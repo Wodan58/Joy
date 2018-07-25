@@ -1,0 +1,19 @@
+# makefile for Joy 
+
+HDRS = globals.h
+SRCS = interp.c scan.c utils.c main.c
+OBJS = interp.obj scan.obj utils.obj main.obj
+
+CC = cl.exe
+CC_FLAGS = /nologo /W3 /GX /O2 /Gy /c -Iinclude -DGC_BDW
+
+LINK = link.exe
+LINK_FLAGS = /nologo \gc6.5\gc.lib user32.lib
+
+joy.exe: $(OBJS)
+        $(LINK) $(OBJS) $(LINK_FLAGS) -out:$@
+
+.c.obj:
+        $(CC) $(CC_FLAGS) -D__STDC__ $*.c /Fo$*.obj 
+
+$(OBJS): $(HDRS)
