@@ -12,7 +12,10 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")       # enabl
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} --coverage") # enabling coverage
 endif()
 add_executable(joy interp.c scan.c utils.c main.c)
+if(WIN32)
+else()
 target_link_libraries(joy m)
+endif()
 add_custom_target(demo01.txt ALL
 		  DEPENDS joy
 		  COMMAND joy fib.joy >demo01.txt)
