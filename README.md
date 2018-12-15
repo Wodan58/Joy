@@ -1,9 +1,13 @@
 Joy
 ---
 
+Build|Linux|Windows|Coverage|Quality
+---|---|---|---|---
+status|[![Travis CI build status](https://travis-ci.org/Wodan58/Joy.svg?branch=master)](https://travis-ci.org/Wodan58/Joy)|[![AppVeyor CI build status](https://ci.appveyor.com/api/projects/status/github/Wodan58/Joy?branch=master&svg=true)](https://ci.appveyor.com/project/Wodan58/Joy)|[![Coverage Status](https://coveralls.io/repos/github/Wodan58/Joy/badge.svg?branch=master)](https://coveralls.io/github/Wodan58/Joy?branch=master)|[![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/Wodan58/Joy.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Wodan58/Joy/context:cpp)
+
 This is a distribution of [Joy1](https://github.com/Wodan58/joy1), without
 the libraries. All modifications done in that fork make it difficult to see
-what the original version was. Joy is a fine language and needs a decent
+what the original version was. Joy is a good language and needs a decent
 presentation.
 
 Changes
@@ -22,8 +26,5 @@ done during one night. In fact, according to this [interview](https://www.nsl.co
 Installation
 ------------
 
-The [BDW garbage collector](https://github.com/ivmai/bdwgc) needs to be
-installed and compiled separately, although Joy can operate without.
-The makefile assumes that the bdwgc directory is located below the Joy
-directory. It is not necessary to make a copy; you can create a symlink,
-like this: ln -s /usr/local/src/bdwgc bdwgc.
+The [BDW garbage collector](https://github.com/ivmai/bdwgc) can be installed
+and used, but Joy can operate without: this is both easier and faster.
