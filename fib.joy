@@ -1,0 +1,2 @@
+0 __settracegc.
+10 [small] [] [pred dup pred] [+] binrec.
