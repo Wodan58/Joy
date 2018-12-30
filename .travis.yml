@@ -14,7 +14,7 @@ before_script:
 
 script:
   - cmake -G "Unix Makefiles"
-  - cmake --build . --config Release
+  - cmake --build . --config Debug
 
 after_success:
   - lcov --directory . --capture --output-file coverage.info # capture coverage info
