@@ -18,6 +18,8 @@ static char linbuf[INPLINEMAX];
 static int linelength, currentcolumn = 0;
 static int errorcount = 0;
 
+static int ch = ' ';
+
 PUBLIC void inilinebuffer(void)
 {
     ilevel = 0; infile[ilevel] = srcfile;
@@ -32,7 +34,7 @@ PUBLIC void putline(void)
 
 PRIVATE void getch()
 {
-    char c;
+    int c;
 
     if (currentcolumn == linelength)
       { Again:

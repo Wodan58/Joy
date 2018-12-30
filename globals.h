@@ -1,5 +1,6 @@
 /* FILE : globals.h */
-
+#ifndef GLOBALS_H
+#define GLOBALS_H
 				/* configure			*/
 #define SHELLESCAPE	'$'
 #define INPSTACKMAX	10
@@ -101,7 +102,7 @@ CLASS int autoput;
 CLASS int undeferror;
 CLASS int tracegc;
 CLASS int startclock,gc_clock;			/* main		*/
-CLASS int ch;					/* scanner	*/
+// CLASS int ch;				/* scanner	*/
 CLASS Symbol sym;
 CLASS long num;
 CLASS double dbl;
@@ -185,3 +186,4 @@ PUBLIC void writeterm(Node *n, FILE *stm);
 #define LIST_NEWNODE(u,r)	(bucket.lis = u, newnode(LIST_, bucket, r))
 #define FLOAT_NEWNODE(u,r)	(bucket.dbl = u, newnode(FLOAT_, bucket, r))
 #define FILE_NEWNODE(u,r)	(bucket.fil = u, newnode(FILE_, bucket, r))
+#endif

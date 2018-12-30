@@ -358,10 +358,11 @@ D(  printf("starting main loop\n"); )
 
 	  { readterm();
 D(	    printf("program is: "); writeterm(stk->u.lis, stdout); printf("\n"); )
+	    if (stk) {
 	    prog = stk->u.lis;
 	    stk = stk->next;
 	    conts = NULL;
-	    exeterm(prog);
+	    exeterm(prog); }
 	    if (conts || dump || dump1 || dump2 || dump3 || dump4 || dump5)
 	      { printf("the dumps are not empty\n");
 		CHECK(conts,"conts");

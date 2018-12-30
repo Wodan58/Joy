@@ -224,6 +224,7 @@ PUSH(stderr_, FILE_NEWNODE, stderr)
 PUSH(dump_,LIST_NEWNODE,dump)				/* variables	*/
 PUSH(conts_,LIST_NEWNODE,LIST_NEWNODE(conts->u.lis->next,conts->next))
 PUSH(symtabindex_,INTEGER_NEWNODE,(long)LOC2INT(symtabindex))
+// FIXME: Use /dev/random on Unix or CryptGenRandom on Windows
 PUSH(rand_, INTEGER_NEWNODE, (long)rand())
 /* this is now in utils.c
 PUSH(memoryindex_,INTEGER_NEWNODE,MEM2INT(memoryindex))
@@ -273,7 +274,8 @@ PRIVATE void intern_()
     char *p;
     ONEPARAM("intern");
     STRING("intern");
-    strcpy(id, stk->u.str);
+    strncpy(id, stk->u.str, sizeof(id));
+    id[sizeof(id) - 1] = 0;
     hashvalue = 0;
     for (p = id; *p; p++) hashvalue += *p;
     hashvalue %= HASHSIZE;
@@ -930,6 +932,7 @@ PRIVATE void fwrite_()
     POP(stk);
     FILE("fwrite");
     fwrite(buff, (size_t)length, (size_t)1, stk->u.fil);
+    free(buff);
     return; }
 
 PRIVATE void fseek_()
