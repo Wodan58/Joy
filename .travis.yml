@@ -21,3 +21,4 @@ after_success:
   - lcov --remove coverage.info 'tests/*' '/usr/*' --output-file coverage.info # filter out system and test code
   - lcov --list coverage.info # debug before upload
   - coveralls-lcov coverage.info # uploads to coveralls
+  - bash <(curl -s https://codecov.io/bash)
