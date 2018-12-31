@@ -1,9 +1,9 @@
 Joy
 ---
 
-Build|Linux|Windows|Coverity|Coverage|Codecov|Quality
----|---|---|---|---|---|---
-status|[![Travis CI build status](https://travis-ci.org/Wodan58/Joy.svg?branch=master)](https://travis-ci.org/Wodan58/Joy)|[![AppVeyor CI build status](https://ci.appveyor.com/api/projects/status/github/Wodan58/Joy?branch=master&svg=true)](https://ci.appveyor.com/project/Wodan58/Joy)|[![Coverity Scan Build Status](https://img.shields.io/coverity/scan/14641.svg)](https://scan.coverity.com/projects/wodan58-joy)|[![Coverage Status](https://coveralls.io/repos/github/Wodan58/Joy/badge.svg?branch=master)](https://coveralls.io/github/Wodan58/Joy?branch=master)|[![Codecov](https://codecov.io/gh/Wodan58/Joy/branch/master/graph/badge.svg)](https://codecov.io/gh/Wodan58/Joy)|[![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/Wodan58/Joy.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Wodan58/Joy/context:cpp)
+Build|Linux|Windows|Coverity|Quality|Coverage|Codecov|Alerts
+---|---|---|---|---|---|---|---
+status|[![Travis CI build status](https://travis-ci.org/Wodan58/Joy.svg?branch=master)](https://travis-ci.org/Wodan58/Joy)|[![AppVeyor CI build status](https://ci.appveyor.com/api/projects/status/github/Wodan58/Joy?branch=master&svg=true)](https://ci.appveyor.com/project/Wodan58/Joy)|[![Coverity Scan Build Status](https://img.shields.io/coverity/scan/14641.svg)](https://scan.coverity.com/projects/wodan58-joy)|[![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/Wodan58/Joy.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Wodan58/Joy/context:cpp)[![Coverage Status](https://coveralls.io/repos/github/Wodan58/Joy/badge.svg?branch=master)](https://coveralls.io/github/Wodan58/Joy?branch=master)|[![Codecov](https://codecov.io/gh/Wodan58/Joy/branch/master/graph/badge.svg)](https://codecov.io/gh/Wodan58/Joy)|[![Alerts](https://img.shields.io/lgtm/alerts/g/Wodan58/Joy.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Wodan58/Joy/alerts)
 
 This is a distribution of [Joy1](https://github.com/Wodan58/joy1), without
 the libraries. All modifications done in that fork make it difficult to see
