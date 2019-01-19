@@ -4,7 +4,7 @@
 CC = gcc
 CFLAGS = -DGC_BDW -Ibdwgc/include -Ofast -Wall -Wextra
 LDLIBS = -Lbdwgc -lgc-lib -lm
-OBJECTS = interp.o main.o scan.o utils.o
+OBJECTS = interp.o scan.o utils.o main.o
 
 joy.exe: $(OBJECTS)
 	$(CC) -o$@ $(OBJECTS) $(LDLIBS)
