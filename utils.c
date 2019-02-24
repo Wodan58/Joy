@@ -53,7 +53,7 @@ PUBLIC void printnode(Node *p)
     printf("%10ld:        %-10s %10ld %10ld\n",
 	MEM2INT(p),
 	symtab[(short) p->op].name,
-	p->op == LIST_ ? MEM2INT(p->u.lis) : p->u.num,
+	p->op == LIST_ ? (long)MEM2INT(p->u.lis) : p->u.num,
 	MEM2INT(p->next));
 # endif
 }
@@ -188,6 +188,7 @@ PUBLIC void memoryindex_(void)
 # endif
 }
 
+#if 0
 PRIVATE void readmodule_field(void)
 {
     Entry *p;
@@ -211,6 +212,7 @@ D(  printf("found field: %s\n",p->name); )
     stk = USR_NEWNODE(p,stk);
     return;
 }
+#endif
 
 PUBLIC void readfactor(void)	/* read a JOY factor		*/
 {

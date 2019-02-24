@@ -224,7 +224,7 @@ PUSH(stderr_, FILE_NEWNODE, stderr)
 PUSH(dump_,LIST_NEWNODE,dump)				/* variables	*/
 PUSH(conts_,LIST_NEWNODE,LIST_NEWNODE(conts->u.lis->next,conts->next))
 PUSH(symtabindex_,INTEGER_NEWNODE,(long)LOC2INT(symtabindex))
-// FIXME: Use /dev/random on Unix or CryptGenRandom on Windows
+/* FIXME: Use /dev/random on Unix or CryptGenRandom on Windows */
 PUSH(rand_, INTEGER_NEWNODE, (long)rand())
 /* this is now in utils.c
 PUSH(memoryindex_,INTEGER_NEWNODE,MEM2INT(memoryindex))
@@ -466,8 +466,8 @@ PRIVATE void mul_()
 PRIVATE void divide_()
 {
     TWOPARAMS("/");
-    if (stk->op == FLOAT_   && stk->u.dbl == 0.0  ||
-	stk->op == INTEGER_ && stk->u.num == 0)
+    if ((stk->op == FLOAT_   && stk->u.dbl == 0.0) ||
+	(stk->op == INTEGER_ && stk->u.num == 0))
       execerror("non-zero divisor","/");
     FLOAT_I(/);
     INTEGERS2("/");
@@ -1137,7 +1137,7 @@ PRIVATE void PROCEDURE()					\
 	    INDEXTOOLARGE(NAME);				\
 	    return; }						\
 	case STRING_:						\
-	    if (strlen(AGGR->u.str) < INDEX->u.num)		\
+	    if ((int)strlen(AGGR->u.str) < INDEX->u.num)	\
 		INDEXTOOLARGE(NAME);				\
 	    BINARY(CHAR_NEWNODE,(long)AGGR->u.str[INDEX->u.num]);	\
 	    return;						\
@@ -1280,7 +1280,7 @@ PRIVATE void take_()
 	    POP(stk);
 	    /* do not swap the order of the next two statements ! ! ! */
 	    if (i < 0) i = 0;
-	    if (i > strlen(old))  return; /* the old string unchanged */
+	    if (i > (int)strlen(old)) return; /* the old string unchanged */
 	    p = result = (char *) malloc(strlen(old) - i + 1);
 	    while (i-- > 0)  *p++ = *old++;
 	    UNARY(STRING_NEWNODE,result);

@@ -21,7 +21,7 @@ the comments at the start of main.c and of interp.c. Manfred von Thun really
 wanted those comments in main.c, but the [newsgroup](https://groups.yahoo.com/neo/groups/concatenative/info) did not allow attachments, so it was never
 published. As for the comments in interp.c, I added them because I like some
 version history. It proves that the language and the implementation was not
-done during one night. In fact, according to this [interview](https://www.nsl.com/papers/interview.htm) the implementation in C was started in 1995.
+done during one night. In fact, according to this [interview](http://vector.org.uk/art10000360) the implementation in C was started in 1995.
 
 Installation
 ------------

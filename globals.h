@@ -102,7 +102,7 @@ CLASS int autoput;
 CLASS int undeferror;
 CLASS int tracegc;
 CLASS int startclock,gc_clock;			/* main		*/
-// CLASS int ch;				/* scanner	*/
+/* CLASS int ch; */				/* scanner	*/
 CLASS Symbol sym;
 CLASS long num;
 CLASS double dbl;

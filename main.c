@@ -305,8 +305,9 @@ static int mustinclude = 1;
 
 int main(int argc, char **argv)
 {
+#if 0
     int ch;
-
+#endif
     g_argc = argc;
     g_argv = argv;
     if (argc > 1) {
@@ -334,7 +335,9 @@ int main(int argc, char **argv)
     echoflag = INIECHOFLAG;
     tracegc = INITRACEGC;
     autoput = INIAUTOPUT;
+#if 0
     ch = ' ';
+#endif
     inilinebuffer();
     inisymboltable();
     display[0] = NULL;

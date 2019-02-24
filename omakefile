@@ -2,8 +2,8 @@
 .SUFFIXES:
 
 CC = gcc
-CFLAGS = -DGC_BDW -Ibdwgc/include -Ofast -Wall -Wextra
-LDLIBS = -Lbdwgc -lgc-lib -lm
+CFLAGS = -DBIT_32 -Ofast -Wall -Wextra -Werror -ansi -pedantic -D_C_SOURCE=1
+LDLIBS = -lm
 OBJECTS = interp.o scan.o utils.o main.o
 
 joy.exe: $(OBJECTS)
