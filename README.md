@@ -14,14 +14,14 @@ Changes
 -------
 
 All changes done in Joy1 have been undone. The only new thing is a portable
-makefile, following the advice from [here](nullprogram.com/blog/2017/08/20).
+makefile, following the advice from [here](http://nullprogram.com/blog/2017/08/20).
 Even so, there is something different in these sources compared to the ones
-that can be downloaded from the original [site](www.latrobe.edu.au/humanities/research/research-projects/past-projects/joy-programming-language) and that is
+that can be downloaded from the original [site](http://www.latrobe.edu.au/humanities/research/research-projects/past-projects/joy-programming-language) and that is
 the comments at the start of main.c and of interp.c. Manfred von Thun really
 wanted those comments in main.c, but the [newsgroup](https://groups.yahoo.com/neo/groups/concatenative/info) did not allow attachments, so it was never
 published. As for the comments in interp.c, I added them because I like some
 version history. It proves that the language and the implementation was not
-done during one night. In fact, according to this [interview](http://vector.org.uk/art10000360) the implementation in C was started in 1995.
+done during one night. In fact, according to this [interview](https://www.nsl.com/papers/interview.htm) the implementation in C was started in 1995.
 
 Installation
 ------------
