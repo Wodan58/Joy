@@ -8,7 +8,7 @@ status|[![Travis CI build status](https://travis-ci.org/Wodan58/Joy.svg?branch=m
 This is a distribution of [Joy1](https://github.com/Wodan58/joy1), without the libraries.
 All modifications done in that fork make it difficult to see what the original version
 was. [Joy](http://www.complang.tuwien.ac.at/anton/euroforth/ef01/thun01.pdf) is a decent
-language and needs a ditto [presentation](http://www.complang.tuwien.at/anton/euroforth/ef01/thomas01a.pdf).
+language and needs a ditto [presentation](http://www.complang.tuwien.ac.at/anton/euroforth/ef01/thomas01a.pdf).
 
 Changes
 -------
