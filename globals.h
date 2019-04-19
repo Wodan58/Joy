@@ -1,6 +1,10 @@
 /* FILE : globals.h */
 #ifndef GLOBALS_H
 #define GLOBALS_H
+
+#ifdef _MSC_VER
+#pragma warning( disable : 4244 )
+#endif
 				/* configure			*/
 #define SHELLESCAPE	'$'
 #define INPSTACKMAX	10
