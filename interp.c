@@ -894,7 +894,7 @@ PRIVATE void fputchars_() /* suggested by Heiko Kuhrt, as "fputstring_" */
     TWOPARAMS("fputchars");
     if (stk->next->op != FILE_ || (stm = stk->next->u.fil) == NULL)
         execerror("file", "fputchars");
-    fprintf(stm,stk->u.str);
+    fprintf(stm,"%s",stk->u.str);
     POP(stk);
     return; }
 
@@ -1463,7 +1463,7 @@ TYPE(user_,"user",==,USR_)
 
 USETOP( put_,"put",ONEPARAM, writefactor(stk, stdout);printf(" "))
 USETOP( putch_,"putch",NUMERICTYPE, printf("%c", (char) stk->u.num) )
-USETOP( putchars_,"putchars",STRING, printf(stk->u.str) )
+USETOP( putchars_,"putchars",STRING, printf("%s",stk->u.str) )
 USETOP( setecho_,"setecho",NUMERICTYPE, echoflag = stk->u.num )
 USETOP( setautoput_,"setautoput",NUMERICTYPE, autoput = stk->u.num )
 USETOP( setundeferror_, "setundeferror", NUMERICTYPE, undeferror = stk->u.num )
