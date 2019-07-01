@@ -13,8 +13,8 @@ before_script:
   - lcov --directory . --zerocounters
 
 script:
-  - cmake -G "Unix Makefiles"
-  - cmake --build . --config Debug
+  - cmake -G "Unix Makefiles" .
+  - cmake --build . --config Release
 
 after_success:
   - lcov --directory . --capture --output-file coverage.info # capture coverage info

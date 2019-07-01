@@ -2,7 +2,7 @@ extraction:
   cpp:
     configure:
       command:
-        - cmake -G "Unix Makefiles"
+        - cmake -G "Unix Makefiles" .
     index:
       build_command:
         - cmake --build . --config Release
