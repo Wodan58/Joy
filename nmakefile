@@ -11,9 +11,9 @@ LINK = link.exe
 LINK_FLAGS = /nologo \gc6.5\gc.lib user32.lib
 
 joy.exe: $(OBJS)
-        $(LINK) $(OBJS) $(LINK_FLAGS) -out:$@
+	$(LINK) $(OBJS) $(LINK_FLAGS) -out:$@
 
 .c.obj:
-        $(CC) $(CC_FLAGS) -D__STDC__ $*.c /Fo$*.obj 
+	$(CC) $(CC_FLAGS) -D__STDC__ $*.c /Fo$*.obj 
 
 $(OBJS): $(HDRS)
