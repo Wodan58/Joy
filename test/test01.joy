@@ -1,0 +1,27 @@
+DEFINE test01 == true false (* maxint *) ; undefined == .
+# scan.c
+3 setecho .
+$ echo use shell escape
+"\07" .
+"\b\r\f\'\"\v\\\a" .
+2 setautoput .
+0xFF
+0377
+2.55e+2 .
+# main.c
+1 setautoput .
+# utils.c
+gc .
+__memoryindex .
+"dummy.txt" "r" fopen .
+stdin .
+stdout .
+stderr .
+"test01.joy" "r" fopen .
+# interp.c
+[ true false (* maxint *) test01 undefined ] helpdetail .
+undefs .
+manual .
+__html_manual .
+__latex_manual .
+__manual_list .

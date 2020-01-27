@@ -1,0 +1,154 @@
+(* file  TYPLIB.JOY *)
+
+LIBRA
+
+fatal2  ==  putchars putchars newline abort;
+
+HIDE                                            (* stack *)
+    _st_chk == "non_empty stack needed for " fatal2
+IN
+    st_new      == [];
+    st_push     == swons;
+    st_null     == dup null;
+    st_top      == [null] ["st_top\n" _st_chk] [dup first] ifte;
+    st_pop      == [null] ["st_pop\n" _st_chk] [rest] ifte;
+    st_pull     == [null] ["st_pull\n" _st_chk] [unswons] ifte
+END;
+
+HIDE                                            (* queue *)
+    _q_chk      == "non_empty queue needed for" fatal2;
+    _q_prep     == [null] [swap reverse] [] ifte
+IN
+    q_new       == [] [];
+    q_null      == _q_prep dup null;
+    q_add       == swap [swons] dip;
+    q_addl      == swap [shunt] dip; (* add a list *)
+    q_front     == _q_prep [null] ["q_front\n" _q_chk] [dup first] ifte;
+    q_rem       == _q_prep [null] ["q_rem \n" _q_chk] [unswons] ifte
+END;
+
+HIDE                                    (* tree *)
+    _t_chk      == "non_empty tree needed for" fatal2;
+    _t_prep     ==  [ [ [null] [] ]
+                      [ [first null] [rest] [] ]
+                      [ [first first list] [[unswons] infra] [] ]
+                      [ [] ] ]
+                    condlinrec
+IN
+    t_new       == [];
+    t_reset     == dup  unitlist unitlist;
+    t_add       == unitlist unitlist cons;
+    t_null      == _t_prep dup null;
+    t_front     == _t_prep
+                    [null] ["t_front\n" _t_chk] [dup first first] ifte;
+    t_rem       == _t_prep
+                   [null]
+                   ["t_rem\n" _t_chk]
+                   [unswons unswons [swons] dip]
+                   ifte;
+    _t_sample == [1 20 [3 40] [5 60] 70 [[[8]]] ]
+END.
+
+LIBRA                    (* big sets *) (* B&W p 230 *)
+
+bs_new == [];
+bs_union ==
+        [ [ [null] [pop] ]
+          [ [pop null] [swap pop] ]
+          [ [unswons2 <] [[uncons] dip] [cons] ]
+          [ [unswons2 >] [uncons swapd] [cons] ]
+          [ [rest [uncons] dip] [cons] ] ]
+        condlinrec;
+bs_differ ==
+        [ [ [null] [pop]]
+          [ [pop null] [pop pop []] ]
+          [ [unswons2 <] [[uncons] dip] [cons] ]
+          [ [unswons2 >] [rest] [] ]
+          [ [[rest] dip rest] [] ] ]
+        condlinrec;
+bs_member ==
+        [ [ [pop null] [pop2 false] ]
+          [ [[first] dip >] [pop2 false] ]
+          [ [[first] dip =] [pop2 true] ]
+          [ [[rest] dip] [] ] ]
+        condlinrec;
+bs_insert ==
+        [ [ [pop null] [swons] ]
+          [ [[first] dip >] [swons] ]
+          [ [[first] dip =] [pop] ]
+          [ [[uncons] dip] [cons] ] ]
+        condlinrec;
+bs_delete ==
+        [ [ [pop null] [pop] ]
+          [ [[first] dip >] [pop] ]
+          [ [[first] dip =] [pop rest] ]
+          [ [[uncons] dip] [cons] ] ]
+        condlinrec;
+
+(* old recursive versions *)
+
+    r_bs_union ==
+        [ [ [null]  pop ]
+          [ [pop null]  swap pop ]
+          [ [unswons2 <]  [uncons] dip r_bs_union cons ]
+          [ [unswons2 >]  uncons  swapd r_bs_union cons ]
+          [ rest [uncons] dip r_bs_union cons ] ]
+        cond;
+    r_bs_differ ==
+        [ [ [null]  pop ]
+          [ [pop null]  pop pop [] ]
+          [ [unswons2 <]  [uncons] dip r_bs_differ cons ]
+          [ [unswons2 >]  rest r_bs_differ ]
+          [ [rest] dip rest r_bs_differ ] ]
+        cond;
+    r_bs_member ==
+        [ [ [pop null]  pop2 false ]
+          [ [[first] dip >]  pop2 false ]
+          [ [[first] dip =]  pop2 true ]
+          [ [rest] dip r_bs_member ] ]
+        cond;
+    r_bs_insert1 == unitlist r_bs_union;
+    r_bs_delete1 == unitlist r_bs_differ.
+
+
+(* end old recursive versions *)
+
+LIBRA (* dictionary *)
+
+d_new   == [];
+d_null  == null;
+d_add   ==
+        [ [ [pop null] [swons] ]
+          [ [[first] dip [first] app2 >=] [swons] ]
+          [ [[uncons] dip] [cons] ] ]
+        condlinrec;
+d_union ==
+        [ [ [null] [pop] ]
+          [ [pop null] [swap pop] ]
+          [ [unswons2 [first] app2 <] [[uncons] dip] [cons] ]
+          [ [unswons2 [first] app2 >] [uncons swapd] [cons] ]
+          [ [uncons2] [cons cons] ] ]
+        condlinrec;
+d_differ ==
+        [ [ [null] [pop]]
+          [ [pop null] [pop pop []] ]
+          [ [unswons2 [first] app2 <] [[uncons] dip] [cons] ]
+          [ [unswons2 [first] app2 >] [rest] [] ]
+          [ [[rest] dip rest] [] ] ]
+        condlinrec;
+d_look  == [dup] dip
+        [ [ [pop null] [pop pop "not found"] ]
+          [ [[first first] dip >] [pop pop "not found"] ]
+          [ [[first first] dip =] [pop first] ]
+          [ [[rest] dip] [] ] ]
+        condlinrec;
+d_rem   ==
+        [ [ [pop null] [pop] ]
+          [ [[first first] dip >] [pop] ]
+          [ [[first first] dip =] [pop rest] ]
+          [ [[uncons] dip] [cons] ] ]
+        condlinrec;
+_d_sample ==
+        [ [1 "1"] [2 "2"] [3 "3"] [4 "4"] ["fred" "FRED"] ].
+
+(* end  TYPLIB.JOY *)

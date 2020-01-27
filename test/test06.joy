@@ -1,0 +1,16 @@
+0 setautoput .
+"test1" "w+" fopen .
+[ 65 66 67 ] fwrite .
+"test" fputchars .
+65 fputch .
+10 fput .
+fflush .
+feof pop .
+ferror pop .
+0 0 fseek pop .
+fgets put .
+fgetch put .
+fget put .
+fclose .
+"test" "test1" frename .
+"test1" fremove .

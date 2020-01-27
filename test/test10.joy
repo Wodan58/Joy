@@ -1,0 +1,6 @@
+(* see if a declaration clears the stack *)
+
+1 2 3 . # 3 in output; stack now contains 1 2
+LIBRA a == 3 .
++ . # if the stack was cleared: error, else 3
+) . # this gives an error

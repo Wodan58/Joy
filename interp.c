@@ -40,7 +40,6 @@
 #    define free(X)
 # endif
 
-
 PRIVATE void helpdetail_();		/* this file		*/
 PRIVATE void undefs_();
 PRIVATE void make_manual(int style /* 0=plain, 1=html, 2=latex */);
@@ -2562,7 +2561,6 @@ static struct {char *name; void (*proc) (); char *messg1, *messg2 ; }
 
 {"stderr",		stderr_,	"->  S",
 "Pushes the standard error stream."},
-
 
 /* OPERATORS */
 

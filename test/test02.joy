@@ -1,0 +1,127 @@
+true .
+false .
+setsize .
+maxint .
+__symtabmax .
+__memorymax .
+__dump .
+# conts .
+__symtabindex .
+rand .
+echo .
+autoput .
+undeferror .
+clock .
+[] stack .
+[] unstack .
+[ stack ] first name .
+"PATH" getenv .
+"PAT" getenv .
+1 2 3 4 rolldownd . . . .
+1 2 3 4 rotated . . . .
+'A ord .
+65 chr .
+1 abs .
+1.5 fabs .
+-1 abs .
+-1.5 fabs .
+1 sign.
+0.0 fsign .
+-0.0 fsign .
+1.5 fsign.
+-1 sign .
+-1.5 fsign .
+1 neg .
+1.5 fneg .
+-1 neg .
+-1.5 fneg .
+2 1 / .
+2 0 / .
+2 1 div . .
+"1.0" strtod .
+1 'd 10 10 format .
+1.5 'f 10 10 formatf .
+localtime "%c" strftime .
+gmtime mktime .
+1.5 acos .
+1.5 asin .
+1.5 atan .
+1.5 ceil .
+1.5 cosh .
+1.5 exp .
+1.5 floor .
+1.5 log .
+1.5 sinh .
+1.5 sqrt .
+1.5 tanh .
+1.5 2.5 atan2 .
+1.5 2.5 pow .
+1.5 frexp .
+1.5 modf .
+1 2.5 ldexp .
+[] unstack .
+1.5 2 ldexp .
+3.0 2 ldexp .
+1.5 trunc .
+1.5 2.5 fmax .
+1.5 2.5 fmin .
+1.5 2.5 != .
+1.5 2.5 compare .
+{} {0} compare .
+1.5 2.5 sametype .
+"test" first .
+{ 1 2 3 } first .
+"test" rest .
+{ 1 2 3 } rest .
+{ 1 2 3 } uncons . .
+{ 1 2 3 } unswons . .
+"test" unswons . .
+true 1.5 2.5 choice .
+false 1.5 2.5 choice .
+{ 1 2 3 } 1 drop .
+"test" 1 drop .
+[ 1 2 3 ] 1 drop .
+{ 1 2 3 } 1 take .
+"test" 1 take .
+[ 1 2 3 ] 1 take .
+{ 1 2 3 } { 4 5 6 } concat .
+1.5 null .
+stdin null .
+{ 0 } null .
+"test" not .
+[ 1 2 3 ] not .
+1.5 not .
+stdin not .
+{ 1 2 3 } size .
+"test" size .
+{ 1 2 3 } small .
+'A char .
+true logical .
+{ 1 2 3 } set .
+stdin file .
+[ nothing ] first user .
+"date" system .
+help .
+_help .
+1 2 3 [ + ] binary .
+1 2 3 [ + ] ternary .
+1 2 3 [ + ] app1 .
+1 2 3 [ + ] app11 .
+1 2 3 4 [ over + ] unary3 . . .
+1 2 3 4 5 [ over + ] unary4 . . . .
+1 2 3 4 5 [ over + ] app12 .
+[] unstack .
+"test" [ 1 + ] map .
+{ 1 2 3 } [ 1 + ] map .
+0 { 1 2 3 } [ + ] step .
+1 [ "integer\n" putchars ] [ "no\n" putchars ] ifinteger .
+'A [ "char\n" putchars ] [ "no\n" putchars ] ifchar .
+true [ "logical\n" putchars ] [ "no\n" putchars ] iflogical .
+"test" [ "string\n" putchars ] [ "no\n" putchars ] ifstring .
+{ 1 2 3 } [ "set\n" putchars ] [ "no\n" putchars ] ifset .
+1.5 [ "float\n" putchars ] [ "no\n" putchars ] iffloat .
+stdin [ "file\n" putchars ] [ "no\n" putchars ] iffile .
+{ 1 2 3 } [ 2 < ] filter .
+"test" [ 't < ] filter .
+{ 1 2 3 } [ 2 < ] split . .
+[ 1 2 3 ] [ 2 < ] all .

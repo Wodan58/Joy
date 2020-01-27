@@ -1,0 +1,97 @@
+(* FILE: tutlib.joy *)
+
+LIBRA
+
+    _tutlib == true;
+    pause ==
+	bell "\nTo return, hit  Control-" putchars control-eof putch newline
+	terminal include;
+    pausing == putchars pause;
+    praise ==
+	[ "Good." "Splendid." "Excellent." "Great." "Terrific." ]
+	rand 5 rem at putchars newline;
+    get-integer ==
+	get
+	[ integer not ]
+	[ pop "An integer is expected:\n" putchars get ]
+	while;
+    get-list ==
+	get
+	[ list not ]
+	[ pop "A list is expected:\n" putchars get ]
+	while;
+    get-quote ==
+	get
+	[ list not ]
+	[ pop "A quotation is expected:\n" putchars get ]
+	while;
+    expecting ==
+	[ equal ]
+	[ pop pop praise [succ] dip]
+	[ "No, the right answer is:  " putchars put pop newline ]
+	ifte
+	succ;
+    expecting-from ==
+	[ [equal] some ]
+	[ pop pop praise [succ] dip]
+	[ "No, the right answer must be one of the following:\n\t" putchars
+	  [put "  " putchars] step pop newline ]
+	ifte
+	succ;
+    ini-stats ==
+	0 0 ;
+    put-stats ==
+	"You answered " putchars [put] dip
+	"of the " putchars put
+	"questions correctly.\n\n" putchars;
+
+(* the following assume a "Table Of Contents" definition of the form
+	toc-of-tutorial == [ [ [Q0] "Title" ]
+			     [ [Q1] "1 H1 " ]
+			     [ [Q1] "2 H2 " ]
+			     ....             ]
+where each Qi is a quote, each Hi is a section heading. *)
+
+    toc-all-headings ==
+	toc-of-tutorial rest
+	[space space second putchars newline] step;
+    toc-one-heading ==
+	toc-of-tutorial of second putchars newline newline;
+    toc-do-section0 ==
+	terminal include
+	newline
+	0 toc-one-heading
+	"Contents:\n" putchars toc-all-headings newline
+	toc-of-tutorial first first i;
+    toc-ask-for-section ==
+	"\nTo repeat something, here are the sections again\n"
+	putchars
+	toc-all-headings
+	[ "Type the number of the section you want, or \n"
+	  "type  0  to do all sections, or\n"
+	  "type any other number (even negative) to quit.\n" ]
+	putstrings
+	get-integer
+	[toc-of-tutorial size >=] [0 swap -] [] ifte;
+    toc-do-section ==
+	toc-of-tutorial of first i;
+    toc-repeat-sections ==
+	toc-ask-for-section
+	[ 0 >= ]
+	[ toc-do-section
+	  toc-ask-for-section ]
+	while;
+    toc-do-sec0-loop ==
+	toc-do-section0
+	toc-repeat-sections
+	pop
+	"Leaving  " putchars 0 toc-one-heading
+	"\nBye\n\n" putchars;
+
+
+    TUTLIB == "tutlib.joy - tutorial library, for interaction".
+						(* end LIBRA *)
+
+time srand. (* set seed for rand *)
+
+(* END  tutlib.joy *)

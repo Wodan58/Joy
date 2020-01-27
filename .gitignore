@@ -1,1 +1,8 @@
-joy64
+dummy
+*.o
+demo*.txt
+test*.txt
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+CMakeFiles

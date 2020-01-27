@@ -1,0 +1,47 @@
+(******************************************************************************
+ * fraclib.joy - a simple fractal generator example.
+ * Nick Forde <nickf@cadence.com> (March 2002)
+ * The main definition is 'mandel' which may be run without arguments.
+ * This implementation uses a single loop through all x & y coordinates and 
+ * maintains state by manipulating the aggregate [I:z1 I:z2 F:c1 F:c2].
+ * $Id: fraclib.joy,v 1.3 2002/03/26 16:17:06 nickf Exp nickf $
+ ******************************************************************************)
+
+"seqlib" libload.
+
+LIBRA
+
+  nrows  == 30; ncols == 75;                    (* size of output display     *)
+  mandel == -1 nrows ncols *                    (* one loop for rows & cols.  *)
+  	    [ succ dup dup [col] dip row        (* calc. column & row indices *)
+              get_c1 swap get_c2                (* calc. coefficients 1 & 2   *)
+              get_k putpt                       (* calc. k and then print     *)
+              [eol] ['\n putch] [] ifte         (* put newline if appropriate *)
+            ] times;                            (* loop for each cell         *)
+  row    == ncols /;                            (*               I:i -> I:row *)
+  col    == ncols rem;                          (*               I:i -> I:col *)
+  eol    == col ncols pred =;                   (*               I:i -> B     *)
+  putpt  == 16 rem " .:,;!/>)|&IH%*#" of putch; (* we've a palette of 16      *)
+  get_k  == pairlist [0 0] swoncat              (* F:c1 F:c2 -> A             *)
+            0 [112 <= [eoloop] dip and]         (* condition                  *)
+            [succ [inc_zs] dip] while           (* if true                    *)
+            popd 1 -;                           (* cleanup               -> I *)
+  get_c1 == 0.10 * 1.5 -;                       (* outer loop coeff. I:i -> F *)
+  get_c2 == 0.04 * 2.0 -;                       (* inner loop coeff. I:i -> F *)
+  sqr_z1 == first dup *;                        (*                     A -> I *)
+  sqr_z2 == 1 at  dup *;                        (*                     A -> I *)
+  inc_z1 == dup [sqr_z1] [sqr_z2] cleave -      (* (z1*z1)-(z2*z2)+c2         *)
+            [3 at] dip +;                       (*                     A -> I *)
+  inc_z2 == 3 take reverse uncons uncons        (* (2*z1*z2)+c1               *)
+            uncons pop                          (*                            *)
+            2 * * + ;                           (*                     A -> I *)
+  eoloop == dup sqr_z1 swap sqr_z2 + 10 <=;     (* (z1*z1)+(z2*z2)<=10 A -> B *)
+  inc_zs == dup [inc_z1] [inc_z2] cleave        (*                            *)
+            pairlist swap rest rest concat;     (*                     A -> A *)
+
+FRACLIB == "fraclib.joy - fractal library\n".
+"fraclib is loaded\n" putchars.
+
+(******************************************************************************
+ * END  fraclib.joy
+ ******************************************************************************)

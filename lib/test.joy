@@ -1,0 +1,13 @@
+"inilib.joy" include.
+
+
+"numlib.joy" include.
+
+1001.1  cube-root.
+
+argc.
+
+argv.
+
+quit.
+

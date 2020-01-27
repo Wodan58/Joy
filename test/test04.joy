@@ -1,0 +1,27 @@
+DEFINE nl == '\n putch .
+
+"stdlib.joy" include .
+
+time localtime .
+
+"test04.joy" "r" fopen
+16 fread 5 take put fclose nl .
+
+undefs .
+
+10 [small] [] [pred dup pred] [+] binrec .
+
+true ["true"] ["false"] branch putchars nl .
+false ["true"] ["false"] branch putchars nl .
+
+5 [1] [*] primrec .
+
+[1 2 3 4 5] [0] [+] primrec .
+
+DEFINE g-fib == [small] [] [pred dup pred] [app2 +] genrec .
+
+10 g-fib .
+
+[2 3] [[-] [+] [*] [/]] construct . . . .
+
+1 2 3 4 5 [+] unary3 . . .

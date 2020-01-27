@@ -1,0 +1,44 @@
+(* FILE:  lsptst.joy *)
+
+"\nTesting the Lisp interpreter lisp in the library lsplib.joy\n" putchars.
+
+"lsplib" libload.
+0 __settracegc.
+1 setecho.
+DEFINE l-prompt == "".
+lisp.
+
+							(* CONSTANTS	*)
+	123.456
+	false
+	"hello world"
+	[ QUOTE [Peter Paul Mary] ]
+	[ QUOTE [1 2 3 4 5] ]
+
+						(* PRIMITIVE FUNCTIONS	*)
+	[ CAR [QUOTE [Peter Paul Mary]] ]
+	[ CDR [QUOTE [1 2 3 4 5]] ]
+	[ CONS Fred [QUOTE [Peter Paul]] ]
+	[ ATOM Fred ]
+	[ ATOM [QUOTE [1 2 3]] ]
+	[ NULL [QUOTE [1 2 3]] ]
+	[ NULL [QUOTE []] ]
+	[ EQ  2  3 ]
+	[ LIST  [CDR [QUOTE [1 2 3]]]  [ATOM 123]  ]
+	[ [LAMBDA [lis] CAR [CDR lis]]  [QUOTE [11 22 33]] ]
+
+						(* "BORROWED" from JOY	*)
+	[ + [* 2 5] [- 10 7] ]
+	[ and true false ]
+	[ or true false ]
+	[ >  3  4 ]
+	[ and  [NULL [QUOTE []]]  [NULL [QUOTE [Bob]]] ]
+	[ map    [QUOTE [10 11 12 13 14 15 16]]  [QUOTE [prime]] ]
+	[ filter [QUOTE [10 11 12 13 14 15 16]]  [QUOTE [prime]] ]
+
+	[ include "OK" "lsptst.lsp" ]		(* "BORROWED" include	*)
+
+						(* back to lsptst.joy	*)
+	EXIT	(* from Lisp *)
+
+(* END:  lsptst.joy *)

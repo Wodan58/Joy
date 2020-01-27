@@ -1,0 +1,222 @@
+(* FILE:   grmlib.joy *)
+
+(* uses the Min2Tre translator of the symbolic library to transform
+   regular expressions (RE) and grammars from infix to tree notation	*)
+
+    "symlib" libload.
+
+LIBRA
+
+    _grmlib == true;
+
+(* define the operators used by regular expressions and grammars:	*)
+    unops == [ ? * +  $ ];
+    binops == [ | _ ];
+    bin1ops == [ | ];
+    bin2ops == [ _ ];
+    bin3ops == [ ];
+
+# This library currently contains two parts:
+# 1 GENERATING all strings in the language of a regular expression or grammar
+# 2 PARSING a given input string in accordance with a R.E. or grammar
+
+(* - - - - -              G E N E R A T I N G                  - - - - - *)
+
+HIDE
+
+(* the various initial continuations:					*)
+
+    show-put ==
+	pop put newline pop;
+    show-put-step ==
+	pop [put] step newline pop;
+    show-putchars-step ==
+	pop [putchars] step newline pop;
+    show-putchars-sp-step ==
+	pop [putchars space] step newline pop;
+
+    accumulate ==
+#	"accu: " putchars stack putln
+	pop popd swons
+
+IN
+
+    generate ==	(* length-limit  accumulator  continuation  expression	*)
+      [ pop pop size <= ]
+      [ pop pop pop pop ] (* got enough *)
+      [
+	"generate B" gen-trace
+	unswons
+						# binary operators
+	[ [ [[ | ] in]
+	    pop
+	    [ [] cons cons cons dup ] dip
+	    uncons first
+	    [ swap
+	      [[i] dip generate] dip ]
+	    dip
+	    [i] dip generate ]
+	  [ [[ _ ] in ]
+	    pop uncons first
+	    [ [generate] cons swons ]
+	    dip generate ]
+						# unary operators
+	  [ [[ ? ] in ]
+	    pop
+	    [ [] cons cons cons dup
+	      [i unswons i] dip ]
+	    dip
+	    [i] dip first generate ]
+	  [ [[ + ] in ]
+	    swons
+	    [] cons cons cons cons dup
+	    [ i second generate ] dip
+	    i dup
+	    [ [generate] cons swons ] dip
+	    second generate ]
+	  [ [[ * ] in ]
+	    swons
+	    [ [] cons cons cons dup
+	      [i unswons i] dip ]
+	    dip
+	    dup
+	    [ [i] dip [generate] cons swons ] dip
+	    second generate ]
+	  [ [[ $ ] in]
+	    pop first i
+	    Min2Tre generate ]
+	  [ [[QUOTE] in ]
+	    pop first
+	    swap [swons] dip
+	    unswons i ]
+						# operands
+	  [ [[epsilon] in ]
+	    pop pop
+	    unswons i ]
+	  [ # default: an atom
+	    popd
+	    swap [swons] dip
+	    unswons i ] ]
+	cond
+	"generate E" gen-trace
+	]
+      ifte;
+
+    gen-trace-default == putchars " : " putchars stack putln;
+    gen-trace == pop;
+#   gen-trace == gen-trace-default;
+
+(*   the four basic wrappers						*)
+
+    gen-put ==					(* count  Min-exp	*)
+	Min2Tre  [ [] [[show-put]] ] dip generate;
+    gen-put-step ==
+	Min2Tre  [ [] [[show-put-step]] ] dip generate;
+    gen-putchars-step ==
+	Min2Tre  [ [] [[show-putchars-step]] ] dip generate;
+    gen-putchars-sp-step ==
+	Min2Tre  [ [] [[show-putchars-sp-step]] ] dip generate;
+
+    gen-accumulate ==
+	Min2Tre  [ [[]] dip [] [[accumulate]] ] dip generate
+
+END; (* HIDE, generator *)
+
+(* - - - - -               P A R S I N G                      - - - - - *)
+
+HIDE
+
+(* the various initial continuations:					*)
+
+    parse-string-residues ==
+	pop [ succ dup put ": " putchars ] dip [putch] step newline;
+    parse-list-residues ==
+	pop [ succ dup put ": " putchars ] dip [put] step newline;
+    parse-test == pop pop true or;
+    parse-count == # "count" put stack putln
+		 pop pop succ;
+    parse-tell == "accept\n" putchars pop pop succ
+
+IN
+
+    parse ==	(*  N  list-to-be-parsed   continuation  expression	*)
+	"parse B" prs-trace
+	unswons
+						# binary operators
+	[ [ [[ | ] in]
+	    pop
+	    [ [] cons cons dup ] dip
+	    uncons first
+	    [ swap
+	      [[i] dip parse] dip ]
+	    dip
+	    [i] dip parse ]
+	  [ [[ _ ] in ]
+	    pop uncons first swap # in generate there is no swap
+	    [ [parse] cons swons ]
+	    dip parse ]
+						# unary operators
+	  [ [[ ? ] in ]
+	    pop
+	    [ [] cons cons dup
+	      [i unswons i] dip ]
+	    dip
+	    [i] dip first parse ]
+	  [ [[ + ] in ]
+	    swons
+	    [] cons cons cons dup
+	    [ i second parse ] dip
+	    i dup
+	    [ [parse] cons swons ] dip
+	    second parse ]
+	  [ [[ * ] in ]
+	    swons
+	    [ [] cons cons dup
+	      [i unswons i] dip ]
+	    dip
+	    dup
+	    [ [i] dip [parse] cons swons ] dip
+	    second parse ]
+	  [ [[ $ ] in]
+	    pop first i
+	    Min2Tre parse ]
+	  [ [[QUOTE] in ]
+	    pop first
+	    swap [swons] dip
+	    unswons i ]
+						# operands
+	  [ [[epsilon] in ]
+	    pop pop
+	    unswons i ]
+	  [ # default: an atom
+	    # here I need a test that the list is not empty
+	    # otherwise the "first" below will crash
+	    popd
+	    [ [pop first] dip = ]
+	    [ pop [rest] dip unswons i ]
+	    [ pop pop pop ]
+	    ifte ] ]
+	cond
+	"parse E" prs-trace
+      ;
+#    prs-trace == putchars stack putln;
+
+    prs-test ==
+	Min2Tre [ [false] dip [[parse-test]] ] dip parse;
+    prs-string-residues ==
+	Min2Tre [ [0] dip [[parse-string-residues]] ] dip parse pop;
+    prs-list-residues ==
+	Min2Tre [ [0] dip [[parse-list-residues]] ] dip parse pop;
+    prs-count ==
+	Min2Tre [ [0] dip [[parse-count]] ] dip parse
+
+END; (* HIDE, parser *)
+
+(* other stuff to go here *)
+
+    GRMLIB == "grmlib.joy - grammar (generating/parsing) library\n".
+
+							(*  end LIBRA	*)
+"grmlib  is loaded\n" putchars.
+
+(* END  grmlib.joy *)

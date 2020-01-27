@@ -131,7 +131,7 @@ D(  printf("entered %s at %ld\n",id,LOC2INT(location)); )
 
 PUBLIC void lookup(void)
 {
-int i;
+    int i;
 D(  printf("%s  hashes to %d\n",id,hashvalue); )
 
     for (i = display_lookup; i > 0; --i)
@@ -305,21 +305,15 @@ static int mustinclude = 1;
 
 int main(int argc, char **argv)
 {
-#if 0
-    int ch;
-#endif
     g_argc = argc;
     g_argv = argv;
     if (argc > 1) {
-/*
-	FILE *f;
-*/
 	g_argc--;
 	g_argv++;
 	srcfile = fopen(argv[1], "r");
 	if (!srcfile) {
 	    printf("failed to open the file '%s'.\n", argv[1]);
-	    exit(1);
+	    exit(0);
 	}
     } else {
 	srcfile = stdin;
@@ -335,9 +329,6 @@ int main(int argc, char **argv)
     echoflag = INIECHOFLAG;
     tracegc = INITRACEGC;
     autoput = INIAUTOPUT;
-#if 0
-    ch = ' ';
-#endif
     inilinebuffer();
     inisymboltable();
     display[0] = NULL;

@@ -1,0 +1,180 @@
+(* FILE:   lsplib.joy *)
+
+    basic-libload.
+
+LIBRA
+
+    _lsplib == true;
+
+(*   - - -            L I S P   I N T E R P R E T E R             - - - *)
+
+(* REFS: SICP p ???, Henderson p 39, p 101 *)
+
+(* - - - - -			E V A L			      - - - - - *)
+
+eval == 					(*  env  exp		*)
+(*
+	dup2
+	swap
+	"eval: env = " putchars put newline
+	"      exp = " putchars put newline
+*)
+    [ list ]
+
+    [						(*  eval-compound!	*)
+      unswons					(*  env args fun	*)
+      [ [ QUOTE
+	  first ]
+	[ LAMBDA
+	  dupd cons [CLOSURE] swoncat ]
+	[ IF					(*  env  [[i] [t] [e]]	*)
+	  uncons [eval] dip			(*  env  e-i [[t] [e]]	*)
+	  swap					(*  env  [[t] [e]] e-i	*)
+	  [ null ]
+	  [ pop second]				(*  env  [e]		*)
+	  [ pop first ]				(*  env  [t]		*)
+	  ifte eval ]
+	[ DEF					(* env      [name body]	*)
+	  uncons first swap			(* env      body   name	*)
+	  [ eval ]				(* env    e-b		*)
+	  dip					(* env    e-b	name	*)
+	  dup					(* env    e-b   n    n	*)
+	  [ [[] cons] unary2			(* env   [e-b] [n]	*)
+	    swons				(* env   [[n] e-b]	*)
+	    swons ]				(* [[[n] e-b] env]	*)
+	  dip ]					(* new-env            n	*)
+	[ DEFUN					(* e  [name vars body]	*)
+	  uncons				(* e      n   [vs b]	*)
+	  [LAMBDA] swoncat			(* e      n [L vs b]	*)
+	  [] cons cons				(* e     [n [L vs b]]	*)
+	  [DEF] swoncat				(* e   [D n [L vs b]]	*)
+	  eval ]
+	[ (* DEFAULT *)
+	  swons [eval] map unswons		(*  env  ev-args ev-fun	*)
+	  apply ] ]
+      case ]
+
+    [						(* eval-atomic		*)
+      [ [numerical] [string] sequor ]
+	[ ]					(* self-evaluating	*)
+	[					(* lookup!		*)
+	  dupd swap				(*  env  v  env		*)
+	  [					(*  member?		*)
+	    [ null ]
+	    [ true ]				(*  fake		*)
+	    [ first first in ]			(*  really ?		*)
+	    ifte ]
+	  [ [ null ]				(*  was fake ?		*)
+	    [ pop ]				(*  self-evaluating	*)
+	    [					(*  search really	*)
+	      first unswons rolldown		(*  [e1..] [v1..] v	*)
+	      [ [first] dip = ]
+	      [ pop pop first ]
+	      [ [ [rest] unary2] dip ]
+	      tailrec ]
+	    ifte ]
+	  [ rest ]
+	  tailrec ]				(* end lookup!		*)
+	ifte ]					(* end eval-atomic	*)
+
+    ifte;					(* end eval		*)
+
+(* - - - - -			A P P L Y		      - - - - - *)
+
+apply ==
+(*
+    dup2
+    "apply: fun = " putchars putln
+    "      args = " putchars putln
+*)
+    [ list ]
+
+    [						(* apply-compound	*)
+      unswons
+      [ [ CLOSURE				(* args [e v body]	*)
+	  unswons call swons
+	  uncons swapd uncons			(* dissect the closure	*)
+	  [ swap cons				(* build new frame	*)
+	    swons ]				(* install new frame	*)
+	  dip eval				(* new-env body		*)
+	  popd ]				(* restore old env	*)
+	[ "apply: unknown procedure type -\n"
+	  putchars abort ] ]
+      case ]
+
+    [						(* apply-atomic		*)
+      [ [ CAR first first ]
+	[ CDR first rest ]
+	[ CONS uncons first cons ]
+	[ EQ uncons first equal ]
+	[ ATOM first leaf ]
+	[ NULL first null ]
+	[ LIST (* do nothing *) ]
+	[ (* try Joy: *)
+	  [i] dip call ] ]
+      case ]
+
+    ifte;					(* end apply		*)
+
+
+(* - - - - -			  L I B			      - - - - - *)
+
+lib0 ==
+	[
+	  [ [ FOLDR ]
+	    [ CLOSURE lib0 [lis ini bin]
+	      IF [NULL lis] ini
+		 [bin [CAR lis]
+		      [FOLDR [CDR lis] ini bin] ] ] ]
+	  [ [ FOLDL ]
+	    [ CLOSURE lib0 [lis ini bin]
+	      IF [NULL lis] ini
+		 [FOLDL [CDR lis]
+			[bin [CAR lis] ini]
+			bin ] ] ]
+	  [ [ FOLDR2 ]
+	    [ CLOSURE lib0 [l1 l2 ini tern]
+	      IF [or [NULL l1] [NULL l2]] ini
+		 [ tern [CAR l1] [CAR l2]
+		        [FOLDR2 [CDR l1] [CDR l2] ini tern] ] ] ]
+	  [ [ RECFOLDR ]
+	    [ CLOSURE lib0 [x y bin]
+	      IF [ATOM x]
+		 [bin x y]
+		 [IF [NULL x]
+		     y
+		     [RECFOLDR [CAR x]
+			       [RECFOLDR [CDR x]
+					 y
+					 bin]
+			       bin] ] ] ]
+	  (* other definitions could go here, candidates are:
+		 LINREC  BINREC  Y					*)
+	    ];
+
+(* - - - - -		  L I S P  (read-eval-print)	      - - - - - *)
+
+l-prompt == "L: ";
+
+lisp ==
+	[ "\nLisp interpreter\n"
+	  "\t\tTo include the Lisp library, type\n"
+	  "\t\t\t[ include  \"OK\"  \"lsplib.lsp\" ]\n"
+	  "GO\n\n" ]
+	putstrings
+	lib0						(* load lib0	*)
+	l-prompt putchars get
+	[ "EXIT" = not ]
+	[ eval putln
+	  l-prompt putchars get ]
+	while
+	pop pop
+	"exit from Lisp interpreter\n" putchars;
+
+    LSPLIB == "lsplib.joy - (eval-apply) Lisp interpreter\n".
+
+							(* end LIBRA	*)
+
+"lsplib  is loaded\n" putchars.
+
+(* END   lsplib.joy *)

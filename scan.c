@@ -11,13 +11,12 @@
 
 #define EOLN '\n'
 
-static FILE  *infile[INPSTACKMAX];
+static FILE *infile[INPSTACKMAX];
 static int ilevel;
 static int linenumber = 0;
 static char linbuf[INPLINEMAX];
 static int linelength, currentcolumn = 0;
 static int errorcount = 0;
-
 static int ch = ' ';
 
 PUBLIC void inilinebuffer(void)

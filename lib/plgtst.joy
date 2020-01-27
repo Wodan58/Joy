@@ -1,0 +1,163 @@
+(* FILE:   plgtst.joy *)
+
+"\ntesting the propositional logic library in file  plglib.joy\n\n" putchars.
+
+"plglib" libload.
+1 setecho.
+
+(* There are many notations. Begin using minimally bracketed infix:	*)
+
+DEFINE   m-show == Min2Tre taut-show-all.
+
+[ raining or not raining ]				m-show.
+
+[ raining or not windy ]				m-show.
+
+[ [p and q] imp [p or q] ]				m-show.
+
+[ [p or q] imp [p and q] ]				m-show.
+
+(* Really using minimal bracketing on the last two examples:		*)
+
+[ p and q  imp  p or q ]				m-show.
+
+[ p or q  imp  p and q ]				m-show.
+
+(* Longer examples show the benefit of minimal bracketing:		*)
+
+[ p and q and r imp  p or r or q ]			m-show.
+
+[ p and q and r iff  p or r or q ]			m-show.
+
+(* Using a more compact single symbol notation:				*)
+
+[ p & q & r & s  >  p v r v q v s ]			m-show.
+
+[ p & q & r & s  =  p v r v q v s ]			m-show.
+
+[ - p & - q   >  - [p v q] ]				m-show.
+
+[ - p v - p   >   - [p v q] ]				m-show.
+
+[ p > q > r > p & q & r ]				m-show.
+
+[ p > q > r > p & q & s ]				m-show.
+
+[ [[p > q]  >  p]   >   p  ]				m-show.
+
+[ [[p > q]  >  q]   >   p  ]				m-show.
+
+[ [ p & q v p & r ]  =  p & [q v r] ]			m-show.
+
+[ [ p & q v p & r ]  =  q & [p v r] ]			m-show.
+
+[ [p v q] & [p > r] & [q > s]   >   [r v s] ]		m-show.
+
+[ [p v q] & [p > r] & [q > s]   >   [r & s] ]		m-show.
+
+(* The original Polish notation, used by Polish logicians in the 1920's	*)
+(* N = not, K = and, A = or, C = imp, E = iff :				*)
+
+DEFINE   p-show == Pol2Tre taut-show-all.
+
+[  A  p  N p  ]						p-show.
+
+[  A  p  N q  ]						p-show.
+
+[  C   C p q   C N q N p  ]				p-show.
+
+[  C   C p q   C N p N q  ]				p-show.
+
+[  C  K  K  A p q  C p r  C q s   A r s  ]		p-show.
+
+[  C  K  K  A p q  C p r  C q s   K r s  ]		p-show.
+
+(* But we can also use the other symbols for Polish notation:		*)
+
+[ imp  and  imp p q  imp q r   imp p r ]		p-show.
+
+[ imp  and  imp p q  imp p r   imp q r ]		p-show.
+
+[ >  v p & q r   & v p q v p r ]			p-show.
+
+[ >  v p & q r   v & p q & p r ]			p-show.
+
+(* Using reverse Polish (postfix, Joy) notation:			*)
+
+DEFINE   r-show == Rev2Tre taut-show-all.
+
+[ p not q not and r imp   q p or  not   and  r  imp ]	r-show.
+
+[ p not q not and r imp   q p and not   and  r  imp ]	r-show.
+
+(* The remaining tests only use minimally bracketed infix for input.	*)
+(* There are four additional versions of the possible output:		*)
+
+(* 1. Instead of showing all countermodels, show only one:		*)
+
+DEFINE   m-show1 == Min2Tre taut-show-first.
+
+[ p & q & r  >  p v q v r ]				m-show.
+
+[ p v q v r  >  p & q & r ]				m-show.
+
+[ p v q v r  >  p & q & r ]				m-show1.
+
+(* 2. Do not show, but collect into  list (for further processing ?):	*)
+
+DEFINE   m-collect  == Min2Tre taut-collect-all;
+	 m-collect1 == Min2Tre taut-collect-first.
+
+[ [p > q] & [q > s]   >   [p > s] ]			m-collect.
+
+[ [p > q] & [q > s]   >   [s > p] ]			m-collect.
+
+[ [p > q] & [q > s]   >   [s > p] ]			m-collect1.
+
+(* 3. Do not show or collect, just return number of countermodels:	*)
+
+DEFINE   m-count == Min2Tre taut-count.
+
+[ [p > q] & [r > s]   >  [[p & r] > [q v s]] ]		m-count.
+
+[ [p > q] & [r > s]   >  [[p v r] > [q & s]] ]		m-count.
+
+[ [p > q] & [r > s]   >  [[p v r] > [q & s]] ]		m-show.
+
+(* 4. Disregard countermodels, just determine whether tautology:	*)
+
+DEFINE   m-test == Min2Tre taut-test.
+
+[ [p & q & r]  >  [p = q = r] ]				m-test.
+
+[ [p = q = r]  >  [p & q & r] ]				m-test.
+
+[ [p = q = r]  >  [p v q v r] ]				m-test.
+
+[ [p v q v r]  >  [p = q = r] ]				m-test.
+
+(* Finally, for big formulas it can be useful to give a definition:	*)
+(* Also, it can help to set them out over several lines:		*)
+
+DEFINE big-formula ==
+  [  [ CEO-sells-shares
+	imp    insider-trading  and  traders-conspire ]		and
+     [ i-trade-exposed
+	imp    CEO-resigns  or  CEO-is-sacked ]			and
+     [ CEO-resigns
+	imp    i-trade-exposed  and  shares-drop ]		and
+     [ traders-conspire  and  CEO-is-sacked
+	imp    sales-drop ]					and
+     [ sales-drop
+	imp    CEO-is-sacked  and  shares-drop ]
+  imp
+     [ CEO-sells-shares
+	imp    shares-drop ]  ].
+
+big-formula  m-test.
+
+big-formula  m-show.
+
+(* So, it ain't half as bad as long as you let them get away with it...	*)
+
+(* end  plgtst.joy *)

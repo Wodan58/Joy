@@ -1,0 +1,314 @@
+(* FILE:   symlib.joy *)
+
+    basic-libload.
+
+LIBRA
+
+    _symlib == true;
+
+HIDE
+									(*
+21 translators, involving 6 notations (5 source, 5 target)
+All translators have time complexity linear in the lenth of input.
+
+Notations (S=source, T=target)
+	Pol (ST)  -  Polish or prefix, without bracketing
+	Rev (ST)  -  Reverse Polish or postfix, Joy without dup swap ..
+	Cam (ST)  -  Cambridge, Lisp-like bracketing but no lambda
+	Tre ( T)  -  Trees, similar to Cam but even atoms in brackets
+	Inf (ST)  -  Infix, fully bracketed only for binary operators
+	Min (S )  -  Minimally bracketed, binaries with precedences
+Lexicon, based on Joy leaves (i.e. not lists or quotations)):
+	a     =   atoms or operands, leaves not defined as operators
+	u     =   unary operators, user defined as leaves
+	b     =   binary operators, user defined as leaves
+	[..]  =   Joy lists or quotations (i.e. not leaves)
+	b1 b2 b3  = user defined binaries of increasing precedences
+Grammars for the notations:
+	Pol  ::=  [P],   P  ::=   a  |  u P  |  b P P  |        [..]
+	Rev  ::=  [R],   R  ::=   a  |  R u  |  R R b  |        [..]
+	Cam  ::=   C ,   C  ::=   a  | [u C] | [b C C] | [QUOTE [..]]
+	Tre  ::=   T ,   T  ::=  [a] | [u T] | [b T T] | [QUOTE [..]]
+	Inf  ::=  [I],   I  ::=   a  |  u I  | [I b I] |  QUOTE [..]
+	Min  ::=  [M1],	 M1 ::=  M2  |  M2  b1  M1
+			 M2 ::=  M3  |  M3  b2  M2
+			 M3 ::=  M4  |  M4  b3  M3
+			 M4 ::=   a  |  u M4  |  [M1]  |  QUOTE [..]
+
+Note that operator classes u b b1 b2 b3 need to be user defined as lists:
+	unops == [succ..]; binops == [cons..];
+	bin1ops == [>..]; bin2ops == [+..]; bin3ops == [*..]
+									*)
+
+						(* from Cambridge to ..	*)
+    C2T ==
+	[ list ]
+	[ unswons
+	  [ [ [unops in]
+	      [first C2T [] cons] dip swons ]
+	    [ [[QUOTE] in]
+	      swons ]
+	    [ [uncons first [C2T] dip C2T [] cons cons]
+	      dip swons ] ]
+	  cond ]
+	[ [] cons ]
+	ifte;
+    C2I ==
+	[ list ]
+	[ unswons
+	  [ [ [unops in]
+	      [first C2I] dip swons ]
+	    [ [[QUOTE] in]
+	      swons ]
+	    [ [uncons first [C2I] dip C2I]
+	      dip swons concat [] cons ] ]
+	  cond ]
+	[ [] cons ]
+	ifte;
+    C2P ==
+	[ list ]
+	[ unswons 
+	  [ [ [unops in]
+	      [first C2P] dip ]
+	    [ [[QUOTE] in]
+	      pop first ]
+	    [ [uncons first swap [C2P] dip C2P]
+	      dip ] ]
+	  cond ]
+	[ ]
+	ifte;
+    C2R ==
+	[ list ]
+	[ unswons 
+	  [ [ [unops in]
+	      swap first C2R ]
+	    [ [[QUOTE] in]
+	      pop first ]
+	    [ swap uncons first swap
+	      [C2R] dip C2R ] ]
+	  cond ]
+	[ ]
+	ifte;
+						(* from Infix to ..	*)
+    I2C ==
+	unswons
+	[ [ [unops in]
+	    [I2C [] cons] dip swons ]
+	  [ [[QUOTE] in]
+	    [unswons [] cons] dip swons ]
+	  [ [list] (* binary *)
+	    I2C swap uncons swapd
+	    I2C swons cons cons ]
+	  [ ] ]
+	cond;
+    I2T ==
+	unswons
+	[ [ [unops in]
+	    [I2T [] cons] dip swons ]
+	  [ [[QUOTE] in]
+	    [unswons [] cons] dip swons ]
+	  [ [list] (* binary *)
+	    I2T swap uncons swapd
+	    I2T swons cons cons ]
+	  [ [] cons ] ]
+	cond;
+						(* from Polish to ..	*)
+    P2C ==
+	unswons
+	[ [ [unops in]
+	    [P2C [] cons] dip swons ]
+	  [ [binops in]
+	    [P2C [] cons [P2C [] cons] dip swoncat]
+	    dip swons ]
+	  [ [list]
+	    [] cons [QUOTE] swoncat ]
+	  [ ] ]
+	cond;
+    P2T ==
+	unswons
+	[ [ [unops in]
+	    [P2T [] cons] dip swons ]
+	  [ [binops in]
+	    [P2T [] cons [P2T [] cons] dip swoncat]
+	    dip swons ]
+	  [ [list]
+	    [] cons [QUOTE] swoncat ]
+	  [ [] cons ] ]
+	cond;
+    P2I ==
+	unswons
+	[ [ [unops in]
+	    [P2I] dip swons ]
+	  [ [binops in]
+	    [P2I [P2I] dip swap]
+	    dip swons concat [] cons ]
+	  [ [list]
+	    [QUOTE] swoncat ]
+	  [ [] cons ] ]
+	cond;
+						(* from Reverse to ..	*)
+    R2C ==
+	[ [ [ [unops in]
+	      [[] cons] dip swons ]
+	    [ [binops in]
+	      [[] cons cons] dip swons ]
+	    [ [list]
+	      [] cons [QUOTE] swoncat ]
+	    [ ] ]
+	  cond ]
+	step;
+    R2T ==
+	[ [ [ [unops in]
+	      [[] cons] dip swons ]
+	    [ [binops in]
+	      [[] cons cons] dip swons ]
+	    [ [list]
+	      [] cons [QUOTE] swoncat ]
+	    [ [] cons ] ]
+	  cond ]
+	step;
+    R2I ==
+	[ [ [ [unops in]
+	      swons ]
+	    [ [binops in]
+	      swons concat [] cons ]
+	    [ [list]
+	      [] cons [QUOTE] swoncat ]
+	    [ [] cons ] ]
+	  cond ]
+	step;
+
+    X2Y ==				(* used by Pol2Rev and Rev2Pol	*)
+	unswons
+	[ [ [unops in]
+	    [X2Y] dip swap ]
+	  [ [binops in]
+	    [X2Y X2Y] dip swap ]
+	  [ swap ] ]
+	cond;
+
+    new-infra == cons [] swap infra
+
+IN
+
+(* Ideally the following should be inside the HIDE. But since currently
+   HIDE definitions cannot be mutually recursive, the are placed here.	*)
+
+    M12T ==
+	M22T
+	[ pop [null not] [first bin1ops in] sequand ]
+	[ swap uncons swapd unswons M12T
+	  rollupd [] cons cons cons ]
+	[ ]
+	ifte;
+    M22T ==
+	M32T
+	[ pop [null not] [first bin2ops in] sequand ]
+	[ swap uncons swapd unswons M22T
+	  rollupd [] cons cons cons ]
+	[ ]
+	ifte;
+    M32T ==
+	M42T
+	[ pop [null not] [first bin3ops in] sequand ]
+	[ swap uncons swapd unswons M32T
+	  rollupd [] cons cons cons ]
+	[ ]
+	ifte;
+    M42T ==
+	[ [ [ unops in ]
+	    [ unswons M42T [] cons ] dip swons ]
+	  [ [ [QUOTE] in ]
+	    [ unswons [] cons ] dip swons ]
+	  [ [ list]
+	    unswons M12T popd ]
+	  [ [] cons ] ]
+	  cond;
+
+    M12C ==
+	M22C
+	[ pop [null not] [first bin1ops in] sequand ]
+	[ swap uncons swapd unswons M12C
+	  rollupd [] cons cons cons ]
+	[ ]
+	ifte;
+    M22C ==
+	M32C
+	[ pop [null not] [first bin2ops in] sequand ]
+	[ swap uncons swapd unswons M22C
+	  rollupd [] cons cons cons ]
+	[ ]
+	ifte;
+    M32C ==
+	M42C
+	[ pop [null not] [first bin3ops in] sequand ]
+	[ swap uncons swapd unswons M32C
+	  rollupd [] cons cons cons ]
+	[ ]
+	ifte;
+    M42C ==
+	[ [ [ unops in ]
+	    [ unswons M42C [] cons ] dip swons ]
+	  [ [ [QUOTE] in ]
+	    [ unswons [] cons ] dip swons ]
+	  [ [ list]
+	    unswons M12C popd ]
+	  [ ] ]
+	  cond;
+
+      (*  In following, the fast reverselist is counted as  0.5 pass	*)
+
+    Pol2Rev == [X2Y] new-infra rest reverselist;	(*  1.5 passes	*)
+    Pol2Cam == P2C popd;				(*  1   pass	*)
+    Pol2Inf == P2I popd;				(*  1   pass	*)
+    Pol2Tre == P2T popd;				(*  1   pass	*)
+
+    Rev2Pol == reverselist [X2Y] new-infra rest;	(*  1.5 passes	*)
+    Rev2Cam == R2C;					(*  1   pass	*)
+    Rev2Inf == R2I;					(*  1   pass	*)
+    Rev2Tre == R2T;					(*  1   pass	*)
+
+    Cam2Pol == [C2P] new-infra;				(*  1   pass	*)
+    Cam2Rev == [C2R] new-infra;				(*  1   pass	*)
+    Cam2Tre == C2T;					(*  1   pass	*)
+    Cam2Inf == C2I;					(*  1   pass	*)
+
+    Inf2Pol == Inf2Cam Cam2Pol;				(*  2   passes	*)
+    Inf2Rev == Inf2Cam Cam2Rev;				(*  2   passes	*)
+    Inf2Cam == I2C popd;				(*  1   pass	*)
+    Inf2Tre == I2T popd;				(*  1   pass	*)
+
+    Min2Pol == Min2Cam Cam2Pol;				(*  2   passes	*)
+    Min2Rev == Min2Cam Cam2Rev;				(*  2   passes	*)
+    Min2Cam == unswons M12C popd;			(*  1   pass	*)
+    Min2Tre == unswons M12T popd;			(*  1   pass	*)
+    Min2Inf == Min2Cam Cam2Inf				(*  2   passes	*)
+
+END; (* HIDE, end of 21 translators *)
+
+# "Floy" - a flat concatenative version of Joy, see jp-flatjoy.html
+# These are the two Joy-to-Floy translators:
+HIDE
+    j2f-f ==
+        [ list ]
+        [ [[[]] concat] dip [j2f-f] step [[] cons concat] concat ]
+        [ [] cons [concat] cons concat ]
+        ifte;
+    j2f-r ==
+        [ list ]
+        [ [[swons] swoncat] dip [j2f-r] step [] swons ]
+        [ [] cons [swoncat] cons swoncat ]
+        ifte
+IN
+    j2f-forwards == [[]] swap [j2f-f] step;
+    j2f-reverse == [] swap [j2f-r] step [] swons
+END; # Floy translators
+
+(* other stuff to go here *)
+
+    SYMLIB == "symlib.joy - symbolic manipulation library\n".
+
+							(*  end LIBRA	*)
+"symlib  is loaded\n" putchars.
+
+(* END   symlib.joy *)

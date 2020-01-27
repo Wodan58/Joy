@@ -1,0 +1,89 @@
+(* FILE:  laztst.joy *)
+
+"\nTesting lazy lists in the library lazlib.joy\n" putchars.
+
+"lazlib" libload.
+"numlib" libload.
+2 setecho.
+
+	(* Some lazy lists defined in the library	*)
+
+Naturals.
+Evens.
+Powers-of-2.
+
+	(* Rest and Drop				*)
+
+Naturals.
+Naturals Rest.
+Naturals Rest Rest.
+Naturals 2 Drop.
+Naturals 3 Drop.
+
+Ones.
+Ones  Rest.
+Ones  10 Drop.
+
+	(* First, Second, Third, N-th, Take		*)
+
+Evens First.
+Evens Second.
+Evens Third.
+Evens 3 N-th.
+Evens 4 N-th.
+Evens 10 Take.
+Powers-of-2   5 N-th.
+Powers-of-2  10 N-th.
+Powers-of-2  20 N-th.
+Powers-of-2  20 Drop.
+Powers-of-2  21 N-th.
+Powers-of-2  10 Take.
+Powers-of-2  5 Drop  5 Take.
+Ones  5 Take.
+Ones  5 Drop  5 Take.
+
+	(* user constructed infinite lazy lists		*)
+
+1 [1.1 *] From-by.
+1 [1.1 *] From-by  Rest.
+1 [1.1 *] From-by  Third.
+1 [1.1 *] From-by  10 Drop.
+1 [1.1 *] From-by  10 N-th.
+1 [1.1 *] From-by  10 Take.
+
+true [not] From-by.
+true [not] From-by   Third.
+true [not] From-by   3 Drop.
+true [not] From-by  10 Take.
+
+"" ['a swons] From-by  7 Take.
+[] [[]  cons] From-by  7 Take.
+
+	(* user constructed finite lazy lists		*)
+
+'0 '9 From-to .			(* digits 	*)
+'0 '9  From-to  Third.
+'0 '9  From-to   9 Drop.
+'0 '9  From-to   9 Drop Null.
+'0 '9  From-to  10 Drop.
+'0 '9  From-to  10 Drop Null.
+'0 '9  From-to   5 Take.
+'0 '9  From-to  10 Take.
+
+10 50 [3 +] From-to-by.
+10 50 [3 +] From-to-by  Third.
+	(* Map and Filter				*)
+
+Naturals  [dup *] Map    10 Take.
+Naturals  [prime] Filter 10 Take.
+
+Naturals  [fib] Map  [3 rem null] Filter  10 Take.
+Naturals  [prime] Filter  [dup *] Map  10 Take.
+
+
+1000001 From.                       (*     naturals > 1 Million	*)
+1000001 From [prime] Filter.        (*       primes > 1 Million  *)
+1000001 From [prime] Filter Third.  (* third prime  > 1 Million	*)
+1000001 From [prime] Filter 50 Take.(* fifty primes > 1 Million	*)
+
+(* END:  laztst.joy *)

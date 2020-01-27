@@ -1,0 +1,91 @@
+2 setecho.
+
+# from Little Lisper
+
+DEFINE
+    str-maker  ==  #  n [N]  =>  [n [N(n) [N] str-maker]]
+        dupd dup [i] dip
+        [str-maker] cons cons
+        [] cons cons;
+    str-first == first;
+    str-rest  == second i.
+
+DEFINE
+    str-ints == 0 [succ] str-maker;
+    str-pows == 1 [2 *] str-maker;
+    str-prim == 2 [succ [prime not] [succ] while] str-maker;
+    str-brak == [] [[] cons] str-maker.
+
+str-ints.
+
+str-pows.
+
+DEFINE
+    str-uncons ==  [str-first] [str-rest]  cleave;
+    str-third ==   str-rest str-rest str-rest str-first;
+    str-tenth ==  10 [str-rest] times str-first;
+    str-drop == [str-rest] times;
+    str-n-th == str-drop str-first;
+    str-take ==    #  S n  =>  [S1 S2 .. Sn]
+        [null] [pop pop []] [[str-uncons] dip pred] [cons] linrec.
+
+str-brak.
+str-brak  str-third.
+
+str-pows.
+str-pows str-tenth.
+
+str-ints 5 str-take.
+
+str-pows 10 str-take.
+
+str-prim 10 str-drop 10 str-take.
+
+# using replicating
+
+DEFINE
+    dureco == dup rest cons;
+    rep-maker  ==  #  n [N]  => [ [n [N] infra dureco] [N] infra dureco ]
+        [infra dureco] cons cons  dureco;
+    rep-first == first first;
+    rep-rest  == i.
+
+DEFINE
+    rep-ints == 0 [succ] rep-maker;
+    rep-evns == 0 [2 +] rep-maker;
+    rep-pows == 1 [2 *] rep-maker;
+    rep-prim == 2 [succ [prime not] [succ] while] rep-maker;
+    rep-brak == [] [[] cons] rep-maker.
+
+rep-ints.
+
+rep-pows.
+
+DEFINE
+    rep-uncons ==  [rep-first] [rep-rest]  cleave;
+    rep-third ==   rep-rest rep-rest rep-rest rep-first;
+    rep-tenth ==  10 [rep-rest] times rep-first;
+    rep-drop == [rep-rest] times;
+    rep-n-th == rep-drop rep-first;
+    rep-take ==    #  S n  =>  [S1 S2 .. Sn]
+        [null] [pop pop []] [[rep-uncons] dip pred] [cons] linrec.
+
+rep-evns.
+rep-evns  rep-rest rep-rest rep-first.
+
+rep-brak.
+rep-brak  rep-third.
+
+rep-pows.
+rep-pows rep-tenth.
+
+rep-ints 5 rep-take.
+
+rep-pows 10 rep-take.
+
+rep-prim 10 rep-drop 10 rep-take.
+
+DEFINE
+    rep-n-th-pow ==  [0 1] [[succ [2 *] dip] infra] rep-maker.
+
+rep-n-th-pow  10 rep-drop 5 rep-take.

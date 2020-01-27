@@ -1,0 +1,26 @@
+(* FILE:  jp-joytst.joy  -  test file for jp-joyjoy.joy *)
+
+"jp-joyjoy" libinclude.
+
+1 setecho.
+(* testing the tracing versions of joy0:    joy0s  and  joy0l  *)
+
+      2 3 +                             "\nfinal answer = " putchars.
+
+    [ 2 3 + ]  joy0s                    "\nfinal answer = " putchars.
+
+  [ [ 2 3 + ]  joy0s ]  joy0s           "\nfinal answer = " putchars.
+
+[ [ [ 2 3 + ]  joy0s ]  joy0s ]  joy0s  "\nfinal answer = " putchars.
+
+    [ 2 3 + ]  joy0l                    "\nfinal answer = " putchars.
+
+  [ [ 2 3 + ]  joy0l ]  joy0l           "\nfinal answer = " putchars.
+
+[ [ [ 2 3 + ]  joy0l ]  joy0l ]  joy0l  "\nfinal answer = " putchars.
+
+(* and as a final absurdity, with no tracing at all: *)
+
+[[[[[ 2 3 +] joy0] joy0] joy0] joy0] joy0 "\nfinal answer = "putchars.
+
+(* END  jp-joytst.joy *)

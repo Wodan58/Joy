@@ -11,10 +11,12 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O0 --coverage -fprofile-arcs -ftest-cove
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage") # enabling coverage
 endif()
 add_executable(joy interp.c scan.c utils.c main.c)
+add_custom_target(demo02.txt ALL
+		  DEPENDS joy
+		  COMMAND joy fib.joy >demo02.txt)
 if(WIN32)
 else()
 target_link_libraries(joy m)
+add_subdirectory(lib)
+add_subdirectory(test)
 endif()
-add_custom_target(demo01.txt ALL
-		  DEPENDS joy
-		  COMMAND joy fib.joy >demo01.txt)

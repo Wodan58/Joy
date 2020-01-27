@@ -4,5 +4,5 @@ image: Visual Studio 2017
 
 build_script:
   - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars32.bat"
-  - cmake -G "NMake Makefiles" .
-  - cmake --build . --config Release
+  - cmake .
+  - cmake --build .

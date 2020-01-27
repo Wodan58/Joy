@@ -1,0 +1,178 @@
+DEFINE nl == '\n putch .
+
+'A ['B 'C 'D] [equal] some .
+
+'B ['B 'C 'D] [equal] some .
+
+10 [small] [] [pred dup pred] [+] binrec .
+
+DEFINE test ==
+[
+  [ 1 "one\n" putchars ]
+  [ 2 "two\n" putchars ]
+  [ pop "other\n" putchars ]
+] case .
+
+1 test .
+2 test .
+3 test .
+
+DEFINE test == [ 1 + ] i .
+
+2 test .
+
+DEFINE test == [ pop 1 + ] x .
+
+2 test .
+
+DEFINE test == [ 2 3 + put nl ] dip .
+
+1 test . .
+
+DEFINE test == [2 3] [[+] [*] [-] [/]] construct .
+
+test . . . . .
+
+DEFINE prime ==
+	2
+	[ [ [dup * >] nullary  [rem 0 >] dip  and ] nullary ]
+	[ succ ]
+	while
+	dup * < .
+
+2 20 [dup put 32 putch dup prime nl succ] times .
+
+DEFINE fib == [1 0] dip [swap [+] unary] times popd .
+
+10 fib . .
+
+DEFINE qsort1 == [small] [] [uncons [[first] unary2 >] split]
+		 [enconcat] binrec .
+
+[[2 3] [4 5] [6 7] [8 9] [1 2] [3 4] [5 6] [7 8] [9 0]] qsort1 .
+
+1 2 3 4 5 [[+] unary] unary3 . . . .
+
+1 2 3 4 5 [[+] unary] unary4 . . . . .
+
+1 2 3 4 5 [+] binary . .
+
+1 2 3 4 5 [+] ternary . .
+
+DEFINE
+    sum == 0 [+] fold;
+    average == [sum] [size] cleave / .
+
+[1.0 2.0 3.0] average .
+[4.0 5.0 6.0] average .
+[7.0 8.0 9.0] average .
+
+0 ["true\n" putchars] ["false\n" putchars] branch .
+1 ["true\n" putchars] ["false\n" putchars] branch .
+
+[0] ["true\n" putchars] ["false\n" putchars] ifte .
+[1] ["true\n" putchars] ["false\n" putchars] ifte .
+
+DEFINE reverse_str == "" swap [swons] step;
+       reverse_lst == [] swap [swons] step;
+       reverse == [reverse_lst] [reverse_str] iflist.
+
+[1 2 3 4 5 6 7 8 9] reverse .
+"123456789" reverse .
+
+DEFINE test ==
+[
+  [ [dup 1 =] "one\n" putchars ]
+  [ [dup 2 =] "two\n" putchars ]
+  [ "other\n" putchars ]
+] cond .
+
+1 test .
+2 test .
+3 test .
+
+DEFINE swoncat == swap concat .
+
+DEFINE from-to ==
+	[] cons  [pop pop] swoncat
+	[>] swap
+	[ [dup succ] dip ]
+	[cons]
+	linrec;
+from-to-list == [] from-to .
+
+1 10 from-to-list .
+
+1 10 [>] [pop pop []] [[dup succ] dip] [cons] linrec .
+
+0 [10 =] [] [dup put 32 putch succ] tailrec .
+
+DEFINE g-fib == [small] [] [pred dup pred] [app2 +] genrec .
+
+10 g-fib .
+
+DEFINE
+    cnr-ack ==
+	[ [ [null]  [popd succ] ]
+	  [ [null]  [pop pred 1]  [] ]
+	  [ [[dup pred swap] dip pred]  []  [] ] ]
+	condnestrec .
+
+3 4 cnr-ack .
+
+[1 2 3 4 5 6 7 8 9] [1 +] map .
+
+DEFINE test == [] [2 3 + 4 5 *] infra .
+
+1 2 3 4 5 test . . . . . .
+
+[1 2 3 4 5] [0] [+] primrec .
+
+5 [1] [*] primrec .
+
+"test" [""] [cons] primrec .
+
+{ 1 2 3 } [{}] [cons] primrec .
+
+[1 2 3 4 5 6 7 8 9] [5 <] filter .
+
+[1 2 3 4 5 6 7 8 9] [5 <] split . .
+
+[1 2 3 4 5 6 7 8 9] [5 <] some .
+
+[1 2 3 4 5 6 7 8 9] [5 <] all .
+
+DEFINE treesample == [ [1 2 [3 4] 5 [[[6]]] 7 ] 8 ] .
+
+[] treesample [swons] treestep .
+
+treesample [dup *] [map] treerec . . .
+
+DEFINE treemap == [] [map] treegenrec .
+
+0 treesample [-] treemap .
+
+MODULE rep
+
+PRIVATE
+
+duco == dup cons
+
+PUBLIC
+
+self == [duco] duco
+
+END
+
+rep.self .
+
+LIBRA
+
+    seqand  == [pop false] ifte;
+    unops   == [? * + $];
+    binops  == [| _];
+    bin1ops == [|];
+    bin2ops == [_];
+    bin3ops == [] .
+
+[+] 3 [pop [dup null not] [first unops in] seqand] [true] [false] ifte .

@@ -1,0 +1,96 @@
+(* File:  jp-joyjoy.joy
+   Joy interpreters written in Joy
+*)
+
+LIBRA
+
+HIDE
+  cr1  ==  pop  [joy] cons;
+  cr2  ==  pop [[joy] cons] app2;
+  cr3  ==  pop [[joy] cons] app3;
+  cr4  ==  pop [[joy] cons] app4
+IN
+  joy  ==
+    [ [ [ joy		body	joy	]
+	[ true				]
+	[ 'A				]
+	[ []				]
+	[ ""				]
+	[ {}				]
+	[ 0				]
+	[ dup		pop	dup	]
+	[ swap		pop	swap	]
+	[ pop		pop	pop	]
+	[ +		pop	+	]
+	[ -		pop	-	]
+	[ and		pop	and	]
+	[ cons		pop	cons	]
+	[ i		pop	joy	]
+	[ dip		cr1	dip	]
+	[ step		cr1	step	]
+	[ map		cr1	map	]
+	[ filter	cr1	filter	]
+	[ times		cr1	times	]
+        [ app1          cr1     app1    ]
+        [ app2          cr1     app2    ]
+        [ app3          cr1     app3    ]
+        [ app4          cr1     app4    ]
+	[ ifte		cr3	ifte	]
+	[ linrec	cr4	linrec	]
+	[ binrec	cr4	binrec	]
+	[	      dup put [] cons i ] ]
+      opcase
+      i ]
+    step
+END;
+
+joy0  ==
+    [ [ [ joy0		body		joy0	 ]
+	[ []				 	 ]
+	[ pop		pop		pop	 ]
+	[ cons		pop		cons	 ]
+	[ opcase	pop		opcase	 ]
+	[ body		pop		body	 ]
+	[ i		pop		joy0 	 ]
+	[ step		pop [joy0] cons	step 	 ]
+	[		       [] cons	i	 ] ]
+      opcase
+      i ]
+    step.
+
+(* some additional versions of joy0 with tracing *)
+
+LIBRA 
+
+joy0s  ==  (* joy0 with short trace *)
+    newline "joy0s :" putchars newline
+    [ [ [ joy0s		body		joy0s	 ]
+	[ []				 	 ]
+	[ pop		pop		pop	 ]
+	[ cons		pop		cons	 ]
+	[ opcase	pop		opcase	 ]
+	[ body		pop		body	 ]
+	[ i		pop		joy0s 	 ]
+	[ step		pop [joy0] cons	step 	 ]
+	[		       [] cons	i	 ] ]
+      opcase
+      i ]
+    step;
+
+joy0l  == (* joy0 with long trace *)
+    newline "joy0l :" putchars newline
+    [ dup put (* long trace *)
+      [ [ joy0l		body		joy0l	 ]
+	[ []				 	 ]
+	[ pop		pop		pop	 ]
+	[ cons		pop		cons	 ]
+	[ opcase	pop		opcase	 ]
+	[ body		pop		body	 ]
+	[ i		pop		joy0l 	 ]
+	[ step		pop [joy0] cons	step 	 ]
+	[		       [] cons	i	 ] ]
+      opcase
+      i ]
+    step.
+
+(* END of jp-joyjoy.joy  *)

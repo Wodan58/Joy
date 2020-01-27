@@ -1,0 +1,110 @@
+(* FILE:   mthlib.joy *)
+
+    basic-libload.
+
+LIBRA
+
+    _mthlib == true;
+
+(* REMOVE THIS, PUT IN OBJ LIBRARY *)
+(* "object oriented" lists:
+	constructor kons,
+	selectors kar,kdr (messages) *)
+    kons == [] cons cons [of] cons;
+    kar == 0 swap i;
+    kdr == 1 swap i;
+
+(* NOTE : This file defines just two programs:
+	1. Numerical Calculator		-  calc
+	2. Symbolic Differentiation 	-  diff
+   All two programs expect input in Lisp notation			*)
+
+(* - - -          N U M E R I C A L   C A L C U L A T O R         - - - *)
+
+(*	e.g.   [* 10 [+ 2.2 3.3]]  calc.   *)
+
+    calc == 
+	[ numerical ]
+	[ ]
+	[ unswons
+	  [ dup [+ - * /] in ]
+	  [ [ [calc] map uncons first ] dip
+	    call ]
+	  [ "bad operator\n" put ]
+	  ifte ]
+	ifte;
+
+(* - - -      S Y M B O L I C   D I F F E R E N T I A T I O N     - - - *)
+
+(* REFS: SICP p 106, Henderson p 39 *)
+
+HIDE
+
+    _msum == pairlist [+] swoncat;
+    (* optimised for addition of 0 :					*)
+    _makesum ==						(*  e1  e2	*)
+	[ [ [ [numerical] unary2 and ]			(*  n1  n2  ?	*)
+	    + ]
+	  [ [ numerical ]				(*  e1  n2  ?	*)
+	    [0 =] [pop] [_msum] ifte ]
+	  [ [ pop numerical ]				(*  n1  e2  ?	*)
+	    [pop 0 =] [popd] [_msum] ifte ]
+	  [ _msum] ]					(*  e1  e2  !	*)
+	cond;
+
+    _mprod == pairlist [*] swoncat;
+    (* optimised for multiplication by 0 and 1 :			*)
+    _makeproduct ==					(*  e1  e2	*)
+	[ [ [ [numerical] unary2 and ]			(*  n1  n2  ?	*)
+	    * ]
+	  [ [ numerical ]				(*  e1  n2  ?	*)
+	    [ [ [0 =] popd ]				(*      0   ?	*)
+	      [ [1 =] pop ]				(*      1   ?	*)
+	      [ _mprod ] ]				(*  e1  n2  !	*)
+	    cond ]
+	  [ [ pop numerical ]				(*  n1  e2  ?	*)
+	    [ [ [pop 0 =] pop ]				(*  0       ?	*)
+	      [ [pop 1 =] popd ]			(*  1       ?	*)
+	      [ _mprod ] ]				(*  n1  e2  !	*)
+	    cond ]
+	  [ _mprod ] ]					(*  e1  e2  !	*)
+	cond
+
+IN
+
+(*  [var]  exp  diff  =>   the derivative of exp w.r.t. var		*)
+    diff ==					(*  [v]  e		*)
+	[ [ [numerical]			
+	    pop pop 0 ]				(*  => 0		*)
+	  [ [leaf] 
+	    [[first] dip = ]			(*   v  e  = ?		*)
+	    [pop pop 1]				(*  => 1		*)
+	    [pop pop 0]				(*  => 0		*)
+	    ifte ]
+	  [ [list]
+	    unswons
+	    [ [ +
+		pop unpair			(*  [v]  e1 e2		*)
+		[diff] unary2			(*  [v]  d1 d2		*)
+		_makesum popd ]			(*  =>     s		*)
+	      [ *
+		pop unpair			(*  [v]  e1 e2		*)
+		dup2				(*  [v]  e1 e2  e1 e2	*)
+		[[diff] unary2] dip2		(*  [v]  d1 d2  e1 e2	*)
+		rollup				(*  [v]  d1 e2  d2 e1	*)
+		_makeproduct [_makeproduct] dip	(*  [v]    p1     p2	*)
+		_makesum popd ]			(*  =>         s	*)
+	      [] ]
+	    opcase i ]
+	  [] ]
+	cond
+
+END;
+
+    MTHLIB == "mthlib.joy - symbolic mathematics library\n".
+
+						(* end LIBRA *)
+
+"mthlib  is loaded\n" putchars.
+
+(* END   mthlib.joy *)

@@ -1,0 +1,111 @@
+(* FILE:   numlib.joy *)
+
+LIBRA
+
+    _numlib == true;
+
+(* predicates *)
+
+    positive == 0 >;
+    negative == 0 <;
+    even == 2 rem null;
+    odd == even not;
+    prime ==
+	2
+	[ [dup * >] nullary  [rem 0 >] dip  and ]
+	[ succ ]
+	while
+	dup * < ;
+
+(* functions *)
+
+    fact == [1 1] dip [dup [*] dip succ] times pop;
+    fib == [1 0] dip [swap [+] unary] times popd;
+(*
+    nfib == [1 1] dip [dup [+ succ] dip swap] times pop;
+*)
+    gcd == [0 >] [dup rollup rem] while pop;
+
+    fahrenheit == 9 * 5 / 32 + ;
+    celsius == 32 - 5 * 9 / ;
+
+    pi == 3.14159265;
+    e == 1.0 exp;
+    radians == pi * 180 / ;
+    sindeg == radians sin;
+    cosdeg == radians cos;
+    tandeg == radians tan;
+
+    (* find roots of the quadratic equation with coefficients a b c :
+				  a * X^2  +  b * X   +  c  =  0	*)
+    qroots ==					(*  a  b  c		*)
+	[	pop pop null ]			(* a = 0 ?		*)
+						(* degenerate cases:	*)
+	[	[   pop null ]			(* b = 0 ?		*)
+		[   [ null   ]			(* c = 0 ?		*)
+		    [ [_INF] ]			(* =>  [_INF]		*)
+		    [ [] ]			(* =>  []		*)
+		    ifte
+		    [ pop pop pop ] dip ]
+		[   0 swap - swap 1.0 * /	(* float divisor	*)
+		    [] cons popd ]		(* =>  [ -c/b ]		*)
+		ifte ]
+						(* standard cases:	*)
+	[	[   [ dup * swap ] dip
+		      4 * * - ] unary		(* b^2 - 4ac		*)
+		[   0 < ]			(* b^2 - 4ac negative ?	*)
+		[   pop pop pop [_COMPLEX] ]	(* =>  [_COMPLEX]	*)
+		[   [ 0 swap - 1.0 *		(* -b  (floated)	*)
+		      swap 2 * ] dip		(* 2a			*)
+		    [ 0 = ]			(* b^2 - 4ac zero ?	*)
+		    [ pop / [] cons ]		(* =>  [-b / 2a]	*)
+		    [ sqrt swapd dup2 - [+] dip	(*   -b+s      -b-s     *)
+			[] cons cons 		(* [ -b+s      -b-s    ]*)
+		      swap [/] cons map ]   (* =>  [(-b+s)/2a (-b-s)/2a]*)
+		    ifte ]
+		ifte ]
+	ifte;
+
+    (* a simpler version, FEB 05 : *)
+
+    quadratic-formula  ==                          # a b c => [root1 root2 ]
+        [ [ [ pop pop 2 * ]                        # divisor
+            [ pop 0 swap - ]                       # minusb
+            [ swap dup * rollup * 4 * - sqrt ] ]   # radical
+          [i] map ]
+        ternary i
+        [ [ [ + swap / ]                           # root1
+            [ - swap / ] ]                         # root2
+          [i] map ]
+        ternary;
+
+(* combinators *)
+
+    deriv == [unary2 swap - 0.001 /] cons  [dup 0.001 +] swoncat;
+
+(*  Newton's method for finding roots of equations in one variable,
+    for example to find the temperature at which Fahrenheit = Celsius:
+    "using 5 as a guess, find the X for which X = fahrenheit(X)
+					   or X - fahrenheit(X) = 0
+    in Joy:    5 [dup fahrenheit -] newton     =>  -40
+        or  -100 [dup celsius    -] newton     =>  -40
+    So -40 is the fixpoint for the two conversion functions.
+*)
+    newton ==		(*  Usage: guess [F] newton		*)
+	dup deriv		(* guess [F] [D]		*)
+	[ pop i abs 0.0001 > ]	(* too big ?			*)
+	[ [dupd] dip      	(* guess guess [F] [D]		*)
+	  dup2			(* guess guess [F] [D] [F] [D]	*)
+	  [[cleave / - ] dip]
+	  dip  ]		(* newguess [F] [D]		*)
+	while
+	pop pop;
+    use-newton == [[-] cons] dip  swoncat  1 swap newton;
+    cube-root == [dup dup * *] use-newton;
+
+    NUMLIB == "numlib.joy - numerical library\n".
+						(* end LIBRA *)
+
+"numlib  is loaded\n" putchars.
+
+(* END   numlib.joy *)

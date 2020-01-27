@@ -1,0 +1,350 @@
+(* FILE:   plglib.joy *)
+
+    "symlib" libload.
+
+LIBRA
+
+    _plglib == true;
+
+    unops == [ not - N ];
+    binops == [ imp > C  iff = E  or v A  and & K ];
+    bin1ops == [ imp > C   iff = E ];
+    bin2ops == [ or v A ];
+    bin3ops == [ and & K ];
+
+
+(* - - - - -         S E M A N T I C   T A B L E A U X        - - - - - *)
+
+(*	 	also known as truth trees or Wang's algorithm		*)
+
+HIDE
+
+(* the various initial continuations:					*)
+
+(*
+    show-old ==
+	pop
+	swap '\t putch
+	"T: " putchars put
+	"  F: " putchars putln;
+*)
+    show-all ==
+	pop
+	[ [null]
+	  ["\tnot tautology, countermodel(s):\n" putchars]
+	  []
+	  ifte
+	  "  " putchars succ dup put ]
+	dipd
+	swap '\t putch
+	"T: " putchars put
+	"  F: " putchars putln;
+    show-first ==
+	pop
+	"\tnot tautology, first countermodel:\n" putchars
+	swap '\t putch
+	"T: " putchars put
+	"  F: " putchars putln
+	succ;
+
+    collect ==
+	pop [] cons cons swons;
+    count ==
+	pop pop pop succ;
+    found ==
+	pop pop pop not
+
+IN
+
+(*
+    ver-old ==
+	"ver-old B" t-trace
+	unswons
+	[ [ [[or v A] in]
+	    pop uncons first
+	    [ stack [ver-old] infra pop pop ] dip
+	    ver-old ]
+	  [ [[imp > C] in]
+	    pop uncons first
+	    [ stack [fal-old] infra pop pop ] dip
+	    ver-old ]
+	  [ [[and & K] in]
+	    pop uncons first swap
+	    [ [ver-old] cons swons ]
+	    dip ver-old ]
+	  [ [[not - N] in]
+	    pop first fal-old ]
+	  [ popd
+	    [ popd has ]
+	    [ pop pop pop pop ]
+	    [ swap
+	      [ swapd
+		[has] [pop] [swons] ifte
+		swap ]
+	      dip
+	      unswons i ]
+	    ifte ] ]
+	cond
+	"ver-old E" t-trace;
+
+    fal-old ==
+	"fal-old B" t-trace
+	unswons
+	[ [ [[and & K] in]
+	    pop uncons first
+	    [ stack [fal-old] infra pop pop ] dip
+	    fal-old ]
+	  [ [[or v A] in]
+	    pop uncons first swap
+	    [ [fal-old] cons swons ]
+	    dip fal-old ]
+	  [ [[imp > C] in]
+	    pop uncons first swap
+	    [ [fal-old] cons swons ]
+	    dip ver-old ]
+	  [ [[not - N] in]
+	    pop first ver-old ]
+	  [ popd
+	    [ popd popd has ]
+	    [ pop pop pop pop ]
+	    [ swap
+	      [ [has] [pop] [swons] ifte ]
+	      dip
+	      unswons i ]
+	    ifte ] ]
+	cond
+	"fal-old E" t-trace;
+*)
+
+    ver-all ==					(* t f c F		*)
+	"ver-all B" t-trace
+	unswons
+	[ [ [[or v A] in]
+	    pop
+	    [ [] cons cons cons dup ] dip
+	    uncons first
+	    [ swap
+	      [[i] dip ver-all] dip ]
+	    dip
+	    [i] dip ver-all ]
+	  [ [[imp > C] in]
+	    pop
+	    [ [] cons cons cons dup ] dip
+	    uncons first
+	    [ swap
+	      [[i] dip fal-all] dip ]
+	    dip
+	    [i] dip ver-all ]
+	  [ [[iff = E] in]
+	    pop
+	    [ [] cons cons cons dup ] dip
+	    dup
+	    [[and] swoncat] dip   [or] swoncat
+	    [ swap
+	      [[i] dip ver-all] dip ]
+	    dip
+	    [i] dip fal-all ]
+	  [ [[and & K] in]
+	    pop uncons first swap
+	    [ [ver-all] cons swons ]
+	    dip ver-all ]
+	  [ [[not - N] in]
+	    pop first fal-all ]
+	  [ popd
+	    [ popd has ]
+	    [ pop pop pop pop ]
+	    [ swap
+	      [ swapd
+		[has] [pop] [swons] ifte
+		swap ]
+	      dip
+	      unswons i ]
+	    ifte ] ]
+	cond
+	"ver-all E" t-trace;
+
+    fal-all ==					(* t f c F		*)
+	"fal-all B" t-trace
+	unswons
+	[ [ [[and & K] in]
+	    pop
+	    [ [] cons cons cons dup ] dip
+	    uncons first
+	    [ swap
+	      [[i] dip fal-all] dip ]
+	    dip
+	    [i] dip fal-all ]
+	  [ [[or v A] in]
+	    pop uncons first swap
+	    [ [fal-all] cons swons ]
+	    dip fal-all ]
+	  [ [[imp > C] in]
+	    pop uncons first swap
+	    [ [fal-all] cons swons ]
+	    dip ver-all ]
+	  [ [[iff = E] in]
+	    pop
+	    [ [] cons cons cons dup ] dip
+	    dup
+	    [[imp] swoncat] dip   [swap] infra [imp] swoncat
+	    [ swap
+	      [[i] dip fal-all] dip ]
+	    dip
+	    [i] dip fal-all ]
+	  [ [[not - N] in]
+	    pop first ver-all ]
+	  [ popd
+	    [ popd popd has ]
+	    [ pop pop pop pop ]
+	    [ swap
+	      [ [has] [pop] [swons] ifte ]
+	      dip
+	      unswons i ]
+	    ifte ] ]
+	cond
+	"fal-all E" t-trace;
+
+    ver-first ==				(* t f c F		*)
+      [ pop pop pop pop null ]
+      [
+	"ver-first B" t-trace
+	unswons
+	[ [ [[or v A] in]
+	    pop
+	    [ [] cons cons cons dup ] dip
+	    uncons first
+	    [ swap
+	      [[i] dip ver-first] dip ]
+	    dip
+	    [i] dip ver-first ]
+	  [ [[imp > C] in]
+	    pop
+	    [ [] cons cons cons dup ] dip
+	    uncons first
+	    [ swap
+	      [[i] dip fal-first] dip ]
+	    dip
+	    [i] dip ver-first ]
+	  [ [[iff = E] in]
+	    pop
+	    [ [] cons cons cons dup ] dip
+	    dup
+	    [[and] swoncat] dip   [or] swoncat
+	    [ swap
+	      [[i] dip ver-first] dip ]
+	    dip
+	    [i] dip fal-first ]
+	  [ [[and & K] in]
+	    pop uncons first swap
+	    [ [ver-first] cons swons ]
+	    dip ver-first ]
+	  [ [[not - N] in]
+	    pop first fal-first ]
+	  [ popd
+	    [ popd has ]
+	    [ pop pop pop pop ]
+	    [ swap
+	      [ swapd
+		[has] [pop] [swons] ifte
+		swap ]
+	      dip
+	      unswons i ]
+	    ifte ] ]
+	cond
+	"ver-first E" t-trace
+	]
+      [ pop pop pop pop ]
+      ifte;
+
+    fal-first ==				(* t f c F		*)
+      [ pop pop pop pop null ]
+      [
+	"fal-first B" t-trace
+	unswons
+	[ [ [[and & K] in]
+	    pop
+	    [ [] cons cons cons dup ] dip
+	    uncons first
+	    [ swap
+	      [[i] dip fal-first] dip ]
+	    dip
+	    [i] dip fal-first ]
+	  [ [[iff = E] in]
+	    pop
+	    [ [] cons cons cons dup ] dip
+	    dup
+	    [[imp] swoncat] dip   [swap] infra [imp] swoncat
+	    [ swap
+	      [[i] dip fal-first] dip ]
+	    dip
+	    [i] dip fal-first ]
+	  [ [[or v A] in]
+	    pop uncons first swap
+	    [ [fal-first] cons swons ]
+	    dip fal-first ]
+	  [ [[imp > C] in]
+	    pop uncons first swap
+	    [ [fal-first] cons swons ]
+	    dip ver-first ]
+	  [ [[not - N] in]
+	    pop first ver-first ]
+	  [ popd
+	    [ popd popd has ]
+	    [ pop pop pop pop ]
+	    [ swap
+	      [ [has] [pop] [swons] ifte ]
+	      dip
+	      unswons i ]
+	    ifte ] ]
+	cond
+	"fal-first E" t-trace
+	]
+      [ pop pop pop pop ]
+      ifte;
+
+    t-trace-default == putchars " : " putchars stack putln;
+    t-trace == pop;
+(*
+    t-trace == t-trace-default;
+*)
+
+(* the five basic tautology wrappers:				*)
+
+(*
+    taut-old ==
+	[ [] [] [[show-old]] ] dip
+	fal-old;
+*)
+    taut-show-all ==
+	[ 0  [] [] [[show-all]] ] dip
+	fal-all
+	[null] ['\t putch "tautology\n" putchars] [] ifte
+	pop;
+    taut-show-first ==
+	[ 0  [] [] [[show-first]] ] dip
+	fal-first
+	[null] ['\t putch "tautology\n" putchars] [] ifte
+	pop;
+    taut-collect-all ==
+	[ [] [] [] [[collect]] ] dip
+	fal-all;
+    taut-collect-first ==
+	[ [] [] [] [[collect]] ] dip
+	fal-first;
+    taut-count ==
+	[ 0 [] [] [[count]] ] dip
+	fal-all;
+    taut-test ==
+	[ false [] [] [[found]] ] dip
+	fal-first not
+
+END; (* HIDE, end of SEMANTIC TABLEAUX *)
+
+(* other stuff to go here *)
+
+    PLGLIB == "plglib.joy - propositional logic library\n".
+
+							(*  end LIBRA	*)
+"plglib  is loaded\n" putchars.
+
+(* END  plglib.joy *)

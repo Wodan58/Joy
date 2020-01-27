@@ -1,0 +1,103 @@
+(* FILE:   replib.joy *)
+
+"agglib" libload.
+
+LIBRA
+
+    _replib == true;
+
+MODULE rep	# "replicating programs"
+
+PRIVATE
+    foo == "foo"
+
+PUBLIC
+
+    # basic utilities
+    duco == dup cons;
+    dureco == dup rest cons;
+    durereco == dup rest rest cons;
+
+    count == [0 [succ] infra] swoncat;
+    deposit == [dup [first] dip] swoncat;
+
+    self == [duco]         duco;      exe   == [dip duco]   cons       duco;
+    ints == [dureco] count dureco;    exe-c == [dip dureco] cons count dureco;
+
+    c-stream == [dureco] cons dureco;
+    c-stream-d == [dureco] deposit cons dureco;
+
+    n-stream == [infra dureco] cons cons dureco;
+    n-stream-d == [infra dureco] cons deposit cons dureco;
+
+    f-stream-prepare ==                 # s [N] [F]
+        swap                            # s [F] [N]
+        [dip] cons concat               # s [F [N] dip]
+        cons                            # [s F [N] dip]
+        [dup] infra                     # [s s F [N] dip]
+        dup rest rest infra             # [Fs Ns F [N] dip]
+        uncons uncons                   # Fs Ns [F [N] dip]
+        [pop dup] swoncat               # Fs Ns [pop dup F [N] dip]
+        [infra durereco] cons;          # Fs Ns [[pop .. dip] infra durereco]
+
+    f-stream == f-stream-prepare cons cons durereco;
+    f-stream-d == f-stream-prepare deposit cons cons durereco;
+
+    inter ==                            #  s [P]
+        [dip cons dureco] cons          #  s [[P] dip cons dureco]
+        [uncons] swoncat                #  s [uncons [P] dip cons dureco]
+        cons dureco;
+
+    exe-t ==                            # N [P] => [[N [I] [T] [E] ifte] ..]
+        [dip dureco] cons               # N [[P] dip dureco]
+        [[pred] infra] swoncat          # N [[pred] infra [P] dip dureco]
+        [ifte] cons                     # N [[E] ifte]
+        [pop [[duco] duco]] swons        # N [[pop [[duco] duco] [E] ifte]
+        [first null] swons              # N [[first null] [T] [E] ifte]
+        cons dureco;                    # [[N [I] [T] [E] ifte] ..]
+
+    fix == [duco] swoncat duco;
+    fix-c == [0 [succ] infra dureco] swoncat dureco;
+(*
+    fix-i ==                            #  s [I] [P]
+        [dip cons dureco] swoncat cons  #  s [[I] dip cons dureco P]
+        [uncons] swoncat cons           #  [s uncons [I] dip cons dureco P]
+        dureco;
+*)
+
+    fix-i ==                            # [P] s [I]
+        [dip cons dureco] cons          # [P] s [[I] dip cons dureco]
+        [uncons] swoncat                # [P] s [uncons [I] dip cons dureco]
+        cons                            # [P] [s uncons [I] dip cons dureco]
+        swoncat                         # [s uncons [I] dip cons dureco P]
+        dureco;
+
+    fix-a == [] [[cons] unary] fix-i;
+
+    _expand ==                          # [I] [T] [R1] [R2] [r]  ==>
+                          # [ [pop I] [[T] dip] [[R1] dip r [R2] dip] ifte ]
+        swap                            # [I] [T] [R1] [r] [R2]
+        [dip] cons                      #  .. .. .. .. [[R2] dip]
+        concat                          #  .. .. .. [r [R2] dip]
+        [dip] swoncat                   #  .. .. .. [dip r [R2] dip]
+        cons                            #  .. .. [[R1] dip r [R2] dip]
+
+        [ [dip] cons                    #  .. [[T] dip] ..
+
+          [ [pop] swoncat] dip ]        #  [pop [I]] .. ..
+        dip
+
+        [ifte] cons cons cons;          # [ .. .. .. ifte ]
+
+    linear == [i] _expand;
+    binary == [dip swap i] _expand
+
+END;     # MODULE rep
+
+    REPLIB == "replib.joy - for survey of replicating programs"
+
+END      # LIBRA
+
+"replib  is loaded\n" putchars.
+
+(* END   replib.joy *)

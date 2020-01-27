@@ -1,0 +1,37 @@
+MODULE m .
+
+# m 10 .
+
+# [10] [pop] map .
+
+false false = .
+false [] = .
+false 0.0 = .
+false stdin = .
+
+'A [] = .
+'A 0.0 = .
+'A stdin = .
+
+0 0.0 = .
+0 stdin = .
+0 {} = .
+
+{0} {} = .
+{} stdin = .
+
+"" {} = .
+"" stdin = .
+
+[] [] = .
+
+0.0 0 = .
+0.0 [] = .
+0.0 stdin = .
+
+stdin 0.0 = .
+stdin stdout = .
+
+"test12.joy" include .
+
+10 .

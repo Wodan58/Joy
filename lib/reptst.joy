@@ -1,0 +1,238 @@
+(* FILE:   reptst.joy *)
+
+"replib" libload.
+2 setecho.
+
+(* -FOUR BASIC *)
+
+DEFINE
+    selfr == rep.self.
+
+selfr.
+
+selfr i i i.
+
+DEFINE
+    squaring == [dup *] rep.exe.
+
+squaring.
+
+2 squaring i pop.
+
+2 squaring i i pop.
+
+2 squaring i i i pop.
+
+DEFINE
+    state == first first;
+    integers == rep.ints.
+
+integers.
+
+integers i i i i i state.
+
+integers i i i i i i.
+
+DEFINE
+    times10-c ==  [10 *] rep.exe-c.
+
+times10-c.
+
+3 times10-c i i i i i pop.
+
+3 times10-c i i i i i popd state.
+
+(* -STREAMS *)
+
+DEFINE
+    ones == 1 rep.c-stream.
+
+ones.
+ones i i i i i.
+ones i i i i i state.
+
+DEFINE
+    halving == 1.0 [2 /] rep.n-stream.
+
+halving.
+
+halving i i i.
+
+halving i i i state.
+
+DEFINE
+    integers-from == [succ] rep.n-stream.
+
+42 integers-from.
+
+42 integers-from i i i i i state.
+
+
+DEFINE
+    ones-d == 1 rep.c-stream-d.
+
+ones-d.
+
+ones-d i i i pop. . .
+
+DEFINE
+    halving-d == 1.0 [2 /] rep.n-stream-d.
+
+halving-d.
+
+halving-d i i i i i pop. . . . .
+
+DEFINE
+    primes-d == 2 [succ [prime not] [succ] while] rep.n-stream-d.
+
+primes-d.
+
+primes-d i i i i i pop. . . . .
+
+
+DEFINE
+    even-squares == 0 [2 +] [dup *] rep.f-stream.
+
+even-squares.
+
+even-squares state.
+
+even-squares i state.
+
+even-squares i i state.
+
+even-squares i i i state.
+
+even-squares i i i i state.
+
+DEFINE
+    ten-powers-log10 ==
+	 1  [10 * ] [[] cons [dup log10] infra]  rep.f-stream-d.
+
+ten-powers-log10.
+
+ten-powers-log10 i i i i i i pop. . . . . .
+
+(* -INTERACTION *)
+
+DEFINE
+    accu-list == [] [cons] rep.inter;
+    accu-sum == 0 [+] rep.inter;
+    accu-product-list == [] [[*] dip cons] rep.inter.
+
+accu-list.
+
+1 2 3 4 5 accu-list i i i i i state.
+
+accu-sum.
+
+1 2 3 4 5 accu-sum i i i i i state.
+
+accu-product-list.
+
+1 10 2 100 3 1000 4 10000 accu-product-list i i i i state.
+
+DEFINE
+    max-3-adds == 3 [+] rep.exe-t;
+    max-4-adds == 4 [+] rep.exe-t.
+
+          max-3-adds.
+
+
+      2 1 max-3-adds i pop.
+
+    3 2 1 max-3-adds i i pop.
+
+  4 3 2 1 max-3-adds i i i pop.
+
+5 4 3 2 1 max-3-adds i i i i pop. .
+
+5 4 3 2 1 max-4-adds i i i i pop.
+
+(* -RECURSIVE *)
+
+DEFINE
+    fact0 == [[pop null] [pop pop 1  ] [[dup pred] dip i  *     ] ifte];
+    fact  == [[pop null] [[pop 1] dip] [[dup pred] dip i [*] dip] ifte].
+
+6 fact0 rep.fix i.
+
+6 fact  rep.fix i. .
+
+3 fact  rep.fix i i. .
+
+DEFINE
+    fact-fix   == fact rep.fix;
+    fact-fix-c == fact rep.fix-c;
+    fact-fix-a == fact rep.fix-a;
+
+    steps == "steps: " putchars state putln;
+    trace == "trace: " putchars state putln.
+
+3 4 5  fact-fix   i swap put i swap put i swap putln pop.
+
+3 4 5  fact-fix-c i swap put i swap put i swap putln steps.
+
+3 4 5  fact-fix-a i swap put i swap put i swap putln trace.
+
+DEFINE
+    nfib ==
+	[ [ pop small ]
+	  [ [pop 1] dip ]
+	  [ [pred dup pred] dip
+	    dip swap i
+	    [+] dip ]
+	  ifte ];
+
+    nfib-fix == nfib rep.fix;
+    nfib-fix-c == nfib rep.fix-c;
+    nfib-fix-a == nfib rep.fix-a.
+
+nfib-fix.
+
+6 nfib-fix i pop.
+
+6 nfib-fix-c i swap putln steps.
+
+6 nfib-fix-a i swap putln trace.
+
+0 __settracegc.
+(*
+30 nfib-fix-c i swap putln steps.
+*)
+
+(* -CONVENIENCE *)
+
+DEFINE
+    fact-lin == [null] [pop 1] [dup pred] [*] rep.linear;
+    length-lin == [null] [pop 0] [rest] [succ] rep.linear;
+    nfib-bin == [small] [pop 1] [pred dup pred] [+] rep.binary;
+
+    fact-fix == fact-lin rep.fix;
+    length-fix-a == length-lin rep.fix-a;
+    nfib-fix == nfib-bin rep.fix.
+
+4 fact-fix i pop.
+
+[2 5 3 7 6] [a b c] length-fix-a i swap put i swap putln trace.
+
+6 nfib-fix i pop.
+
+6 nfib-bin [] [[dup put] dip] rep.fix-i i newline pop.
+
+DEFINE
+    qsort-bin == [small] [] [uncons [>] split] [enconcat] rep.binary;
+    qsort-fix-c == qsort-bin rep.fix-c;
+    qtest == qsort-fix-c i state.
+
+[5 10 9 14 7 18 1 4 15 3 20 19 8 11 2 6 12 13 16 17] qtest. .
+
+[10 5 3 2 4 1 8 7 9 6 15 13 12 14 11 18 17 19 16 20] qtest. .
+
+[1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20] qtest. .
+
+[20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1] qtest. .
+
+"You can also sort strings, of course" qtest. .
+
+(* END   reptst.joy *)

@@ -1,0 +1,19 @@
+false [nothing] first = .
+
+'A [nothing] first = .
+
+10 [nothing] first = .
+
+{} 0 = .
+{} {0} = .
+
+"nothing" [nothing] first = .
+"10" 10 = .
+"+" [+] first = .
+
+0.0 [nothing] first = .
+
+stdin [+] first = .
+
+[+] first "+" = .
+[+] first stdin = .

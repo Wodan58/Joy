@@ -1,0 +1,106 @@
+
+(* FILE:   lazlib.joy *)
+
+LIBRA
+
+    _lazlib == true;
+
+(* predicates *)
+
+    Null == null;
+
+(* operators *)
+
+    First == first;
+    Rest == rest first i;
+    Uncons == uncons first i;
+    Cons == [] cons cons;
+    Second == Rest First;
+    Third == Rest Rest First;
+    Drop == [Rest] times;
+    N-th == pred Drop First;
+    Size ==
+	0 swap
+	[Null not]  [[succ] dip Rest]  while
+	pop;
+    Take ==
+	[ Null ]
+	[ pop pop [] ]
+	[ [Uncons] dip  pred ]	(* note: lazy Uncons	*)
+	[ cons ]		(* note: ordinary cons	*)
+	linrec;
+
+(* constructors *)
+
+    From ==			(*  f			*)
+	dup succ		(*  f  f'		*)
+	[From] cons		(*  f [f' From]		*)
+	Cons;			(* [f [f' From]]	*)
+
+    From-to ==			(*  f   t		*)
+	[ > ]
+	[ pop pop [] ]
+	[ [dup succ] dip 	(*  f   f' t		*)
+	  [From-to] cons cons	(*  f  [f' t From-to]	*)
+	  Cons ]		(* [f  [f' t From-to]]	*)
+	ifte;
+
+(* combinators *)
+
+    From-to-by ==		(*  f  t  [B]			*)
+	(* else-part: *)
+	[ dup [From-to-by] cons	(*  f  t  [B] [[B] From-to-by]	*)
+	  swapd cons		(*  f [B]  [t  [B] From-to-by]	*)
+	  [dupd i] dip cons	(*  f [B(f) t  [B] From-to-by]	*)
+	  Cons ]		(* [f  B(f) t  [B] From-to-by]]	*)
+	(* ifpart, else-part: *)
+	[ [pop >]
+	  [pop pop pop] ] dip
+	ifte;
+
+    From-by ==			(*  f       [B]			*)
+	dupd			(*  f    f  [B]			*)
+	dup [i] dip		(*  f  B(f) [B]			*)
+	[From-by] cons cons	(*  f [B(f) [B] From-by]	*)
+	Cons;			(* [f [B(f) [B] From-by]]	*)
+
+    Map ==			(*     s        [F]		*)
+	[pop Null]
+	[[]]			(*     []			*)
+	[ [Uncons] dip		(*     f      r [F]		*)
+	  dup swapd		(*     f [F]  r [F]		*)
+	  [Map] cons cons	(*     f [F] [r [F] Map]	*)
+	  [i] dip		(*   F(f)    [r [F] Map]	*)
+	  Cons ]		(* [ F(f)    [r [F] Map] ]	*)
+	ifte;
+
+    Filter ==			(*  s   [P]			*)
+	[pop Null]
+	[[]]			(* []				*)
+	[ dup			(*   s   [P]   [P]		*)
+	  [ [i not] cons [first] swoncat
+	    [Rest]
+	    while
+	    Uncons ]
+	  dip
+	  [Filter] cons cons	(*   f  [r [P] Filter]		*)
+	  Cons ]		(* [ f  [r [P] Filter] ]	*)
+	ifte;
+
+(* examples *)
+
+    Naturals    == 0 From;
+    Positives	== 1 From;
+    Evens       == 0 [2 +] From-by;
+    Odds        == 1 [2 +] From-by;
+    Powers-of-2 == 1 [2 *] From-by;
+    Ones        == 1 []    From-by;
+    Squares     == Naturals [dup *] Map;
+
+    LAZLIB == "lazlib.joy - lazy list library\n".
+
+						(* end LIBRA *)
+
+"lazlib  is loaded\n" putchars.
+
+(* END   lazlib.joy *)

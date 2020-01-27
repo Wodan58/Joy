@@ -1,0 +1,173 @@
+(* FILE:   grmtst.joy *)
+
+"\ntesting the grammar library in file  grmlib.joy\n\n" putchars.
+
+"grmlib" libload.
+0 __settracegc.
+1 setecho.
+
+# the library grmlib.joy defines operators for
+# 1 GENERATING strings defined by REs and grammars
+# 2 PARSING given strings in accordance with REs or grammars
+
+(* - - - - -              G E N E R A T I N G                 - - - - - *)
+
+(*   The binary operators:						*)
+(*   underscore _ is concatenation,   vertical-bar | is alternation	*)
+
+# Note that the numeric parameter (8 in the first example) serves
+# to limit the length of strings to be generated
+
+8 ["The" _ ["cat" | "dog"]  _ "sat" _ "on" _ "the" _ ["mat" | "lawn"]] gen-put.
+
+(*   The unary operators:
+(*   question-mark is 0 or 1, star is 0 or more, plus is 1 or more	*)
+
+7 [ "The" _ ?[ ? "very" _ "big" ] _ "tree" ]   gen-put.
+
+5 [ "The" _ * "very" _ "big" _ "tree" ]   gen-put-step.
+
+7 [ "The" _ +["very" _ "big"] _ "tree" ]   gen-putchars-sp-step.
+
+(*  Using literals other than strings:					*)
+
+8  [ Smith _ Peter _ "(Pete)" _ CS _ QUOTE [20 22 18 16] _ 76 _ 'B
+   | Jones _ Robert _ "(BOB)" _ LG _ QUOTE [12 19 13 14] _ 58 _ 'D ]
+   gen-put-step.
+
+5 [ [0 | 1] _ [0 | 1] _ [0 | 1] ]  gen-put-step.
+
+(* another unary operator, dollar $ to call a defined non-terminal:	*)
+(* a small recursive context free grammar for a fragment of arithmetic	*)
+(* the grammar has only one production					*)
+
+DEFINE arith == [ "x"  |  "(" _ $ arith _ "+" _ $ arith _ ")" ].
+
+13 [ $ arith ]   gen-putchars-step.	# using no spaces between outputs
+
+# A grammar for arithmetic with precedences, using three productions:
+
+DEFINE expression ==  [ $ term  _  * ["+" _ $ term] ];
+       term       ==  [ $ factor  _  * ["*" _ $ factor] ];
+       factor     ==  [ "x"  |  "(" _ $ expression _ ")" ].
+
+7 [ $ expression ]  gen-putchars-sp-step.    # using spaces between outputs
+
+(* Do not show, but collect into a list (of lists of tokens)		*)
+
+8 ["The" _ ["cat" | "dog"]  _ "sat" _ "on" _ "the" _ ["mat" | "lawn"]] gen-accumulate.
+
+# just counting the number of expressions, terms, factors of max length 7
+
+7 [ $ expression ]  gen-accumulate size.
+
+7 [ $ term ]  gen-accumulate size.
+
+7 [ $ factor ]  gen-accumulate size.
+
+# in case the last count seems suspicious, here are the details:
+
+7 [ $ factor ] gen-putchars-sp-step.
+
+(* - - - - -                  P A R S I N G                  - - - - -	*)
+
+DEFINE prs-trace == pop.
+
+1 setecho.
+
+DEFINE
+    tree == [ "big" _ "tree" ];
+    names == [ "peter" _ "smith" | "paul" _ "jones" | "mary" _ "robinson" ].
+
+[ "big" "tree" ]  tree prs-test.
+
+[ "peter"  "smith" ]  names  prs-test.
+[ "paul"  "jones" ]  names  prs-test.
+[ "mary"  "robinson" ]  names  prs-test.
+
+
+[ "fred"  ]  names  prs-test.
+
+DEFINE anyname ==
+    [ ["peter" | "paul" | "mary"] _ ["smith" | "jones" | "robinson" ] ].
+
+["peter" "robinson"]  anyname prs-test.
+
+["paul" "smith"] anyname prs-test.
+
+[ "paul" "nurks" ] anyname prs-test.
+
+[ "fred" "nurks" ] anyname prs-test.
+
+[ "mary" "robinson" ]  [ $ anyname ]  prs-test.
+
+[ "mary" "robertson" ]  [ $ anyname ]  prs-test.
+
+DEFINE
+  Polish  ==  [  'p
+	       |  'N _ $ Polish
+	       |  ['A | 'C | 'K] _ $ Polish _ $ Polish ].
+
+[ 'K 'p 'N 'p ]  [ $ Polish ]  prs-test.
+[ 'K 'p 'M 'p ]  [ $ Polish ]  prs-test.
+[ 'K 'p 'N 'q ]  [ $ Polish ]  prs-test.
+
+DEFINE
+    string2charlist ==
+	[null]  [pop []]  [uncons]  [cons]  linrec.
+
+
+"CNpApKpp"  string2charlist Polish prs-test.
+"CNpBpKpp"  string2charlist Polish prs-test.
+
+# testing the unary operators  ? + *
+
+[ "*" "*" "*" "*" "*" "." ]  [ * "*" ]  prs-count.
+[ "*" "*" "*" "." "*" "*" ]  [ * "*" ]  prs-count.
+[ "*" "*" "*" "." "*" "*" ]  [ + "*" ]  prs-count.
+
+(* The following examples all use test strings of which some
+   initial substrings are accepted by the grammar. Each parse
+   then leaves some unused part of the test string behind.		*)
+
+#  Using the reverse Polish notation for propositional logic:
+
+DEFINE
+  Rev-Pol  ==  [ 'p _ * [ 'N
+			| $ Rev-Pol _ ['A | 'C | 'K] ] ].
+
+"pNNpNANNpC " string2charlist  Rev-Pol  prs-string-residues.
+"pNNpNABNpC " string2charlist  Rev-Pol  prs-string-residues.
+
+DEFINE 		# Four productions for a rudimentary fragment of English
+
+sentence  ==
+  [ $ noun-phrase _ $ verb-phrase  _ * [["and" | "or"] _ $ sentence] ];
+noun-phrase  ==
+  [ "John" | "Mary" | ["a" | "the"] _ * $ adjective _ ["cat" | "dog"] ];
+verb-phrase  ==
+  [ "is" _ ? "not" _ $ adjective
+  | "sleeps"
+  | ["eats" | "sits" _ "on"] _ $ noun-phrase ];
+adjective  ==
+   [ "brown" | "black" | "rich" ];
+E  ==
+   sentence prs-list-residues.
+
+[ "Mary" "sleeps" "and" "the" "cat" "sleeps" "." ] E.
+
+[ "the" "cat" "is" "brown" "and" "the" "dog" "is" "black" "." ] E.
+
+[ "the" "cat" "is" "brown" "und" "the" "dog" "is" "black" "." ] E.
+
+[ "the" "cat" "is" "brown" "and" "the" "duck" "is" "black" "." ] E.
+
+[ "the" "cat" "is" "brwon" "and" "the" "dog" "is" "black" "." ] E.
+
+[ "Mary" "is" "rich" "and" "John" "is" "not" "rich" "." ] E.
+
+[ "a" "black" "cat" "sits" "on" "Mary" "." ] E.
+
+[ "a" "black" "cat" "sits" "on" "Maria" "." ] E.
+
+(* END  grmtst.joy *)

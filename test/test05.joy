@@ -1,0 +1,18 @@
+#
+#  Read a file and print the contents.
+#
+LIBRA
+	  seek-to-end == 0 2 fseek pop;
+               rewind == 0 0 fseek pop.
+
+[argc 1 =]
+["Use: " putchars argv 0 at putchars " <file>\n" putchars quit] [] ifte
+argv 1 at "rb" fopen
+[null]
+["Could not read " putchars argv 1 at putchars "\n" putchars quit] [] ifte
+seek-to-end
+ftell
+[rewind] dip
+fread
+[putch] step
+fclose.

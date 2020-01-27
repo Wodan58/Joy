@@ -1,0 +1,35 @@
+DEFINE
+    quadratic-1  ==                                # a b c => [root1 root2 ]
+        [ [ pop pop 2 * ]                          # divisor
+          [ pop 0 swap - ]                         # minusb
+          [ swap dup * rollup * 4 * - sqrt ] ]     # radical
+        [i] map [] step
+        [ [ + swap / ]                             # root1
+          [ - swap / ] ]                           # root2
+        [i] map  [] step
+        [] cons cons                               # build pair
+        [ pop pop pop pop pop pop ] dip.           # cleanup stack
+DEFINE
+    quadratic-2  ==                                # a b c => [root1 root2 ]
+        [ [ [ pop pop 2 * ]                        # divisor
+            [ pop 0 swap - ]                       # minusb
+            [ swap dup * rollup * 4 * - sqrt ] ]   # radical
+          [i] map ]
+        ternary i
+        [ [ [ + swap / ]                           # root1
+            [ - swap / ] ]                         # root2
+          [i] map ]
+        ternary.
+DEFINE
+    quadratic-3  ==                                # a b c => [root1 root2 ]
+        [] cons cons cons                          # list of parameters
+        [ [ [ [dup * swap] dip * 4 * - sqrt ]      # radical
+            [ pop 0 swap - ]                       # minusb
+            [ 2 * ] ]                              # divisor
+          [i] map ]
+        infra first
+        [ [ [ + swap / ]                           # root1
+            [ - swap / ] ]                         # root2
+          [i] map ]
+        infra first.
+

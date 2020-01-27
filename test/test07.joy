@@ -1,0 +1,15 @@
+1 'c 10 10 format .
+1.5 'c 10 10 formatf .
+"dummy" "r" fopen fclose .
+"dummy" "r" fopen fget .
+"dummy" "w" fopen 10 fput .
+"dummy" "r" fopen "test" fputchars .
+"test@" intern .
+[] unstack .
+MODULE m PUBLIC a == "a" .
+MODULE 10 PUBLIC a == "a" .
+# m.10 .
+{ "test" } .
+getch .
+1
+quit .
