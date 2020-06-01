@@ -1,0 +1,23 @@
+(* interp.c *)
+-5.0 sign .
+5.0 sign .
+0.0 sign .
+1 2 max .
+1 2 min .
+1 2 >= .
+"tekst" "w" fopen fclose .
+"text" "r" fopen 10 fput .
+"text" "r" fopen "test" fputchars .
+{1 2 3} {1 2 3} equal .
+[1 2 3] [1 2 3] equal .
+"123" "123" equal .
+1 [1 2 3] of .
+[1 2 3] 1 of .
+1 leaf .
+1 srand .
+(* main.c *)
+6 __settracegc .
+10 [small] [] [pred dup pred] [+] binrec .
+DEFINE d == dup;
+       dup == d.
+1 dup . .

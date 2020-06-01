@@ -869,7 +869,7 @@ PRIVATE void fgets_()
     return; }
 
 PRIVATE void fput_()
-{   FILE *stm;
+{   FILE *stm=0;
     TWOPARAMS("fput");
     if (stk->next->op != FILE_ || (stm = stk->next->u.fil) == NULL)
 	execerror("file", "fput");
@@ -889,7 +889,7 @@ PRIVATE void fputch_()
     return; }
 
 PRIVATE void fputchars_() /* suggested by Heiko Kuhrt, as "fputstring_" */
-{   FILE *stm;
+{   FILE *stm=0;
     TWOPARAMS("fputchars");
     if (stk->next->op != FILE_ || (stm = stk->next->u.fil) == NULL)
         execerror("file", "fputchars");

@@ -1,7 +1,7 @@
 .POSIX:
 .SUFFIXES:
 
-CC = gcc
+CC = clang
 CFLAGS = -O3 -Wall -Wextra -Werror -ansi -pedantic
 LDLIBS = -static -lm
 OBJECTS = interp.o scan.o utils.o main.o

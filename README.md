@@ -39,8 +39,6 @@ and used but Joy can operate without; that is both easier and faster.
 Binaries
 --------
 
-The binary `joy32` is the original from 2003 and still works under Linux;
+The binary `joy` is the original from 2003 and still works under Linux;
 `joy.exe` was compiled by me in 2005 and should still work under Windows;
-`joym` is a Macintosh executable from the original site; `joy` and `joy64`
-are recently compiled executables for Linux.
-The first two use the BDW garbage collector; the last three do not.
+both use the BDW garbage collector.

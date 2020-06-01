@@ -2,7 +2,7 @@ extraction:
   cpp:
     configure:
       command:
-        - cmake -G .
+        - cmake .
     index:
       build_command:
         - cmake --build .
