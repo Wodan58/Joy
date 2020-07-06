@@ -4,6 +4,8 @@
 
 LIBRA
 
+putchars == [putch] step;
+
 HIDE
   cr1  ==  pop  [joy] cons;
   cr2  ==  pop [[joy] cons] app2;

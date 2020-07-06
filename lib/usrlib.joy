@@ -36,7 +36,7 @@ IN
 	control-eof putch  '\n putch
 	"@tt:" system
 	returned;
-						(* etc *)
+						etc *)
 
     edit ==
 	dup editor swap concat system

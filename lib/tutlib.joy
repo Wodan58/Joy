@@ -9,7 +9,7 @@ LIBRA
     pausing == putchars pause;
     praise ==
 	[ "Good." "Splendid." "Excellent." "Great." "Terrific." ]
-	rand 5 rem at putchars newline;
+	(* rand 5 rem *) 0 at putchars newline;			(* R.W. *)
     get-integer ==
 	get
 	[ integer not ]
@@ -58,7 +58,7 @@ where each Qi is a quote, each Hi is a section heading. *)
     toc-one-heading ==
 	toc-of-tutorial of second putchars newline newline;
     toc-do-section0 ==
-	terminal include
+#	terminal include					(* R.W. *)
 	newline
 	0 toc-one-heading
 	"Contents:\n" putchars toc-all-headings newline

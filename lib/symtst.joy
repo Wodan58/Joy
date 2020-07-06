@@ -1,9 +1,9 @@
 (* FILE:  symtst.joy *)
 
-"\Testing the 12 translators in the library  symlib.joy\n" putchars.
+"\nTesting the 12 translators in the library  symlib.joy\n" putchars. (* R.W. *)
 
 "symlib" libload.
-1 __settracegc.
+0 __settracegc.							(* R.W. *)
 1 setecho.
 
 (* The translations will use the following unary and binary operators:	*)

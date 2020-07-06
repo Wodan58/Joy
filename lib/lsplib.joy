@@ -103,6 +103,8 @@ apply ==
       case ]
 
     [						(* apply-atomic		*)
+     [ [numerical] [string] sequor ]		(* R.W. *)
+      [ ] [					(* R.W. self-evaluating *)
       [ [ CAR first first ]
 	[ CDR first rest ]
 	[ CONS uncons first cons ]
@@ -113,7 +115,7 @@ apply ==
 	[ (* try Joy: *)
 	  [i] dip call ] ]
       case ]
-
+     ifte ]					(* R.W. *)
     ifte;					(* end apply		*)
 
 
@@ -164,7 +166,7 @@ lisp ==
 	putstrings
 	lib0						(* load lib0	*)
 	l-prompt putchars get
-	[ "EXIT" = not ]
+	[ [ EXIT ] first equal not ]				(* R.W. *)
 	[ eval putln
 	  l-prompt putchars get ]
 	while

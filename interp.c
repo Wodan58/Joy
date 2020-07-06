@@ -1,4 +1,9 @@
-/* FILE : interp.c */
+/* FILE: interp.c */
+/*
+ *  module  : interp.c
+ *  version : 1.30.1.7
+ *  date    : 07/06/20
+ */
 
 /*
 07-May-03 condnestrec
@@ -15,160 +20,200 @@
       (now success  => true)
    3. nullary, unary, binary, ternary had two bugs:
       a. coredump when there was nothing to push
-	 e.g.   11 22 [pop pop] nullary
+         e.g.   11 22 [pop pop] nullary
       b. produced circular ("infinite") list when no
-	 new node had been created
-	 e.g.   11 22 [pop] nullary
+         new node had been created
+         e.g.   11 22 [pop] nullary
    4. app4 combinator was wrong.
       Also renamed:  app2 -> unary2,  app3 -> unary3, app4 -> unary4
       the old names can still be used, but are declared obsolete.
    5. Small additions to (raw) Joy:
       a)  putchars - previously defined in library file inilib.joy
       b) fputchars (analogous, for specified file)
-	 fputstring (== fputchars for Heiko Kuhrt's program)
+         fputstring (== fputchars for Heiko Kuhrt's program)
 */
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <math.h>
 #include "globals.h"
-# ifdef GC_BDW
-#    include <gc.h>
-#    define malloc GC_malloc_atomic
-#    define realloc GC_realloc
-#    define free(X)
-# endif
+#ifdef CORRECT_INTERN_LOOKUP
+#include <ctype.h>
+#endif
 
-PRIVATE void helpdetail_();		/* this file		*/
-PRIVATE void undefs_();
+PRIVATE void helpdetail_(void); /* this file		*/
+PRIVATE void undefs_(void);
 PRIVATE void make_manual(int style /* 0=plain, 1=html, 2=latex */);
-PRIVATE void manual_list_();
-PRIVATE void manual_list_aux_();
+PRIVATE void manual_list_(void);
+#if 0
+PRIVATE void manual_list_aux_(void);
+#endif
 
-#define ONEPARAM(NAME)						\
-    if (stk == NULL)						\
-	execerror("one parameter",NAME)
-#define TWOPARAMS(NAME)						\
-    if (stk == NULL || stk->next == NULL)			\
-	execerror("two parameters",NAME)
-#define THREEPARAMS(NAME)					\
-    if (stk == NULL || stk->next == NULL			\
-	    || stk->next->next == NULL)				\
-	execerror("three parameters",NAME)
-#define FOURPARAMS(NAME)					\
-    if (stk == NULL || stk->next == NULL			\
-	    || stk->next->next == NULL				\
-	    || stk->next->next->next == NULL)			\
-	execerror("four parameters",NAME)
-#define FIVEPARAMS(NAME)					\
-    if (stk == NULL || stk->next == NULL			\
-	    || stk->next->next == NULL				\
-	    || stk->next->next->next == NULL			\
-	    || stk->next->next->next->next == NULL)		\
-	execerror("four parameters",NAME)
-#define ONEQUOTE(NAME)						\
-    if (stk->op != LIST_)					\
-	execerror("quotation as top parameter",NAME)
-#define TWOQUOTES(NAME)						\
-    ONEQUOTE(NAME);						\
-    if (stk->next->op != LIST_)					\
-	execerror("quotation as second parameter",NAME)
-#define THREEQUOTES(NAME)					\
-    TWOQUOTES(NAME);						\
-    if (stk->next->next->op != LIST_)				\
-	execerror("quotation as third parameter",NAME)
-#define FOURQUOTES(NAME)					\
-    THREEQUOTES(NAME);						\
-    if (stk->next->next->next->op != LIST_)			\
-	execerror("quotation as fourth parameter",NAME)
-#define SAME2TYPES(NAME)					\
-    if (stk->op != stk->next->op)				\
-	execerror("two parameters of the same type",NAME)
-#define STRING(NAME)						\
-    if (stk->op != STRING_)					\
-	execerror("string",NAME)
-#define STRING2(NAME)						\
-    if (stk->next->op != STRING_)				\
-	execerror("string as second parameter",NAME)
-#define INTEGER(NAME)						\
-    if (stk->op != INTEGER_)					\
-	execerror("integer",NAME)
-#define INTEGER2(NAME)						\
-    if (stk->next->op != INTEGER_)				\
-	execerror("integer as second parameter",NAME)
-#define CHARACTER(NAME)						\
-    if (stk->op != CHAR_)					\
-	execerror("character",NAME)
-#define INTEGERS2(NAME)						\
-    if (stk->op != INTEGER_ || stk->next->op != INTEGER_)	\
-	execerror("two integers",NAME)
-#define NUMERICTYPE(NAME)					\
-    if (stk->op != INTEGER_ && stk->op !=  CHAR_		\
-	  && stk->op != BOOLEAN_ )				\
-	execerror("numeric",NAME)
-#define NUMERIC2(NAME)						\
-    if (stk->next->op != INTEGER_ && stk->next->op != CHAR_)	\
-	execerror("numeric second parameter",NAME)
-#define FLOATABLE						\
-    (stk->op == INTEGER_ || stk->op == FLOAT_)
-#define FLOATABLE2						\
-    ((stk->op == FLOAT_ && stk->next->op == FLOAT_) ||		\
-	(stk->op == FLOAT_ && stk->next->op == INTEGER_) ||	\
-	(stk->op == INTEGER_ && stk->next->op == FLOAT_))
-#define FLOAT(NAME)						\
-    if (!FLOATABLE)						\
-	execerror("float or integer", NAME);
-#define FLOAT2(NAME)						\
-    if (!(FLOATABLE2 || (stk->op == INTEGER_ && stk->next->op == INTEGER_))) \
-	execerror("two floats or integers", NAME)
-#define FLOATVAL						\
-    (stk->op == FLOAT_ ? stk->u.dbl : (double) stk->u.num)
-#define FLOATVAL2						\
-    (stk->next->op == FLOAT_ ? stk->next->u.dbl : (double) stk->next->u.num)
-#define FLOAT_U(OPER)						\
-    if (FLOATABLE) { UNARY(FLOAT_NEWNODE, OPER(FLOATVAL)); return; }
-#define FLOAT_P(OPER)						\
-    if (FLOATABLE2) { BINARY(FLOAT_NEWNODE, OPER(FLOATVAL2, FLOATVAL)); return; }
-#define FLOAT_I(OPER)						\
-    if (FLOATABLE2) { BINARY(FLOAT_NEWNODE, (FLOATVAL2) OPER (FLOATVAL)); return; }
-#define FILE(NAME)						\
-    if (stk->op != FILE_ || stk->u.fil == NULL)			\
-	execerror("file", NAME)
-#define CHECKZERO(NAME)						\
-    if (stk->u.num == 0)					\
-	execerror("non-zero operand",NAME)
-#define LIST(NAME)						\
-    if (stk->op != LIST_)					\
-	execerror("list",NAME)
-#define LIST2(NAME)						\
-    if (stk->next->op != LIST_)					\
-	execerror("list as second parameter",NAME)
-#define USERDEF(NAME)						\
-    if (stk->op != USR_)					\
-	execerror("user defined symbol",NAME)
-#define CHECKLIST(OPR,NAME)					\
-    if (OPR != LIST_)						\
-	execerror("internal list",NAME)
-#define CHECKSETMEMBER(NODE,NAME)				\
-    if ((NODE->op != INTEGER_ && NODE->op != CHAR_) ||		\
-	NODE->u.num >= SETSIZE)					\
-	execerror("small numeric",NAME)
-#define CHECKEMPTYSET(SET,NAME)					\
-    if (SET == 0)						\
-	execerror("non-empty set",NAME)
-#define CHECKEMPTYSTRING(STRING,NAME)				\
-    if (*STRING == '\0')					\
-	execerror("non-empty string",NAME)
-#define CHECKEMPTYLIST(LIST,NAME)				\
-    if (LIST == NULL)						\
-	execerror("non-empty list",NAME)
-#define INDEXTOOLARGE(NAME)					\
-    execerror("smaller index",NAME)
-#define BADAGGREGATE(NAME)					\
-    execerror("aggregate parameter",NAME)
-#define BADDATA(NAME)						\
-    execerror("different type",NAME)
+#ifdef RUNTIME_CHECKS
+#define ONEPARAM(NAME)                                                         \
+    if (stck == NULL)                                                          \
+    execerror("one parameter", NAME)
+#define TWOPARAMS(NAME)                                                        \
+    if (stck == NULL || stck->next == NULL)                                    \
+    execerror("two parameters", NAME)
+#define THREEPARAMS(NAME)                                                      \
+    if (stck == NULL || stck->next == NULL || stck->next->next == NULL)        \
+    execerror("three parameters", NAME)
+#define FOURPARAMS(NAME)                                                       \
+    if (stck == NULL || stck->next == NULL || stck->next->next == NULL         \
+        || stck->next->next->next == NULL)                                     \
+    execerror("four parameters", NAME)
+#define FIVEPARAMS(NAME)                                                       \
+    if (stck == NULL || stck->next == NULL || stck->next->next == NULL         \
+        || stck->next->next->next == NULL                                      \
+        || stck->next->next->next->next == NULL)                               \
+    execerror("five parameters", NAME)
+#define ONEQUOTE(NAME)                                                         \
+    if (stck->op != LIST_)                                                     \
+    execerror("quotation as top parameter", NAME)
+#define TWOQUOTES(NAME)                                                        \
+    ONEQUOTE(NAME);                                                            \
+    if (stck->next->op != LIST_)                                               \
+    execerror("quotation as second parameter", NAME)
+#define THREEQUOTES(NAME)                                                      \
+    TWOQUOTES(NAME);                                                           \
+    if (stck->next->next->op != LIST_)                                         \
+    execerror("quotation as third parameter", NAME)
+#define FOURQUOTES(NAME)                                                       \
+    THREEQUOTES(NAME);                                                         \
+    if (stck->next->next->next->op != LIST_)                                   \
+    execerror("quotation as fourth parameter", NAME)
+#define SAME2TYPES(NAME)                                                       \
+    if (stck->op != stck->next->op)                                            \
+    execerror("two parameters of the same type", NAME)
+#define STRING(NAME)                                                           \
+    if (stck->op != STRING_)                                                   \
+    execerror("string", NAME)
+#define STRING2(NAME)                                                          \
+    if (stck->next->op != STRING_)                                             \
+    execerror("string as second parameter", NAME)
+#define INTEGER(NAME)                                                          \
+    if (stck->op != INTEGER_)                                                  \
+    execerror("integer", NAME)
+#define INTEGER2(NAME)                                                         \
+    if (stck->next->op != INTEGER_)                                            \
+    execerror("integer as second parameter", NAME)
+#define CHARACTER(NAME)                                                        \
+    if (stck->op != CHAR_)                                                     \
+    execerror("character", NAME)
+#define INTEGERS2(NAME)                                                        \
+    if (stck->op != INTEGER_ || stck->next->op != INTEGER_)                    \
+    execerror("two integers", NAME)
+#define NUMERICTYPE(NAME)                                                      \
+    if (stck->op != INTEGER_ && stck->op != CHAR_ && stck->op != BOOLEAN_)     \
+    execerror("numeric", NAME)
+#define NUMERIC2(NAME)                                                         \
+    if (stck->next->op != INTEGER_ && stck->next->op != CHAR_)                 \
+    execerror("numeric second parameter", NAME)
+#else
+#define ONEPARAM(NAME)
+#define TWOPARAMS(NAME)
+#define THREEPARAMS(NAME)
+#define FOURPARAMS(NAME)
+#define FIVEPARAMS(NAME)
+#define ONEQUOTE(NAME)
+#define TWOQUOTES(NAME)
+#define THREEQUOTES(NAME)
+#define FOURQUOTES(NAME)
+#define SAME2TYPES(NAME)
+#define STRING(NAME)
+#define STRING2(NAME)
+#define INTEGER(NAME)
+#define INTEGER2(NAME)
+#define CHARACTER(NAME)
+#define INTEGERS2(NAME)
+#define NUMERICTYPE(NAME)
+#define NUMERIC2(NAME)
+#endif
+#define FLOATABLE (stck->op == INTEGER_ || stck->op == FLOAT_)
+#define FLOATABLE2                                                             \
+    ((stck->op == FLOAT_ && stck->next->op == FLOAT_)                          \
+        || (stck->op == FLOAT_ && stck->next->op == INTEGER_)                  \
+        || (stck->op == INTEGER_ && stck->next->op == FLOAT_))
+#ifdef RUNTIME_CHECKS
+#define FLOAT(NAME)                                                            \
+    if (!FLOATABLE)                                                            \
+        execerror("float or integer", NAME);
+#define FLOAT2(NAME)                                                           \
+    if (!(FLOATABLE2 || (stck->op == INTEGER_ && stck->next->op == INTEGER_))) \
+    execerror("two floats or integers", NAME)
+#else
+#define FLOAT(NAME)
+#define FLOAT2(NAME)
+#endif
+#define FLOATVAL (stck->op == FLOAT_ ? stck->u.dbl : (double)stck->u.num)
+#define FLOATVAL2                                                              \
+    (stck->next->op == FLOAT_ ? stck->next->u.dbl : (double)stck->next->u.num)
+#define FLOAT_U(OPER)                                                          \
+    if (FLOATABLE) {                                                           \
+        UNARY(FLOAT_NEWNODE, OPER(FLOATVAL));                                  \
+        return;                                                                \
+    }
+#define FLOAT_P(OPER)                                                          \
+    if (FLOATABLE2) {                                                          \
+        BINARY(FLOAT_NEWNODE, OPER(FLOATVAL2, FLOATVAL));                      \
+        return;                                                                \
+    }
+#define FLOAT_I(OPER)                                                          \
+    if (FLOATABLE2) {                                                          \
+        BINARY(FLOAT_NEWNODE, (FLOATVAL2)OPER(FLOATVAL));                      \
+        return;                                                                \
+    }
+#ifdef RUNTIME_CHECKS
+#define FILE(NAME)                                                             \
+    if (stck->op != FILE_ || stck->u.fil == NULL)                              \
+    execerror("file", NAME)
+#define CHECKZERO(NAME)                                                        \
+    if (stck->u.num == 0)                                                      \
+    execerror("non-zero operand", NAME)
+#define LIST(NAME)                                                             \
+    if (stck->op != LIST_)                                                     \
+    execerror("list", NAME)
+#define LIST2(NAME)                                                            \
+    if (stck->next->op != LIST_)                                               \
+    execerror("list as second parameter", NAME)
+#define USERDEF(NAME)                                                          \
+    if (stck->op != USR_)                                                      \
+    execerror("user defined symbol", NAME)
+#define CHECKLIST(OPR, NAME)                                                   \
+    if (OPR != LIST_)                                                          \
+    execerror("internal list", NAME)
+#define CHECKSETMEMBER(NODE, NAME)                                             \
+    if ((NODE->op != INTEGER_ && NODE->op != CHAR_) || NODE->u.num >= SETSIZE) \
+    execerror("small numeric", NAME)
+#define CHECKEMPTYSET(SET, NAME)                                               \
+    if (SET == 0)                                                              \
+    execerror("non-empty set", NAME)
+#define CHECKEMPTYSTRING(STRING, NAME)                                         \
+    if (*STRING == '\0')                                                       \
+    execerror("non-empty string", NAME)
+#define CHECKEMPTYLIST(LIST, NAME)                                             \
+    if (LIST == NULL)                                                          \
+    execerror("non-empty list", NAME)
+#define INDEXTOOLARGE(NAME) execerror("smaller index", NAME)
+#define BADAGGREGATE(NAME) execerror("aggregate parameter", NAME)
+#define BADDATA(NAME) execerror("different type", NAME)
+#else
+#define FILE(NAME)
+#define CHECKZERO(NAME)
+#define LIST(NAME)
+#define LIST2(NAME)
+#define USERDEF(NAME)
+#define CHECKLIST(OPR, NAME)
+#define CHECKSETMEMBER(NODE, NAME)
+#define CHECKEMPTYSET(SET, NAME)
+#define CHECKEMPTYSTRING(STRING, NAME)
+#define CHECKEMPTYLIST(LIST, NAME)
+#define INDEXTOOLARGE(NAME)
+#define BADAGGREGATE(NAME)
+#define BADDATA(NAME)
+#endif
 
 #define DMP dump->u.lis
 #define DMP1 dump1->u.lis
@@ -176,7 +221,7 @@ PRIVATE void manual_list_aux_();
 #define DMP3 dump3->u.lis
 #define DMP4 dump4->u.lis
 #define DMP5 dump5->u.lis
-#define SAVESTACK  dump = LIST_NEWNODE(stk,dump)
+#define SAVESTACK dump = LIST_NEWNODE(stck, dump)
 #define SAVED1 DMP
 #define SAVED2 DMP->next
 #define SAVED3 DMP->next->next
@@ -186,2282 +231,3171 @@ PRIVATE void manual_list_aux_();
 
 #define POP(X) X = X->next
 
-#define NULLARY(CONSTRUCTOR,VALUE)                              \
-    stk = CONSTRUCTOR(VALUE, stk)
-#define UNARY(CONSTRUCTOR,VALUE)                                \
-    stk = CONSTRUCTOR(VALUE, stk->next)
-#define BINARY(CONSTRUCTOR,VALUE)                               \
-    stk = CONSTRUCTOR(VALUE, stk->next->next)
-#define GNULLARY(TYPE,VALUE)                                    \
-    stk = newnode(TYPE,(VALUE),stk)
-#define GUNARY(TYPE,VALUE)                                      \
-    stk = newnode(TYPE,(VALUE),stk->next)
-#define GBINARY(TYPE,VALUE)                                     \
-    stk = newnode(TYPE,(VALUE),stk->next->next)
-#define GTERNARY(TYPE,VALUE)					\
-    stk = newnode(TYPE,(VALUE),stk->next->next->next)
+#define NULLARY(CONSTRUCTOR, VALUE) stck = CONSTRUCTOR(VALUE, stck)
+#define UNARY(CONSTRUCTOR, VALUE) stck = CONSTRUCTOR(VALUE, stck->next)
+#define BINARY(CONSTRUCTOR, VALUE) stck = CONSTRUCTOR(VALUE, stck->next->next)
+#define GNULLARY(TYPE, VALUE) stck = newnode(TYPE, (VALUE), stck)
+#define GUNARY(TYPE, VALUE) stck = newnode(TYPE, (VALUE), stck->next)
+#define GBINARY(TYPE, VALUE) stck = newnode(TYPE, (VALUE), stck->next->next)
+#define GTERNARY(TYPE, VALUE)                                                  \
+    stck = newnode(TYPE, (VALUE), stck->next->next->next)
 
-#define GETSTRING(NODE)						\
-  ( NODE->op == STRING_  ?  NODE->u.str :			\
-   (NODE->op == USR_  ?  NODE->u.ent->name :			\
-    opername(NODE->op) ) )
+#define GETSTRING(NODE)                                                        \
+    (NODE->op == STRING_                                                       \
+            ? NODE->u.str                                                      \
+            : (NODE->op == USR_ ? NODE->u.ent->name : opername(NODE->op)))
 
 /* - - - -  O P E R A N D S   - - - - */
 
-#define PUSH(PROCEDURE,CONSTRUCTOR,VALUE)			\
-PRIVATE void PROCEDURE()					\
-{   NULLARY(CONSTRUCTOR,VALUE); }
-PUSH(true_,BOOLEAN_NEWNODE,1L)				/* constants	*/
-PUSH(false_,BOOLEAN_NEWNODE,0L)
-PUSH(setsize_,INTEGER_NEWNODE,(long)SETSIZE)
-PUSH(maxint_,INTEGER_NEWNODE,(long)MAXINT)
-PUSH(symtabmax_,INTEGER_NEWNODE,(long)SYMTABMAX)
-PUSH(memorymax_,INTEGER_NEWNODE,(long)MEMORYMAX)
+#define PUSH(PROCEDURE, CONSTRUCTOR, VALUE)                                    \
+    PRIVATE void PROCEDURE(void) { NULLARY(CONSTRUCTOR, VALUE); }
+#if 0
+PUSH(true_, BOOLEAN_NEWNODE, 1L)			/* constants	*/
+PUSH(false_, BOOLEAN_NEWNODE, 0L)
+PUSH(maxint_, INTEGER_NEWNODE, (long_t)MAXINT)
+#endif
+PUSH(setsize_, INTEGER_NEWNODE, (long_t)SETSIZE)
+PUSH(symtabmax_, INTEGER_NEWNODE, (long_t)SYMTABMAX)
+PUSH(memorymax_, INTEGER_NEWNODE, (long_t)MEMORYMAX)
 PUSH(stdin_, FILE_NEWNODE, stdin)
 PUSH(stdout_, FILE_NEWNODE, stdout)
 PUSH(stderr_, FILE_NEWNODE, stderr)
-PUSH(dump_,LIST_NEWNODE,dump)				/* variables	*/
-PUSH(conts_,LIST_NEWNODE,LIST_NEWNODE(conts->u.lis->next,conts->next))
-PUSH(symtabindex_,INTEGER_NEWNODE,(long)LOC2INT(symtabindex))
-/* FIXME: Use /dev/random on Unix or CryptGenRandom on Windows */
-PUSH(rand_, INTEGER_NEWNODE, (long)rand())
+PUSH(dump_, LIST_NEWNODE, dump) /* variables	*/
+PUSH(conts_, LIST_NEWNODE, LIST_NEWNODE(conts->u.lis->next, conts->next))
+PUSH(symtabindex_, INTEGER_NEWNODE, (long_t)LOC2INT(symtabindex))
+PUSH(rand_, INTEGER_NEWNODE, (long_t)rand())
 /* this is now in utils.c
-PUSH(memoryindex_,INTEGER_NEWNODE,MEM2INT(memoryindex))
+PUSH(memoryindex_, INTEGER_NEWNODE, MEM2INT(memoryindex))
 */
-PUSH(echo_,INTEGER_NEWNODE,(long)echoflag)
-PUSH(autoput_,INTEGER_NEWNODE,(long)autoput)
-PUSH(undeferror_,INTEGER_NEWNODE,(long)undeferror)
-PUSH(clock_,INTEGER_NEWNODE,(long)(clock() - startclock))
-PUSH(time_,INTEGER_NEWNODE,(long)time(NULL))
-PUSH(argc_,INTEGER_NEWNODE,(long)g_argc)
+PUSH(echo_, INTEGER_NEWNODE, (long_t)echoflag)
+PUSH(autoput_, INTEGER_NEWNODE, (long_t)autoput)
+PUSH(undeferror_, INTEGER_NEWNODE, (long_t)undeferror)
+PUSH(clock_, INTEGER_NEWNODE, (long_t)(clock() - startclock))
+PUSH(time_, INTEGER_NEWNODE, (long_t)time(NULL))
+PUSH(argc_, INTEGER_NEWNODE, (long_t)g_argc)
 
-PUBLIC void stack_(void)
-{ NULLARY(LIST_NEWNODE, stk); }
+PUBLIC void stack_(void) { NULLARY(LIST_NEWNODE, stck); }
 
 /* - - - - -   O P E R A T O R S   - - - - - */
 
-PRIVATE void id_()
-{
-    /* do nothing */
-}
+PRIVATE void id_(void) { /* do nothing */ }
 
-PRIVATE void unstack_()
+PRIVATE void unstack_(void)
 {
     ONEPARAM("unstack");
     LIST("unstack");
-    stk = stk->u.lis;
+    stck = stck->u.lis;
 }
 
 /*
-PRIVATE void newstack_()
+PRIVATE void newstack_(void)
 {
-    stk = NULL;
+    stck = NULL;
 }
 */
 
 /* - - -   STACK   - - - */
 
-PRIVATE void name_()
+PRIVATE void name_(void)
 {
     ONEPARAM("name");
-    UNARY(STRING_NEWNODE, stk->op == USR_ ?
-		   stk->u.ent->name : opername(stk->op));
+    UNARY(STRING_NEWNODE,
+        stck->op == USR_ ? stck->u.ent->name : opername(stck->op));
 }
 
-PRIVATE void intern_()
+PRIVATE void intern_(void)
 {
-    char *p;
+#if defined(RUNTIME_CHECKS)
+    char* p;
+#endif
     ONEPARAM("intern");
     STRING("intern");
-    strncpy(id, stk->u.str, sizeof(id));
-    id[sizeof(id) - 1] = 0;
-    hashvalue = 0;
-    for (p = id; *p; p++) hashvalue += *p;
-    hashvalue %= HASHSIZE;
-    lookup();
-    if (location < firstlibra)
-	{ bucket.proc = location->u.proc;
-	GUNARY(LOC2INT(location), bucket); }
-	else UNARY(USR_NEWNODE, location);
+    strncpy(ident, stck->u.str, ALEN);
+    ident[ALEN - 1] = 0;
+#if defined(RUNTIME_CHECKS) && defined(CORRECT_INTERN_LOOKUP)
+    p = 0;
+    if (ident[0] == '-' || !strchr("(#)[]{}.;'\"0123456789", ident[0]))
+        for (p = ident + 1; *p; p++)
+            if (!isalnum((int)*p) && !strchr("=_-", *p))
+                break;
+    if (!p || *p)
+        execerror("valid name", ident);
+#endif
+    HashValue(ident);
+    lookup(0);
+    if (location < firstlibra) {
+        bucket.proc = location->u.proc;
+        GUNARY(LOC2INT(location), bucket);
+    } else
+        UNARY(USR_NEWNODE, location);
 }
 
-PRIVATE void getenv_()
+PRIVATE void getenv_(void)
 {
+    char* str;
+
     ONEPARAM("getenv");
     STRING("getenv");
-    UNARY(STRING_NEWNODE, getenv(stk->u.str)); }
+    if ((str = getenv(stck->u.str)) == 0)
+        str = "";
+    UNARY(STRING_NEWNODE, str);
+}
 
-PRIVATE void body_()
+PRIVATE void body_(void)
 {
     ONEPARAM("body");
     USERDEF("body");
-    UNARY(LIST_NEWNODE,stk->u.ent->u.body);
+    UNARY(LIST_NEWNODE, stck->u.ent->u.body);
 }
 
-PRIVATE void pop_()
+PRIVATE void pop_(void)
 {
     ONEPARAM("pop");
-    POP(stk);
+    POP(stck);
 }
 
-PRIVATE void swap_()
+PRIVATE void swap_(void)
 {
     TWOPARAMS("swap");
     SAVESTACK;
-    GBINARY(SAVED1->op,SAVED1->u);
-    GNULLARY(SAVED2->op,SAVED2->u);
+    GBINARY(SAVED1->op, SAVED1->u);
+    GNULLARY(SAVED2->op, SAVED2->u);
     POP(dump);
 }
 
-PRIVATE void rollup_()
+PRIVATE void rollup_(void)
 {
     THREEPARAMS("rollup");
     SAVESTACK;
-    GTERNARY(SAVED1->op,SAVED1->u);
-    GNULLARY(SAVED3->op,SAVED3->u);
-    GNULLARY(SAVED2->op,SAVED2->u);
+    GTERNARY(SAVED1->op, SAVED1->u);
+    GNULLARY(SAVED3->op, SAVED3->u);
+    GNULLARY(SAVED2->op, SAVED2->u);
     POP(dump);
 }
 
-PRIVATE void rolldown_()
+PRIVATE void rolldown_(void)
 {
     THREEPARAMS("rolldown");
     SAVESTACK;
-    GTERNARY(SAVED2->op,SAVED2->u);
-    GNULLARY(SAVED1->op,SAVED1->u);
-    GNULLARY(SAVED3->op,SAVED3->u);
+    GTERNARY(SAVED2->op, SAVED2->u);
+    GNULLARY(SAVED1->op, SAVED1->u);
+    GNULLARY(SAVED3->op, SAVED3->u);
     POP(dump);
 }
 
-PRIVATE void rotate_()
+PRIVATE void rotate_(void)
 {
     THREEPARAMS("rotate");
     SAVESTACK;
-    GTERNARY(SAVED1->op,SAVED1->u);
-    GNULLARY(SAVED2->op,SAVED2->u);
-    GNULLARY(SAVED3->op,SAVED3->u);
+    GTERNARY(SAVED1->op, SAVED1->u);
+    GNULLARY(SAVED2->op, SAVED2->u);
+    GNULLARY(SAVED3->op, SAVED3->u);
     POP(dump);
 }
 
-PRIVATE void dup_()
+PRIVATE void dup_(void)
 {
     ONEPARAM("dup");
-    GNULLARY(stk->op,stk->u);
+    GNULLARY(stck->op, stck->u);
 }
 
-#define DIPPED(PROCEDURE,NAME,PARAMCOUNT,ARGUMENT)              \
-PRIVATE void PROCEDURE()                                        \
-{   PARAMCOUNT(NAME);                                           \
-    SAVESTACK;                                                  \
-    POP(stk);                                                   \
-    ARGUMENT();                                                 \
-    GNULLARY(SAVED1->op,SAVED1->u);                             \
-    POP(dump);                                                  \
-}
+#define DIPPED(PROCEDURE, NAME, PARAMCOUNT, ARGUMENT)                          \
+    PRIVATE void PROCEDURE(void)                                               \
+    {                                                                          \
+        PARAMCOUNT(NAME);                                                      \
+        SAVESTACK;                                                             \
+        POP(stck);                                                             \
+        ARGUMENT();                                                            \
+        GNULLARY(SAVED1->op, SAVED1->u);                                       \
+        POP(dump);                                                             \
+    }
 
-DIPPED(popd_,"popd",TWOPARAMS,pop_)
-DIPPED(dupd_,"dupd",TWOPARAMS,dup_)
-DIPPED(swapd_,"swapd",THREEPARAMS,swap_)
-DIPPED(rolldownd_,"rolldownd",FOURPARAMS,rolldown_)
-DIPPED(rollupd_,"rollupd",FOURPARAMS,rollup_)
-DIPPED(rotated_,"rotated",FOURPARAMS,rotate_)
+DIPPED(popd_, "popd", TWOPARAMS, pop_)
+DIPPED(dupd_, "dupd", TWOPARAMS, dup_)
+DIPPED(swapd_, "swapd", THREEPARAMS, swap_)
+DIPPED(rolldownd_, "rolldownd", FOURPARAMS, rolldown_)
+DIPPED(rollupd_, "rollupd", FOURPARAMS, rollup_)
+DIPPED(rotated_, "rotated", FOURPARAMS, rotate_)
 
 /* - - -   BOOLEAN   - - - */
 
-#define ANDORXOR(PROCEDURE,NAME,OPER1,OPER2)			\
-PRIVATE void PROCEDURE()					\
-{   TWOPARAMS(NAME);						\
-    SAME2TYPES(NAME);						\
-    switch (stk->next->op)					\
-      { case SET_:						\
-	    BINARY(SET_NEWNODE,(long)(stk->next->u.set OPER1 stk->u.set)); \
-	    return;						\
-	case BOOLEAN_: case CHAR_: case INTEGER_: case LIST_:	\
-	    BINARY(BOOLEAN_NEWNODE,(long)(stk->next->u.num OPER2 stk->u.num)); \
-	    return;						\
-	default:						\
-	    BADDATA(NAME); } }
-
-ANDORXOR(and_,"and",&,&&)
-ANDORXOR(or_,"or",|,||)
-ANDORXOR(xor_,"xor",^,!=)
+#define ANDORXOR(PROCEDURE, NAME, OPER1, OPER2)                                \
+    PRIVATE void PROCEDURE(void)                                               \
+    {                                                                          \
+        TWOPARAMS(NAME);                                                       \
+        SAME2TYPES(NAME);                                                      \
+        switch (stck->next->op) {                                              \
+        case SET_:                                                             \
+            BINARY(                                                            \
+                SET_NEWNODE, (long_t)(stck->next->u.set OPER1 stck->u.set));   \
+            return;                                                            \
+        case BOOLEAN_:                                                         \
+        case CHAR_:                                                            \
+        case INTEGER_:                                                         \
+        case LIST_:                                                            \
+            BINARY(BOOLEAN_NEWNODE,                                            \
+                (long_t)(stck->next->u.num OPER2 stck->u.num));                \
+            return;                                                            \
+        default:                                                               \
+            BADDATA(NAME);                                                     \
+        }                                                                      \
+    }
+ANDORXOR(and_, "and", &, &&)
+ANDORXOR(or_, "or", |, ||)
+ANDORXOR(xor_, "xor", ^, !=)
 
 /* - - -   INTEGER   - - - */
 
-#define ORDCHR(PROCEDURE,NAME,RESULTTYP)			\
-PRIVATE void PROCEDURE()					\
-{   ONEPARAM(NAME);						\
-    NUMERICTYPE(NAME);						\
-    UNARY(RESULTTYP,stk->u.num);				\
-}
+#define ORDCHR(PROCEDURE, NAME, RESULTTYP)                                     \
+    PRIVATE void PROCEDURE(void)                                               \
+    {                                                                          \
+        ONEPARAM(NAME);                                                        \
+        NUMERICTYPE(NAME);                                                     \
+        UNARY(RESULTTYP, stck->u.num);                                         \
+    }
+ORDCHR(ord_, "ord", INTEGER_NEWNODE)
+ORDCHR(chr_, "chr", CHAR_NEWNODE)
 
-ORDCHR(ord_,"ord",INTEGER_NEWNODE)
-ORDCHR(chr_,"chr",CHAR_NEWNODE)
-
-PRIVATE void abs_()
+PRIVATE void abs_(void)
 {
     ONEPARAM("abs");
-/* start new */
+    /* start new */
     FLOAT("abs");
-    if (stk->op == INTEGER_)
-      { if (stk->u.num >= 0) return;
-        else { UNARY(INTEGER_NEWNODE, - stk->u.num); return; } }
-/* end new */
+    if (stck->op == INTEGER_) {
+        if (stck->u.num < 0)
+            UNARY(INTEGER_NEWNODE, -stck->u.num);
+        return;
+    }
+    /* end new */
     FLOAT_U(fabs);
+#if 0
     INTEGER("abs");
-    if (stk->u.num < 0) UNARY(INTEGER_NEWNODE, - stk->u.num);
+    if (stck->u.num < 0) UNARY(INTEGER_NEWNODE, - stck->u.num);
+#endif
 }
 
 PRIVATE double fsgn(double f)
-{   if (f < 0) return -1.0;
-    else if (f > 0) return 1.0;
-    else return 0.0;
+{
+    if (f < 0)
+        return -1.0;
+    if (f > 0)
+        return 1.0;
+    return 0.0;
 }
 
-PRIVATE void sign_()
+PRIVATE void sign_(void)
 {
     ONEPARAM("sign");
-/* start new */
+    /* start new */
     FLOAT("sign");
-    if (stk->op == INTEGER_)
-      { long i = stk->u.num;
-	if (i == 0 || i == 1) return;
-	else { UNARY(INTEGER_NEWNODE, i > 0 ? 1 : -1); return; } }
-/* end new */
+    if (stck->op == INTEGER_) {
+        if (stck->u.num != 0 && stck->u.num != 1)
+            UNARY(INTEGER_NEWNODE, stck->u.num > 0 ? 1 : -1);
+        return;
+    }
+    /* end new */
     FLOAT_U(fsgn);
+#if 0
     INTEGER("sign");
-    if (stk->u.num < 0) UNARY(INTEGER_NEWNODE,-1L);
-    else if (stk->u.num > 0) UNARY(INTEGER_NEWNODE,1L);
+    if (stck->u.num < 0) UNARY(INTEGER_NEWNODE, -1L);
+    else if (stck->u.num > 0) UNARY(INTEGER_NEWNODE, 1L);
+#endif
 }
 
-PRIVATE void neg_()
+PRIVATE void neg_(void)
 {
     ONEPARAM("neg");
+    /* start new */
+    FLOAT("neg");
+    if (stck->op == INTEGER_) {
+        if (stck->u.num)
+            UNARY(INTEGER_NEWNODE, -stck->u.num);
+        return;
+    }
+    /* end new */
     FLOAT_U(-);
+#if 0
     INTEGER("neg");
-    UNARY(INTEGER_NEWNODE, -stk->u.num);
+    UNARY(INTEGER_NEWNODE, -stck->u.num);
+#endif
 }
 
 /* probably no longer needed:
-#define MULDIV(PROCEDURE,NAME,OPER,CHECK)			\
-PRIVATE void PROCEDURE()					\
+#define MULDIV(PROCEDURE, NAME, OPER, CHECK)			\
+PRIVATE void PROCEDURE(void)					\
 {   TWOPARAMS(NAME);						\
     FLOAT_I(OPER);						\
     INTEGERS2(NAME);						\
     CHECK;							\
-    BINARY(INTEGER_NEWNODE,stk->next->u.num OPER stk->u.num); }
-
-MULDIV(mul_,"*",*,)
-MULDIV(divide_,"/",/,CHECKZERO("/"))
+    BINARY(INTEGER_NEWNODE, stck->next->u.num OPER stck->u.num); }
+MULDIV(mul_, "*", *, )
+MULDIV(divide_, "/", /, CHECKZERO("/"))
 */
-PRIVATE void mul_()
+
+PRIVATE void mul_(void)
 {
     TWOPARAMS("*");
     FLOAT_I(*);
     INTEGERS2("*");
-    BINARY(INTEGER_NEWNODE,stk->next->u.num * stk->u.num);
+    BINARY(INTEGER_NEWNODE, stck->next->u.num * stck->u.num);
 }
 
-PRIVATE void divide_()
+PRIVATE void divide_(void)
 {
+#ifdef RUNTIME_CHECKS
     TWOPARAMS("/");
-    if ((stk->op == FLOAT_   && stk->u.dbl == 0.0) ||
-	(stk->op == INTEGER_ && stk->u.num == 0))
-      execerror("non-zero divisor","/");
+    if ((stck->op == FLOAT_ && stck->u.dbl == 0.0)
+        || (stck->op == INTEGER_ && stck->u.num == 0))
+        execerror("non-zero divisor", "/");
+#endif
     FLOAT_I(/);
     INTEGERS2("/");
-    BINARY(INTEGER_NEWNODE,stk->next->u.num / stk->u.num);
+    BINARY(INTEGER_NEWNODE, stck->next->u.num / stck->u.num);
 }
 
-PRIVATE void rem_()
+PRIVATE void rem_(void)
 {
     TWOPARAMS("rem");
     FLOAT_P(fmod);
     INTEGERS2("rem");
     CHECKZERO("rem");
-    BINARY(INTEGER_NEWNODE,stk->next->u.num % stk->u.num); }
+    BINARY(INTEGER_NEWNODE, stck->next->u.num % stck->u.num);
+}
 
-
-PRIVATE void div_()
+PRIVATE void div_(void)
 {
+#ifdef BIT_32
     ldiv_t result;
+#else
+    lldiv_t result;
+#endif
     TWOPARAMS("div");
     INTEGERS2("div");
     CHECKZERO("div");
-    result = ldiv(stk->next->u.num, stk->u.num);
+#ifdef BIT_32
+    result = ldiv(stck->next->u.num, stck->u.num);
+#else
+    result = lldiv(stck->next->u.num, stck->u.num);
+#endif
     BINARY(INTEGER_NEWNODE, result.quot);
-    NULLARY(INTEGER_NEWNODE, result.rem); }
+    NULLARY(INTEGER_NEWNODE, result.rem);
+}
 
-PRIVATE void strtol_()
-{   TWOPARAMS("strtol");
+PRIVATE void strtol_(void)
+{
+    TWOPARAMS("strtol");
     SAVESTACK;
     INTEGER("strtol");
-    POP(stk);
+    POP(stck);
     STRING("strtol");
+#ifdef BIT_32
     UNARY(INTEGER_NEWNODE, strtol(SAVED2->u.str, NULL, SAVED1->u.num));
-    POP(dump); }
+#else
+    UNARY(INTEGER_NEWNODE, strtoll(SAVED2->u.str, NULL, SAVED1->u.num));
+#endif
+    POP(dump);
+}
 
-PRIVATE void strtod_()
+PRIVATE void strtod_(void)
 {
     ONEPARAM("strtod");
     STRING("strtod");
-    UNARY(FLOAT_NEWNODE, strtod(stk->u.str, NULL)); }
+    UNARY(FLOAT_NEWNODE, strtod(stck->u.str, NULL));
+}
 
-PRIVATE void format_()
-{   int width, prec;
-    char spec;
-    char format[7];
-    char *result;
-
+PRIVATE void format_(void)
+{
+    int width, prec;
+    char spec, format[7], *result;
+#ifdef USE_SNPRINTF
+    int leng;
+#endif
     FOURPARAMS("format");
     INTEGER("format");
     INTEGER2("format");
-    prec = stk->u.num;
-    POP(stk);
-    width = stk->u.num;
-    POP(stk);
+    prec = stck->u.num;
+    POP(stck);
+    width = stck->u.num;
+    POP(stck);
     CHARACTER("format");
-    spec = stk->u.num;
-    POP(stk);
+    spec = (char)stck->u.num;
+    POP(stck);
+#ifdef RUNTIME_CHECKS
     if (!strchr("dioxX", spec))
-	execerror("one of: d i o x X", "format");
+        execerror("one of: d i o x X", "format");
+#endif
     strcpy(format, "%*.*ld");
     format[5] = spec;
-    result = malloc(INPLINEMAX);		/* should be sufficient */
+#ifdef USE_SNPRINTF
+    leng = snprintf(0, 0, format, width, prec, stck->u.num) + 1;
+    result = malloc(leng + 1);
+#else
+    result = malloc(INPLINEMAX); /* should be sufficient */
+#endif
     NUMERICTYPE("format");
-    sprintf(result, format, width, prec, stk->u.num);
+#ifdef USE_SNPRINTF
+    snprintf(result, leng, format, width, prec, stck->u.num);
+#else
+    sprintf(result, format, width, prec, stck->u.num);
+#endif
     UNARY(STRING_NEWNODE, result);
-    return; }
+}
 
-PRIVATE void formatf_()
-{   int width, prec;
-    char spec;
-    char format[7];
-    char *result;
-
-    FOURPARAMS("format");
-    INTEGER("format");
-    INTEGER2("format");
-    prec = stk->u.num;
-    POP(stk);
-    width = stk->u.num;
-    POP(stk);
-    CHARACTER("format");
-    spec = stk->u.num;
-    POP(stk);
+PRIVATE void formatf_(void)
+{
+    int width, prec;
+    char spec, format[7], *result;
+#ifdef USE_SNPRINTF
+    int leng;
+#endif
+    FOURPARAMS("formatf");
+    INTEGER("formatf");
+    INTEGER2("formatf");
+    prec = stck->u.num;
+    POP(stck);
+    width = stck->u.num;
+    POP(stck);
+    CHARACTER("formatf");
+    spec = (char)stck->u.num;
+    POP(stck);
+#ifdef RUNTIME_CHECKS
     if (!strchr("eEfgG", spec))
-	execerror("one of: e E f g G", "format");
+        execerror("one of: e E f g G", "formatf");
+#endif
     strcpy(format, "%*.*lg");
     format[5] = spec;
-    result = malloc(INPLINEMAX);		/* should be sufficient */
-    FLOAT("format");
-    sprintf(result, format, width, prec, stk->u.dbl);
+#ifdef USE_SNPRINTF
+    leng = snprintf(0, 0, format, width, prec, stck->u.num) + 1;
+    result = malloc(leng + 1);
+#else
+    result = malloc(INPLINEMAX); /* should be sufficient */
+#endif
+    FLOAT("formatf");
+#ifdef USE_SNPRINTF
+    snprintf(result, leng, format, width, prec, stck->u.dbl);
+#else
+    sprintf(result, format, width, prec, stck->u.dbl);
+#endif
     UNARY(STRING_NEWNODE, result);
-    return; }
+}
 
 /* - - -   TIME   - - - */
 
-#define UNMKTIME(PROCEDURE,NAME,FUNC)				\
-PRIVATE void PROCEDURE()					\
-{   struct tm *t;						\
-    long wday;							\
-    time_t timval;						\
-    ONEPARAM(NAME);						\
-    INTEGER(NAME);						\
-    timval = stk->u.num;					\
-    t = FUNC(&timval);						\
-    wday = t->tm_wday;						\
-    if (wday == 0) wday = 7;					\
-    dump1 = LIST_NEWNODE(NULL, dump1);				\
-    DMP1 = INTEGER_NEWNODE(wday, DMP1);				\
-    DMP1 = INTEGER_NEWNODE((long)t->tm_yday, DMP1);		\
-    DMP1 = BOOLEAN_NEWNODE((long)t->tm_isdst, DMP1);		\
-    DMP1 = INTEGER_NEWNODE((long)t->tm_sec, DMP1);		\
-    DMP1 = INTEGER_NEWNODE((long)t->tm_min, DMP1);		\
-    DMP1 = INTEGER_NEWNODE((long)t->tm_hour, DMP1);		\
-    DMP1 = INTEGER_NEWNODE((long)t->tm_mday, DMP1);		\
-    DMP1 = INTEGER_NEWNODE((long)(t->tm_mon + 1), DMP1);	\
-    DMP1 = INTEGER_NEWNODE((long)(t->tm_year + 1900), DMP1);	\
-    UNARY(LIST_NEWNODE, DMP1);					\
-    POP(dump1);							\
-    return; }
+#ifndef USE_TIME_REC
+void localtime_r(time_t* t, struct tm* tm) { *tm = *localtime(t); }
 
-UNMKTIME(localtime_,"localtime",localtime)
-UNMKTIME(gmtime_,"gmtime",gmtime)
+void gmtime_r(time_t* t, struct tm* tm) { *tm = *gmtime(t); }
+#endif
 
-PRIVATE void decode_time(struct tm *t)
-{   Node *p;
-    t->tm_year = t->tm_mon = t->tm_mday =
-	t->tm_hour = t->tm_min = t->tm_sec = t->tm_isdst =
-	t->tm_yday = t->tm_wday = 0;
-    p = stk->u.lis;
-    if (p && p->op == INTEGER_)
-	{ t->tm_year = p->u.num - 1900; POP(p); }
-    if (p && p->op == INTEGER_)
-	{ t->tm_mon = p->u.num - 1; POP(p); }
-    if (p && p->op == INTEGER_)
-	{ t->tm_mday = p->u.num; POP(p); }
-    if (p && p->op == INTEGER_)
-	{ t->tm_hour = p->u.num; POP(p); }
-    if (p && p->op == INTEGER_)
-	{ t->tm_min = p->u.num; POP(p); }
-    if (p && p->op == INTEGER_)
-	{ t->tm_sec = p->u.num; POP(p); }
-    if (p && p->op == BOOLEAN_)
-	{ t->tm_isdst = p->u.num; POP(p); }
-    if (p && p->op == INTEGER_)
-	{ t->tm_yday = p->u.num; POP(p); }
-    if (p && p->op == INTEGER_)
-	{ t->tm_wday = p->u.num; POP(p); }
-    return; }
+#define UNMKTIME(PROCEDURE, NAME, FUNC)                                        \
+    PRIVATE void PROCEDURE(void)                                               \
+    {                                                                          \
+        struct tm t;                                                           \
+        long_t wday;                                                           \
+        time_t timval;                                                         \
+        ONEPARAM(NAME);                                                        \
+        INTEGER(NAME);                                                         \
+        timval = stck->u.num;                                                  \
+        FUNC(&timval, &t);                                                     \
+        wday = t.tm_wday;                                                      \
+        if (wday == 0)                                                         \
+            wday = 7;                                                          \
+        dump1 = LIST_NEWNODE(NULL, dump1);                                     \
+        DMP1 = INTEGER_NEWNODE(wday, DMP1);                                    \
+        DMP1 = INTEGER_NEWNODE((long_t)t.tm_yday, DMP1);                       \
+        DMP1 = BOOLEAN_NEWNODE((long_t)t.tm_isdst, DMP1);                      \
+        DMP1 = INTEGER_NEWNODE((long_t)t.tm_sec, DMP1);                        \
+        DMP1 = INTEGER_NEWNODE((long_t)t.tm_min, DMP1);                        \
+        DMP1 = INTEGER_NEWNODE((long_t)t.tm_hour, DMP1);                       \
+        DMP1 = INTEGER_NEWNODE((long_t)t.tm_mday, DMP1);                       \
+        DMP1 = INTEGER_NEWNODE((long_t)(t.tm_mon + 1), DMP1);                  \
+        DMP1 = INTEGER_NEWNODE((long_t)(t.tm_year + 1900), DMP1);              \
+        UNARY(LIST_NEWNODE, DMP1);                                             \
+        POP(dump1);                                                            \
+    }
+UNMKTIME(localtime_, "localtime", localtime_r)
+UNMKTIME(gmtime_, "gmtime", gmtime_r)
 
-PRIVATE void mktime_()
-{   struct tm t;
+PRIVATE void decode_time(struct tm* t)
+{
+    Node* p;
+    t->tm_year = t->tm_mon = t->tm_mday = t->tm_hour = t->tm_min = t->tm_sec
+        = t->tm_isdst = t->tm_yday = t->tm_wday = 0;
+    p = stck->u.lis;
+    if (p && p->op == INTEGER_) {
+        t->tm_year = p->u.num - 1900;
+        POP(p);
+    }
+    if (p && p->op == INTEGER_) {
+        t->tm_mon = p->u.num - 1;
+        POP(p);
+    }
+    if (p && p->op == INTEGER_) {
+        t->tm_mday = p->u.num;
+        POP(p);
+    }
+    if (p && p->op == INTEGER_) {
+        t->tm_hour = p->u.num;
+        POP(p);
+    }
+    if (p && p->op == INTEGER_) {
+        t->tm_min = p->u.num;
+        POP(p);
+    }
+    if (p && p->op == INTEGER_) {
+        t->tm_sec = p->u.num;
+        POP(p);
+    }
+    if (p && p->op == BOOLEAN_) {
+        t->tm_isdst = p->u.num;
+        POP(p);
+    }
+    if (p && p->op == INTEGER_) {
+        t->tm_yday = p->u.num;
+        POP(p);
+    }
+    if (p && p->op == INTEGER_) {
+        t->tm_wday = p->u.num;
+        POP(p);
+    }
+}
+
+PRIVATE void mktime_(void)
+{
+    struct tm t;
+
     ONEPARAM("mktime");
     LIST("mktime");
     decode_time(&t);
-    UNARY(INTEGER_NEWNODE, (long)mktime(&t));
-    return; }
+    UNARY(INTEGER_NEWNODE, (long_t)mktime(&t));
+}
 
-PRIVATE void strftime_()
-{   struct tm t;
-    char *fmt;
-    char *result;
+PRIVATE void strftime_(void)
+{
+    struct tm t;
+    char *fmt, *result;
     size_t length;
+
     TWOPARAMS("strftime");
     STRING("strftime");
-    fmt = stk->u.str;
-    POP(stk);
+    fmt = stck->u.str;
+    POP(stck);
     LIST("strftime");
     decode_time(&t);
-    length = strlen(fmt) * 3 + 1;		/* should be sufficient */
+    length = INPLINEMAX;
     result = malloc(length);
     strftime(result, length, fmt, &t);
     UNARY(STRING_NEWNODE, result);
-    return; }
+}
 
 /* - - -   FLOAT   - - - */
 
-#define UFLOAT(PROCEDURE,NAME,FUNC)				\
-PRIVATE void PROCEDURE()					\
-{   ONEPARAM(NAME);						\
-    FLOAT(NAME);						\
-    UNARY(FLOAT_NEWNODE, FUNC(FLOATVAL));			\
-    return; }
-UFLOAT(acos_,"acos",acos)
-UFLOAT(asin_,"asin",asin)
-UFLOAT(atan_,"atan",atan)
-UFLOAT(ceil_,"ceil",ceil)
-UFLOAT(cos_,"cos",cos)
-UFLOAT(cosh_,"cosh",cosh)
-UFLOAT(exp_,"exp",exp)
-UFLOAT(floor_,"floor",floor)
-UFLOAT(log_,"log",log)
-UFLOAT(log10_,"log10",log10)
-UFLOAT(sin_,"sin",sin)
-UFLOAT(sinh_,"sinh",sinh)
-UFLOAT(sqrt_,"sqrt",sqrt)
-UFLOAT(tan_,"tan",tan)
-UFLOAT(tanh_,"tanh",tanh)
+#define UFLOAT(PROCEDURE, NAME, FUNC)                                          \
+    PRIVATE void PROCEDURE(void)                                               \
+    {                                                                          \
+        ONEPARAM(NAME);                                                        \
+        FLOAT(NAME);                                                           \
+        UNARY(FLOAT_NEWNODE, FUNC(FLOATVAL));                                  \
+    }
+UFLOAT(acos_, "acos", acos)
+UFLOAT(asin_, "asin", asin)
+UFLOAT(atan_, "atan", atan)
+UFLOAT(ceil_, "ceil", ceil)
+UFLOAT(cos_, "cos", cos)
+UFLOAT(cosh_, "cosh", cosh)
+UFLOAT(exp_, "exp", exp)
+UFLOAT(floor_, "floor", floor)
+UFLOAT(log_, "log", log)
+UFLOAT(log10_, "log10", log10)
+UFLOAT(sin_, "sin", sin)
+UFLOAT(sinh_, "sinh", sinh)
+UFLOAT(sqrt_, "sqrt", sqrt)
+UFLOAT(tan_, "tan", tan)
+UFLOAT(tanh_, "tanh", tanh)
 
-#define BFLOAT(PROCEDURE,NAME,FUNC)				\
-PRIVATE void PROCEDURE()					\
-{   TWOPARAMS(NAME);						\
-    FLOAT2(NAME);						\
-    BINARY(FLOAT_NEWNODE, FUNC(FLOATVAL2, FLOATVAL));		\
-    return; }
-BFLOAT(atan2_,"atan2",atan2)
-BFLOAT(pow_,"pow",pow)
+#define BFLOAT(PROCEDURE, NAME, FUNC)                                          \
+    PRIVATE void PROCEDURE(void)                                               \
+    {                                                                          \
+        TWOPARAMS(NAME);                                                       \
+        FLOAT2(NAME);                                                          \
+        BINARY(FLOAT_NEWNODE, FUNC(FLOATVAL2, FLOATVAL));                      \
+    }
+BFLOAT(atan2_, "atan2", atan2)
+BFLOAT(pow_, "pow", pow)
 
-PRIVATE void frexp_()
-{   int exp;
+PRIVATE void frexp_(void)
+{
+    int exp;
+
     ONEPARAM("frexp");
     FLOAT("frexp");
     UNARY(FLOAT_NEWNODE, frexp(FLOATVAL, &exp));
-    NULLARY(INTEGER_NEWNODE, (long)exp);
-    return; }
+    NULLARY(INTEGER_NEWNODE, (long_t)exp);
+}
 
-PRIVATE void modf_()
-{   double exp;
-    ONEPARAM("frexp");
-    FLOAT("frexp");
+PRIVATE void modf_(void)
+{
+    double exp;
+
+    ONEPARAM("modf");
+    FLOAT("modf");
     UNARY(FLOAT_NEWNODE, modf(FLOATVAL, &exp));
     NULLARY(FLOAT_NEWNODE, exp);
-    return; }
+}
 
-PRIVATE void ldexp_()
-{   long exp;
+PRIVATE void ldexp_(void)
+{
+    int exp;
+
     TWOPARAMS("ldexp");
     INTEGER("ldexp");
-    exp = stk->u.num;
-    POP(stk);
+    exp = stck->u.num;
+    POP(stck);
     FLOAT("ldexp");
-    UNARY(FLOAT_NEWNODE, ldexp(FLOATVAL, (int)exp));
-    return; }
+    UNARY(FLOAT_NEWNODE, ldexp(FLOATVAL, exp));
+}
 
-PRIVATE void trunc_()
+PRIVATE void trunc_(void)
 {
     ONEPARAM("trunc");
     FLOAT("trunc");
-    UNARY(INTEGER_NEWNODE, (long)FLOATVAL);
+    UNARY(INTEGER_NEWNODE, (long_t)FLOATVAL);
 }
 
 /* - - -   NUMERIC   - - - */
 
-#define PREDSUCC(PROCEDURE,NAME,OPER)				\
-PRIVATE void PROCEDURE()					\
-{   ONEPARAM(NAME);						\
-    NUMERICTYPE(NAME);						\
-    if (stk->op == CHAR_)					\
-	UNARY(CHAR_NEWNODE, stk->u.num OPER 1);			\
-    else UNARY(INTEGER_NEWNODE, stk->u.num OPER 1); }
+#define PREDSUCC(PROCEDURE, NAME, OPER)                                        \
+    PRIVATE void PROCEDURE(void)                                               \
+    {                                                                          \
+        ONEPARAM(NAME);                                                        \
+        NUMERICTYPE(NAME);                                                     \
+        if (stck->op == CHAR_)                                                 \
+            UNARY(CHAR_NEWNODE, stck->u.num OPER 1);                           \
+        else                                                                   \
+            UNARY(INTEGER_NEWNODE, stck->u.num OPER 1);                        \
+    }
+PREDSUCC(pred_, "pred", -)
+PREDSUCC(succ_, "succ", +)
 
-PREDSUCC(pred_,"pred",-)
-PREDSUCC(succ_,"succ",+)
+#define PLUSMINUS(PROCEDURE, NAME, OPER)                                       \
+    PRIVATE void PROCEDURE(void)                                               \
+    {                                                                          \
+        TWOPARAMS(NAME);                                                       \
+        FLOAT_I(OPER);                                                         \
+        INTEGER(NAME);                                                         \
+        NUMERIC2(NAME);                                                        \
+        if (stck->next->op == CHAR_)                                           \
+            BINARY(CHAR_NEWNODE, stck->next->u.num OPER stck->u.num);          \
+        else                                                                   \
+            BINARY(INTEGER_NEWNODE, stck->next->u.num OPER stck->u.num);       \
+    }
+PLUSMINUS(plus_, "+", +)
+PLUSMINUS(minus_, "-", -)
 
-#define PLUSMINUS(PROCEDURE,NAME,OPER)				\
-PRIVATE void PROCEDURE()					\
-{   TWOPARAMS(NAME);						\
-    FLOAT_I(OPER);						\
-    INTEGER(NAME);						\
-    NUMERIC2(NAME);						\
-    if (stk->next->op == CHAR_)					\
-	BINARY(CHAR_NEWNODE, stk->next->u.num OPER stk->u.num);	\
-    else BINARY(INTEGER_NEWNODE, stk->next->u.num OPER stk->u.num); }
+#define MAXMIN(PROCEDURE, NAME, OPER)                                          \
+    PRIVATE void PROCEDURE(void)                                               \
+    {                                                                          \
+        TWOPARAMS(NAME);                                                       \
+        if (FLOATABLE2) {                                                      \
+            BINARY(FLOAT_NEWNODE,                                              \
+                FLOATVAL OPER FLOATVAL2 ? FLOATVAL2 : FLOATVAL);               \
+            return;                                                            \
+        }                                                                      \
+        SAME2TYPES(NAME);                                                      \
+        NUMERICTYPE(NAME);                                                     \
+        if (stck->op == CHAR_)                                                 \
+            BINARY(CHAR_NEWNODE, stck->u.num OPER stck->next->u.num            \
+                    ? stck->next->u.num                                        \
+                    : stck->u.num);                                            \
+        else                                                                   \
+            BINARY(INTEGER_NEWNODE, stck->u.num OPER stck->next->u.num         \
+                    ? stck->next->u.num                                        \
+                    : stck->u.num);                                            \
+    }
+MAXMIN(max_, "max", <)
+MAXMIN(min_, "min", >)
 
-PLUSMINUS(plus_,"+",+)
-PLUSMINUS(minus_,"-",-)
+#if defined(CORRECT_INHAS_COMPARE) || defined(CORRECT_TYPE_COMPARE)            \
+    || defined(CORRECT_CASE_COMPARE)
+PRIVATE double Compare(Node* first, Node* second, int* error)
+{
+    *error = 0;
+    switch (first->op) {
+    case USR_:
+        switch (second->op) {
+        case USR_:
+            return strcmp(first->u.ent->name, second->u.ent->name);
+        case ANON_FUNCT_:
+        case BOOLEAN_:
+        case CHAR_:
+        case INTEGER_:
+        case SET_:
+            break;
+        case STRING_:
+            return strcmp(first->u.ent->name, second->u.str);
+        case LIST_:
+        case FLOAT_:
+        case FILE_:
+            break;
+        default:
+            return strcmp(first->u.ent->name, opername(second->op));
+        }
+        break;
+    case ANON_FUNCT_:
+        switch (second->op) {
+        case USR_:
+            break;
+        case ANON_FUNCT_:
+            return (size_t)first->u.proc - (size_t)second->u.proc;
+        case BOOLEAN_:
+        case CHAR_:
+        case INTEGER_:
+        case SET_:
+        case STRING_:
+        case LIST_:
+        case FLOAT_:
+        case FILE_:
+        default:
+            break;
+        }
+        break;
+    case BOOLEAN_:
+        switch (second->op) {
+        case USR_:
+        case ANON_FUNCT_:
+            break;
+        case BOOLEAN_:
+        case CHAR_:
+        case INTEGER_:
+            return first->u.num - second->u.num;
+        case SET_:
+        case STRING_:
+        case LIST_:
+            break;
+        case FLOAT_:
+            return first->u.num - second->u.dbl;
+        case FILE_:
+        default:
+            break;
+        }
+        break;
+    case CHAR_:
+        switch (second->op) {
+        case USR_:
+        case ANON_FUNCT_:
+            break;
+        case BOOLEAN_:
+        case CHAR_:
+        case INTEGER_:
+            return first->u.num - second->u.num;
+        case SET_:
+        case STRING_:
+        case LIST_:
+            break;
+        case FLOAT_:
+            return first->u.num - second->u.dbl;
+        case FILE_:
+        default:
+            break;
+        }
+        break;
+    case INTEGER_:
+        switch (second->op) {
+        case USR_:
+        case ANON_FUNCT_:
+            break;
+        case BOOLEAN_:
+        case CHAR_:
+        case INTEGER_:
+            return first->u.num - second->u.num;
+        case SET_:
+        case STRING_:
+        case LIST_:
+            break;
+        case FLOAT_:
+            return first->u.num - second->u.dbl;
+        case FILE_:
+        default:
+            break;
+        }
+        break;
+    case SET_:
+        switch (second->op) {
+        case USR_:
+        case ANON_FUNCT_:
+        case BOOLEAN_:
+        case CHAR_:
+        case INTEGER_:
+            break;
+        case SET_:
+            return first->u.set - second->u.set;
+        case STRING_:
+        case LIST_:
+        case FLOAT_:
+        case FILE_:
+        default:
+            break;
+        }
+        break;
+    case STRING_:
+        switch (second->op) {
+        case USR_:
+            return strcmp(first->u.str, second->u.ent->name);
+        case ANON_FUNCT_:
+        case BOOLEAN_:
+        case CHAR_:
+        case INTEGER_:
+        case SET_:
+            break;
+        case STRING_:
+            return strcmp(first->u.str, second->u.str);
+        case LIST_:
+        case FLOAT_:
+        case FILE_:
+            break;
+        default:
+            return strcmp(first->u.str, opername(second->op));
+        }
+        break;
+    case LIST_:
+        switch (second->op) {
+        case USR_:
+        case ANON_FUNCT_:
+        case BOOLEAN_:
+        case CHAR_:
+        case INTEGER_:
+        case SET_:
+        case STRING_:
+        case LIST_:
+        case FLOAT_:
+        case FILE_:
+        default:
+            break;
+        }
+        break;
+    case FLOAT_:
+        switch (second->op) {
+        case USR_:
+        case ANON_FUNCT_:
+            break;
+        case BOOLEAN_:
+        case CHAR_:
+        case INTEGER_:
+            return first->u.dbl - second->u.num;
+        case SET_:
+        case STRING_:
+        case LIST_:
+            break;
+        case FLOAT_:
+            return first->u.dbl - second->u.dbl;
+        case FILE_:
+        default:
+            break;
+        }
+        break;
+    case FILE_:
+        switch (second->op) {
+        case USR_:
+        case ANON_FUNCT_:
+        case BOOLEAN_:
+        case CHAR_:
+        case INTEGER_:
+        case SET_:
+        case STRING_:
+        case LIST_:
+        case FLOAT_:
+            break;
+        case FILE_:
+            return first->u.fil - second->u.fil;
+        default:
+            break;
+        }
+        break;
+    default:
+        switch (second->op) {
+        case USR_:
+            return strcmp(opername(first->op), second->u.ent->name);
+        case ANON_FUNCT_:
+        case BOOLEAN_:
+        case CHAR_:
+        case INTEGER_:
+        case SET_:
+            break;
+        case STRING_:
+            return strcmp(opername(first->op), second->u.str);
+        case LIST_:
+        case FLOAT_:
+        case FILE_:
+            break;
+        default:
+            return strcmp(opername(first->op), opername(second->op));
+        }
+        break;
+    }
+    *error = 1;
+    return 0;
+}
+#endif
 
-#define MAXMIN(PROCEDURE,NAME,OPER)				\
-PRIVATE void PROCEDURE()					\
-{   TWOPARAMS(NAME);						\
-    if (FLOATABLE2)						\
-      { BINARY(FLOAT_NEWNODE,					\
-	    FLOATVAL OPER FLOATVAL2 ?				\
-	    FLOATVAL2 : FLOATVAL);				\
-	return; }						\
-    SAME2TYPES(NAME);						\
-    NUMERICTYPE(NAME);						\
-    if (stk->op == CHAR_)					\
-	BINARY(CHAR_NEWNODE,					\
-	    stk->u.num OPER stk->next->u.num ?			\
-	    stk->next->u.num : stk->u.num);			\
-    else BINARY(INTEGER_NEWNODE,				\
-	    stk->u.num OPER stk->next->u.num ?			\
-	    stk->next->u.num : stk->u.num); }
+#ifdef CORRECT_TYPE_COMPARE
+#define COMPREL(PROCEDURE, NAME, CONSTRUCTOR, OPR, SETCMP)                     \
+    PRIVATE void PROCEDURE(void)                                               \
+    {                                                                          \
+        double cmp;                                                            \
+        int comp = 0, error, i, j;                                             \
+        TWOPARAMS(NAME);                                                       \
+        if (stck->op == SET_) {                                                \
+            i = stck->next->u.num;                                             \
+            j = stck->u.num;                                                   \
+            comp = SETCMP;                                                     \
+        } else {                                                               \
+            cmp = Compare(stck->next, stck, &error);                           \
+            if (error)                                                         \
+                BADDATA(NAME);                                                 \
+            else {                                                             \
+                comp = (int)(cmp OPR 0);                                       \
+                if (comp < 0)                                                  \
+                    comp = -1;                                                 \
+                else if (comp > 0)                                             \
+                    comp = 1;                                                  \
+            }                                                                  \
+        }                                                                      \
+        stck = CONSTRUCTOR(comp, stck->next->next);                            \
+    }
+#else
+#define COMPREL(PROCEDURE, NAME, CONSTRUCTOR, OPR)                             \
+    PRIVATE void PROCEDURE(void)                                               \
+    {                                                                          \
+        int comp = 0;                                                          \
+        TWOPARAMS(NAME);                                                       \
+        switch (stck->op) {                                                    \
+        case BOOLEAN_:                                                         \
+        case CHAR_:                                                            \
+        case INTEGER_:                                                         \
+            if (FLOATABLE2)                                                    \
+                comp = FLOATVAL2 - FLOATVAL OPR 0;                             \
+            else                                                               \
+                comp = stck->next->u.num - stck->u.num OPR 0;                  \
+            break;                                                             \
+        case FLOAT_:                                                           \
+            if (FLOATABLE2)                                                    \
+                comp = FLOATVAL2 - FLOATVAL OPR 0;                             \
+            else                                                               \
+                comp = 0;                                                      \
+            break;                                                             \
+        case SET_: {                                                           \
+            int i = 0;                                                         \
+            while (i < SETSIZE && ((stck->next->u.set & ((long_t)1 << i))      \
+                                      == (stck->u.set & ((long_t)1 << i))))    \
+                ++i;                                                           \
+            if (i == SETSIZE)                                                  \
+                i = 0;                                                         \
+            else                                                               \
+                ++i;                                                           \
+            if (!(stck->u.set & ((long_t)1 << i)))                             \
+                i = -i;                                                        \
+            comp = i OPR 0;                                                    \
+            break;                                                             \
+        }                                                                      \
+        case LIST_:                                                            \
+            BADDATA(NAME);                                                     \
+        default:                                                               \
+            if (stck->next->op == LIST_)                                       \
+                BADDATA(NAME);                                                 \
+            comp = strcmp(GETSTRING(stck->next), GETSTRING(stck)) OPR 0;       \
+            break;                                                             \
+        }                                                                      \
+        stck = CONSTRUCTOR(comp, stck->next->next);                            \
+    }
 
-MAXMIN(max_,"max",<)
-MAXMIN(min_,"min",>)
+#endif
 
-#define COMPREL(PROCEDURE,NAME,CONSTRUCTOR,OPR)			\
-PRIVATE void PROCEDURE()					\
-  { long comp = 0;						\
-    TWOPARAMS(NAME);						\
-    switch (stk->op)						\
-      { case BOOLEAN_: case CHAR_: case INTEGER_:		\
-	    if (FLOATABLE2)					\
-		comp = FLOATVAL2 - FLOATVAL OPR 0;		\
-	    else						\
-		comp = stk->next->u.num - stk->u.num OPR 0;	\
-	    break;						\
-	case FLOAT_:						\
-	    if (FLOATABLE2)					\
-		comp = FLOATVAL2 - FLOATVAL OPR 0;		\
-	    else						\
-		comp = 0;					\
-	    break;						\
-	case SET_:						\
-	  { int i = 0;						\
-	    while ( i < SETSIZE &&				\
-		    ( (stk->next->u.set & 1 << i) ==		\
-		      (stk->u.set & 1 << i) )  )		\
-		++i;						\
-	    if (i == SETSIZE) i = 0; else ++i;			\
-	    if (!(stk->u.set & 1 << i)) i = -i;			\
-	    comp = i OPR 0;					\
-	    break; }						\
-	case LIST_:						\
-	    BADDATA(NAME);					\
-	default:						\
-	    if (stk->next->op == LIST_)				\
-	      BADDATA(NAME);					\
-	    comp = strcmp(GETSTRING(stk->next), GETSTRING(stk))	\
-		   OPR 0;					\
-	    break; }						\
-    stk = CONSTRUCTOR(comp, stk->next->next); }
+#ifdef CORRECT_TYPE_COMPARE
+COMPREL(eql_, "=", BOOLEAN_NEWNODE, ==, i == j)
+COMPREL(neql_, "!=", BOOLEAN_NEWNODE, !=, i != j)
+COMPREL(less_, "<", BOOLEAN_NEWNODE, <, i != j && !(i & ~j))
+COMPREL(leql_, "<=", BOOLEAN_NEWNODE, <=, !(i & ~j))
+COMPREL(greater_, ">", BOOLEAN_NEWNODE, >, i != j && !(j & ~i))
+COMPREL(geql_, ">=", BOOLEAN_NEWNODE, >=, !(j & ~i))
+COMPREL(compare_, "compare", INTEGER_NEWNODE, +, i - j < 0 ? -1 : i - j > 0)
+#else
+COMPREL(eql_, "=", BOOLEAN_NEWNODE, ==)
+COMPREL(neql_, "!=", BOOLEAN_NEWNODE, !=)
+COMPREL(less_, "<", BOOLEAN_NEWNODE, <)
+COMPREL(leql_, "<=", BOOLEAN_NEWNODE, <=)
+COMPREL(greater_, ">", BOOLEAN_NEWNODE, >)
+COMPREL(geql_, ">=", BOOLEAN_NEWNODE, >=)
+COMPREL(compare_, "compare", INTEGER_NEWNODE, +)
+#endif
 
-COMPREL(eql_,"=",BOOLEAN_NEWNODE,==)
-COMPREL(neql_,"!=",BOOLEAN_NEWNODE,!=)
-COMPREL(less_,"<",BOOLEAN_NEWNODE,<)
-COMPREL(leql_,"<=",BOOLEAN_NEWNODE,<=)
-COMPREL(greater_,">",BOOLEAN_NEWNODE,>)
-COMPREL(geql_,">=",BOOLEAN_NEWNODE,>=)
-COMPREL(compare_,"compare",INTEGER_NEWNODE,+)
+#ifdef SAMETYPE_BUILTIN
+PRIVATE void sametype_(void)
+{
+    TWOPARAMS("sametype");
+    BINARY(BOOLEAN_NEWNODE, stck->op == stck->next->op);
+}
+#endif
 
 /* - - -   FILES AND STREAMS   - - - */
 
-PRIVATE void fopen_()
+PRIVATE void fopen_(void)
 {
     TWOPARAMS("fopen");
     STRING("fopen");
     STRING2("fopen");
-    BINARY(FILE_NEWNODE, fopen(stk->next->u.str, stk->u.str));
-    return; }
+    BINARY(FILE_NEWNODE, fopen(stck->next->u.str, stck->u.str));
+}
 
-PRIVATE void fclose_()
+PRIVATE void fclose_(void)
 {
     ONEPARAM("fclose");
-    if (stk->op == FILE_ && stk->u.fil == NULL)
-	{ POP(stk);  return; }
+    if (stck->op == FILE_ && stck->u.fil == NULL) {
+        POP(stck);
+        return;
+    }
     FILE("fclose");
-    fclose(stk->u.fil);
-    POP(stk);
-    return; }
+    fclose(stck->u.fil);
+    POP(stck);
+}
 
-PRIVATE void fflush_()
+PRIVATE void fflush_(void)
 {
     ONEPARAM("fflush");
     FILE("fflush");
-    fflush(stk->u.fil);
-    return; }
+    fflush(stck->u.fil);
+}
 
-PRIVATE void fremove_()
+PRIVATE void fremove_(void)
 {
     ONEPARAM("fremove");
     STRING("fremove");
-    UNARY(BOOLEAN_NEWNODE, (long)!remove(stk->u.str));
-    return; }
+    UNARY(BOOLEAN_NEWNODE, (long_t)!remove(stck->u.str));
+}
 
-PRIVATE void frename_()
+PRIVATE void frename_(void)
 {
     TWOPARAMS("frename");
     STRING("frename");
     STRING2("frename");
-    BINARY(BOOLEAN_NEWNODE, (long)!rename(stk->next->u.str, stk->u.str));
-    return; }
+    BINARY(BOOLEAN_NEWNODE, (long_t)!rename(stck->next->u.str, stck->u.str));
+}
 
-#define FILEGET(PROCEDURE,NAME,CONSTRUCTOR,EXPR)		\
-PRIVATE void PROCEDURE()					\
-{   ONEPARAM(NAME);						\
-    FILE(NAME);							\
-    NULLARY(CONSTRUCTOR,EXPR);					\
-    return; }
+#define FILEGET(PROCEDURE, NAME, CONSTRUCTOR, EXPR)                            \
+    PRIVATE void PROCEDURE(void)                                               \
+    {                                                                          \
+        ONEPARAM(NAME);                                                        \
+        FILE(NAME);                                                            \
+        NULLARY(CONSTRUCTOR, EXPR);                                            \
+    }
+FILEGET(feof_, "feof", BOOLEAN_NEWNODE, (long_t)feof(stck->u.fil))
+FILEGET(ferror_, "ferror", BOOLEAN_NEWNODE, (long_t)ferror(stck->u.fil))
+FILEGET(fgetch_, "fgetch", CHAR_NEWNODE, (long_t)getc(stck->u.fil))
+FILEGET(ftell_, "ftell", INTEGER_NEWNODE, ftell(stck->u.fil))
 
-FILEGET(feof_,"feof",BOOLEAN_NEWNODE,(long)feof(stk->u.fil))
-FILEGET(ferror_,"ferror",BOOLEAN_NEWNODE,(long)ferror(stk->u.fil))
-FILEGET(fgetch_,"fgetch",CHAR_NEWNODE,(long)getc(stk->u.fil))
-FILEGET(ftell_,"ftell",INTEGER_NEWNODE,ftell(stk->u.fil))
+#ifdef GETCH_AS_BUILTIN
+PRIVATE void getch_(void) { NULLARY(CHAR_NEWNODE, (long_t)getchar()); }
+#endif
 
-PRIVATE void fgets_()
-{   int length = 0;
-    int size = INPLINEMAX;
-    char *buff = NULL;
+PRIVATE void fgets_(void)
+{
+    int length = 0, size = INPLINEMAX;
+    char *buff = NULL, *newbuff;
+
     ONEPARAM("fgets");
     FILE("fgets");
-    for (;;)
-      { buff = realloc(buff, size);
-	if (fgets(buff + length, size - length, stk->u.fil) == NULL)
-	    { buff[length] = 0; break; }
-	if (strchr(buff, '\n')) break;
-	length += strlen(buff);
-	size = size * 2; }
+    for (;;) {
+        if ((newbuff = realloc(buff, size)) == 0)
+            break;
+        buff = newbuff;
+        if (fgets(buff + length, size - length, stck->u.fil) == NULL) {
+            buff[length] = 0;
+            break;
+        }
+        if (strchr(buff, '\n'))
+            break;
+        length = strlen(buff);
+        size = size * 2;
+    }
     NULLARY(STRING_NEWNODE, buff);
-    return; }
+}
 
-PRIVATE void fput_()
-{   FILE *stm=0;
+PRIVATE void fput_(void)
+{
+    FILE* stm;
+
+#ifdef RUNTIME_CHECKS
     TWOPARAMS("fput");
-    if (stk->next->op != FILE_ || (stm = stk->next->u.fil) == NULL)
-	execerror("file", "fput");
-    writefactor(stk, stm);
+    stm = NULL;
+    if (stck->next->op != FILE_ || (stm = stck->next->u.fil) == NULL)
+        execerror("file", "fput");
+#else
+    stm = stck->next->u.fil;
+#endif
+    writefactor(stck, stm);
     fprintf(stm, " ");
-    POP(stk);
-    return; }
+    POP(stck);
+}
 
-PRIVATE void fputch_()
-{   int ch;
+#ifdef FGET_FROM_FILE
+PRIVATE void fget_(void)
+{
+    FILE* stm = NULL;
+
+#ifdef RUNTIME_CHECKS
+    ONEPARAM("fget");
+    if (stck->op != FILE_ || (stm = stck->u.fil) == NULL)
+        execerror("file", "fget");
+#else
+    stm = stck->u.fil;
+#endif
+    redirect(stm);
+    getsym();
+    readfactor(0);
+}
+#endif
+
+PRIVATE void fputch_(void)
+{
+    int ch;
+
     TWOPARAMS("fputch");
     INTEGER("fputch");
-    ch = stk->u.num;
-    POP(stk);
+    ch = stck->u.num;
+    POP(stck);
     FILE("fputch");
-    putc(ch, stk->u.fil);
-    return; }
+    putc(ch, stck->u.fil);
+}
 
-PRIVATE void fputchars_() /* suggested by Heiko Kuhrt, as "fputstring_" */
-{   FILE *stm=0;
+PRIVATE void fputchars_(void) /* suggested by Heiko Kuhrt, as "fputstring_" */
+{
+    FILE* stm;
+
+#ifdef RUNTIME_CHECKS
     TWOPARAMS("fputchars");
-    if (stk->next->op != FILE_ || (stm = stk->next->u.fil) == NULL)
+    stm = NULL;
+    if (stck->next->op != FILE_ || (stm = stck->next->u.fil) == NULL)
         execerror("file", "fputchars");
-    fprintf(stm,"%s",stk->u.str);
-    POP(stk);
-    return; }
+#else
+    stm = stck->next->u.fil;
+#endif
+    fprintf(stm, "%s", stck->u.str);
+    POP(stck);
+}
 
-PRIVATE void fread_()
-{   unsigned char *buf;
-    long count;
+PRIVATE void fread_(void)
+{
+    unsigned char* buf;
+    long_t count;
 
     TWOPARAMS("fread");
     INTEGER("fread");
-    count = stk->u.num;
-    POP(stk);
+    count = stck->u.num;
+    POP(stck);
     FILE("fread");
     buf = malloc(count);
     dump1 = LIST_NEWNODE(NULL, dump1);
-    for (count = fread(buf, (size_t)1, (size_t)count, stk->u.fil) - 1;
-	     count >= 0; count--)
-	DMP1 = INTEGER_NEWNODE((long)buf[count], DMP1);
+    for (count = fread(buf, (size_t)1, (size_t)count, stck->u.fil) - 1;
+         count >= 0; count--)
+        DMP1 = INTEGER_NEWNODE((long_t)buf[count], DMP1);
     free(buf);
+#ifdef CORRECT_FREAD_PARAM
+    NULLARY(LIST_NEWNODE, DMP1);
+#else
     UNARY(LIST_NEWNODE, DMP1);
+#endif
     POP(dump1);
-    return; }
+}
 
-PRIVATE void fwrite_()
-{   int length;
-    int i;
-    unsigned char *buff;
-    Node *n;
+PRIVATE void fwrite_(void)
+{
+    int length, i;
+    unsigned char* buff;
+    Node* n;
+
     TWOPARAMS("fwrite");
     LIST("fwrite");
-    for (n = stk->u.lis, length = 0; n; n = n->next, length++)
-	if (n->op != INTEGER_) execerror("numeric list", "fwrite");
+    for (n = stck->u.lis, length = 0; n; n = n->next, length++)
+#ifdef RUNTIME_CHECKS
+        if (n->op != INTEGER_)
+            execerror("numeric list", "fwrite");
+#else
+        ;
+#endif
     buff = malloc(length);
-    for (n = stk->u.lis, i = 0; n; n = n->next, i++)
-	buff[i] = n->u.num;
-    POP(stk);
+    for (n = stck->u.lis, i = 0; n; n = n->next, i++)
+        buff[i] = (char)n->u.num;
+    POP(stck);
     FILE("fwrite");
-    fwrite(buff, (size_t)length, (size_t)1, stk->u.fil);
+    fwrite(buff, (size_t)length, (size_t)1, stck->u.fil);
     free(buff);
-    return; }
+}
 
-PRIVATE void fseek_()
-{   long pos;
+PRIVATE void fseek_(void)
+{
+    long pos;
     int whence;
+
     THREEPARAMS("fseek");
     INTEGER("fseek");
     INTEGER2("fseek");
-    whence = stk->u.num;
-    POP(stk);
-    pos = stk->u.num;
-    POP(stk);
+    whence = stck->u.num;
+    POP(stck);
+    pos = stck->u.num;
+    POP(stck);
     FILE("fseek");
-    NULLARY(BOOLEAN_NEWNODE, (long)!!fseek(stk->u.fil, pos, whence));
-    return; }
+    NULLARY(BOOLEAN_NEWNODE, (long_t) !!fseek(stck->u.fil, pos, whence));
+}
 
 /* - - -   AGGREGATES   - - - */
 
-PRIVATE void first_()
+PRIVATE void first_(void)
 {
     ONEPARAM("first");
-    switch (stk->op)
-      { case LIST_:
-	    CHECKEMPTYLIST(stk->u.lis,"first");
-	    GUNARY(stk->u.lis->op,stk->u.lis->u);
-	    return;
-	case STRING_:
-	    CHECKEMPTYSTRING(stk->u.str,"first");
-	    UNARY(CHAR_NEWNODE,(long)*(stk->u.str));
-	    return;
-	case SET_:
-	  { long i = 0;
-	    CHECKEMPTYSET(stk->u.set,"first");
-	    while (!(stk->u.set & (1 << i))) i++;
-	    UNARY(INTEGER_NEWNODE,i);
-	    return; }
-	default:
-	    BADAGGREGATE("first"); }
+    switch (stck->op) {
+    case LIST_:
+        CHECKEMPTYLIST(stck->u.lis, "first");
+        GUNARY(stck->u.lis->op, stck->u.lis->u);
+        return;
+    case STRING_:
+        CHECKEMPTYSTRING(stck->u.str, "first");
+        UNARY(CHAR_NEWNODE, (long_t) * (stck->u.str));
+        return;
+    case SET_: {
+        int i = 0;
+        CHECKEMPTYSET(stck->u.set, "first");
+        while (!(stck->u.set & ((long_t)1 << i)))
+            i++;
+        UNARY(INTEGER_NEWNODE, i);
+        return;
+    }
+    default:
+        BADAGGREGATE("first");
+    }
 }
 
-PRIVATE void rest_()
+PRIVATE void rest_(void)
 {
     ONEPARAM("rest");
-    switch (stk->op)
-      { case SET_:
-	  { int i = 0;
-	    CHECKEMPTYSET(stk->u.set,"rest");
-	    while (!(stk->u.set & (1 << i))) i++;
-	    UNARY(SET_NEWNODE,stk->u.set & ~(1 << i));
-	    break; }
-	case STRING_:
-	  { char *s = stk->u.str;
-	    CHECKEMPTYSTRING(s,"rest");
-	    UNARY(STRING_NEWNODE, ++s);
-	    break; }
-	case LIST_:
-	    CHECKEMPTYLIST(stk->u.lis,"rest");
-	    UNARY(LIST_NEWNODE,stk->u.lis->next);
-	    return;
-	default:
-	    BADAGGREGATE("rest"); }
+    switch (stck->op) {
+    case SET_: {
+        int i = 0;
+        CHECKEMPTYSET(stck->u.set, "rest");
+        while (!(stck->u.set & ((long_t)1 << i)))
+            i++;
+        UNARY(SET_NEWNODE, stck->u.set & ~((long_t)1 << i));
+        break;
+    }
+    case STRING_: {
+        char* s = stck->u.str;
+        CHECKEMPTYSTRING(s, "rest");
+        UNARY(STRING_NEWNODE, ++s);
+        break;
+    }
+    case LIST_:
+        CHECKEMPTYLIST(stck->u.lis, "rest");
+        UNARY(LIST_NEWNODE, stck->u.lis->next);
+        return;
+    default:
+        BADAGGREGATE("rest");
+    }
 }
 
-PRIVATE void uncons_()
+PRIVATE void uncons_(void)
 {
     ONEPARAM("uncons");
-    switch (stk->op)
-      { case SET_:
-	  { long i = 0; long set = stk->u.set;
-	    CHECKEMPTYSET(set,"uncons");
-	    while (!(set & (1 << i))) i++;
-	    UNARY(INTEGER_NEWNODE,i);
-	    NULLARY(SET_NEWNODE,set & ~(1 << i));
-	    break; }
-	case STRING_:
-	  { char *s = stk->u.str;
-	    CHECKEMPTYSTRING(s,"uncons");
-	    UNARY(CHAR_NEWNODE,(long)*s);
-	    NULLARY(STRING_NEWNODE,++s);
-	    break; }
-	case LIST_:
-	    SAVESTACK;
-	    CHECKEMPTYLIST(SAVED1->u.lis,"uncons");
-	    GUNARY(SAVED1->u.lis->op,SAVED1->u.lis->u);
-	    NULLARY(LIST_NEWNODE,SAVED1->u.lis->next);
-	    POP(dump);
-	    return;
-	default:
-	    BADAGGREGATE("uncons"); }
+    switch (stck->op) {
+    case SET_: {
+        int i = 0;
+        long_t set = stck->u.set;
+        CHECKEMPTYSET(set, "uncons");
+        while (!(set & ((long_t)1 << i)))
+            i++;
+        UNARY(INTEGER_NEWNODE, i);
+        NULLARY(SET_NEWNODE, set & ~((long_t)1 << i));
+        break;
+    }
+    case STRING_: {
+        char* s = stck->u.str;
+        CHECKEMPTYSTRING(s, "uncons");
+        UNARY(CHAR_NEWNODE, (long_t)*s);
+        NULLARY(STRING_NEWNODE, ++s);
+        break;
+    }
+    case LIST_:
+        SAVESTACK;
+        CHECKEMPTYLIST(SAVED1->u.lis, "uncons");
+        GUNARY(SAVED1->u.lis->op, SAVED1->u.lis->u);
+        NULLARY(LIST_NEWNODE, SAVED1->u.lis->next);
+        POP(dump);
+        return;
+    default:
+        BADAGGREGATE("uncons");
+    }
 }
 
-PRIVATE void unswons_()
+PRIVATE void unswons_(void)
 {
     ONEPARAM("unswons");
-    switch (stk->op)
-      { case SET_:
-	  { long i = 0; long set = stk->u.set;
-	    CHECKEMPTYSET(set,"unswons");
-	    while (!(set & (1 << i))) i++;
-	    UNARY(SET_NEWNODE,set & ~(1 << i));
-	    NULLARY(INTEGER_NEWNODE,i);
-	    break; }
-	case STRING_:
-	  { char *s = stk->u.str;
-	    CHECKEMPTYSTRING(s,"unswons");
-	    UNARY(STRING_NEWNODE,++s);
-	    NULLARY(CHAR_NEWNODE,(long)*(--s));
-	    break; }
-	case LIST_:
-	    SAVESTACK;
-	    CHECKEMPTYLIST(SAVED1->u.lis,"unswons");
-	    UNARY(LIST_NEWNODE,SAVED1->u.lis->next);
-	    GNULLARY(SAVED1->u.lis->op,SAVED1->u.lis->u);
-	    POP(dump);
-	    return;
-	default:
-	    BADAGGREGATE("unswons"); }
+    switch (stck->op) {
+    case SET_: {
+        int i = 0;
+        long_t set = stck->u.set;
+        CHECKEMPTYSET(set, "unswons");
+        while (!(set & ((long_t)1 << i)))
+            i++;
+        UNARY(SET_NEWNODE, set & ~((long_t)1 << i));
+        NULLARY(INTEGER_NEWNODE, i);
+        break;
+    }
+    case STRING_: {
+        char* s = stck->u.str;
+        CHECKEMPTYSTRING(s, "unswons");
+        UNARY(STRING_NEWNODE, ++s);
+        NULLARY(CHAR_NEWNODE, (long_t) * (--s));
+        break;
+    }
+    case LIST_:
+        SAVESTACK;
+        CHECKEMPTYLIST(SAVED1->u.lis, "unswons");
+        UNARY(LIST_NEWNODE, SAVED1->u.lis->next);
+        GNULLARY(SAVED1->u.lis->op, SAVED1->u.lis->u);
+        POP(dump);
+        return;
+    default:
+        BADAGGREGATE("unswons");
+    }
 }
 
-PRIVATE long equal_aux(); /* forward */
+PRIVATE int equal_aux(Node* n1, Node* n2); /* forward */
 
-PRIVATE int equal_list_aux(n1,n2)
-Node *n1, *n2;
+PRIVATE int equal_list_aux(Node* n1, Node* n2)
 {
-    if (n1 == NULL && n2 == NULL) return 1;
-    if (n1 == NULL || n2 == NULL) return 0;
-    if (equal_aux(n1,n2))
-	return equal_list_aux(n1->next,n2->next);
-    else return 0;
+    if (n1 == NULL && n2 == NULL)
+        return 1;
+    if (n1 == NULL || n2 == NULL)
+        return 0;
+    if (equal_aux(n1, n2))
+        return equal_list_aux(n1->next, n2->next);
+    else
+        return 0;
 }
 
-PRIVATE long equal_aux(n1,n2)
-Node *n1, *n2;
+PRIVATE int equal_aux(Node* n1, Node* n2)
 {
-    if (n1 == NULL && n2 == NULL) return 1;
-    if (n1 == NULL || n2 == NULL) return 0;
-    switch (n1->op)
-      { case BOOLEAN_: case CHAR_: case INTEGER_:
-	    if (n2->op != BOOLEAN_ && n2->op != CHAR_ &&
-		n2->op != INTEGER_)
-		return 0;
-	    return n1->u.num == n2->u.num;
-	case SET_ :
-	    if (n2->op != SET_) return 0;
-	    return n1->u.num == n2->u.num;
-	case LIST_ :
-	    if (n2->op != LIST_) return 0;
-	    return equal_list_aux(n1->u.lis,n2->u.lis);
-	default:
-	    return strcmp(GETSTRING(n1),GETSTRING(n2)) == 0; }
+#ifdef CORRECT_TYPE_COMPARE
+    int error;
+#endif
+    if (n1 == NULL && n2 == NULL)
+        return 1;
+    if (n1 == NULL || n2 == NULL)
+        return 0;
+#ifdef CORRECT_TYPE_COMPARE
+    if (n1->op == LIST_ && n2->op == LIST_)
+        return equal_list_aux(n1->u.lis, n2->u.lis);
+    return !Compare(n1, n2, &error) && !error;
+#else
+    switch (n1->op) {
+    case BOOLEAN_:
+    case CHAR_:
+    case INTEGER_:
+        if (n2->op != BOOLEAN_ && n2->op != CHAR_ && n2->op != INTEGER_)
+            return 0;
+        return n1->u.num == n2->u.num;
+    case SET_:
+        if (n2->op != SET_)
+            return 0;
+        return n1->u.num == n2->u.num;
+    case LIST_:
+        if (n2->op != LIST_)
+            return 0;
+        return equal_list_aux(n1->u.lis, n2->u.lis);
+    default:
+        return strcmp(GETSTRING(n1), GETSTRING(n2)) == 0;
+    }
+#endif
 }
 
-PRIVATE void equal_()
+PRIVATE void equal_(void)
 {
     TWOPARAMS("equal");
-    BINARY(BOOLEAN_NEWNODE,equal_aux(stk,stk->next));
+    BINARY(BOOLEAN_NEWNODE, equal_aux(stck, stck->next));
 }
 
-#define INHAS(PROCEDURE,NAME,AGGR,ELEM)				\
-PRIVATE void PROCEDURE()					\
-{   int found = 0;						\
-    TWOPARAMS(NAME);						\
-    switch (AGGR->op)						\
-      { case SET_:						\
-	    found = ((AGGR->u.set) & (1 << ELEM->u.num)) > 0;	\
-	    break;						\
-	case STRING_:						\
-	  { char *s;						\
-	    for (s = AGGR->u.str;				\
-		 *s != '\0' && *s != ELEM->u.num;		\
-		 s++);						\
-	    found = *s != '\0';					\
-	    break; }						\
-	case LIST_:						\
-	  { Node *n = AGGR->u.lis;				\
-	    while (n != NULL && n->u.num != ELEM->u.num)	\
-		n = n->next;					\
-	    found = n != NULL;					\
-	    break; }						\
-	default:						\
-	    BADAGGREGATE(NAME); }				\
-    BINARY(BOOLEAN_NEWNODE,(long)found);			\
-}
+#ifdef CORRECT_INHAS_COMPARE
+#define INHAS(PROCEDURE, NAME, AGGR, ELEM)                                     \
+    PRIVATE void PROCEDURE(void)                                               \
+    {                                                                          \
+        int found = 0, error;                                                  \
+        TWOPARAMS(NAME);                                                       \
+        switch (AGGR->op) {                                                    \
+        case SET_:                                                             \
+            found = ((AGGR->u.set) & ((long_t)1 << ELEM->u.num)) > 0;          \
+            break;                                                             \
+        case STRING_: {                                                        \
+            char* s;                                                           \
+            for (s = AGGR->u.str; s && *s != '\0' && *s != ELEM->u.num; s++)   \
+                ;                                                              \
+            found = s && *s != '\0';                                           \
+            break;                                                             \
+        }                                                                      \
+        case LIST_: {                                                          \
+            Node* n = AGGR->u.lis;                                             \
+            while (n != NULL && (Compare(n, ELEM, &error) || error))           \
+                n = n->next;                                                   \
+            found = n != NULL;                                                 \
+            break;                                                             \
+        }                                                                      \
+        default:                                                               \
+            BADAGGREGATE(NAME);                                                \
+        }                                                                      \
+        BINARY(BOOLEAN_NEWNODE, (long_t)found);                                \
+    }
+#else
+#define INHAS(PROCEDURE, NAME, AGGR, ELEM)                                     \
+    PRIVATE void PROCEDURE(void)                                               \
+    {                                                                          \
+        int found = 0;                                                         \
+        TWOPARAMS(NAME);                                                       \
+        switch (AGGR->op) {                                                    \
+        case SET_:                                                             \
+            found = ((AGGR->u.set) & ((long_t)1 << ELEM->u.num)) > 0;          \
+            break;                                                             \
+        case STRING_: {                                                        \
+            char* s;                                                           \
+            for (s = AGGR->u.str; *s != '\0' && *s != ELEM->u.num; s++)        \
+                ;                                                              \
+            found = *s != '\0';                                                \
+            break;                                                             \
+        }                                                                      \
+        case LIST_: {                                                          \
+            Node* n = AGGR->u.lis;                                             \
+            while (n != NULL && n->u.num != ELEM->u.num)                       \
+                n = n->next;                                                   \
+            found = n != NULL;                                                 \
+            break;                                                             \
+        }                                                                      \
+        default:                                                               \
+            BADAGGREGATE(NAME);                                                \
+        }                                                                      \
+        BINARY(BOOLEAN_NEWNODE, (long_t)found);                                \
+    }
+#endif
+INHAS(in_, "in", stck, stck->next)
+INHAS(has_, "has", stck->next, stck)
 
-INHAS(in_,"in",stk,stk->next)
-INHAS(has_,"has",stk->next,stk)
+#ifdef RUNTIME_CHECKS
+#define OF_AT(PROCEDURE, NAME, AGGR, INDEX)                                    \
+    PRIVATE void PROCEDURE(void)                                               \
+    {                                                                          \
+        TWOPARAMS(NAME);                                                       \
+        if (INDEX->op != INTEGER_ || INDEX->u.num < 0)                         \
+            execerror("non-negative integer", NAME);                           \
+        switch (AGGR->op) {                                                    \
+        case SET_: {                                                           \
+            int i, indx = INDEX->u.num;                                        \
+            CHECKEMPTYSET(AGGR->u.set, NAME);                                  \
+            for (i = 0; i < SETSIZE; i++) {                                    \
+                if (AGGR->u.set & ((long_t)1 << i)) {                          \
+                    if (indx == 0) {                                           \
+                        BINARY(INTEGER_NEWNODE, i);                            \
+                        return;                                                \
+                    }                                                          \
+                    indx--;                                                    \
+                }                                                              \
+            }                                                                  \
+            INDEXTOOLARGE(NAME);                                               \
+            return;                                                            \
+        }                                                                      \
+        case STRING_:                                                          \
+            if (strlen(AGGR->u.str) < (size_t)INDEX->u.num)                    \
+                INDEXTOOLARGE(NAME);                                           \
+            BINARY(CHAR_NEWNODE, (long_t)AGGR->u.str[INDEX->u.num]);           \
+            return;                                                            \
+        case LIST_: {                                                          \
+            Node* n = AGGR->u.lis;                                             \
+            int i = INDEX->u.num;                                              \
+            CHECKEMPTYLIST(n, NAME);                                           \
+            while (i > 0) {                                                    \
+                if (n->next == NULL)                                           \
+                    INDEXTOOLARGE(NAME);                                       \
+                n = n->next;                                                   \
+                i--;                                                           \
+            }                                                                  \
+            GBINARY(n->op, n->u);                                              \
+            return;                                                            \
+        }                                                                      \
+        default:                                                               \
+            BADAGGREGATE(NAME);                                                \
+        }                                                                      \
+    }
+#else
+#define OF_AT(PROCEDURE, NAME, AGGR, INDEX)                                    \
+    PRIVATE void PROCEDURE(void)                                               \
+    {                                                                          \
+        switch (AGGR->op) {                                                    \
+        case SET_: {                                                           \
+            int i, indx = INDEX->u.num;                                        \
+            for (i = 0; i < SETSIZE; i++) {                                    \
+                if (AGGR->u.set & ((long_t)1 << i)) {                          \
+                    if (indx == 0) {                                           \
+                        BINARY(INTEGER_NEWNODE, i);                            \
+                        return;                                                \
+                    }                                                          \
+                    indx--;                                                    \
+                }                                                              \
+            }                                                                  \
+            return;                                                            \
+        }                                                                      \
+        case STRING_:                                                          \
+            BINARY(CHAR_NEWNODE, (long_t)AGGR->u.str[INDEX->u.num]);           \
+            return;                                                            \
+        case LIST_: {                                                          \
+            Node* n = AGGR->u.lis;                                             \
+            int i = INDEX->u.num;                                              \
+            while (i > 0) {                                                    \
+                n = n->next;                                                   \
+                i--;                                                           \
+            }                                                                  \
+            GBINARY(n->op, n->u);                                              \
+            return;                                                            \
+        }                                                                      \
+        default:                                                               \
+            BADAGGREGATE(NAME);                                                \
+        }                                                                      \
+    }
+#endif
+OF_AT(of_, "of", stck, stck->next)
+OF_AT(at_, "at", stck->next, stck)
 
-#define OF_AT(PROCEDURE,NAME,AGGR,INDEX)			\
-PRIVATE void PROCEDURE()					\
-{   TWOPARAMS(NAME);						\
-    if (INDEX->op != INTEGER_ || INDEX->u.num < 0)		\
-	execerror("non-negative integer", NAME);		\
-    switch (AGGR->op)						\
-      { case SET_:						\
-	  { long i; int indx = INDEX->u.num;			\
-	    CHECKEMPTYSET(AGGR->u.set,NAME);			\
-	    for (i = 0; i < SETSIZE; i++)			\
-	      { if (AGGR->u.set & (1 << i))			\
-		  { if (indx == 0)				\
-			{BINARY(INTEGER_NEWNODE,i); return;}	\
-		    indx--; } }					\
-	    INDEXTOOLARGE(NAME);				\
-	    return; }						\
-	case STRING_:						\
-	    if ((int)strlen(AGGR->u.str) < INDEX->u.num)	\
-		INDEXTOOLARGE(NAME);				\
-	    BINARY(CHAR_NEWNODE,(long)AGGR->u.str[INDEX->u.num]);	\
-	    return;						\
-	case LIST_:						\
-	  { Node *n = AGGR->u.lis;  int i  = INDEX->u.num;	\
-	    CHECKEMPTYLIST(n,NAME);				\
-	    while (i > 0)					\
-	      { if (n->next == NULL)				\
-		    INDEXTOOLARGE(NAME);			\
-		n = n->next; i--; }				\
-	    GBINARY(n->op,n->u);				\
-	    return; }						\
-	default:						\
-	    BADAGGREGATE(NAME); }				\
-}
-
-OF_AT(of_,"of",stk,stk->next)
-OF_AT(at_,"at",stk->next,stk)
-
-PRIVATE void choice_()
+PRIVATE void choice_(void)
 {
     THREEPARAMS("choice");
-    if (stk->next->next->u.num)
-	 stk = newnode(stk->next->op,stk->next->u,
-		       stk->next->next->next);
-    else stk = newnode(stk->op,stk->u,
-		       stk->next->next->next);
+    if (stck->next->next->u.num)
+        stck = newnode(stck->next->op, stck->next->u, stck->next->next->next);
+    else
+        stck = newnode(stck->op, stck->u, stck->next->next->next);
 }
 
-PRIVATE void case_()
+PRIVATE void case_(void)
 {
-    Node *n;
+    Node* n;
+#ifdef CORRECT_CASE_COMPARE
+    int error;
+#endif
 
     TWOPARAMS("case");
     LIST("case");
-    n = stk->u.lis;
-    CHECKEMPTYLIST(n,"case");
-    while ( n->next != NULL &&
-	    n->u.lis->u.num != stk->next->u.num )
-	n = n->next;
+    n = stck->u.lis;
+    CHECKEMPTYLIST(n, "case");
+    while (n->next != NULL && n->u.lis->u.num != stck->next->u.num) {
+#ifdef CORRECT_CASE_COMPARE
+        if (!Compare(n->u.lis, stck->next, &error) && !error)
+            break;
+#endif
+        n = n->next;
+    }
 /*
     printf("case : now execute : ");
     writefactor(n->u.lis, stdout); printf("\n");
-    stk = stk->next->next;
+    stck = stck->next->next;
     exeterm(n->next != NULL ? n->u.lis->next : n->u.lis);
 */
-    if (n->next != NULL)
-	{stk = stk->next->next; exeterm(n->u.lis->next);}
-    else
-	{stk = stk->next;       exeterm(n->u.lis);}
+    if (n->next != NULL) {
+        stck = stck->next->next;
+        exeterm(n->u.lis->next);
+    } else {
+        stck = stck->next;
+        exeterm(n->u.lis);
+    }
 }
 
-PRIVATE void opcase_()
+PRIVATE void opcase_(void)
 {
-    Node *n;
+    Node* n;
     ONEPARAM("opcase");
     LIST("opcase");
-    n = stk->u.lis;
-    CHECKEMPTYLIST(n,"opcase");
-    while ( n->next != NULL &&
-	    n->op == LIST_ &&
-	    n->u.lis->op != stk->next->op )
-	n = n->next;
-    CHECKLIST(n->op,"opcase");
-    UNARY(LIST_NEWNODE,
-	n->next != NULL ? n->u.lis->next : n->u.lis);
+    n = stck->u.lis;
+    CHECKEMPTYLIST(n, "opcase");
+    while (n->next != NULL && n->op == LIST_ && n->u.lis->op != stck->next->op)
+        n = n->next;
+    CHECKLIST(n->op, "opcase");
+    UNARY(LIST_NEWNODE, n->next != NULL ? n->u.lis->next : n->u.lis);
 }
 
-#define CONS_SWONS(PROCEDURE,NAME,AGGR,ELEM)			\
-PRIVATE void PROCEDURE()					\
-{   TWOPARAMS(NAME);						\
-    switch (AGGR->op)						\
-      { case LIST_:						\
-	    BINARY(LIST_NEWNODE,newnode(ELEM->op,		\
-				 ELEM->u,AGGR->u.lis));		\
-	    break;						\
-	case SET_:						\
-	    CHECKSETMEMBER(ELEM,NAME);				\
-	    BINARY(SET_NEWNODE,AGGR->u.set | (1 << ELEM->u.num));	\
-	    break;						\
-	case STRING_:						\
-	  { char *s;						\
-	    if (ELEM->op != CHAR_)				\
-		execerror("character", NAME);			\
-	    s = (char *) malloc(strlen(AGGR->u.str) + 2);	\
-	    s[0] = ELEM->u.num;					\
-	    strcpy(s + 1,AGGR->u.str);				\
-	    BINARY(STRING_NEWNODE,s);				\
-	    break; }						\
-	default:						\
-	    BADAGGREGATE(NAME); }				\
-}
+#ifdef RUNTIME_CHECKS
+#define CONS_SWONS(PROCEDURE, NAME, AGGR, ELEM)                                \
+    PRIVATE void PROCEDURE(void)                                               \
+    {                                                                          \
+        TWOPARAMS(NAME);                                                       \
+        switch (AGGR->op) {                                                    \
+        case LIST_:                                                            \
+            BINARY(LIST_NEWNODE, newnode(ELEM->op, ELEM->u, AGGR->u.lis));     \
+            break;                                                             \
+        case SET_:                                                             \
+            CHECKSETMEMBER(ELEM, NAME);                                        \
+            BINARY(SET_NEWNODE, AGGR->u.set | ((long_t)1 << ELEM->u.num));     \
+            break;                                                             \
+        case STRING_: {                                                        \
+            char* s;                                                           \
+            if (ELEM->op != CHAR_)                                             \
+                execerror("character", NAME);                                  \
+            s = (char*)malloc(strlen(AGGR->u.str) + 2);                        \
+            s[0] = (char)ELEM->u.num;                                          \
+            strcpy(s + 1, AGGR->u.str);                                        \
+            BINARY(STRING_NEWNODE, s);                                         \
+            break;                                                             \
+        }                                                                      \
+        default:                                                               \
+            BADAGGREGATE(NAME);                                                \
+        }                                                                      \
+    }
+#else
+#define CONS_SWONS(PROCEDURE, NAME, AGGR, ELEM)                                \
+    PRIVATE void PROCEDURE(void)                                               \
+    {                                                                          \
+        TWOPARAMS(NAME);                                                       \
+        switch (AGGR->op) {                                                    \
+        case LIST_:                                                            \
+            BINARY(LIST_NEWNODE, newnode(ELEM->op, ELEM->u, AGGR->u.lis));     \
+            break;                                                             \
+        case SET_:                                                             \
+            BINARY(SET_NEWNODE, AGGR->u.set | ((long_t)1 << ELEM->u.num));     \
+            break;                                                             \
+        case STRING_: {                                                        \
+            char* s;                                                           \
+            s = (char*)malloc(strlen(AGGR->u.str) + 2);                        \
+            s[0] = ELEM->u.num;                                                \
+            strcpy(s + 1, AGGR->u.str);                                        \
+            BINARY(STRING_NEWNODE, s);                                         \
+            break;                                                             \
+        }                                                                      \
+        default:                                                               \
+            BADAGGREGATE(NAME);                                                \
+        }                                                                      \
+    }
+#endif
+CONS_SWONS(cons_, "cons", stck, stck->next)
+CONS_SWONS(swons_, "swons", stck->next, stck)
 
-CONS_SWONS(cons_,"cons",stk,stk->next)
-CONS_SWONS(swons_,"swons",stk->next,stk)
-
-PRIVATE void drop_()
-{   int n = stk->u.num;
+PRIVATE void drop_(void)
+{
+    int n = stck->u.num;
     TWOPARAMS("drop");
-    switch (stk->next->op)
-      { case SET_:
-	  { int i; long result = 0;
-	    for (i = 0; i < SETSIZE; i++)
-	        if (stk->next->u.set & (1 << i))
-		  { if (n < 1) result = result | (1 << i);
-		    else n--; }
-	    BINARY(SET_NEWNODE,result);
-	    return; }
-	case STRING_:
-	  { char *result = stk->next->u.str;
-	    while (n-- > 0  &&  *result != '\0') ++result;
-	    BINARY(STRING_NEWNODE,result);
-	    return; }
-	case LIST_:
-	  { Node *result = stk->next->u.lis;
-	    while (n-- > 0 && result != NULL) result = result->next;
-	    BINARY(LIST_NEWNODE,result);
-	    return; }
-	default:
-	    BADAGGREGATE("drop"); }
+    switch (stck->next->op) {
+    case SET_: {
+        int i;
+        long_t result = 0;
+        for (i = 0; i < SETSIZE; i++)
+            if (stck->next->u.set & ((long_t)1 << i)) {
+                if (n < 1)
+                    result |= ((long_t)1 << i);
+                else
+                    n--;
+            }
+        BINARY(SET_NEWNODE, result);
+        return;
+    }
+    case STRING_: {
+        char* result = stck->next->u.str;
+        while (n-- > 0 && *result != '\0')
+            ++result;
+        BINARY(STRING_NEWNODE, result);
+        return;
+    }
+    case LIST_: {
+        Node* result = stck->next->u.lis;
+        while (n-- > 0 && result != NULL)
+            result = result->next;
+        BINARY(LIST_NEWNODE, result);
+        return;
+    }
+    default:
+        BADAGGREGATE("drop");
+    }
 }
 
-PRIVATE void take_()
-{   int n = stk->u.num;
+PRIVATE void take_(void)
+{
+    int n = stck->u.num;
+
     TWOPARAMS("take");
-    switch (stk->next->op)
-      { case SET_:
-	  { int i; long result = 0;
-	    for (i = 0; i < SETSIZE; i++)
-	        if (stk->next->u.set & (1 << i))
-		  { if (n > 0)
-		      { --n;  result = result | (1 << i); }
-		    else break; }
-	    BINARY(SET_NEWNODE,result);
-	    return; }
-	case STRING_:
-	  { int i; char *old, *p, *result;
-	    i = stk->u.num;
-	    old = stk->next->u.str;
-	    POP(stk);
-	    /* do not swap the order of the next two statements ! ! ! */
-	    if (i < 0) i = 0;
-	    if (i > (int)strlen(old)) return; /* the old string unchanged */
-	    p = result = (char *) malloc(strlen(old) - i + 1);
-	    while (i-- > 0)  *p++ = *old++;
-	    UNARY(STRING_NEWNODE,result);
-	    return; }
-	case LIST_:
-	  { int i = stk->u.num;
-	    if (i < 1) { BINARY(LIST_NEWNODE,NULL); return; } /* null string */
-	    dump1 = newnode(LIST_,stk->next->u,dump1);	/* old  */
-	    dump2 = LIST_NEWNODE(0L, dump2);		/* head */
-	    dump3 = LIST_NEWNODE(0L, dump3);		/* last */
-	    while (DMP1 != NULL && i-- > 0)
-	      { if (DMP2 == NULL)			/* first */
-		  { DMP2 = newnode(DMP1->op,DMP1->u,NULL);
-		    DMP3 = DMP2; }
-		else					/* further */
-		  { DMP3->next = newnode(DMP1->op,DMP1->u,NULL);
-		    DMP3 = DMP3->next; }
-		DMP1 = DMP1->next; }
-	    DMP3->next = NULL;
-	    BINARY(LIST_NEWNODE,DMP2);
-	    POP(dump1); POP(dump2); POP(dump3);
-	    return; }
-	default:
-	    BADAGGREGATE("take"); }
+    switch (stck->next->op) {
+    case SET_: {
+        int i;
+        long_t result = 0;
+        for (i = 0; i < SETSIZE; i++)
+            if (stck->next->u.set & ((long_t)1 << i)) {
+                if (n > 0) {
+                    --n;
+                    result |= ((long_t)1 << i);
+                } else
+                    break;
+            }
+        BINARY(SET_NEWNODE, result);
+        return;
+    }
+    case STRING_: {
+        int i;
+        char *old, *p, *result;
+        i = stck->u.num;
+        old = stck->next->u.str;
+        POP(stck);
+        /* do not swap the order of the next two statements ! ! ! */
+        if (i < 0)
+            i = 0;
+        if ((size_t)i >= strlen(old))
+            return; /* the old string unchanged */
+        p = result = (char*)malloc(i + 1);
+        while (i-- > 0)
+            *p++ = *old++;
+        *p = 0;
+        UNARY(STRING_NEWNODE, result);
+        return;
+    }
+    case LIST_: {
+        int i = stck->u.num;
+        if (i < 1) {
+            BINARY(LIST_NEWNODE, NULL);
+            return;
+        } /* null string */
+        dump1 = newnode(LIST_, stck->next->u, dump1); /* old  */
+        dump2 = LIST_NEWNODE(0L, dump2); /* head */
+        dump3 = LIST_NEWNODE(0L, dump3); /* last */
+        while (DMP1 != NULL && i-- > 0) {
+            if (DMP2 == NULL) /* first */
+            {
+                DMP2 = NEWNODE(DMP1->op, DMP1->u, NULL);
+                DMP3 = DMP2;
+            } else /* further */
+            {
+                DMP3->next = NEWNODE(DMP1->op, DMP1->u, NULL);
+                DMP3 = DMP3->next;
+            }
+            DMP1 = DMP1->next;
+        }
+        DMP3->next = NULL;
+        BINARY(LIST_NEWNODE, DMP2);
+        POP(dump1);
+        POP(dump2);
+        POP(dump3);
+        return;
+    }
+    default:
+        BADAGGREGATE("take");
+    }
 }
 
-PRIVATE void concat_()
+PRIVATE void concat_(void)
 {
     TWOPARAMS("concat");
     SAME2TYPES("concat");
-    switch (stk->op)
-      { case SET_:
-	    BINARY(SET_NEWNODE,stk->next->u.set | stk->u.set);
-	    return;
-	case STRING_:
-	  { char *s, *p;
-	    s = p = (char *)malloc(strlen(stk->next->u.str) +
-				   strlen(stk->u.str) + 1);
-	    while ((*p++ = *(stk->next->u.str)++) != '\0');
-	    --p; /* don't want terminating null */
-	    while ((*p++ = *(stk->u.str)++) != '\0');
-	    BINARY(STRING_NEWNODE,s);
-	    return; }
-	case LIST_:
-	    if (stk->next->u.lis == NULL)
-	      { BINARY(LIST_NEWNODE,stk->u.lis); return; }
-	    dump1 = LIST_NEWNODE(stk->next->u.lis,dump1);/* old  */
-	    dump2 = LIST_NEWNODE(0L,dump2);		 /* head */
-	    dump3 = LIST_NEWNODE(0L,dump3);		 /* last */
-	    while (DMP1 != NULL)
-	      { if (DMP2 == NULL)			/* first */
-		  { DMP2 =
-			newnode(DMP1->op,
-			    DMP1->u,NULL);
-		    DMP3 = DMP2; }
-		else					/* further */
-		  { DMP3->next =
-			newnode(DMP1->op,
-			    DMP1->u,NULL);
-		    DMP3 = DMP3->next; };
-		DMP1 = DMP1->next; }
-	    DMP3->next = stk->u.lis;
-	    BINARY(LIST_NEWNODE,DMP2);
-	    POP(dump1);
-	    POP(dump2);
-	    POP(dump3);
-	    return;
-	default:
-	    BADAGGREGATE("concat"); };
+    switch (stck->op) {
+    case SET_:
+        BINARY(SET_NEWNODE, stck->next->u.set | stck->u.set);
+        return;
+    case STRING_: {
+        char *s, *p;
+        s = p = (char*)malloc(
+            strlen(stck->next->u.str) + strlen(stck->u.str) + 1);
+        strcpy(s, stck->next->u.str);
+        strcat(s, stck->u.str);
+        BINARY(STRING_NEWNODE, s);
+        return;
+    }
+    case LIST_:
+        if (stck->next->u.lis == NULL) {
+            BINARY(LIST_NEWNODE, stck->u.lis);
+            return;
+        }
+        dump1 = LIST_NEWNODE(stck->next->u.lis, dump1); /* old  */
+        dump2 = LIST_NEWNODE(0L, dump2); /* head */
+        dump3 = LIST_NEWNODE(0L, dump3); /* last */
+        while (DMP1 != NULL) {
+            if (DMP2 == NULL) /* first */
+            {
+                DMP2 = NEWNODE(DMP1->op, DMP1->u, NULL);
+                DMP3 = DMP2;
+            } else /* further */
+            {
+                DMP3->next = NEWNODE(DMP1->op, DMP1->u, NULL);
+                DMP3 = DMP3->next;
+            };
+            DMP1 = DMP1->next;
+        }
+        DMP3->next = stck->u.lis;
+        BINARY(LIST_NEWNODE, DMP2);
+        POP(dump1);
+        POP(dump2);
+        POP(dump3);
+        return;
+    default:
+        BADAGGREGATE("concat");
+    };
 }
 
-PRIVATE void enconcat_()
+PRIVATE void enconcat_(void)
 {
     THREEPARAMS("enconcat");
     SAME2TYPES("enconcat");
-    swapd_(); cons_(); concat_();
+    swapd_();
+    cons_();
+    concat_();
 }
 
-PRIVATE void null_()
+PRIVATE void null_(void)
 {
     ONEPARAM("null");
-    switch (stk->op)
-      { case STRING_:
-	    UNARY(BOOLEAN_NEWNODE, (long)(*(stk->u.str) == '\0'));
-	    break;
-	case FLOAT_:
-	    UNARY(BOOLEAN_NEWNODE, (long)(stk->u.dbl == 0.0));
-	    break;
-	case FILE_:
-	    UNARY(BOOLEAN_NEWNODE, (long)(stk->u.fil == NULL));
-	    break;
-	default:
-	    UNARY(BOOLEAN_NEWNODE, (long)(! stk->u.num)); }
+    switch (stck->op) {
+    case STRING_:
+        UNARY(BOOLEAN_NEWNODE, (long_t)(*(stck->u.str) == '\0'));
+        break;
+    case FLOAT_:
+        UNARY(BOOLEAN_NEWNODE, (long_t)(stck->u.dbl == 0.0));
+        break;
+    case FILE_:
+        UNARY(BOOLEAN_NEWNODE, (long_t)(stck->u.fil == NULL));
+        break;
+    case LIST_:
+        UNARY(BOOLEAN_NEWNODE, (long_t)(!stck->u.lis));
+        break;
+    case SET_:
+        UNARY(BOOLEAN_NEWNODE, (long_t)(!stck->u.set));
+        break;
+    case BOOLEAN_:
+    case CHAR_:
+    case INTEGER_:
+        UNARY(BOOLEAN_NEWNODE, (long_t)(!stck->u.num));
+        break;
+    default:
+        BADDATA("null");
+    }
 }
 
-PRIVATE void not_()
+PRIVATE void not_(void)
 {
     ONEPARAM("not");
-    switch (stk->op)
-      { case SET_:
-	    UNARY(SET_NEWNODE,~ stk->u.set);
-	    break;
-	case STRING_:
-	    UNARY(BOOLEAN_NEWNODE,(long)(*(stk->u.str) != '\0'));
-	    break;
-	case BOOLEAN_: case CHAR_: case INTEGER_: case LIST_:
-	    UNARY(BOOLEAN_NEWNODE, (long)(! stk->u.num));
-	    break;
-	default:
-	    BADDATA("not"); }
+    switch (stck->op) {
+    case SET_:
+        UNARY(SET_NEWNODE, ~stck->u.set);
+        break;
+#ifndef ONLY_LOGICAL_NOT
+    case STRING_:
+        UNARY(BOOLEAN_NEWNODE, (long_t)(*(stck->u.str) != '\0'));
+        break;
+    case LIST_:
+        UNARY(BOOLEAN_NEWNODE, (long_t)(!stck->u.lis));
+        break;
+    case CHAR_:
+    case INTEGER_:
+#endif
+    case BOOLEAN_:
+        UNARY(BOOLEAN_NEWNODE, (long_t)(!stck->u.num));
+        break;
+#ifdef NOT_ALSO_FOR_FLOAT
+    case FLOAT_:
+        UNARY(BOOLEAN_NEWNODE, (long_t)(!stck->u.dbl));
+        break;
+#endif
+#ifdef NOT_ALSO_FOR_FILE
+    case FILE_:
+        UNARY(BOOLEAN_NEWNODE, (long_t)(stck->u.fil != NULL));
+        break;
+#endif
+    default:
+        BADDATA("not");
+    }
 }
 
-PRIVATE void size_()
+PRIVATE void size_(void)
 {
-    long siz = 0;
+    long_t siz = 0;
     ONEPARAM("size");
-    switch (stk->op)
-      { case SET_:
-	  { int i;
-	    for (i = 0; i < SETSIZE; i++)
-		if (stk->u.set & (1 << i)) siz++;
-	    break; }
-	case STRING_:
-	    siz = strlen(stk->u.str);
-	    break;
-	case LIST_:
-	  { Node *e = stk->u.lis;
-	    while (e != NULL) {e = e->next; siz++;};
-	    break; }
-	default :
-	    BADDATA("size"); }
-    UNARY(INTEGER_NEWNODE,siz);
+    switch (stck->op) {
+    case SET_: {
+        int i;
+        for (i = 0; i < SETSIZE; i++)
+            if (stck->u.set & ((long_t)1 << i))
+                siz++;
+        break;
+    }
+    case STRING_:
+        siz = strlen(stck->u.str);
+        break;
+    case LIST_: {
+        Node* e = stck->u.lis;
+        while (e != NULL) {
+            e = e->next;
+            siz++;
+        };
+        break;
+    }
+    default:
+        BADAGGREGATE("size");
+    }
+    UNARY(INTEGER_NEWNODE, siz);
 }
 
-PRIVATE void small_()
+PRIVATE void small_(void)
 {
-    long sml = 0;
+    int sml = 0;
     ONEPARAM("small");
-    switch (stk->op)
-      { case BOOLEAN_: case INTEGER_:
-	    sml = stk->u.num < 2;
-	    break;
-	case SET_:
-	    if (stk->u.set == 0) sml = 1; else
-	      { int i = 0;
-		while  (!(stk->u.set & (1 << i))) i++;
-D(		printf("small: first member found is %d\n",i); )
-		sml = (stk->u.set & ~(1 << i)) == 0; }
-	    break;
-	case STRING_:
-	    sml = stk->u.str[0] == '\0' || stk->u.str[1] == '\0';
-	    break;
-	case LIST_:
-	    sml = stk->u.lis == NULL || stk->u.lis->next == NULL;
-	    break;
-	default:
-	    BADDATA("small"); }
-    UNARY(BOOLEAN_NEWNODE,sml);
+    switch (stck->op) {
+    case BOOLEAN_:
+    case INTEGER_:
+        sml = stck->u.num < 2;
+        break;
+    case SET_:
+        if (stck->u.set == 0)
+            sml = 1;
+        else {
+            int i = 0;
+            while (!(stck->u.set & ((long_t)1 << i)))
+                i++;
+            D(printf("small: first member found is %d\n", i);)
+            sml = (stck->u.set & ~((long_t)1 << i)) == 0;
+        }
+        break;
+    case STRING_:
+        sml = stck->u.str[0] == '\0' || stck->u.str[1] == '\0';
+        break;
+    case LIST_:
+        sml = stck->u.lis == NULL || stck->u.lis->next == NULL;
+        break;
+    default:
+        BADDATA("small");
+    }
+    UNARY(BOOLEAN_NEWNODE, sml);
 }
 
-#define TYPE(PROCEDURE,NAME,REL,TYP)				\
-    PRIVATE void PROCEDURE()					\
-    {   ONEPARAM(NAME);						\
-	UNARY(BOOLEAN_NEWNODE,(long)(stk->op REL TYP)); }
+#define TYPE(PROCEDURE, NAME, REL, TYP)                                        \
+    PRIVATE void PROCEDURE(void)                                               \
+    {                                                                          \
+        ONEPARAM(NAME);                                                        \
+        UNARY(BOOLEAN_NEWNODE, (long_t)(stck->op REL TYP));                    \
+    }
+TYPE(integer_, "integer", ==, INTEGER_)
+TYPE(char_, "char", ==, CHAR_)
+TYPE(logical_, "logical", ==, BOOLEAN_)
+TYPE(string_, "string", ==, STRING_)
+TYPE(set_, "set", ==, SET_)
+TYPE(list_, "list", ==, LIST_)
+TYPE(leaf_, "leaf", !=, LIST_)
+TYPE(float_, "float", ==, FLOAT_)
+TYPE(file_, "file", ==, FILE_)
+TYPE(user_, "user", ==, USR_)
 
-TYPE(integer_,"integer",==,INTEGER_)
-TYPE(char_,"char",==,CHAR_)
-TYPE(logical_,"logical",==,BOOLEAN_)
-TYPE(string_,"string",==,STRING_)
-TYPE(set_,"set",==,SET_)
-TYPE(list_,"list",==,LIST_)
-TYPE(leaf_,"leaf",!=,LIST_)
-TYPE(float_,"float",==,FLOAT_)
-TYPE(file_,"file",==,FILE_)
-TYPE(user_,"user",==,USR_)
-
-#define USETOP(PROCEDURE,NAME,TYPE,BODY)			\
-    PRIVATE void PROCEDURE()					\
-    { ONEPARAM(NAME); TYPE(NAME); BODY; POP(stk); }
-
-USETOP( put_,"put",ONEPARAM, writefactor(stk, stdout);printf(" "))
-USETOP( putch_,"putch",NUMERICTYPE, printf("%c", (char) stk->u.num) )
-USETOP( putchars_,"putchars",STRING, printf("%s",stk->u.str) )
-USETOP( setecho_,"setecho",NUMERICTYPE, echoflag = stk->u.num )
-USETOP( setautoput_,"setautoput",NUMERICTYPE, autoput = stk->u.num )
-USETOP( setundeferror_, "setundeferror", NUMERICTYPE, undeferror = stk->u.num )
-USETOP( settracegc_,"settracegc",NUMERICTYPE, tracegc = stk->u.num )
-USETOP( srand_,"srand",INTEGER, srand((unsigned int) stk->u.num) )
-USETOP( include_,"include",STRING, doinclude(stk->u.str) )
-USETOP( system_,"system",STRING, system(stk->u.str) )
+#define USETOP(PROCEDURE, NAME, TYPE, BODY)                                    \
+    PRIVATE void PROCEDURE(void)                                               \
+    {                                                                          \
+        ONEPARAM(NAME);                                                        \
+        TYPE(NAME);                                                            \
+        BODY;                                                                  \
+        POP(stck);                                                             \
+    }
+USETOP(put_, "put", ONEPARAM, writefactor(stck, stdout); printf(" "))
+USETOP(putch_, "putch", NUMERICTYPE, printf("%c", (char)stck->u.num))
+USETOP(putchars_, "putchars", STRING, printf("%s", stck->u.str))
+USETOP(setecho_, "setecho", NUMERICTYPE, echoflag = stck->u.num)
+USETOP(setautoput_, "setautoput", NUMERICTYPE, autoput = stck->u.num)
+USETOP(setundeferror_, "setundeferror", NUMERICTYPE, undeferror = stck->u.num)
+USETOP(settracegc_, "settracegc", NUMERICTYPE, tracegc = stck->u.num)
+USETOP(srand_, "srand", INTEGER, srand((unsigned int)stck->u.num))
+USETOP(include_, "include", STRING, doinclude(stck->u.str))
+USETOP(system_, "system", STRING, (void)system(stck->u.str))
 
 PRIVATE void undefs_(void)
 {
-    Entry *i = symtabindex;
-    Node *n = 0;
-    while (i != symtab)
-      { --i;
-	if ( (i->name[0] != 0) && (i->name[0] != '_') &&  (i->u.body == NULL) )
-	    n = STRING_NEWNODE(i->name, n); }
-    stk = LIST_NEWNODE(n,stk);
+    Entry* i = symtabindex;
+    dump1 = LIST_NEWNODE(NULL, dump1);
+    while (i != symtab) {
+        --i;
+        if ((i->name[0] != 0) && (i->name[0] != '_') && (i->u.body == NULL))
+            DMP1 = STRING_NEWNODE(i->name, DMP1);
+    }
+    NULLARY(LIST_NEWNODE, DMP1);
+    POP(dump1);
 }
 
-PRIVATE void argv_()
+PRIVATE void argv_(void)
 {
     int i;
     dump1 = LIST_NEWNODE(NULL, dump1);
-    for(i = g_argc - 1; i >= 0; i--) {
-	DMP1 = STRING_NEWNODE(g_argv[i], DMP1);
+    for (i = g_argc - 1; i >= 0; i--) {
+        DMP1 = STRING_NEWNODE(g_argv[i], DMP1);
     }
     NULLARY(LIST_NEWNODE, DMP1);
     POP(dump1);
     return;
 }
 
-PRIVATE void get_()
+PRIVATE void get_(void)
 {
     getsym();
-    readfactor();
+    readfactor(0);
 }
 
-PUBLIC void dummy_(void)
-{
-    /* never called */
-}
+PUBLIC void dummy_(void) { /* never called */ }
 
-#define HELP(PROCEDURE,REL)					\
-PRIVATE void PROCEDURE()					\
-{   Entry *i = symtabindex;					\
-    int column = 0;						\
-    int name_length;						\
-    while (i != symtab)						\
-	if ((--i)->name[0] REL '_')				\
-	  { name_length = strlen(i->name) + 1;			\
-	    if (column + name_length > 72)			\
-	      { printf("\n"); column = 0; }			\
-	    printf("%s ", i->name);				\
-	    column += name_length; }				\
-    printf("\n"); }
-HELP(help1_,!=)
-HELP(h_help1_,==)
+#define HELP(PROCEDURE, REL)                                                   \
+    PRIVATE void PROCEDURE(void)                                               \
+    {                                                                          \
+        Entry* i = symtabindex;                                                \
+        int column = 0;                                                        \
+        int name_length;                                                       \
+        while (i != symtab)                                                    \
+            if ((--i)->name[0] REL '_' && !i->is_local) {                      \
+                name_length = strlen(i->name) + 1;                             \
+                if (column + name_length > 72) {                               \
+                    printf("\n");                                              \
+                    column = 0;                                                \
+                }                                                              \
+                printf("%s ", i->name);                                        \
+                column += name_length;                                         \
+            }                                                                  \
+        printf("\n");                                                          \
+    }
+HELP(help1_, !=)
+HELP(h_help1_, ==)
 
 /* - - - - -   C O M B I N A T O R S   - - - - - */
 
-PUBLIC void exeterm(Node *n)
+#ifdef TRACE
+PUBLIC void printfactor(Node* n, FILE* stm)
 {
-    Node *stepper;
+    switch (n->op) {
+    case BOOLEAN_:
+        fprintf(stm, "type boolean");
+        return;
+    case INTEGER_:
+        fprintf(stm, "type integer");
+        return;
+    case FLOAT_:
+        fprintf(stm, "type float");
+        return;
+    case SET_:
+        fprintf(stm, "type set");
+        return;
+    case CHAR_:
+        fprintf(stm, "type char");
+        return;
+    case STRING_:
+        fprintf(stm, "type string");
+        return;
+    case LIST_:
+        fprintf(stm, "type list");
+        return;
+    case USR_:
+        fprintf(stm, n->u.ent->name);
+        return;
+    case FILE_:
+        fprintf(stm, "type file");
+        return;
+    default:
+        fprintf(stm, "%s", symtab[(int)n->op].name);
+        return;
+    }
+}
+#endif
+
+#ifdef TRACK_USED_SYMBOLS
+static void report_symbols(void)
+{
+    Entry* n;
+
+    for (n = symtab; n->name; n++)
+        if (n->is_used)
+            fprintf(stderr, "%s\n", n->name);
+}
+#endif
+
+#ifdef STATS
+static double calls, opers;
+
+static void report_stats(void)
+{
+    fprintf(stderr, "%.0f calls to joy interpreter\n", calls);
+    fprintf(stderr, "%.0f operations executed\n", opers);
+}
+#endif
+
+PUBLIC void exeterm(Node* n)
+{
+    Node* stepper;
+#ifdef TRACK_USED_SYMBOLS
+    static int first;
+
+    if (!first) {
+        first = 1;
+        atexit(report_symbols);
+    }
+#endif
 start:
-    if (n == NULL) return;
-    conts = LIST_NEWNODE(n,conts);
-    while (conts->u.lis != NULL)
-      {
-	if (tracegc > 5)
-	  { printf("exeterm1: %ld ",(long)conts->u.lis);
-	    printnode(conts->u.lis); }
-	stepper = conts->u.lis;
-	conts->u.lis = conts->u.lis->next;
-	switch (stepper->op)
-	  { case BOOLEAN_: case CHAR_: case INTEGER_: case FLOAT_:
-	    case SET_: case STRING_: case LIST_:
-		stk = newnode(stepper->op, stepper->u, stk); break;
-	    case USR_:
-              if (stepper->u.ent->u.body == NULL && undeferror)
-                  execerror("definition", stepper->u.ent->name);
-		if (stepper->next == NULL)
-		  { POP(conts);
-		    n = stepper->u.ent->u.body;
-		    goto start; }
-		  else exeterm(stepper->u.ent->u.body );
-		break;
-	    case COPIED_: case ILLEGAL_:
-		printf("exeterm: attempting to execute bad node\n");
-		printnode(stepper);
-		break;
-	    default:
-D(		printf("trying to do "); )
-D(		writefactor(dump1, stdout); )
-		(*(stepper->u.proc))(); break; }
-	if (tracegc > 5)
-	  { printf("exeterm2: %ld ",(long)stepper);
-            printnode(stepper); }
-/*
-	stepper = stepper->next; }
-*/
-		}
+    if (n == NULL)
+        return;
+#ifdef STATS
+    if (++calls == 1)
+	atexit(report_stats);
+#endif
+    conts = LIST_NEWNODE(n, conts);
+    while (conts->u.lis != NULL) {
+#ifdef ENABLE_TRACEGC
+        if (tracegc > 5) {
+            printf("exeterm1: %p ", (void*)conts->u.lis);
+            printnode(conts->u.lis);
+        }
+#endif
+        stepper = conts->u.lis;
+        conts->u.lis = conts->u.lis->next;
+#ifdef TRACE
+        printfactor(stepper, stdout);
+        printf(" . ");
+        writeterm(stck, stdout);
+        printf("\n");
+#endif
+#ifdef STATS
+	++opers;
+#endif
+        switch (stepper->op) {
+        case BOOLEAN_:
+        case CHAR_:
+        case INTEGER_:
+        case FLOAT_:
+        case SET_:
+        case STRING_:
+        case LIST_:
+        case FILE_:
+            stck = newnode(stepper->op, stepper->u, stck);
+            break;
+        case USR_:
+            if (stepper->u.ent->u.body == NULL && undeferror)
+                execerror("definition", stepper->u.ent->name);
+            if (stepper->next == NULL) {
+                POP(conts);
+                n = stepper->u.ent->u.body;
+                goto start;
+            } else
+                exeterm(stepper->u.ent->u.body);
+            break;
+        case COPIED_:
+        case ILLEGAL_:
+            printf("exeterm: attempting to execute bad node\n");
+#ifdef ENABLE_TRACEGC
+            printnode(stepper);
+#endif
+            break;
+        default:
+            D(printf("trying to do ");)
+            D(writefactor(stepper, stdout);)
+#ifdef TRACK_USED_SYMBOLS
+            symtab[(int)stepper->op].is_used = 1;
+#endif
+            (*(stepper->u.proc))();
+            break;
+        }
+#ifdef ENABLE_TRACEGC
+        if (tracegc > 5) {
+            printf("exeterm2: %p ", (void*)stepper);
+            printnode(stepper);
+        }
+#endif
+    }
     POP(conts);
-D(  printf("after execution, stk is:\n"); )
-D(  writeterm(stk, stdout); )
-D(  printf("\n"); )
+    D(printf("after execution, stck is:\n");)
+    D(writeterm(stck, stdout);)
+    D(printf("\n");)
 }
 
-PRIVATE void x_()
+PRIVATE void x_(void)
 {
     ONEPARAM("x");
     ONEQUOTE("x");
-    exeterm(stk->u.lis);
+    exeterm(stck->u.lis);
 }
 
-PRIVATE void i_()
+PRIVATE void i_(void)
 {
     ONEPARAM("i");
     ONEQUOTE("i");
     SAVESTACK;
-    POP(stk);
+    POP(stck);
     exeterm(SAVED1->u.lis);
     POP(dump);
 }
 
-PRIVATE void dip_()
+PRIVATE void dip_(void)
 {
     TWOPARAMS("dip");
     ONEQUOTE("dip");
     SAVESTACK;
-    stk = stk->next->next;
+    stck = stck->next->next;
     exeterm(SAVED1->u.lis);
-    GNULLARY(SAVED2->op,SAVED2->u);
+    GNULLARY(SAVED2->op, SAVED2->u);
     POP(dump);
 }
 
-#define N_ARY(PROCEDURE,NAME,PARAMCOUNT,TOP)			\
-PRIVATE void PROCEDURE()					\
-{   PARAMCOUNT(NAME);						\
-    ONEQUOTE(NAME);						\
-    SAVESTACK;							\
-    POP(stk);							\
-    exeterm(SAVED1->u.lis);					\
-    if (stk == NULL) execerror("value to push",NAME);		\
-    stk = newnode(stk->op, stk->u,TOP);				\
-    POP(dump);							\
-}
-
-N_ARY(nullary_,"nullary",ONEPARAM,SAVED2)
-N_ARY(unary_,"unary",TWOPARAMS,SAVED3)
-N_ARY(binary_,"binary",THREEPARAMS,SAVED4)
-N_ARY(ternary_,"ternary",FOURPARAMS,SAVED5)
+#define N_ARY(PROCEDURE, NAME, PARAMCOUNT, TOP)                                \
+    PRIVATE void PROCEDURE(void)                                               \
+    {                                                                          \
+        PARAMCOUNT(NAME);                                                      \
+        ONEQUOTE(NAME);                                                        \
+        SAVESTACK;                                                             \
+        POP(stck);                                                             \
+        exeterm(SAVED1->u.lis);                                                \
+        if (stck == NULL)                                                      \
+            execerror("value to push", NAME);                                  \
+        stck = newnode(stck->op, stck->u, TOP);                                \
+        POP(dump);                                                             \
+    }
+N_ARY(nullary_, "nullary", ONEPARAM, SAVED2)
+N_ARY(unary_, "unary", TWOPARAMS, SAVED3)
+N_ARY(binary_, "binary", THREEPARAMS, SAVED4)
+N_ARY(ternary_, "ternary", FOURPARAMS, SAVED5)
 
 /*
-PRIVATE void nullary_()
+PRIVATE void nullary_(void)
 {
     ONEPARAM("nullary");
     SAVESTACK;
-    POP(stk);
+    POP(stck);
     exeterm(SAVED1->u.lis);
-    stk->next = SAVED2;
+    stck->next = SAVED2;
     POP(dump);
 }
 */
 
-PRIVATE void times_()
+PRIVATE void times_(void)
 {
-    int i,n;
+    int i, n;
     TWOPARAMS("times");
     ONEQUOTE("times");
     INTEGER2("times");
     SAVESTACK;
-    stk = stk->next->next;
+    stck = stck->next->next;
     n = SAVED2->u.num;
     for (i = 1; i <= n; i++)
-	exeterm(SAVED1->u.lis);
+        exeterm(SAVED1->u.lis);
     POP(dump);
 }
 
-PRIVATE void infra_()
+PRIVATE void infra_(void)
 {
     TWOPARAMS("infra");
     ONEQUOTE("infra");
     LIST2("infra");
     SAVESTACK;
-    stk = SAVED2->u.lis;
+    stck = SAVED2->u.lis;
     exeterm(SAVED1->u.lis);
-    stk = LIST_NEWNODE(stk,SAVED3);
+    stck = LIST_NEWNODE(stck, SAVED3);
     POP(dump);
 }
 
-PRIVATE void app1_()
+PRIVATE void app1_(void)
 {
     TWOPARAMS("app1");
     ONEQUOTE("app1");
     SAVESTACK;
-    POP(stk);
+    POP(stck);
     exeterm(SAVED1->u.lis);
     POP(dump);
 }
 
-PRIVATE void cleave_()
-{			/*  X [P1] [P2] cleave ==>  X1 X2	*/
+PRIVATE void cleave_(void)
+{ /*  X [P1] [P2] cleave ==>  X1 X2	*/
     THREEPARAMS("cleave");
     TWOQUOTES("cleave");
     SAVESTACK;
-    stk = SAVED3;
-    exeterm(SAVED2->u.lis);			/* [P1]		*/
-    dump1 = newnode(stk->op,stk->u,dump1);	/*  X1		*/
-    stk = SAVED3;
-    exeterm(SAVED1->u.lis);			/* [P2]		*/
-    dump1 = newnode(stk->op,stk->u,dump1);	/*  X2		*/
-    stk = dump1; dump1 = dump1->next->next; stk->next->next = SAVED4;
+    stck = SAVED3;
+    exeterm(SAVED2->u.lis); /* [P1]		*/
+    dump1 = newnode(stck->op, stck->u, dump1); /*  X1		*/
+    stck = SAVED3;
+    exeterm(SAVED1->u.lis); /* [P2]		*/
+    dump1 = newnode(stck->op, stck->u, dump1); /*  X2		*/
+    stck = dump1;
+    dump1 = dump1->next->next;
+    stck->next->next = SAVED4;
     POP(dump);
 }
 
-PRIVATE void app11_()
+PRIVATE void app11_(void)
 {
     THREEPARAMS("app11");
     ONEQUOTE("app11");
     app1_();
-    stk->next = stk->next->next;
+    stck->next = stck->next->next;
 }
 
-PRIVATE void unary2_()
-{			/*   Y  Z  [P]  unary2     ==>  Y'  Z'  */
+PRIVATE void unary2_(void)
+{ /*   Y  Z  [P]  unary2     ==>  Y'  Z'  */
     THREEPARAMS("unary2");
     ONEQUOTE("unary2");
     SAVESTACK;
-    stk = SAVED2->next;				/* just Y on top */
-    exeterm(SAVED1->u.lis);			/* execute P */
-    dump1 = newnode(stk->op,stk->u,dump1);	/* save P(Y) */
-    stk = newnode(SAVED2->op,SAVED2->u,
-	  SAVED3->next);			/* just Z on top */
-    exeterm(SAVED1->u.lis);			/* execute P */
-    dump1 = newnode(stk->op,stk->u,dump1);	/* save P(Z) */
-    stk = dump1; dump1 = dump1->next->next; stk->next->next = SAVED4;
+    stck = SAVED2->next; /* just Y on top */
+    exeterm(SAVED1->u.lis); /* execute P */
+    dump1 = newnode(stck->op, stck->u, dump1); /* save P(Y) */
+    stck = newnode(SAVED2->op, SAVED2->u, SAVED3->next); /* just Z on top */
+    exeterm(SAVED1->u.lis); /* execute P */
+    dump1 = newnode(stck->op, stck->u, dump1); /* save P(Z) */
+    stck = dump1;
+    dump1 = dump1->next->next;
+    stck->next->next = SAVED4;
     POP(dump);
 }
 
-PRIVATE void unary3_()
-{			/*  X Y Z [P]  unary3    ==>  X' Y' Z'	*/
+PRIVATE void unary3_(void)
+{ /*  X Y Z [P]  unary3    ==>  X' Y' Z'	*/
     FOURPARAMS("unary3");
     ONEQUOTE("unary3");
     SAVESTACK;
-    stk = SAVED3->next;				/* just X on top */
-    exeterm(SAVED1->u.lis);			/* execute P */
-    dump1 = newnode(stk->op,stk->u,dump1);	/* save p(X) */
-    stk = newnode(SAVED3->op,SAVED3->u,
-	  SAVED4->next);			/* just Y on top */
-    exeterm(SAVED1->u.lis);			/* execute P */
-    dump1 = newnode(stk->op,stk->u,dump1);	/* save P(Y) */
-    stk = newnode(SAVED2->op,SAVED2->u,
-	  SAVED4->next);			/* just Z on top */
-    exeterm(SAVED1->u.lis);			/* execute P */
-    dump1 = newnode(stk->op,stk->u,dump1);	/* save P(Z) */
-    stk = dump1; dump1 = dump1->next->next->next;
-    stk->next->next->next = SAVED5;
+    stck = SAVED3->next; /* just X on top */
+    exeterm(SAVED1->u.lis); /* execute P */
+    dump1 = newnode(stck->op, stck->u, dump1); /* save P(X) */
+    stck = newnode(SAVED3->op, SAVED3->u, SAVED4->next); /* just Y on top */
+    exeterm(SAVED1->u.lis); /* execute P */
+    dump1 = newnode(stck->op, stck->u, dump1); /* save P(Y) */
+    stck = newnode(SAVED2->op, SAVED2->u, SAVED4->next); /* just Z on top */
+    exeterm(SAVED1->u.lis); /* execute P */
+    dump1 = newnode(stck->op, stck->u, dump1); /* save P(Z) */
+    stck = dump1;
+    dump1 = dump1->next->next->next;
+    stck->next->next->next = SAVED5;
     POP(dump);
 }
 
-PRIVATE void unary4_()
-{			/*  X Y Z W [P]  unary4    ==>  X' Y' Z' W'	*/
+PRIVATE void unary4_(void)
+{ /*  X Y Z W [P]  unary4    ==>  X' Y' Z' W'	*/
     FIVEPARAMS("unary4");
     ONEQUOTE("unary4");
     SAVESTACK;
-    stk = SAVED4->next;				/* just X on top */
-    exeterm(SAVED1->u.lis);			/* execute P */
-    dump1 = newnode(stk->op,stk->u,dump1);	/* save p(X) */
-    stk = newnode(SAVED4->op,SAVED4->u,
-	  SAVED5->next);			/* just Y on top */
-    exeterm(SAVED1->u.lis);			/* execute P */
-    dump1 = newnode(stk->op,stk->u,dump1);	/* save P(Y) */
-    stk = newnode(SAVED3->op,SAVED3->u,
-	  SAVED5->next);			/* just Z on top */
-    exeterm(SAVED1->u.lis);			/* execute P */
-    dump1 = newnode(stk->op,stk->u,dump1);	/* save P(Z) */
-    stk = newnode(SAVED2->op,SAVED2->u,
-	  SAVED5->next);			/* just W on top */
-    exeterm(SAVED1->u.lis);			/* execute P */
-    dump1 = newnode(stk->op,stk->u,dump1);	/* save P(W) */
-    stk = dump1; dump1 = dump1->next->next->next->next;
-    stk->next->next->next->next = SAVED6;
+    stck = SAVED4->next; /* just X on top */
+    exeterm(SAVED1->u.lis); /* execute P */
+    dump1 = newnode(stck->op, stck->u, dump1); /* save p(X) */
+    stck = newnode(SAVED4->op, SAVED4->u, SAVED5->next); /* just Y on top */
+    exeterm(SAVED1->u.lis); /* execute P */
+    dump1 = newnode(stck->op, stck->u, dump1); /* save P(Y) */
+    stck = newnode(SAVED3->op, SAVED3->u, SAVED5->next); /* just Z on top */
+    exeterm(SAVED1->u.lis); /* execute P */
+    dump1 = newnode(stck->op, stck->u, dump1); /* save P(Z) */
+    stck = newnode(SAVED2->op, SAVED2->u, SAVED5->next); /* just W on top */
+    exeterm(SAVED1->u.lis); /* execute P */
+    dump1 = newnode(stck->op, stck->u, dump1); /* save P(W) */
+    stck = dump1;
+    dump1 = dump1->next->next->next->next;
+    stck->next->next->next->next = SAVED6;
     POP(dump);
 }
 
-PRIVATE void app12_()
+PRIVATE void app12_(void)
 {
     /*   X  Y  Z  [P]  app12  */
     THREEPARAMS("app12");
     unary2_();
-    stk->next->next = stk->next->next->next;	/* delete X */
+    stck->next->next = stck->next->next->next; /* delete X */
 }
 
-PRIVATE void map_()
+PRIVATE void map_(void)
 {
     TWOPARAMS("map");
     ONEQUOTE("map");
     SAVESTACK;
-    switch(SAVED2->op)
-      { case LIST_:
-	  { dump1 = newnode(LIST_,SAVED2->u,dump1);	/* step old */
-	    dump2 = LIST_NEWNODE(0L,dump2);		/* head new */
-	    dump3 = LIST_NEWNODE(0L,dump3);		/* last new */
-	    while (DMP1 != NULL)
-	      { stk = newnode(DMP1->op,
-			      DMP1->u,SAVED3);
-		exeterm(SAVED1->u.lis);
-D(		printf("map: "); writefactor(stk, stdout); printf("\n"); )
-		if (DMP2 == NULL)			/* first */
-		  { DMP2 =
-			newnode(stk->op,stk->u,NULL);
-		    DMP3 = DMP2; }
-		else					/* further */
-		  { DMP3->next =
-			newnode(stk->op,stk->u,NULL);
-		    DMP3 = DMP3->next; }
-		DMP1 = DMP1->next; }
-	    stk = LIST_NEWNODE(DMP2,SAVED3);
-	    POP(dump3);
-	    POP(dump2);
-	    POP(dump1);
-	    break; }
-	case STRING_:
-	  { char *s, *resultstring; int j = 0;
-	    resultstring =
-		(char *) malloc(strlen(SAVED2->u.str) + 1);
-	    for (s = SAVED2->u.str; *s != '\0'; s++)
-	      { stk = CHAR_NEWNODE((long)*s,SAVED3);
-		exeterm(SAVED1->u.lis);
-		resultstring[j++] = stk->u.num; }
-	    stk = STRING_NEWNODE(resultstring,SAVED3);
-	    break; }
-	case SET_:
-	  { long i; long resultset = 0;
-	    for (i = 0; i < SETSIZE; i++)
-		if (SAVED2->u.set & (1 << i))
-		  { stk = INTEGER_NEWNODE(i,SAVED3);
-		    exeterm(SAVED1->u.lis);
-		    resultset = resultset | (1 << stk->u.num); }
-	    stk = SET_NEWNODE(resultset,SAVED3);
-	    break; }
-	default:
-	    BADAGGREGATE("map"); }
+    switch (SAVED2->op) {
+    case LIST_: {
+        dump1 = newnode(LIST_, SAVED2->u, dump1); /* step old */
+        dump2 = LIST_NEWNODE(0L, dump2); /* head new */
+        dump3 = LIST_NEWNODE(0L, dump3); /* last new */
+        while (DMP1 != NULL) {
+            stck = newnode(DMP1->op, DMP1->u, SAVED3);
+            exeterm(SAVED1->u.lis);
+            D(printf("map: "); writefactor(stck, stdout); printf("\n");)
+#if defined(RUNTIME_CHECKS)
+            if (stck == NULL)
+                execerror("non-empty stack", "map");
+#endif
+            if (DMP2 == NULL) /* first */
+            {
+                DMP2 = NEWNODE(stck->op, stck->u, NULL);
+                DMP3 = DMP2;
+            } else /* further */
+            {
+                DMP3->next = NEWNODE(stck->op, stck->u, NULL);
+                DMP3 = DMP3->next;
+            }
+            DMP1 = DMP1->next;
+        }
+        stck = LIST_NEWNODE(DMP2, SAVED3);
+        POP(dump3);
+        POP(dump2);
+        POP(dump1);
+        break;
+    }
+    case STRING_: {
+        char *s, *resultstring;
+        int j = 0;
+        resultstring = (char*)malloc(strlen(SAVED2->u.str) + 1);
+        for (s = SAVED2->u.str; *s != '\0'; s++) {
+            stck = CHAR_NEWNODE((long_t)*s, SAVED3);
+            exeterm(SAVED1->u.lis);
+            resultstring[j++] = stck->u.num;
+        }
+        resultstring[j] = '\0';
+        stck = STRING_NEWNODE(resultstring, SAVED3);
+        break;
+    }
+    case SET_: {
+        int i;
+        long_t resultset = 0;
+        for (i = 0; i < SETSIZE; i++)
+            if (SAVED2->u.set & ((long_t)1 << i)) {
+                stck = INTEGER_NEWNODE(i, SAVED3);
+                exeterm(SAVED1->u.lis);
+                resultset |= ((long_t)1 << stck->u.num);
+            }
+        stck = SET_NEWNODE(resultset, SAVED3);
+        break;
+    }
+    default:
+        BADAGGREGATE("map");
+    }
     POP(dump);
 }
 
-PRIVATE void step_()
+PRIVATE void step_(void)
 {
     TWOPARAMS("step");
     ONEQUOTE("step");
     SAVESTACK;
-    stk = stk->next->next;
-    switch(SAVED2->op)
-      { case LIST_:
-	  { dump1 = newnode(LIST_,SAVED2->u,dump1);
-	    while (DMP1 != NULL)
-	      { GNULLARY(DMP1->op,DMP1->u);
-		exeterm(SAVED1->u.lis);
-		DMP1 = DMP1->next; }
-	    POP(dump1);
-	    break; }
-	case STRING_:
-	  { char *s;
-	    for (s = SAVED2->u.str; *s != '\0'; s++)
-	      { stk = CHAR_NEWNODE((long)*s,stk);
-		exeterm(SAVED1->u.lis); }
-	    break; }
-	case SET_:
-	  { long i;
-	    for (i = 0; i < SETSIZE; i++)
-		if (SAVED2->u.set & (1 << i))
-		  { stk = INTEGER_NEWNODE(i,stk);
-		    exeterm(SAVED1->u.lis); }
-	    break; }
-	default:
-	    BADAGGREGATE("step"); }
+    stck = stck->next->next;
+    switch (SAVED2->op) {
+    case LIST_: {
+        dump1 = newnode(LIST_, SAVED2->u, dump1);
+        while (DMP1 != NULL) {
+            GNULLARY(DMP1->op, DMP1->u);
+            exeterm(SAVED1->u.lis);
+            DMP1 = DMP1->next;
+        }
+        POP(dump1);
+        break;
+    }
+    case STRING_: {
+        char* s;
+        for (s = SAVED2->u.str; *s != '\0'; s++) {
+            stck = CHAR_NEWNODE((long_t)*s, stck);
+            exeterm(SAVED1->u.lis);
+        }
+        break;
+    }
+    case SET_: {
+        int i;
+        for (i = 0; i < SETSIZE; i++)
+            if (SAVED2->u.set & ((long_t)1 << i)) {
+                stck = INTEGER_NEWNODE(i, stck);
+                exeterm(SAVED1->u.lis);
+            }
+        break;
+    }
+    default:
+        BADAGGREGATE("step");
+    }
     POP(dump);
 }
 
-PRIVATE void fold_()
+PRIVATE void fold_(void)
 {
     THREEPARAMS("fold");
     swapd_();
     step_();
 }
 
-PRIVATE void cond_()
+PRIVATE void cond_(void)
 {
+#ifdef RUNTIME_CHECKS
+    Node* my_dump;
+#endif
     int result = 0;
     ONEPARAM("cond");
-				/* must check for QUOTES in list */
     LIST("cond");
-    CHECKEMPTYLIST(stk->u.lis,"cond");
+    CHECKEMPTYLIST(stck->u.lis, "cond");
+/* must check for QUOTES in list */
+#ifdef RUNTIME_CHECKS
+    for (my_dump = stck->u.lis; my_dump->next; my_dump = my_dump->next)
+        CHECKLIST(my_dump->u.lis->op, "cond");
+#endif
     SAVESTACK;
-    dump1 = newnode(LIST_,stk->u,dump1);
-    while ( result == 0 &&
-	    DMP1 != NULL &&
-	    DMP1->next != NULL )
-      { stk = SAVED2;
-	exeterm(DMP1->u.lis->u.lis);
-	result = stk->u.num;
-	if (!result) DMP1 = DMP1->next; }
-    stk = SAVED2;
-    if (result) exeterm(DMP1->u.lis->next);
-	else exeterm(DMP1->u.lis); /* default */
+    dump1 = newnode(LIST_, stck->u, dump1);
+    while (result == 0 && DMP1 != NULL && DMP1->next != NULL) {
+        stck = SAVED2;
+        exeterm(DMP1->u.lis->u.lis);
+        result = stck->u.num;
+        if (!result)
+            DMP1 = DMP1->next;
+    }
+    stck = SAVED2;
+    if (result)
+        exeterm(DMP1->u.lis->next);
+    else
+        exeterm(DMP1->u.lis); /* default */
     POP(dump1);
     POP(dump);
 }
 
-#define IF_TYPE(PROCEDURE,NAME,TYP)				\
-    PRIVATE void PROCEDURE()					\
-    {   TWOPARAMS(NAME);					\
-	TWOQUOTES(NAME);					\
-        SAVESTACK;						\
-	stk = SAVED3;						\
-	exeterm(stk->op == TYP ? SAVED2->u.lis : SAVED1->u.lis);\
-	POP(dump); }
+#define IF_TYPE(PROCEDURE, NAME, TYP)                                          \
+    PRIVATE void PROCEDURE(void)                                               \
+    {                                                                          \
+        TWOPARAMS(NAME);                                                       \
+        TWOQUOTES(NAME);                                                       \
+        SAVESTACK;                                                             \
+        stck = SAVED3;                                                         \
+        exeterm(stck->op == TYP ? SAVED2->u.lis : SAVED1->u.lis);              \
+        POP(dump);                                                             \
+    }
+IF_TYPE(ifinteger_, "ifinteger", INTEGER_)
+IF_TYPE(ifchar_, "ifchar", CHAR_)
+IF_TYPE(iflogical_, "iflogical", BOOLEAN_)
+IF_TYPE(ifstring_, "ifstring", STRING_)
+IF_TYPE(ifset_, "ifset", SET_)
+IF_TYPE(iffloat_, "iffloat", FLOAT_)
+IF_TYPE(iffile_, "iffile", FILE_)
+IF_TYPE(iflist_, "iflist", LIST_)
 
-IF_TYPE(ifinteger_,"ifinteger",INTEGER_)
-IF_TYPE(ifchar_,"ifchar",CHAR_)
-IF_TYPE(iflogical_,"iflogical",BOOLEAN_)
-IF_TYPE(ifstring_,"ifstring",STRING_)
-IF_TYPE(ifset_,"ifset",SET_)
-IF_TYPE(iffloat_,"iffloat",FLOAT_)
-IF_TYPE(iffile_,"iffile",FILE_)
-IF_TYPE(iflist_,"iflist",LIST_)
-
-PRIVATE void filter_()
+PRIVATE void filter_(void)
 {
     TWOPARAMS("filter");
     ONEQUOTE("filter");
     SAVESTACK;
-    switch (SAVED2->op)
-      { case SET_ :
-	  { long j; long resultset = 0;
-	    for (j = 0; j < SETSIZE; j++)
-	      { if (SAVED2->u.set & (1 << j))
-		  { stk = INTEGER_NEWNODE(j,SAVED3);
-		    exeterm(SAVED1->u.lis);
-		    if (stk->u.num)
-			resultset = resultset | (1 << j); } }
-	    stk = SET_NEWNODE(resultset,SAVED3);
-	    break; }
-	case STRING_ :
-	  { char *s, *resultstring; int j = 0;
-	    resultstring =
-		(char *) malloc(strlen(SAVED2->u.str) + 1);
-	    for (s = SAVED2->u.str; *s != '\0'; s++)
-	      { stk = CHAR_NEWNODE((long)*s, SAVED3);
-		exeterm(SAVED1->u.lis);
-		if (stk->u.num) resultstring[j++] = *s; }
-	    resultstring[j] = '\0';
-	    stk = STRING_NEWNODE(resultstring,SAVED3);
-	    break; }
-        case LIST_:
-	  { dump1 = newnode(LIST_,SAVED2->u,dump1);	/* step old */
-	    dump2 = LIST_NEWNODE(0L,dump2);		/* head new */
-	    dump3 = LIST_NEWNODE(0L,dump3);		/* last new */
-	    while (DMP1 != NULL)
-	      { stk = newnode(DMP1->op,DMP1->u,SAVED3);
-		exeterm(SAVED1->u.lis);
-D(		printf("filter: "); writefactor(stk, stdout); printf("\n"); )
-		if (stk->u.num)				/* test */
-		    { if (DMP2 == NULL)			/* first */
-		      { DMP2 =
-			    newnode(DMP1->op,
-				DMP1->u,NULL);
-			DMP3 = DMP2; }
-		    else				/* further */
-		      { DMP3->next =
-			    newnode(DMP1->op,
-				DMP1->u,NULL);
-			DMP3 = DMP3->next; } }
-		DMP1 = DMP1->next; }
-	    stk = LIST_NEWNODE(DMP2,SAVED3);
-	    POP(dump3);
-	    POP(dump2);
-	    POP(dump1);
-	    break; }
-	default :
-	    BADAGGREGATE("filter"); }
+    switch (SAVED2->op) {
+    case SET_: {
+        int j;
+        long_t resultset = 0;
+        for (j = 0; j < SETSIZE; j++) {
+            if (SAVED2->u.set & ((long_t)1 << j)) {
+                stck = INTEGER_NEWNODE(j, SAVED3);
+                exeterm(SAVED1->u.lis);
+                if (stck->u.num)
+                    resultset |= ((long_t)1 << j);
+            }
+        }
+        stck = SET_NEWNODE(resultset, SAVED3);
+        break;
+    }
+    case STRING_: {
+        char *s, *resultstring;
+        int j = 0;
+        resultstring = (char*)malloc(strlen(SAVED2->u.str) + 1);
+        for (s = SAVED2->u.str; *s != '\0'; s++) {
+            stck = CHAR_NEWNODE((long_t)*s, SAVED3);
+            exeterm(SAVED1->u.lis);
+            if (stck->u.num)
+                resultstring[j++] = *s;
+        }
+        resultstring[j] = '\0';
+        stck = STRING_NEWNODE(resultstring, SAVED3);
+        break;
+    }
+    case LIST_: {
+        dump1 = newnode(LIST_, SAVED2->u, dump1); /* step old */
+        dump2 = LIST_NEWNODE(0L, dump2); /* head new */
+        dump3 = LIST_NEWNODE(0L, dump3); /* last new */
+        while (DMP1 != NULL) {
+            stck = newnode(DMP1->op, DMP1->u, SAVED3);
+            exeterm(SAVED1->u.lis);
+            D(printf("filter: "); writefactor(stck, stdout); printf("\n");)
+            if (stck->u.num) /* test */
+            {
+                if (DMP2 == NULL) /* first */
+                {
+                    DMP2 = NEWNODE(DMP1->op, DMP1->u, NULL);
+                    DMP3 = DMP2;
+                } else /* further */
+                {
+                    DMP3->next = NEWNODE(DMP1->op, DMP1->u, NULL);
+                    DMP3 = DMP3->next;
+                }
+            }
+            DMP1 = DMP1->next;
+        }
+        stck = LIST_NEWNODE(DMP2, SAVED3);
+        POP(dump3);
+        POP(dump2);
+        POP(dump1);
+        break;
+    }
+    default:
+        BADAGGREGATE("filter");
+    }
     POP(dump);
 }
 
-PRIVATE void split_()
+PRIVATE void split_(void)
 {
     TWOPARAMS("split");
+    ONEQUOTE("split");
     SAVESTACK;
-    switch (SAVED2->op)
-      { case SET_ :
-	  { long j; long yes_set = 0, no_set = 0;
-	    for (j = 0; j < SETSIZE; j++)
-	      { if (SAVED2->u.set & (1 << j))
-		  { stk = INTEGER_NEWNODE(j,SAVED3);
-		    exeterm(SAVED1->u.lis);
-		    if (stk->u.num)
-			  yes_set = yes_set | (1 << j);
-		    else  no_set = no_set | (1 << j); } }
-	    stk = SET_NEWNODE(yes_set,SAVED3);
-	    NULLARY(SET_NEWNODE,no_set);
-	    break; }
-	case STRING_ :
-	  { char *s, *yesstring, *nostring; int yesptr = 0, noptr = 0;
-	    yesstring =
-		(char *) malloc(strlen(SAVED2->u.str) + 1);
-	    nostring =
-		(char *) malloc(strlen(SAVED2->u.str) + 1);
-	    for (s = SAVED2->u.str; *s != '\0'; s++)
-	      { stk = CHAR_NEWNODE((long) *s, SAVED3);
-		exeterm(SAVED1->u.lis);
-		if (stk->u.num) yesstring[yesptr++] = *s;
-			   else nostring[noptr++] = *s; }
-	    yesstring[yesptr] = '\0'; nostring[noptr] = '\0';
-	    stk = STRING_NEWNODE(yesstring,SAVED3);
-	    NULLARY(STRING_NEWNODE,nostring);
-	    break; }
-        case LIST_:
-	  { dump1 = newnode(LIST_,SAVED2->u,dump1);	/* step old */
-	    dump2 = LIST_NEWNODE(0L,dump2);		/* head true */
-	    dump3 = LIST_NEWNODE(0L,dump3);		/* last true */
-	    dump4 = LIST_NEWNODE(0L,dump4);		/* head false */
-	    dump5 = LIST_NEWNODE(0L,dump5);		/* last false */
-	    while (DMP1 != NULL)
-	      { stk = newnode(DMP1->op,DMP1->u,SAVED3);
-		exeterm(SAVED1->u.lis);
-D(		printf("split: "); writefactor(stk, stdout); printf("\n"); )
-		if (stk->u.num)				/* pass */
-		    if (DMP2 == NULL)			/* first */
-		      { DMP2 =
-			    newnode(DMP1->op,
-				DMP1->u,NULL);
-			DMP3 = DMP2; }
-		    else				/* further */
-		      { DMP3->next =
-			    newnode(DMP1->op,
-				DMP1->u,NULL);
-			DMP3 = DMP3->next; }
-		else					/* fail */
-		    if (DMP4 == NULL)			/* first */
-		      { DMP4 =
-			    newnode(DMP1->op,
-				DMP1->u,NULL);
-			DMP5 = DMP4; }
-		    else				/* further */
-		      { DMP5->next =
-			    newnode(DMP1->op,
-				DMP1->u,NULL);
-			DMP5 = DMP5->next; }
-		DMP1 = DMP1->next; }
-	    stk = LIST_NEWNODE(DMP2,SAVED3);
-	    NULLARY(LIST_NEWNODE,DMP4);
-	    POP(dump5);
-	    POP(dump4);
-	    POP(dump3);
-	    POP(dump2);
-	    POP(dump1);
-	    break; }
-	default :
-	    BADAGGREGATE("split"); }
+    switch (SAVED2->op) {
+    case SET_: {
+        int j;
+        long_t yes_set = 0, no_set = 0;
+        for (j = 0; j < SETSIZE; j++) {
+            if (SAVED2->u.set & ((long_t)1 << j)) {
+                stck = INTEGER_NEWNODE(j, SAVED3);
+                exeterm(SAVED1->u.lis);
+                if (stck->u.num)
+                    yes_set |= ((long_t)1 << j);
+                else
+                    no_set |= ((long_t)1 << j);
+            }
+        }
+        stck = SET_NEWNODE(yes_set, SAVED3);
+        NULLARY(SET_NEWNODE, no_set);
+        break;
+    }
+    case STRING_: {
+        char *s, *yesstring, *nostring;
+        int yesptr = 0, noptr = 0;
+        yesstring = (char*)malloc(strlen(SAVED2->u.str) + 1);
+        nostring = (char*)malloc(strlen(SAVED2->u.str) + 1);
+        for (s = SAVED2->u.str; *s != '\0'; s++) {
+            stck = CHAR_NEWNODE((long_t)*s, SAVED3);
+            exeterm(SAVED1->u.lis);
+            if (stck->u.num)
+                yesstring[yesptr++] = *s;
+            else
+                nostring[noptr++] = *s;
+        }
+        yesstring[yesptr] = '\0';
+        nostring[noptr] = '\0';
+        stck = STRING_NEWNODE(yesstring, SAVED3);
+        NULLARY(STRING_NEWNODE, nostring);
+        break;
+    }
+    case LIST_: {
+        dump1 = newnode(LIST_, SAVED2->u, dump1); /* step old */
+        dump2 = LIST_NEWNODE(0L, dump2); /* head true */
+        dump3 = LIST_NEWNODE(0L, dump3); /* last true */
+        dump4 = LIST_NEWNODE(0L, dump4); /* head false */
+        dump5 = LIST_NEWNODE(0L, dump5); /* last false */
+        while (DMP1 != NULL) {
+            stck = newnode(DMP1->op, DMP1->u, SAVED3);
+            exeterm(SAVED1->u.lis);
+            D(printf("split: "); writefactor(stck, stdout); printf("\n");)
+            if (stck->u.num) /* pass */
+                if (DMP2 == NULL) /* first */
+                {
+                    DMP2 = NEWNODE(DMP1->op, DMP1->u, NULL);
+                    DMP3 = DMP2;
+                } else /* further */
+                {
+                    DMP3->next = NEWNODE(DMP1->op, DMP1->u, NULL);
+                    DMP3 = DMP3->next;
+                }
+            else /* fail */
+                if (DMP4 == NULL) /* first */
+            {
+                DMP4 = NEWNODE(DMP1->op, DMP1->u, NULL);
+                DMP5 = DMP4;
+            } else /* further */
+            {
+                DMP5->next = NEWNODE(DMP1->op, DMP1->u, NULL);
+                DMP5 = DMP5->next;
+            }
+            DMP1 = DMP1->next;
+        }
+        stck = LIST_NEWNODE(DMP2, SAVED3);
+        NULLARY(LIST_NEWNODE, DMP4);
+        POP(dump5);
+        POP(dump4);
+        POP(dump3);
+        POP(dump2);
+        POP(dump1);
+        break;
+    }
+    default:
+        BADAGGREGATE("split");
+    }
     POP(dump);
 }
 
-#define SOMEALL(PROCEDURE,NAME,INITIAL)				\
-PRIVATE void PROCEDURE()					\
-{   long result = INITIAL;					\
-    TWOPARAMS(NAME);						\
-    ONEQUOTE(NAME);						\
-    SAVESTACK;							\
-    switch (SAVED2->op)						\
-      { case SET_ :						\
-	  { long j;						\
-	    for (j = 0; j < SETSIZE && result == INITIAL; j++)	\
-	      { if (SAVED2->u.set & (1 << j))			\
-		  { stk = INTEGER_NEWNODE(j,SAVED3);		\
-		    exeterm(SAVED1->u.lis);			\
-		    if (stk->u.num != INITIAL)			\
-			result = 1 - INITIAL; } }		\
-	    break; }						\
-	case STRING_ :						\
-	  { char *s;						\
-	    for (s = SAVED2->u.str;				\
-		 *s != '\0' && result == INITIAL; s++)		\
-	      { stk = CHAR_NEWNODE((long)*s,SAVED3);		\
-		exeterm(SAVED1->u.lis);				\
-		if (stk->u.num != INITIAL)			\
-		    result = 1 - INITIAL; }			\
-	    break; }						\
-	case LIST_ :						\
-	  { dump1 = newnode(LIST_,SAVED2->u,dump1);		\
-	    while (DMP1 != NULL && result == INITIAL)		\
-	      { stk = newnode(DMP1->op,				\
-			DMP1->u,SAVED3);			\
-		exeterm(SAVED1->u.lis);				\
-		if (stk->u.num != INITIAL)			\
-		     result = 1 - INITIAL;			\
-		DMP1 = DMP1->next; }				\
-	    POP(dump1);						\
-	    break; }						\
-	default :						\
-	    BADAGGREGATE(NAME); }				\
-    stk = BOOLEAN_NEWNODE(result,SAVED3);			\
-    POP(dump);							\
-}
-SOMEALL(some_,"some",0L)
-SOMEALL(all_,"all",1L)
+#define SOMEALL(PROCEDURE, NAME, INITIAL)                                      \
+    PRIVATE void PROCEDURE(void)                                               \
+    {                                                                          \
+        int result = INITIAL;                                                  \
+        TWOPARAMS(NAME);                                                       \
+        ONEQUOTE(NAME);                                                        \
+        SAVESTACK;                                                             \
+        switch (SAVED2->op) {                                                  \
+        case SET_: {                                                           \
+            int j;                                                             \
+            for (j = 0; j < SETSIZE && result == INITIAL; j++) {               \
+                if (SAVED2->u.set & ((long_t)1 << j)) {                        \
+                    stck = INTEGER_NEWNODE(j, SAVED3);                         \
+                    exeterm(SAVED1->u.lis);                                    \
+                    if (stck->u.num != INITIAL)                                \
+                        result = 1 - INITIAL;                                  \
+                }                                                              \
+            }                                                                  \
+            break;                                                             \
+        }                                                                      \
+        case STRING_: {                                                        \
+            char* s;                                                           \
+            for (s = SAVED2->u.str; *s != '\0' && result == INITIAL; s++) {    \
+                stck = CHAR_NEWNODE((long_t)*s, SAVED3);                       \
+                exeterm(SAVED1->u.lis);                                        \
+                if (stck->u.num != INITIAL)                                    \
+                    result = 1 - INITIAL;                                      \
+            }                                                                  \
+            break;                                                             \
+        }                                                                      \
+        case LIST_: {                                                          \
+            dump1 = newnode(LIST_, SAVED2->u, dump1);                          \
+            while (DMP1 != NULL && result == INITIAL) {                        \
+                stck = newnode(DMP1->op, DMP1->u, SAVED3);                     \
+                exeterm(SAVED1->u.lis);                                        \
+                if (stck->u.num != INITIAL)                                    \
+                    result = 1 - INITIAL;                                      \
+                DMP1 = DMP1->next;                                             \
+            }                                                                  \
+            POP(dump1);                                                        \
+            break;                                                             \
+        }                                                                      \
+        default:                                                               \
+            BADAGGREGATE(NAME);                                                \
+        }                                                                      \
+        stck = BOOLEAN_NEWNODE(result, SAVED3);                                \
+        POP(dump);                                                             \
+    }
+SOMEALL(some_, "some", 0L)
+SOMEALL(all_, "all", 1L)
 
-PRIVATE void primrec_()
+PRIVATE void primrec_(void)
 {
-    int n = 0; int i;
+    int n = 0;
+    int i;
     THREEPARAMS("primrec");
+    TWOQUOTES("primrec");
     SAVESTACK;
-    stk = stk->next->next->next;
-    switch (SAVED3->op)
-      { case LIST_:
-	  { Node *current = SAVED3->u.lis;
-	    while (current != NULL)
-	      { stk = newnode(current->op,current->u,stk);
-		current = current->next;
-		n++; }
-	    break; }
-	case STRING_:
-	  { char *s;
-	    for (s = SAVED3->u.str; *s != '\0'; s++)
-	      { stk = CHAR_NEWNODE((long) *s, stk);
-		n++; }
-	    break; }
-	case SET_:
-	  { long j; long set = SAVED3->u.set;
-	    for (j = 0; j < SETSIZE; j++)
-	        if (set & (1 << j))
-		  { stk = INTEGER_NEWNODE(j,stk);
-		    n++; }
-	    break; }
-	case INTEGER_:
-	  { long j;
-	    for (j = SAVED3->u.num; j > 0; j--)
-	      { stk = INTEGER_NEWNODE(j, stk);
-		n++; }
-	    break; }
-	default:
-	    BADDATA("primrec"); }
+    stck = stck->next->next->next;
+    switch (SAVED3->op) {
+    case LIST_: {
+        dump1 = newnode(LIST_, SAVED3->u, dump1);
+        while (DMP1 != NULL) {
+            stck = newnode(DMP1->op, DMP1->u, stck);
+            DMP1 = DMP1->next;
+            n++;
+        }
+        POP(dump1);
+        break;
+    }
+    case STRING_: {
+        char* s;
+        for (s = SAVED3->u.str; *s != '\0'; s++) {
+            stck = CHAR_NEWNODE((long_t)*s, stck);
+            n++;
+        }
+        break;
+    }
+    case SET_: {
+        int j;
+        long_t set = SAVED3->u.set;
+        for (j = 0; j < SETSIZE; j++)
+            if (set & ((long_t)1 << j)) {
+                stck = INTEGER_NEWNODE(j, stck);
+                n++;
+            }
+        break;
+    }
+    case INTEGER_: {
+        long_t j;
+        for (j = SAVED3->u.num; j > 0; j--) {
+            stck = INTEGER_NEWNODE(j, stck);
+            n++;
+        }
+        break;
+    }
+    default:
+        BADDATA("primrec");
+    }
     exeterm(SAVED2->u.lis);
     for (i = 1; i <= n; i++)
-	exeterm(SAVED1->u.lis);
+        exeterm(SAVED1->u.lis);
     POP(dump);
 }
 
-PRIVATE void tailrecaux()
+PRIVATE void tailrecaux(void)
 {
     int result;
-    tailrec:
-    dump1 = LIST_NEWNODE(stk,dump1);
+tailrec:
+    dump1 = LIST_NEWNODE(stck, dump1);
     exeterm(SAVED3->u.lis);
-    result = stk->u.num;
-    stk = DMP1; POP(dump1);
-    if (result) exeterm(SAVED2->u.lis); else
-      { exeterm(SAVED1->u.lis);
-	goto tailrec; }
+    result = stck->u.num;
+    stck = DMP1;
+    POP(dump1);
+    if (result)
+        exeterm(SAVED2->u.lis);
+    else {
+        exeterm(SAVED1->u.lis);
+        goto tailrec;
+    }
 }
 
-PRIVATE void tailrec_()
+PRIVATE void tailrec_(void)
 {
     THREEPARAMS("tailrec");
+    THREEQUOTES("tailrec");
     SAVESTACK;
-    stk = SAVED4;
+    stck = SAVED4;
     tailrecaux();
     POP(dump);
 }
 
-PRIVATE void construct_()
-{			/* [P] [[P1] [P2] ..] -> X1 X2 ..	*/
+PRIVATE void construct_(void)
+{ /* [P] [[P1] [P2] ..] -> X1 X2 ..	*/
     TWOPARAMS("construct");
     TWOQUOTES("construct");
     SAVESTACK;
-    stk = SAVED3;			/* pop progs		*/
-    dump1 = LIST_NEWNODE(dump2,dump1);	/* save dump2		*/
-    dump2 = stk;			/* save old stack	*/
-    exeterm(SAVED2->u.lis);		/* [P]			*/
-    dump3 = LIST_NEWNODE(stk,dump3);	/* save current stack	*/
-    dump4 = newnode(LIST_,SAVED1->u,dump4);	/* step [..]	*/
-    while (DMP4 != NULL)
-      { stk = DMP3;			/* restore new stack	*/
-	exeterm(DMP4->u.lis);
-	dump2 = newnode(stk->op,stk->u,dump2); /* result	*/
-	DMP4 = DMP4->next; }
+    stck = SAVED3; /* pop progs		*/
+    dump1 = LIST_NEWNODE(dump2, dump1); /* save dump2		*/
+    dump2 = stck; /* save old stack	*/
+    exeterm(SAVED2->u.lis); /* [P]			*/
+    dump3 = LIST_NEWNODE(stck, dump3); /* save current stack	*/
+    dump4 = newnode(LIST_, SAVED1->u, dump4); /* step [..]	*/
+    while (DMP4 != NULL) {
+        stck = DMP3; /* restore new stack	*/
+        exeterm(DMP4->u.lis);
+        dump2 = newnode(stck->op, stck->u, dump2); /* result	*/
+        DMP4 = DMP4->next;
+    }
     POP(dump4);
     POP(dump3);
-    stk = dump2; dump2 = dump1->u.lis;	/* restore dump2	*/
+    stck = dump2;
+    dump2 = dump1->u.lis; /* restore dump2	*/
     POP(dump1);
     POP(dump);
 }
 
-PRIVATE void branch_()
+PRIVATE void branch_(void)
 {
     THREEPARAMS("branch");
     TWOQUOTES("branch");
     SAVESTACK;
-    stk = SAVED4;
+    stck = SAVED4;
     exeterm(SAVED3->u.num ? SAVED2->u.lis : SAVED1->u.lis);
     POP(dump);
 }
 
-PRIVATE void while_()
+PRIVATE void while_(void)
 {
     TWOPARAMS("while");
     TWOQUOTES("while");
     SAVESTACK;
-    do
-      { stk = SAVED3;
-	exeterm(SAVED2->u.lis);		/* TEST */
-	if (! stk->u.num) break;
-	stk = SAVED3;
-	exeterm(SAVED1->u.lis);		/* DO */
-	SAVED3 = stk; }
-	while (1);
-    stk = SAVED3;
+    do {
+        stck = SAVED3;
+        exeterm(SAVED2->u.lis); /* TEST */
+        if (!stck->u.num)
+            break;
+        stck = SAVED3;
+        exeterm(SAVED1->u.lis); /* DO */
+        SAVED3 = stck;
+    } while (1);
+    stck = SAVED3;
     POP(dump);
 }
 
-PRIVATE void ifte_()
+PRIVATE void ifte_(void)
 {
     int result;
     THREEPARAMS("ifte");
     THREEQUOTES("ifte");
     SAVESTACK;
-    stk = SAVED4;
+    stck = SAVED4;
     exeterm(SAVED3->u.lis);
-    result = stk->u.num;
-    stk = SAVED4;
+    result = stck->u.num;
+    stck = SAVED4;
     exeterm(result ? SAVED2->u.lis : SAVED1->u.lis);
     POP(dump);
 }
 
-PRIVATE void condlinrecaux()
+PRIVATE void condlinrecaux(void)
 {
     int result = 0;
-    dump1 = newnode(LIST_,SAVED1->u,dump1);
-    dump2 = LIST_NEWNODE(stk,dump2);
-    while ( result == 0 &&
-	    DMP1 != NULL && DMP1->next != NULL )
-      { stk = DMP2;
-	exeterm(DMP1->u.lis->u.lis);
-	result = stk->u.num;
-	if (!result) DMP1 = DMP1->next; }
-    stk = DMP2;
-    if (result)
-      { exeterm(DMP1->u.lis->next->u.lis);
-	if (DMP1->u.lis->next->next != NULL)
-	  { condlinrecaux();
-	    exeterm(DMP1->u.lis->next->next->u.lis); } }
-    else
-      { exeterm(DMP1->u.lis->u.lis);
-	if (DMP1->u.lis->next != NULL)
-	  { condlinrecaux();
-	    exeterm(DMP1->u.lis->next->u.lis); } }
+    dump1 = newnode(LIST_, SAVED1->u, dump1);
+    dump2 = LIST_NEWNODE(stck, dump2);
+    while (result == 0 && DMP1 != NULL && DMP1->next != NULL) {
+        stck = DMP2;
+        exeterm(DMP1->u.lis->u.lis);
+        result = stck->u.num;
+        if (!result)
+            DMP1 = DMP1->next;
+    }
+    stck = DMP2;
+    if (result) {
+        exeterm(DMP1->u.lis->next->u.lis);
+        if (DMP1->u.lis->next->next != NULL) {
+            condlinrecaux();
+            exeterm(DMP1->u.lis->next->next->u.lis);
+        }
+    } else {
+        exeterm(DMP1->u.lis->u.lis);
+        if (DMP1->u.lis->next != NULL) {
+            condlinrecaux();
+            exeterm(DMP1->u.lis->next->u.lis);
+        }
+    }
     POP(dump2);
     POP(dump1);
 }
 
-PRIVATE void condlinrec_()
+PRIVATE void condlinrec_(void)
 {
     ONEPARAM("condlinrec");
     LIST("condlinrec");
-    CHECKEMPTYLIST(stk->u.lis,"condlinrec");
+    CHECKEMPTYLIST(stck->u.lis, "condlinrec");
     SAVESTACK;
-    stk = SAVED2;
+    stck = SAVED2;
     condlinrecaux();
     POP(dump);
 }
 
-PRIVATE void condnestrecaux()
+PRIVATE void condnestrecaux(void)
 {
     int result = 0;
-    dump1 = newnode(LIST_,SAVED1->u,dump1);
-    dump2 = LIST_NEWNODE(stk,dump2);
-    while ( result == 0 &&
-	    DMP1 != NULL && DMP1->next != NULL )
-      { stk = DMP2;
-	exeterm(DMP1->u.lis->u.lis);
-	result = stk->u.num;
-	if (!result) DMP1 = DMP1->next; }
-    stk = DMP2;
-    dump3 = LIST_NEWNODE(
-		(result ? DMP1->u.lis->next : DMP1->u.lis),
-		dump3 );
+    dump1 = newnode(LIST_, SAVED1->u, dump1);
+    dump2 = LIST_NEWNODE(stck, dump2);
+    while (result == 0 && DMP1 != NULL && DMP1->next != NULL) {
+        stck = DMP2;
+        exeterm(DMP1->u.lis->u.lis);
+        result = stck->u.num;
+        if (!result)
+            DMP1 = DMP1->next;
+    }
+    stck = DMP2;
+    dump3 = LIST_NEWNODE((result ? DMP1->u.lis->next : DMP1->u.lis), dump3);
     exeterm(DMP3->u.lis);
     DMP3 = DMP3->next;
-    while (DMP3 != NULL)
-    { condnestrecaux();
-      exeterm(DMP3->u.lis);
-      DMP3 = DMP3->next; }
+    while (DMP3 != NULL) {
+        condnestrecaux();
+        exeterm(DMP3->u.lis);
+        DMP3 = DMP3->next;
+    }
     POP(dump3);
-/*
+    /*
     if (result)
       { exeterm(DMP1->u.lis->next->u.lis);
-	if (DMP1->u.lis->next->next != NULL)
-	  { condnestrecaux();
-	    exeterm(DMP1->u.lis->next->next->u.lis); } }
+        if (DMP1->u.lis->next->next != NULL)
+          { condnestrecaux();
+            exeterm(DMP1->u.lis->next->next->u.lis); } }
     else
       { exeterm(DMP1->u.lis->u.lis);
-	if (DMP1->u.lis->next != NULL)
-	  { condnestrecaux();
-	    exeterm(DMP1->u.lis->next->u.lis); } }
+        if (DMP1->u.lis->next != NULL)
+          { condnestrecaux();
+            exeterm(DMP1->u.lis->next->u.lis); } }
 */
     POP(dump2);
     POP(dump1);
 }
 
-PRIVATE void condnestrec_()
+PRIVATE void condnestrec_(void)
 {
     ONEPARAM("condnestrec");
     LIST("condnestrec");
-    CHECKEMPTYLIST(stk->u.lis,"condnestrec");
+    CHECKEMPTYLIST(stck->u.lis, "condnestrec");
     SAVESTACK;
-    stk = SAVED2;
+    stck = SAVED2;
     condnestrecaux();
     POP(dump);
 }
 
-PRIVATE void linrecaux()
+PRIVATE void linrecaux(void)
 {
     int result;
-    dump1 = LIST_NEWNODE(stk,dump1);
+    dump1 = LIST_NEWNODE(stck, dump1);
     exeterm(SAVED4->u.lis);
-    result = stk->u.num;
-    stk = DMP1; POP(dump1);
-    if (result) exeterm(SAVED3->u.lis); else
-      { exeterm(SAVED2->u.lis);
-	linrecaux();
-	exeterm(SAVED1->u.lis); }
+    result = stck->u.num;
+    stck = DMP1;
+    POP(dump1);
+    if (result)
+        exeterm(SAVED3->u.lis);
+    else {
+        exeterm(SAVED2->u.lis);
+        linrecaux();
+        exeterm(SAVED1->u.lis);
+    }
 }
 
-PRIVATE void linrec_()
+PRIVATE void linrec_(void)
 {
     FOURPARAMS("linrec");
     FOURQUOTES("linrec");
     SAVESTACK;
-    stk = SAVED5;
+    stck = SAVED5;
     linrecaux();
     POP(dump);
 }
 
-PRIVATE void binrecaux()
+PRIVATE void binrecaux(void)
 {
     int result;
-    dump1 = LIST_NEWNODE(stk,dump1);
+    dump1 = LIST_NEWNODE(stck, dump1);
     exeterm(SAVED4->u.lis);
-    result = stk->u.num;
-    stk = DMP1; POP(dump1);
-    if (result) exeterm(SAVED3->u.lis); else
-      { exeterm(SAVED2->u.lis);		/* split */
-	dump2 = newnode(stk->op,stk->u,dump2);
-	POP(stk);
-	binrecaux();			/* first */
-	GNULLARY(dump2->op,dump2->u);
-	POP(dump2);
-	binrecaux();			/* second */
-	exeterm(SAVED1->u.lis); }	/* combine */
+    result = stck->u.num;
+    stck = DMP1;
+    POP(dump1);
+    if (result)
+        exeterm(SAVED3->u.lis);
+    else {
+        exeterm(SAVED2->u.lis); /* split */
+        dump2 = newnode(stck->op, stck->u, dump2);
+        POP(stck);
+        binrecaux(); /* first */
+        GNULLARY(dump2->op, dump2->u);
+        POP(dump2);
+        binrecaux(); /* second */
+        exeterm(SAVED1->u.lis);
+    } /* combine */
 }
 
-PRIVATE void binrec_()
+PRIVATE void binrec_(void)
 {
     FOURPARAMS("binrec");
     FOURQUOTES("binrec");
     SAVESTACK;
-    stk = SAVED5;
+    stck = SAVED5;
     binrecaux();
     POP(dump);
 }
 
-PRIVATE void treestepaux(item)
-    Node *item;
+PRIVATE void treestepaux(Node* item)
 {
-    if (item->op != LIST_)
-      { GNULLARY(item->op,item->u);
-	exeterm(SAVED1->u.lis); }
-    else
-      { dump1 = newnode(LIST_,item->u,dump1);
-	while (DMP1 != NULL)
-	  { treestepaux(DMP1);
-	    DMP1 = DMP1->next; }
-	POP(dump1); }
+    if (item->op != LIST_) {
+        GNULLARY(item->op, item->u);
+        exeterm(SAVED1->u.lis);
+    } else {
+        dump1 = newnode(LIST_, item->u, dump1);
+        while (DMP1 != NULL) {
+            treestepaux(DMP1);
+            DMP1 = DMP1->next;
+        }
+        POP(dump1);
+    }
 }
 
-PRIVATE void treestep_()
+PRIVATE void treestep_(void)
 {
     TWOPARAMS("treestep");
     ONEQUOTE("treestep");
     SAVESTACK;
-    stk = SAVED3;
+    stck = SAVED3;
     treestepaux(SAVED2);
     POP(dump);
 }
 
-PRIVATE void treerecaux()
+PRIVATE void treerecaux(void)
 {
-    if (stk->next->op == LIST_)
-      { NULLARY(LIST_NEWNODE,ANON_FUNCT_NEWNODE(treerecaux,NULL));
-	cons_();		/*  D  [[[O] C] ANON_FUNCT_]	*/
-D(	printf("treerecaux: stack = "); )
-D(	writeterm(stk, stdout); printf("\n"); )
-	exeterm(stk->u.lis->u.lis->next); }
-    else
-      { Node *n = stk;
-	POP(stk);
-	exeterm(n->u.lis->u.lis); }
+    if (stck->next->op == LIST_) {
+        NULLARY(LIST_NEWNODE, ANON_FUNCT_NEWNODE(treerecaux, NULL));
+        cons_(); /*  D  [[[O] C] ANON_FUNCT_]	*/
+        D(printf("treerecaux: stack = ");)
+        D(writeterm(stck, stdout); printf("\n");)
+        exeterm(stck->u.lis->u.lis->next);
+    } else {
+        dump1 = newnode(LIST_, stck->u, dump1);
+        POP(stck);
+        exeterm(DMP1->u.lis);
+        POP(dump1);
+    }
 }
 
-PRIVATE void treerec_()
+PRIVATE void treerec_(void)
 {
     THREEPARAMS("treerec");
+    TWOQUOTES("treerec");
     cons_();
-D(  printf("deep: stack = "); writeterm(stk, stdout); printf("\n"); )
+    D(printf("treerec: stack = "); writeterm(stck, stdout); printf("\n");)
     treerecaux();
 }
 
-PRIVATE void genrecaux()
+PRIVATE void genrecaux(void)
 {
     int result;
-D(  printf("genrecaux: stack = "); )
-D(  writeterm(stk, stdout); printf("\n"); )
+    D(printf("genrecaux: stack = ");)
+    D(writeterm(stck, stdout); printf("\n");)
     SAVESTACK;
-    POP(stk);
-    exeterm(SAVED1->u.lis->u.lis);		/*	[I]	*/
-    result = stk->u.num;
-    stk = SAVED2;
+    POP(stck);
+    exeterm(SAVED1->u.lis->u.lis); /*	[I]	*/
+    result = stck->u.num;
+    stck = SAVED2;
     if (result)
-	exeterm(SAVED1->u.lis->next->u.lis);	/*	[T]	*/
-    else
-      { exeterm(SAVED1->u.lis->next->next->u.lis); /*	[R1]	*/
-	NULLARY(LIST_NEWNODE,SAVED1->u.lis);
-	NULLARY(LIST_NEWNODE,ANON_FUNCT_NEWNODE(genrecaux,NULL));
-	cons_();
-	exeterm(SAVED1->u.lis->next->next->next); } /*   [R2]	*/
+        exeterm(SAVED1->u.lis->next->u.lis); /*	[T]	*/
+    else {
+        exeterm(SAVED1->u.lis->next->next->u.lis); /*	[R1]	*/
+        NULLARY(LIST_NEWNODE, SAVED1->u.lis);
+        NULLARY(LIST_NEWNODE, ANON_FUNCT_NEWNODE(genrecaux, NULL));
+        cons_();
+        exeterm(SAVED1->u.lis->next->next->next);
+    } /*   [R2]	*/
     POP(dump);
 }
 
-PRIVATE void genrec_()
+PRIVATE void genrec_(void)
 {
     FOURPARAMS("genrec");
     FOURQUOTES("genrec");
-    cons_(); cons_(); cons_();
+    cons_();
+    cons_();
+    cons_();
     genrecaux();
 }
 
-PRIVATE void treegenrecaux()
+PRIVATE void treegenrecaux(void)
 {
-D(  printf("treegenrecaux: stack = "); )
-D(  writeterm(stk, stdout); printf("\n"); )
-    if (stk->next->op == LIST_)
-      { SAVESTACK;				/* begin DIP	*/
-	POP(stk);
-	exeterm(SAVED1->u.lis->next->u.lis);	/*	[O2]	*/
-	GNULLARY(SAVED1->op,SAVED1->u);
-	POP(dump);				/*   end DIP	*/
-	NULLARY(LIST_NEWNODE,ANON_FUNCT_NEWNODE(treegenrecaux,NULL));
-	cons_();
-	exeterm(stk->u.lis->u.lis->next->next); } /*	[C]	*/
-    else
-      { Node *n = stk;
-	POP(stk);
-	exeterm(n->u.lis->u.lis); }		/*	[O1]	*/
+    D(printf("treegenrecaux: stack = ");)
+    D(writeterm(stck, stdout); printf("\n");)
+    if (stck->next->op == LIST_) {
+        SAVESTACK; /* begin DIP	*/
+        POP(stck);
+        exeterm(SAVED1->u.lis->next->u.lis); /*	[O2]	*/
+        GNULLARY(SAVED1->op, SAVED1->u);
+        POP(dump); /*   end DIP	*/
+        NULLARY(LIST_NEWNODE, ANON_FUNCT_NEWNODE(treegenrecaux, NULL));
+        cons_();
+        exeterm(stck->u.lis->u.lis->next->next);
+    } /*	[C]	*/
+    else {
+        dump1 = newnode(LIST_, stck->u, dump1);
+        POP(stck);
+        exeterm(DMP1->u.lis);
+        POP(dump1);
+    }
 }
 
-PRIVATE void treegenrec_()
-{					/* T [O1] [O2] [C]	*/
+PRIVATE void treegenrec_(void)
+{ /* T [O1] [O2] [C]	*/
     FOURPARAMS("treegenrec");
-    cons_(); cons_();
-D(  printf("treegenrec: stack = "); writeterm(stk, stdout); printf("\n"); )
+    THREEQUOTES("treegenrec");
+    cons_();
+    cons_();
+    D(printf("treegenrec: stack = "); writeterm(stck, stdout); printf("\n");)
     treegenrecaux();
 }
 
-PRIVATE void plain_manual_()
-{
-    make_manual(0);
-}
+PRIVATE void plain_manual_(void) { make_manual(0); }
 
-PRIVATE void html_manual_()
-{
-    make_manual(1);
-}
+PRIVATE void html_manual_(void) { make_manual(1); }
 
-PRIVATE void latex_manual_()
-{
-    make_manual(2);
-}
+PRIVATE void latex_manual_(void) { make_manual(2); }
 
-PRIVATE void manual_list_aux_()
+#if 0
+PRIVATE void manual_list_aux_(void)
 {
-    manual_list_();
+    manual_list_(void);
 }
-
+#endif
+
 /* - - - - -   I N I T I A L I S A T I O N   - - - - - */
 
-static struct {char *name; void (*proc) (); char *messg1, *messg2 ; }
-    optable[] =
-	/* THESE MUST BE DEFINED IN THE ORDER OF THEIR VALUES */
-{
-
+static struct {
+    char* name;
+    void (*proc)(void);
+    char *messg1, *messg2;
+} optable[] = {
+    /* THESE MUST BE DEFINED IN THE ORDER OF THEIR VALUES */
 {"__ILLEGAL",		dummy_,		"->",
 "internal error, cannot happen - supposedly."},
 
@@ -2502,13 +3436,13 @@ static struct {char *name; void (*proc) (); char *messg1, *messg2 ; }
 
 /* OPERANDS */
 
-{"false",		false_,		"->  false",
+{"false",		dummy_,		"->  false",
 "Pushes the value false."},
 
-{"true",		true_,		"->  true",
+{"true",		dummy_,		"->  true",
 "Pushes the value true."},
 
-{"maxint",		maxint_,	"->  maxint",
+{"maxint",		dummy_,		"->  maxint",
 "Pushes largest integer (platform dependent). Typically it is 32 bits."},
 
 {"setsize",		setsize_,	"->  setsize",
@@ -2542,7 +3476,7 @@ static struct {char *name; void (*proc) (); char *messg1, *messg2 ; }
 "Pushes value of echo flag, I = 0..3."},
 
 {"clock",		clock_,		"->  I",
-"Pushes the integer value of current CPU usage in hundreds of a second."},
+"Pushes the integer value of current CPU usage in milliseconds."},
 
 {"time",		time_,		"->  I",
 "Pushes the current time (in seconds since the Epoch)."},
@@ -2573,31 +3507,31 @@ static struct {char *name; void (*proc) (); char *messg1, *messg2 ; }
 {"swap",		swap_,		"X Y  ->  Y X",
 "Interchanges X and Y on top of the stack."},
 
-{"rollup",              rollup_,        "X Y Z  ->  Z X Y",
+{"rollup",		rollup_,	"X Y Z  ->  Z X Y",
 "Moves X and Y up, moves Z down"},
 
-{"rolldown",            rolldown_,      "X Y Z  ->  Y Z X",
+{"rolldown",		rolldown_,      "X Y Z  ->  Y Z X",
 "Moves Y and Z down, moves X up"},
 
-{"rotate",              rotate_,        "X Y Z  ->  Z Y X",
+{"rotate",		rotate_,	"X Y Z  ->  Z Y X",
 "Interchanges X and Z"},
 
-{"popd",                popd_,          "Y Z  ->  Z",
+{"popd",		popd_,		"Y Z  ->  Z",
 "As if defined by:   popd  ==  [pop] dip "},
 
-{"dupd",                dupd_,          "Y Z  ->  Y Y Z",
+{"dupd",		dupd_,		"Y Z  ->  Y Y Z",
 "As if defined by:   dupd  ==  [dup] dip"},
 
-{"swapd",               swapd_,         "X Y Z  ->  Y X Z",
+{"swapd",	       swapd_,		"X Y Z  ->  Y X Z",
 "As if defined by:   swapd  ==  [swap] dip"},
 
-{"rollupd",             rollupd_,       "X Y Z W  ->  Z X Y W",
+{"rollupd",		rollupd_,       "X Y Z W  ->  Z X Y W",
 "As if defined by:   rollupd  ==  [rollup] dip"},
 
-{"rolldownd",           rolldownd_,     "X Y Z W  ->  Y Z X W",
+{"rolldownd",		rolldownd_,     "X Y Z W  ->  Y Z X W",
 "As if defined by:   rolldownd  ==  [rolldown] dip "},
 
-{"rotated",             rotated_,       "X Y Z W  ->  Z Y X W",
+{"rotated",		rotated_,       "X Y Z W  ->  Z Y X W",
 "As if defined by:   rotated  ==  [rotate] dip"},
 
 {"pop",			pop_,		"X  ->",
@@ -2715,10 +3649,10 @@ static struct {char *name; void (*proc) (); char *messg1, *messg2 ; }
 "I is an integer equal to the float F truncated toward zero."},
 
 {"localtime",		localtime_,	"I  ->  T",
-"Converts a time I into a list T representing local time:\n[year month day hour minute second isdst yearday weekday].\nMonth is 1 = January ... 12 = December;\nisdst is a Boolean flagging daylight savings/summer time;\nweekday is 0 = Monday ... 7 = Sunday."},
+"Converts a time I into a list T representing local time:\n[year month day hour minute second isdst yearday weekday].\nMonth is 1 = January ... 12 = December;\nisdst is a Boolean flagging daylight savings/summer time;\nweekday is 1 = Monday ... 7 = Sunday."},
 
 {"gmtime",		gmtime_,	"I  ->  T",
-"Converts a time I into a list T representing universal time:\n[year month day hour minute second isdst yearday weekday].\nMonth is 1 = January ... 12 = December;\nisdst is false; weekday is 0 = Monday ... 7 = Sunday."},
+"Converts a time I into a list T representing universal time:\n[year month day hour minute second isdst yearday weekday].\nMonth is 1 = January ... 12 = December;\nisdst is false; weekday is 1 = Monday ... 7 = Sunday."},
 
 {"mktime",		mktime_,	"T  ->  I",
 "Converts a list T representing local time into a time I.\nT is in the format generated by localtime."},
@@ -2765,6 +3699,11 @@ static struct {char *name; void (*proc) (); char *messg1, *messg2 ; }
 {"fflush",		fflush_,	"S  ->  S",
 "Flush stream S, forcing all buffered output to be written."},
 
+#ifdef FGET_FROM_FILE
+{"fget",		fget_,		"S  ->  S F",
+"Reads a factor from stream S and pushes it onto stack."},
+#endif
+
 {"fgetch",		fgetch_,	"S  ->  S C",
 "C is the next available character from stream S."},
 
@@ -2781,7 +3720,7 @@ static struct {char *name; void (*proc) (); char *messg1, *messg2 ; }
 "A list of integers are written as bytes to the current position of stream S."},
 
 {"fremove",		fremove_,	"P  ->  B",
-"The file system object with pathname P is removed from the file system.\n is a boolean indicating success or failure."},
+"The file system object with pathname P is removed from the file system.\nB is a boolean indicating success or failure."},
 
 {"frename",		frename_,	"P1 P2  ->  B",
 "The file system object with pathname P1 is renamed to P2.\nB is a boolean indicating success or failure."},
@@ -2798,7 +3737,7 @@ static struct {char *name; void (*proc) (); char *messg1, *messg2 ; }
 {"fputstring",		fputchars_,	"S \"abc..\"  ->  S",
 "== fputchars, as a temporary alternative."},
 
-{"fseek",		fseek_,		"S P W  ->  S",
+{"fseek",		fseek_,		"S P W  ->  S B",
 "Stream S is repositioned to position P relative to whence-point W,\nwhere W = 0, 1, 2 for beginning, current position, end respectively."},
 
 {"ftell",		ftell_,		"S  ->  S I",
@@ -2820,7 +3759,7 @@ static struct {char *name; void (*proc) (); char *messg1, *messg2 ; }
 "R is the non-empty aggregate A with its first member removed."},
 
 {"compare",		compare_,	"A B  ->  I",
-"I (=-1,0,+1) is the comparison of aggregates A and B.\nThe values correspond to the predicates <=, =, >=."},
+"I (=-1,0,+1) is the comparison of aggregates A and B.\nThe values correspond to the predicates <, =, >."},
 
 {"at",			at_,		"A I  ->  X",
 "X (= A[I]) is the member of A at position I."},
@@ -2834,7 +3773,7 @@ static struct {char *name; void (*proc) (); char *messg1, *messg2 ; }
 {"opcase",		opcase_,	"X [..[X Xs]..]  ->  [Xs]",
 "Indexing on type of X, returns the list [Xs]."},
 
-{"case",		case_,		"X [..[X Y]..]  ->  Y i",
+{"case",		case_,		"X [..[X Y]..]  ->  [Y] i",
 "Indexing on the value of X, execute the matching Y."},
 
 {"uncons",		uncons_,	"A  ->  F R",
@@ -2899,6 +3838,11 @@ static struct {char *name; void (*proc) (); char *messg1, *messg2 ; }
 {"in",			in_,		"X A  ->  B",
 "Tests whether X is a member of aggregate A."},
 
+#ifdef SAMETYPE_BUILTIN
+{"sametype",		sametype_,	"X Y  ->  B",
+"Tests whether X and Y have the same type."},
+#endif
+
 {"integer",		integer_,	"X  ->  B",
 "Tests whether X is an integer."},
 
@@ -2941,7 +3885,7 @@ static struct {char *name; void (*proc) (); char *messg1, *messg2 ; }
 "Saves X, executes P, pushes X back."},
 
 {"app1",		app1_,		"X [P]  ->  R",
-"Executes P, pushes result R on stack without X."},
+"Executes P, pushes result R on stack."},
 
 {"app11",		app11_,		"X Y [P]  ->  R",
 "Executes P, pushes result R on stack."},
@@ -3027,14 +3971,14 @@ static struct {char *name; void (*proc) (); char *messg1, *messg2 ; }
 {"tailrec",		tailrec_,	"[P] [T] [R1]  ->  ...",
 "Executes P. If that yields true, executes T.\nElse executes R1, recurses."},
 
-{"binrec",		binrec_,	"[B] [T] [R1] [R2]  ->  ...",
+{"binrec",		binrec_,	"[P] [T] [R1] [R2]  ->  ...",
 "Executes P. If that yields true, executes T.\nElse uses R1 to produce two intermediates, recurses on both,\nthen executes R2 to combines their results."},
 
 {"genrec",		genrec_,	"[B] [T] [R1] [R2]  ->  ...",
-"Executes B, if that yields true executes T.\nElse executes R1 and then [[B] [T] [R1] [R2] genrec] R2."},
+"Executes B, if that yields true executes T.\nElse executes R1 and then [[[B] [T] [R1] R2] genrec] R2."},
 
 {"condnestrec",		condnestrec_,	"[ [C1] [C2] .. [D] ]  ->  ...",
-"A generalisation of condlinrec. Each [Ci] is of the form [[B] [R1] [R2] .. [Rn]] and [D] is of the form [[R1] [R2] .. [Rn]]. Tries each B, or if all fail, takes the default [D]. For the case taken, executes each [Ri] but recurses between any two consecutive [Ri]. (n > 3 would be exceptional.)"},
+"A generalisation of condlinrec.\nEach [Ci] is of the form [[B] [R1] [R2] .. [Rn]] and [D] is of the form\n[[R1] [R2] .. [Rn]]. Tries each B, or if all fail, takes the default [D].\nFor the case taken, executes each [Ri] but recurses between any two\nconsecutive [Ri]. (n > 3 would be exceptional.)"},
 
 {"condlinrec",		condlinrec_,	"[ [C1] [C2] .. [D] ]  ->  ...",
 "Each [Ci] is of the forms [[B] [T]] or [[B] [R1] [R2]].\nTries each B. If that yields true and there is just a [T], executes T and exit.\nIf there are [R1] and [R2], executes R1, recurses, executes R2.\nSubsequent cases are ignored. If no B yields true, then [D] is used.\nIt is then of the forms [[T]] or [[R1] [R2]]. For the former, executes T.\nFor the latter executes R1, recurses, executes R2."},
@@ -3073,10 +4017,10 @@ static struct {char *name; void (*proc) (); char *messg1, *messg2 ; }
 "Recursively traverses leaves of tree T, executes P for each leaf."},
 
 {"treerec",		treerec_,	"T [O] [C]  ->  ...",
-"T is a tree. If T is a leaf, executes O. Else executes [[O] [C] treerec] C."},
+"T is a tree. If T is a leaf, executes O. Else executes [[[O] C] treerec] C."},
 
 {"treegenrec",		treegenrec_,	"T [O1] [O2] [C]  ->  ...",
-"T is a tree. If T is a leaf, executes O1.\nElse executes O2 and then [[O1] [O2] [C] treegenrec] C."},
+"T is a tree. If T is a leaf, executes O1.\nElse executes O2 and then [[[O1] [O2] C] treegenrec] C."},
 
 /* MISCELLANEOUS */
 
@@ -3098,7 +4042,7 @@ static struct {char *name; void (*proc) (); char *messg1, *messg2 ; }
 {"__latex_manual",	latex_manual_,	"->",
 "Writes this manual of all Joy primitives to output file in Latex style but without the head and tail."},
 
-{"__manual_list",	manual_list_aux_, "->  L",
+{"__manual_list",	manual_list_,	"->  L",
 "Pushes a list L of lists (one per operator) of three documentation strings"},
 
 {"__settracegc",	settracegc_,	"I  ->",
@@ -3134,6 +4078,11 @@ static struct {char *name; void (*proc) (); char *messg1, *messg2 ; }
 {"get",			get_,		"->  F",
 "Reads a factor from input and pushes it onto stack."},
 
+#ifdef GETCH_AS_BUILTIN
+{"getch",		getch_,		"->  F",
+"Reads a character from input and pushes it onto stack."},
+#endif
+
 {"put",			put_,		"X  ->",
 "Writes X to output, pops X off stack."},
 
@@ -3155,113 +4104,144 @@ static struct {char *name; void (*proc) (); char *messg1, *messg2 ; }
 {0, dummy_, "->","->"}
 };
 
-PUBLIC void inisymboltable(void)		/* initialise		*/
+PUBLIC void inisymboltable(void) /* initialise		*/
 {
-    int i; char *s;
+    int i;
     symtabindex = symtab;
-    for (i = 0; i < HASHSIZE; hashentry[i++] = symtab) ;
+    for (i = 0; i < HASHSIZE; hashentry[i++] = symtab)
+        ;
+#if 0
     localentry = symtab;
-    for (i = 0; optable[i].name; i++)
-      { s = optable[i].name;
-	/* ensure same algorithm in getsym */
-	for (hashvalue = 0; *s != '\0';) hashvalue += *s++;
-	hashvalue %= HASHSIZE;
-	symtabindex->name = optable[i].name;
-	symtabindex->u.proc = optable[i].proc;
-	symtabindex->next = hashentry[hashvalue];
-	hashentry[hashvalue] = symtabindex;
-D(	printf("entered %s in symbol table at %ld = %ld\n", \
-	    symtabindex->name, (long)symtabindex, \
-	    LOC2INT(symtabindex)); )
-	symtabindex++; }
+#endif
+    for (i = 0; optable[i].name; i++) {
+        char* s = optable[i].name;
+        HashValue(s);
+        symtabindex->name = optable[i].name;
+        symtabindex->u.proc = optable[i].proc;
+        symtabindex->next = hashentry[hashvalue];
+        hashentry[hashvalue] = symtabindex;
+        D(printf("entered %s in symbol table at %p = %p\n", symtabindex->name,
+              (void*)symtabindex, (void*)LOC2INT(symtabindex));)
+        symtabindex++;
+    }
     firstlibra = symtabindex;
 }
 
-PRIVATE void helpdetail_()
+PRIVATE void helpdetail_(void)
 {
-    Node *n;
+    Node* n;
     ONEPARAM("HELP");
     LIST("HELP");
     printf("\n");
-    n = stk->u.lis;
-    while (n != NULL)
-      { if (n->op == USR_)
-	  { printf("%s  ==\n    ",n->u.ent->name);
-	    writeterm(n->u.ent->u.body, stdout);
-	    printf("\n"); break; }
-	else
-	    printf("%s        :   %s.\n%s\n",
-		optable[ (int) n->op].name,
-		optable[ (int) n->op].messg1,
-		optable[ (int) n->op].messg2);
-	printf("\n");
-	n = n->next; }
-    POP(stk);
+    n = stck->u.lis;
+    while (n != NULL) {
+        if (n->op == USR_) {
+            printf("%s  ==\n    ", n->u.ent->name);
+            writeterm(n->u.ent->u.body, stdout);
+            printf("\n");
+            break;
+        } else {
+            Operator op;
+            if ((op = n->op) == BOOLEAN_)
+                op = n->u.num ? TRUE_ : FALSE_;
+            if (op == INTEGER_ && n->u.num == MAXINT)
+                op = MAXINT_;
+            printf("%s	:   %s.\n%s\n", optable[(int)op].name,
+                optable[(int)op].messg1, optable[(int)op].messg2);
+        }
+        printf("\n");
+        n = n->next;
+    }
+    POP(stck);
 }
 #define PLAIN (style == 0)
 #define HTML (style == 1)
 #define LATEX (style == 2)
-#define HEADER(N,NAME,HEAD)					\
-    if (strcmp(N,NAME) == 0)					\
-      { printf("\n\n");						\
-        if (LATEX) printf("\\item[--- \\BX{");			\
-	printf("%s",HEAD);					\
-	if (LATEX) printf("} ---] \\verb# #");			\
-	printf("\n\n"); }
+#define HEADER(N, NAME, HEAD)                                                  \
+    if (strcmp(N, NAME) == 0) {                                                \
+        printf("\n\n");                                                        \
+        if (HTML)                                                              \
+            printf("<DT><BR><B>");                                             \
+        if (LATEX)                                                             \
+            printf("\\item[--- \\BX{");                                        \
+        printf("%s", HEAD);                                                    \
+        if (LATEX)                                                             \
+            printf("} ---] \\verb# #");                                        \
+        if (HTML)                                                              \
+            printf("</B><BR><BR>");                                            \
+        printf("\n\n");                                                        \
+    }
 
 PRIVATE void make_manual(int style /* 0=plain, 1=HTML, 2=Latex */)
 {
-    int i; char *n;
-    if (HTML) printf("<HTML>\n<DL>\n");
-    for (i = BOOLEAN_; optable[i].name != 0; i++)
-      { n = optable[i].name;
-	HEADER(n," truth value type","literal") else
-	HEADER(n,"false","operand") else
-	HEADER(n,"id","operator") else
-	HEADER(n,"null","predicate") else
-	HEADER(n,"i","combinator") else
-	HEADER(n,"help","miscellaneous commands")
-	if (n[0] != '_')
-	  { if (HTML) printf("\n<DT>");
-	    else if (LATEX)
-	      { if (n[0] == ' ')
-		  { n++;  printf("\\item[\\BX{"); }
-		else printf("\\item[\\JX{"); }
-	    if (HTML && strcmp(n,"<=")==0)
-		printf("&lt;=");
-	    else printf("%s",n);
-	    if (LATEX) printf("}]  \\verb#");
-	    if (HTML) printf(" <CODE>      :  </CODE> ");
-		/* the above line does not produce the spaces around ":" */
-	    else printf("\t:  ");
-	    printf("%s", optable[i].messg1);
-	    if (HTML) printf("\n<DD>");
-	    else if (LATEX) printf("# \\\\ \n {\\small\\verb#");
-		else printf("\n");
-	    printf("%s", optable[i].messg2);
-	    if (LATEX) printf("#}");
-	    printf("\n\n"); } }
-    if (HTML) printf("\n</DL>\n</HTML>\n");
+    int i;
+    if (HTML)
+        printf("<HTML>\n<DL>\n");
+    for (i = BOOLEAN_; optable[i].name != 0; i++) {
+        char* n = optable[i].name;
+        HEADER(n, " truth value type", "literal") else
+	HEADER(n, "false", "operand") else
+	HEADER(n, "id", "operator") else
+	HEADER(n, "null", "predicate") else
+	HEADER(n, "i", "combinator") else
+	HEADER(n, "help", "miscellaneous commands")
+	if (n[0] != '_') {
+            if (HTML)
+                printf("\n<DT>");
+            else if (LATEX) {
+                if (n[0] == ' ') {
+                    n++;
+                    printf("\\item[\\BX{");
+                } else
+                    printf("\\item[\\JX{");
+            }
+            if (HTML && strcmp(n, "<=") == 0)
+                printf("&lt;=");
+            else
+                printf("%s", n);
+            if (LATEX)
+                printf("}]  \\verb#");
+            if (HTML)
+                printf(" <CODE>      :  </CODE> ");
+            /* the above line does not produce the spaces around ":" */
+            else
+                printf("\t:  ");
+            printf("%s", optable[i].messg1);
+            if (HTML)
+                printf("\n<DD>");
+            else if (LATEX)
+                printf("# \\\\ \n {\\small\\verb#");
+            else
+                printf("\n");
+            printf("%s", optable[i].messg2);
+            if (LATEX)
+                printf("#}");
+            printf("\n\n");
+        }
+    }
+    if (HTML)
+        printf("\n</DL>\n</HTML>\n");
 }
 
-PRIVATE void manual_list_()
+PRIVATE void manual_list_(void)
 {
     int i = -1;
-    Node *tmp;
-    Node *n = NULL;
-    while (optable[++i].name) ; /* find end */
+    while (optable[++i].name)
+        ; /* find end */
     --i; /* overshot */
-    while (i)
-      { tmp = STRING_NEWNODE(optable[i].messg2, NULL);
-	tmp = STRING_NEWNODE(optable[i].messg1, tmp);
-	tmp = STRING_NEWNODE(optable[i].name, tmp);
-	n = LIST_NEWNODE(tmp, n);
-	--i; }
-    stk = LIST_NEWNODE(n,stk);
+    dump1 = LIST_NEWNODE(0, dump1);
+    dump2 = LIST_NEWNODE(0, dump2);
+    while (i) {
+        DMP1 = STRING_NEWNODE(optable[i].messg2, 0);
+        DMP1 = STRING_NEWNODE(optable[i].messg1, DMP1);
+        DMP1 = STRING_NEWNODE(optable[i].name, DMP1);
+        DMP2 = LIST_NEWNODE(DMP1, DMP2);
+        --i;
+    }
+    stck = LIST_NEWNODE(DMP2, stck);
+    POP(dump2);
+    POP(dump1);
 }
 
-PUBLIC char *opername(int o)
-{
-    return optable[(short)o].name;
-}
+PUBLIC char* opername(int o) { return optable[o].name; }
 /* END of INTERP.C */

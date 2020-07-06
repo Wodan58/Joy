@@ -1,6 +1,10 @@
 (* FILE:   reptst.joy *)
 
+"usrlib" libload.
+"numlib" libload.
+"agglib" libload.
 "replib" libload.
+
 2 setecho.
 
 (* -FOUR BASIC *)
@@ -107,7 +111,7 @@ even-squares i i i i state.
 
 DEFINE
     ten-powers-log10 ==
-	 1  [10 * ] [[] cons [dup log10] infra]  rep.f-stream-d.
+	 1.0 [10 *] [[] cons [dup log10] infra] rep.f-stream-d.  (* R.W. *)
 
 ten-powers-log10.
 

@@ -2,13 +2,15 @@ language: c
 compiler: gcc
 
 install:
-  - git clone https://github.com/linux-test-project/lcov.git
-  - cd lcov; sudo make install; cd ..
+  - wget https://sourceforge.net/projects/ltp/files/Coverage%20Analysis/LCOV-1.14/lcov-1.14.tar.gz
   - gem install coveralls-lcov
-  - lcov --version 
   - gcc --version
 
 before_script:
+  - gunzip lcov-1.14.tar.gz
+  - tar xvf lcov-1.14.tar
+  - cd lcov-1.14; sudo make install; cd ..
+  - lcov --version
   - lcov --directory . --zerocounters
 
 script:
@@ -17,7 +19,7 @@ script:
 
 after_success:
   - lcov --directory . --capture --output-file coverage.info # capture coverage info
-  - lcov --remove coverage.info '/usr/*' --output-file coverage.info # filter out system code
+  - lcov --remove coverage.info '/usr/*' --output-file coverage.info # filter out system, test, and external code
   - lcov --list coverage.info # debug before upload
   - coveralls-lcov coverage.info # uploads to coveralls
   - bash <(curl -s https://codecov.io/bash)

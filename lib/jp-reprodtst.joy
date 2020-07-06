@@ -1,3 +1,6 @@
+"numlib" libload.
+"agglib" libload.
+
 2 setecho.
 
 # from Little Lisper

@@ -34,7 +34,7 @@ LIBRA
     unswonsd == [unswons] dip;
     firstd == [first] dip;
     restd == [rest] dip;
-    secondd == [secondd] dip;
+    secondd == [second] dip;					(* R.W. *)
     thirdd == [third] dip;
 
 (* on two operands *)

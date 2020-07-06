@@ -193,7 +193,7 @@ DEFINE
 	linrec.
 
 
-[ -7 42 99 100 101 102 345 ]  [x-mcc91]  map.
+[ -7 42 99 100 101 102 345 ]  [l-mcc91]  map.			(* R.W. *)
 
 (*
     r-ack ==
@@ -300,7 +300,7 @@ DEFINE
 
 [source destination temp]  2  cnr-hanoi.
 		#
-[S D T]  5  cnr-hanoi.
+[S D T]  5  cnr-hanoi newline.					(* R.W. *)
   
 DEFINE
     cnr-fact ==

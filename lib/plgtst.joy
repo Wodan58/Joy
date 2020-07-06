@@ -2,6 +2,7 @@
 
 "\ntesting the propositional logic library in file  plglib.joy\n\n" putchars.
 
+0 __settracegc.							(* R.W. *)
 "plglib" libload.
 1 setecho.
 

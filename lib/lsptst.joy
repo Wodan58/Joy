@@ -6,7 +6,7 @@
 0 __settracegc.
 1 setecho.
 DEFINE l-prompt == "".
-lisp.
+lisp quit.
 
 							(* CONSTANTS	*)
 	123.456

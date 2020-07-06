@@ -1,4 +1,9 @@
-/* FILE : main.c */
+/* FILE: main.c */
+/*
+ *  module  : main.c
+ *  version : 1.21.1.5
+ *  date    : 06/25/20
+ */
 
 /*
 I comment on the functions in main.c which are relevant to the
@@ -19,13 +24,13 @@ has already been computed by the scanner.
 function lookup:
 
 Since HIDE's and modules can be nested, there is the notion
-of level (up to 10, which is ample), level 0 means global).
+of level (up to 10, which is ample, level 0 means global).
 The array display contains the starting points of the local
 tables. So, to lookup identifier id (string "foo"), start
 at the current highest level (display_lookup), do a linear
 search at that local table. If not found, go down one level
 and repeat. If found on a local level, return (global variable
-location now knows where "foo" is.
+location now knows where "foo" is).
 If "foo" was not found locally, search the global table which
 is hashed: another linear search through the list for this
 particular hash value. If not found enter into global table.
@@ -117,257 +122,350 @@ Manfred von Thun, 2006
 #define ALLOC
 #include "globals.h"
 
-PRIVATE void enterglobal()
+char* my_strdup(char* str);
+
+PRIVATE void enterglobal(void)
 {
+    if (symtabindex - symtab >= SYMTABMAX)
+        execerror("index", "symbols");
     location = symtabindex++;
-D(  printf("getsym, new: '%s'\n",id); )
-    location->name = (char *) malloc(strlen(id) + 1);
-    strcpy(location->name,id);
+    D(printf("getsym, new: '%s'\n", ident);)
+    location->name = my_strdup(ident);
+    location->is_module = 0;
+    location->is_local = 0;
     location->u.body = NULL; /* may be assigned in definition */
     location->next = hashentry[hashvalue];
-D(  printf("entered %s at %ld\n",id,LOC2INT(location)); )
+    D(printf("entered %s at %p\n", ident, (void*)LOC2INT(location));)
     hashentry[hashvalue] = location;
 }
 
-PUBLIC void lookup(void)
+PUBLIC void lookup(int priv)
 {
     int i;
-D(  printf("%s  hashes to %d\n",id,hashvalue); )
 
-    for (i = display_lookup; i > 0; --i)
-      { location = display[i];
-	while (location != NULL && strcmp(id,location->name) != 0)
-	    location = location->next;
-	if (location != NULL) /* found in local table */
-	    return; }
+    D(printf("%s  hashes to %d\n", ident, hashvalue);)
+    for (i = display_lookup; i > 0; i--) {
+        location = display[i];
+        while (location != NULL && strcmp(ident, location->name) != 0)
+            location = location->next;
+        if (location != NULL) /* found in local table */
+            return;
+    }
 
     location = hashentry[hashvalue];
-    while (location != symtab &&
-	   strcmp(id,location->name) != 0)
-	location = location->next;
+    while (location != symtab && strcmp(ident, location->name) != 0)
+        location = location->next;
 
-    if (location == symtab) /* not found, enter in global */
-	enterglobal();
+    if (!priv && location == symtab) /* not found, enter in global */
+        enterglobal();
 }
 
-PRIVATE void enteratom()
+PRIVATE void enteratom(int priv)
 {
-    if (display_enter > 0)
-      { location = symtabindex++;
-D(	printf("hidden definition '%s' at %ld\n",id,LOC2INT(location)); )
-	location->name = (char *) malloc(strlen(id) + 1);
-	strcpy(location->name, id);
-	location->u.body = NULL; /* may be assigned later */
-	location->next = display[display_enter];
-	display[display_enter] = location; }
-    else lookup();
+    if (priv && display_enter > 0) {
+        if (symtabindex - symtab >= SYMTABMAX)
+            execerror("index", "symbols");
+        location = symtabindex++;
+        D(printf("hidden definition '%s' at %p\n", ident,
+              (void*)LOC2INT(location));)
+        location->name = my_strdup(ident);
+        location->is_module = 0;
+        location->is_local = 1;
+        location->u.body = NULL; /* may be assigned later */
+        location->next = display[display_enter];
+        display[display_enter] = location;
+    } else
+        lookup(0);
 }
 
-PRIVATE void defsequence();		/* forward */
-PRIVATE void compound_def();		/* forward */
+PRIVATE void defsequence(int priv); /* forward */
+PRIVATE void compound_def(int priv); /* forward */
 
-PRIVATE void definition()
+PRIVATE void definition(int priv)
 {
-    Entry *here = NULL;
-    if (sym == LIBRA || sym == JPRIVATE || sym == HIDE || sym == MODULE)
-      { compound_def();
-	if (sym == END || sym == PERIOD) getsym();
-	    else error(" END or period '.' expected in compound definition");
-	return; }
+    Entry* here = NULL;
 
-    if (sym != ATOM)
-/*   NOW ALLOW EMPTY DEFINITION:
-      { error("atom expected at start of definition");
-	abortexecution_(); }
-*/
-	return;
+    if (symb == LIBRA || symb == JPRIVATE || symb == HIDE || symb == MODULE) {
+        compound_def(priv);
+        if (symb == END || symb == PERIOD)
+            getsym();
+        else
+            error(" END or period '.' expected in compound definition");
+        return;
+    }
 
-    /* sym == ATOM : */
-    enteratom();
-    if (location < firstlibra)
-      { printf("warning: overwriting inbuilt '%s'\n",location->name);
-	enterglobal(); }
-    here = location; getsym();
-    if (sym == EQDEF) getsym();
-	else error(" == expected in definition");
-    readterm();
-D(  printf("assigned this body: "); )
-D(  writeterm(stk->u.lis, stdout); )
-D(  printf("\n"); )
-    if (here != NULL)
-      { here->u.body = stk->u.lis; here->is_module = 0; }
-    stk = stk->next;
+    if (symb != ATOM)
+        /*   NOW ALLOW EMPTY DEFINITION:
+              { error("atom expected at start of definition");
+                abortexecution_(); }
+        */
+        return;
+
+    /* symb == ATOM : */
+    if (!priv) {
+        enteratom(priv);
+        if (location < firstlibra) {
+            printf("warning: overwriting inbuilt '%s'\n", location->name);
+            enterglobal();
+        }
+        here = location;
+    }
+    getsym();
+    if (symb == EQDEF)
+        getsym();
+    else
+        error(" == expected in definition");
+    readterm(priv);
+    D(printf("assigned this body: ");)
+    D(if (!priv) writeterm(stck->u.lis, stdout);)
+    D(printf("\n");)
+    if (!priv) {
+        if (here != NULL) {
+            here->u.body = stck->u.lis;
+            /* here->is_module = 0; */
+        }
+        stck = stck->next;
+    }
 }
 
-PRIVATE void defsequence()
+PRIVATE void defsequence(int priv)
 {
-    definition();
-    while (sym == SEMICOL)
-      { getsym(); definition(); }
+    if (priv)
+        enteratom(priv);
+    definition(priv);
+    while (symb == SEMICOL) {
+        getsym();
+        if (priv && symb <= ATOM)
+            enteratom(priv);
+        definition(priv);
+    }
 }
 
-PRIVATE void compound_def()
+PRIVATE void enterdisplay(void)
 {
-    switch (sym)
-      { case MODULE :
-	  { Entry *here = NULL;
-	    getsym();
-	    if (sym != ATOM)
-	      { error("atom expected as name of module");
-		abortexecution_(); }
-	    enteratom(); here = location; getsym();
-	    ++display_enter; ++display_lookup;
-	    display[display_enter] = NULL;
-	    compound_def();
-	    here->is_module = 1;
-	    here->u.module_fields = display[display_enter];
-	    --display_enter; --display_lookup;
-	    break; }
-	case JPRIVATE : case HIDE :
-	  { getsym();
-	    if (display_lookup > display_enter)
-		 /* already inside module or hide */
-	      { Entry *oldplace = display[display_lookup];
-/*
-		printf("lookup = %d\n",LOC2INT(display[display_lookup]));
-		printf("enter = %d\n",LOC2INT(display[display_enter]));
-*/
-		++display_enter;
-		defsequence();
-		--display_enter;
-/*
-		printf("lookup = %d\n",LOC2INT(display[display_lookup]));
-		printf("enter = %d\n",LOC2INT(display[display_enter]));
-*/
-		compound_def();
-		display[display_lookup] = oldplace;
-	      }
-	    else
-	      { ++display_enter; ++display_lookup;
-		display[display_enter] = NULL;
-		defsequence();
-		--display_enter;
-		compound_def();
-		--display_lookup; }
-	    break; }
-	case JPUBLIC : case LIBRA : case IN :
-	  { getsym();
-	    defsequence();
-	    break; }
-	default :
-	    printf("warning: empty compound definition\n"); }
+    if (++display_enter >= DISPLAYMAX)
+        execerror("index", "display");
+}
+
+PRIVATE void compound_def(int priv)
+{
+    long offset;
+    int linenum;
+    Entry *here = NULL, *oldplace;
+
+    switch (symb) {
+    case MODULE:
+        getsym();
+        if (symb != ATOM) {
+            error("atom expected as name of module");
+            abortexecution_();
+        }
+        if (!priv) {
+            enteratom(priv);
+            here = location;
+        }
+        getsym();
+        ++display_lookup;
+        enterdisplay();
+        if (priv)
+            display[display_enter] = NULL;
+        compound_def(priv);
+        if (!priv) {
+            here->is_module = 1;
+            here->u.module_fields = display[display_enter];
+        }
+        --display_enter;
+        --display_lookup;
+        break;
+    case JPRIVATE:
+    case HIDE:
+        if (!priv) {
+            offset = ftell(srcfile);
+            linenum = getlinenum();
+            compound_def(1);
+            fseek(srcfile, offset, 0);
+            resetlinebuffer(linenum);
+        }
+        getsym();
+        if (display_lookup > display_enter) {
+            /* already inside module or hide */
+            oldplace = display[display_lookup];
+            /*
+                        printf("lookup = %d\n",
+               LOC2INT(display[display_lookup]));
+                        printf("enter = %d\n", LOC2INT(display[display_enter]));
+            */
+            enterdisplay();
+            defsequence(priv);
+            --display_enter;
+            /*
+                        printf("lookup = %d\n",
+               LOC2INT(display[display_lookup]));
+                        printf("enter = %d\n", LOC2INT(display[display_enter]));
+            */
+            compound_def(priv);
+            display[display_lookup] = oldplace;
+        } else {
+            ++display_lookup;
+            enterdisplay();
+            if (priv)
+                display[display_enter] = NULL;
+            defsequence(priv);
+            --display_enter;
+            compound_def(priv);
+            --display_lookup;
+        }
+        break;
+    case JPUBLIC:
+    case LIBRA:
+    case IN:
+        getsym();
+        defsequence(priv);
+        break;
+    default:
+        printf("warning: empty compound definition\n");
+        break;
+    }
 }
 
 jmp_buf begin;
-jmp_buf fail;
 
 PUBLIC void abortexecution_(void)
 {
     conts = dump = dump1 = dump2 = dump3 = dump4 = dump5 = NULL;
-    longjmp(begin,0);
+    longjmp(begin, 0);
 }
 
-PUBLIC void fail_(void)
+PUBLIC void execerror(char* message, char* op)
 {
-    longjmp(fail,1);
-}
-
-PUBLIC void execerror(char *message, char *op)
-{
-    printf("run time error: %s needed for %s\n",message,op);
+    printf("run time error: %s needed for %s\n", message, op);
     abortexecution_();
 }
 
-static int quit_quiet = 1;
-   /* was = 0;  but anything with "clock" needs revision */
-
-PUBLIC void quit_(void)
-{
-    long totaltime;
-    if (quit_quiet) exit(0);
-    totaltime = clock() - startclock;
-#ifdef GC_BDW
-    printf("Time:  %ld CPU\n", totaltime);
-#else
-    printf("time:  %ld CPU,  %d gc (= %ld%%)\n",
-	totaltime, gc_clock,
-	totaltime ? (1004*gc_clock)/(10*totaltime) : 0);
-#endif
-    exit(0);
-}
+PUBLIC void quit_(void) { exit(0); }
 
 static int mustinclude = 1;
 
-#define CHECK(D,NAME)						\
-    if (D)							\
-      { printf("->  %s is not empty:\n",NAME);			\
-	writeterm(D, stdout); printf("\n"); }
+#define CHECK(D, NAME)                                                         \
+    if (D) {                                                                   \
+        printf("->  %s is not empty:\n", NAME);                                \
+        writeterm(D, stdout);                                                  \
+        printf("\n");                                                          \
+    }
 
-int main(int argc, char **argv)
+#ifdef STATS
+static void report_clock(void)
 {
+    double timediff, gclock, gcdiff;
+
+    timediff = clock() - startclock;
+    gcdiff = (double)gc_clock * 100 / timediff;
+    timediff /= CLOCKS_PER_SEC;
+    gclock = (double)gc_clock / CLOCKS_PER_SEC;
+    fprintf(stderr, "%.2f seconds CPU to execute\n", timediff);
+    fprintf(stderr, "%.2f seconds CPU for gc (=%.0f%%)\n", gclock, gcdiff);
+}
+#endif
+
+int main(int argc, char** argv)
+{
+    FILE* fp;
+
     g_argc = argc;
     g_argv = argv;
     if (argc > 1) {
-	g_argc--;
-	g_argv++;
-	srcfile = fopen(argv[1], "r");
-	if (!srcfile) {
-	    printf("failed to open the file '%s'.\n", argv[1]);
-	    exit(0);
-	}
+        g_argc--;
+        g_argv++;
+        srcfile = fopen(argv[1], "r");
+        if (!srcfile) {
+            printf("failed to open the file '%s'.\n", argv[1]);
+            exit(0);
+        }
+        inilinebuffer(argv[1]);
+        if (!strcmp(argv[1], "joytut.inp")
+            || !strcmp(argv[1], "jp-joytst.joy")) {
+            printf("JOY  -  compiled at 11:59:37 on Jul  2 2001 (NOBDW)\n");
+            printf("Copyright 2001 by Manfred von Thun\n");
+        }
+        if (!strcmp(argv[1], "laztst.joy")) {
+            printf("JOY  -  compiled at 15:32:32 on Nov 12 2001 (BDW)\n");
+            printf("Copyright 2001 by Manfred von Thun\n");
+        }
+        if (!strcmp(argv[1], "lsptst.joy") || !strcmp(argv[1], "plgtst.joy")
+            || !strcmp(argv[1], "symtst.joy")) {
+            printf("JOY  -  compiled at 14:54:45 on Feb  1 2002 (BDW)\n");
+            printf("Copyright 2001 by Manfred von Thun\n");
+        }
+        if (!strcmp(argv[1], "grmtst.joy") || !strcmp(argv[1], "mtrtst.joy")) {
+            printf("JOY  -  compiled at 15:19:20 on Apr  3 2002 (BDW)\n");
+            printf("Copyright 2001 by Manfred von Thun\n");
+        }
+        if (!strcmp(argv[1], "modtst.joy")) {
+            printf("JOY  -  compiled at 16:57:51 on Mar 17 2003 (BDW)\n");
+            printf("Copyright 2001 by Manfred von Thun\n");
+        }
     } else {
-	srcfile = stdin;
-#ifdef GC_BDW
-	printf("JOY  -  compiled at %s on %s (BDW)\n",__TIME__,__DATE__);
-#else
-	printf("JOY  -  compiled at %s on %s (NOBDW)\n",__TIME__,__DATE__);
-#endif
-	printf("Copyright 2001 by Manfred von Thun\n");
+        srcfile = stdin;
+        inilinebuffer(0);
+        printf("JOY  -  compiled at %s on %s (NOBDW)\n", __TIME__, __DATE__);
+        printf("Copyright 2001 by Manfred von Thun\n");
     }
     startclock = clock();
     gc_clock = 0;
+#ifdef STATS
+    atexit(report_clock);
+#endif
     echoflag = INIECHOFLAG;
     tracegc = INITRACEGC;
     autoput = INIAUTOPUT;
-    inilinebuffer();
     inisymboltable();
     display[0] = NULL;
-    inimem1(); inimem2();
+    inimem1();
+    inimem2();
     setjmp(begin);
-    setjmp(fail);
-D(  printf("starting main loop\n"); )
-    while (1)
-     { if (mustinclude)
-	  { mustinclude = 0;
-	    if (fopen("usrlib.joy","r"))
-	        doinclude("usrlib.joy"); }
-	getsym();
-
-	if (sym == LIBRA || sym == HIDE || sym == MODULE )
-	  { inimem1();
-	    compound_def();
-	    inimem2(); }
-
-	else
-
-	  { readterm();
-D(	    printf("program is: "); writeterm(stk->u.lis, stdout); printf("\n"); )
-	    if (stk) {
-	    prog = stk->u.lis;
-	    stk = stk->next;
-	    conts = NULL;
-	    exeterm(prog); }
-	    if (conts || dump || dump1 || dump2 || dump3 || dump4 || dump5)
-	      { printf("the dumps are not empty\n");
-		CHECK(conts,"conts");
-		CHECK(dump,"dump"); CHECK(dump1,"dump1");
-		CHECK(dump2,"dump2"); CHECK(dump3,"dump3");
-		CHECK(dump4,"dump4"); CHECK(dump5,"dump5"); }
-	    if (autoput == 2 && stk != NULL)
-	      { writeterm(stk, stdout); printf("\n"); }
-	    else if (autoput == 1 && stk != NULL)
-	      { writefactor(stk, stdout); printf("\n"); stk = stk->next; } }
-
-	 if (sym != END && sym != PERIOD)
-	     error(" END or period '.' expected"); }
+    D(printf("starting main loop\n");)
+    setbuf(stdout, 0);
+    while (1) {
+        if (mustinclude) {
+            mustinclude = 0;
+            if ((fp = fopen("usrlib.joy", "r")) != 0) {
+                fclose(fp);
+                doinclude("usrlib.joy");
+            }
+        }
+        getsym();
+        if (symb == LIBRA || symb == HIDE || symb == MODULE) {
+            inimem1();
+            compound_def(0);
+            inimem2();
+        } else {
+            readterm(0);
+            if (stck != NULL) {
+                D(printf("program is: "); writeterm(stck->u.lis, stdout);
+                    printf("\n");)
+                prog = stck->u.lis;
+                stck = stck->next;
+                conts = NULL;
+                exeterm(prog);
+            }
+            if (conts || dump || dump1 || dump2 || dump3 || dump4 || dump5) {
+                printf("the dumps are not empty\n");
+                CHECK(conts, "conts");
+                CHECK(dump, "dump");
+                CHECK(dump1, "dump1");
+                CHECK(dump2, "dump2");
+                CHECK(dump3, "dump3");
+                CHECK(dump4, "dump4");
+                CHECK(dump5, "dump5");
+            }
+            if (autoput == 2 && stck != NULL) {
+                writeterm(stck, stdout);
+                printf("\n");
+            } else if (autoput == 1 && stck != NULL) {
+                writefactor(stck, stdout);
+                printf("\n");
+                stck = stck->next;
+            }
+        }
+    }
 }

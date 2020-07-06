@@ -1,7 +1,9 @@
 (* FILE:  laztst.joy *)
+"numlib" libload.						(* R.W. *)
 
 "\nTesting lazy lists in the library lazlib.joy\n" putchars.
 
+0 __settracegc.							(* R.W. *)
 "lazlib" libload.
 "numlib" libload.
 2 setecho.

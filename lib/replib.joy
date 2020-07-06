@@ -1,7 +1,5 @@
 (* FILE:   replib.joy *)
 
-"agglib" libload.
-
 LIBRA
 
     _replib == true;
@@ -52,7 +50,7 @@ PUBLIC
         [dip dureco] cons               # N [[P] dip dureco]
         [[pred] infra] swoncat          # N [[pred] infra [P] dip dureco]
         [ifte] cons                     # N [[E] ifte]
-        [pop [[duco] duco]] swons        # N [[pop [[duco] duco] [E] ifte]
+        [pop [[duco] duco]] swons       # N [[pop [[duco] duco] [E] ifte]
         [first null] swons              # N [[first null] [T] [E] ifte]
         cons dureco;                    # [[N [I] [T] [E] ifte] ..]
 

@@ -7,6 +7,7 @@
 putchars.
 "user input is indented by one tab\n"
 putchars.
+0 __settracegc.							(* R.W. *)
 2 setecho.
                                    (* VECTORS              *)
 

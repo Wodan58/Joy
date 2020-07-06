@@ -1,7 +1,8 @@
 (* FILE:  jp-joytst.joy  -  test file for jp-joyjoy.joy *)
 
-"jp-joyjoy" libinclude.
+"jp-joyjoy" libload.						(* R.W. *)
 
+0 __settracegc.							(* R.W. *)
 1 setecho.
 (* testing the tracing versions of joy0:    joy0s  and  joy0l  *)
 

@@ -187,12 +187,12 @@ Note that operator classes u b b1 b2 b3 need to be user defined as lists:
 	  [ swap ] ]
 	cond;
 
-    new-infra == cons [] swap infra
+    new-infra == cons [] swap infra;
 
-IN
+(* IN - R.W. *)
 
 (* Ideally the following should be inside the HIDE. But since currently
-   HIDE definitions cannot be mutually recursive, the are placed here.	*)
+   HIDE definitions cannot be mutually recursive, they are placed here.	*)
 
     M12T ==
 	M22T
@@ -255,6 +255,8 @@ IN
 	    unswons M12C popd ]
 	  [ ] ]
 	  cond;
+
+IN    (*  R.W.  *)
 
       (*  In following, the fast reverselist is counted as  0.5 pass	*)
 
