@@ -18,19 +18,19 @@ All SINGLE changes done in Joy1 have been undone. Some changes were done that
 make the build environment happy. The only new thing is a portable makefile,
 following this [advice](http://nullprogram.com/blog/2017/08/20).
 There is something different in these sources compared to the ones that can be
-downloaded from the original [site](http://www.latrobe.edu.au/humanities/research/research-projects/past-projects/joy-programming-language) and
-that is the comments at the start of main.c and of interp.c.
+downloaded from the original [site](http://www.latrobe.edu.au/humanities/research/research-projects/past-projects/joy-programming-language) and that is the
+comments at the start of main.c and of interp.c.
 [Manfred von Thun](http://fogus.me/important/von-thun/) really wanted those
-comments in main.c, but the
-[newsgroup](https://groups.yahoo.com/neo/groups/concatenative/info) did not
-allow attachments, so it was never published. As for the comments in interp.c,
-I added them because I like some version history. It proves that the language
-and the implementation was not done during one night. In fact, according to
-this [interview](http://archive.vector.org.uk/art10000350) the implementation
-in C was started in 1995.
+comments in main.c, but the newsgroup did not allow attachments, so it was
+never published.
+As for the comments in interp.c, I added them because I like some version
+history. It proves that the language and the implementation was not done over
+night.
+In fact, according to this [interview](http://archive.vector.org.uk/art10000350) the implementation in C was started in 1995.
 
 Binaries
 --------
 
-The binary `joy.exe` was compiled by me in 2005 and should still work under
-Windows; it used the BDW garbage collector.
+The binary `joy.exe` is a 32-bit Windows executable; it was compiled by me in
+2005 and should still work under Windows or Wine; it uses the BDW garbage
+collector.
