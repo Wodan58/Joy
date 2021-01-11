@@ -1,8 +1,8 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.21.1.5
- *  date    : 06/25/20
+ *  version : 1.21.1.8
+ *  date    : 01/09/21
  */
 
 /*
@@ -249,8 +249,8 @@ PRIVATE void enterdisplay(void)
 
 PRIVATE void compound_def(int priv)
 {
-    long offset;
     int linenum;
+    long offset;
     Entry *here = NULL, *oldplace;
 
     switch (symb) {
@@ -280,10 +280,12 @@ PRIVATE void compound_def(int priv)
     case JPRIVATE:
     case HIDE:
         if (!priv) {
-            offset = ftell(srcfile);
+            if ((offset = ftell(srcfile)) < 0)
+		execerror("ftell", "HIDE");
             linenum = getlinenum();
             compound_def(1);
-            fseek(srcfile, offset, 0);
+            if (fseek(srcfile, offset, 0))
+                execerror("fseek", "HIDE");
             resetlinebuffer(linenum);
         }
         getsym();

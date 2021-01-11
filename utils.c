@@ -1,8 +1,8 @@
 /* FILE: utils.c */
 /*
  *  module  : utils.c
- *  version : 1.19.1.6
- *  date    : 06/25/20
+ *  version : 1.19.1.7
+ *  date    : 07/23/20
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -381,7 +381,7 @@ PUBLIC void readfactor(int priv) /* read a JOY factor        	*/
 
 PUBLIC void readterm(int priv)
 {
-    Node** my_dump;
+    Node** my_dump = 0;
 
     if (!priv) {
         stck = LIST_NEWNODE(0L, stck);
