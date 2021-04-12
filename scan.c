@@ -1,18 +1,21 @@
 /* FILE: scan.c */
 /*
  *  module  : scan.c
- *  version : 1.18.1.3
- *  date    : 06/22/20
+ *  version : 1.18.1.7
+ *  date    : 03/14/21
  */
-#include <ctype.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
+#include <stdlib.h>
+#include "gc.h"
 #include "globals.h"
 
 static struct {
-    FILE* fp;
-    char* name;
+    FILE *fp;
+#if 0
+    char name[ALEN];
+#endif
     int linenum;
 } infile[INPSTACKMAX];
 static int ilevel = 0;
@@ -24,10 +27,13 @@ static int errorcount = 0;
 #endif
 static int ch = ' ';
 
-PUBLIC void inilinebuffer(char* str)
+PUBLIC void inilinebuffer(char *str)
 {
     infile[0].fp = srcfile;
-    infile[0].name = str;
+#if 0
+    strncpy(infile[0].name, str, ALEN);
+    infile[0].name[ALEN - 1] = 0;
+#endif
 }
 
 PUBLIC int getlinenum(void)
@@ -79,7 +85,7 @@ PRIVATE void getch(void)
             srcfile = infile[ilevel].fp;
             linenumber = infile[ilevel].linenum;
         } else
-            quit_();
+            quit_(0);
         linbuf[linelength++] = ' '; /* to help getsym for numbers */
         linbuf[linelength++] = '\0';
         if (echoflag)
@@ -96,7 +102,7 @@ PRIVATE void getch(void)
 
 PRIVATE int endofbuffer(void) { return currentcolumn == linelength; }
 
-PUBLIC void error(char* message)
+PUBLIC void error(char *message)
 {
     int i;
 
@@ -114,48 +120,41 @@ PUBLIC void error(char* message)
 #endif
 }
 
-PUBLIC int doinclude(char* filnam)
+PUBLIC void doinclude(pEnv env, char *filnam)
 {
-    FILE* fp;
+    FILE *fp;
 
     if (ilevel + 1 == INPSTACKMAX)
-        execerror("fewer include files", "include");
+        execerror(env, "fewer include files", "include");
     infile[ilevel].fp = srcfile;
     infile[ilevel].linenum = linenumber;
     linenumber = 0;
     if ((fp = fopen(filnam, "r")) != 0) {
         infile[++ilevel].fp = srcfile = fp;
-        infile[ilevel].name = filnam;
+#if 0
+	strncpy(infile[ilevel].name, filnam, ALEN);
+	infile[ilevel].name[ALEN - 1] = 0;
+#endif
         infile[ilevel].linenum = 0;
-        return 1;
+        return;
     }
-    execerror("valid file name", "include");
-    return -1; /* not reached */
+    execerror(env, "valid file name", "include");
 }
 
 #ifdef FGET_FROM_FILE
-PUBLIC void redirect(FILE* fp)
+PUBLIC void redirect(pEnv env, FILE *fp)
 {
     if (infile[ilevel].fp == fp)
-	return;
+        return;
     if (ilevel + 1 == INPSTACKMAX)
-        execerror("fewer include files", "redirect");
+        execerror(env, "fewer include files", "redirect");
     infile[++ilevel].fp = srcfile = fp;
-    infile[ilevel].name = 0;
+#if 0
+    infile[ilevel].name[0] = 0;
+#endif
     infile[ilevel].linenum = 0;
 }
 #endif
-
-char* my_strdup(char* str)
-{
-    char* ptr;
-    size_t leng;
-
-    leng = strlen(str);
-    if ((ptr = malloc(leng + 1)) != 0)
-        strcpy(ptr, str);
-    return ptr;
-}
 
 PRIVATE int specialchar(void)
 {
@@ -175,12 +174,10 @@ PRIVATE int specialchar(void)
         return '\'';
     case '\"':
         return '\"';
-#ifdef REST_OF_UNIX_ESCAPES
     case 'v':
         return '\v';
     case '\\':
         return '\\';
-#endif
     default:
         if (isdigit(ch)) {
             int i, num = ch - '0';
@@ -199,16 +196,9 @@ PRIVATE int specialchar(void)
     }
 }
 
-PUBLIC void HashValue(char* s)
-{
-    for (hashvalue = 0; *s != '\0'; hashvalue += *s++)
-        ;
-    hashvalue %= HASHSIZE;
-}
-
 PRIVATE int peek(void) { return linbuf[currentcolumn]; }
 
-PUBLIC void getsym(void)
+PUBLIC void getsym(pEnv env)
 {
     int i = 0;
     char string[INPLINEMAX];
@@ -267,7 +257,7 @@ Start:
         getch();
         if (ch == '\\')
             ch = specialchar();
-        numb = ch;
+        env->yylval.num = ch;
         symb = CHAR_;
         getch();
         return;
@@ -281,7 +271,7 @@ Start:
         }
         string[i] = '\0';
         getch();
-        strg = my_strdup(string);
+        env->yylval.str = GC_strdup(string);
         symb = STRING_;
         return;
     case '-': /* PERHAPS unary minus */
@@ -326,16 +316,12 @@ Start:
                     while (isdigit(ch))
                         getch();
                 }
-                dblf = strtod(&linbuf[start], NULL);
+                env->yylval.dbl = strtod(&linbuf[start], NULL);
                 symb = FLOAT_;
                 return;
             }
         done:
-#ifdef BIT_32
-            numb = strtol(&linbuf[start], NULL, 0);
-#else
-            numb = strtoll(&linbuf[start], NULL, 0);
-#endif
+            env->yylval.num = strtol(&linbuf[start], NULL, 0); /* BIT_32 */
             symb = INTEGER_;
             return;
         }
@@ -347,8 +333,6 @@ Start:
             getch();
         } while (isalnum(ch) || strchr("-=_", ch));
         ident[i] = '\0';
-        /* ensure same algorithm in inisymtab */
-        HashValue(ident);
         if (isupper((int)ident[1])) {
             if (strcmp(ident, "LIBRA") == 0 || strcmp(ident, "DEFINE") == 0) {
                 symb = LIBRA;
@@ -386,17 +370,17 @@ Start:
         }
         if (strcmp(ident, "true") == 0) {
             symb = BOOLEAN_;
-            numb = 1;
+            env->yylval.num = 1;
             return;
         }
         if (strcmp(ident, "false") == 0) {
             symb = BOOLEAN_;
-            numb = 0;
+            env->yylval.num = 0;
             return;
         }
         if (strcmp(ident, "maxint") == 0) {
             symb = INTEGER_;
-            numb = MAXINT;
+            env->yylval.num = MAXINT;
             return;
         }
         symb = ATOM;

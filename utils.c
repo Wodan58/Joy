@@ -1,25 +1,26 @@
-/* FILE: utils.c */
 /*
  *  module  : utils.c
- *  version : 1.19.1.7
- *  date    : 07/23/20
+ *  version : 1.19.1.12
+ *  date    : 03/14/21
  */
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
+#include <stdlib.h>
 #include <time.h>
+#include "gc.h"
 #include "globals.h"
 
-static Node memory[MEMORYMAX], *memoryindex = memory, *mem_low = memory,
-                               *mem_mid;
-#define MEM_HIGH (MEMORYMAX - 1)
-static int direction = 1;
-static int nodesinspected, nodescopied;
-static int start_gc_clock;
+static Index memoryindex, mem_low = 1, mem_mid, mem_high = MEMORYMAX - 1;
+static int direction = 1, start_gc_clock;
 
-PUBLIC void inimem1(void)
+#ifdef ENABLE_TRACEGC
+static int nodesinspected, nodescopied;
+#endif
+
+PUBLIC void inimem1(pEnv env)
 {
-    stck = conts = dump = dump1 = dump2 = dump3 = dump4 = dump5 = NULL;
+    env->stck = env->conts = env->dump = NULL;
+    env->dump1 = env->dump2 = env->dump3 = env->dump4 = env->dump5 = NULL;
     direction = 1;
     memoryindex = mem_low;
 }
@@ -38,110 +39,80 @@ static void count_avail(void)
 
     if (!avail)
         atexit(report_avail);
-    new_avail = &memory[MEMORYMAX] - mem_low;
+    new_avail = mem_high - mem_low + 1;
     if (avail > new_avail || !avail)
         avail = new_avail;
 }
 #endif
 
-PUBLIC void inimem2(void)
+PUBLIC void inimem2(pEnv env)
 {
     mem_low = memoryindex;
+    mem_mid = mem_low + (mem_high - mem_low) / 2;
+
 #ifdef STATS
     count_avail();
 #endif
-    mem_mid = mem_low + (&memory[MEM_HIGH] - mem_low) / 2;
 #ifdef ENABLE_TRACEGC
     if (tracegc > 1) {
-        printf("memory = %p : %p\n", (void*)memory, (void*)MEM2INT(memory));
-        printf("memoryindex = %p : %p\n", (void*)memoryindex,
-            (void*)MEM2INT(memoryindex));
-        printf("mem_low = %p : %p\n", (void*)mem_low, (void*)MEM2INT(mem_low));
-        printf("top of mem = %p : %p\n", (void*)&memory[MEM_HIGH],
-            (void*)MEM2INT((&memory[MEM_HIGH])));
-        printf("mem_mid = %p : %p\n", (void*)mem_mid, (void*)MEM2INT(mem_mid));
+        printf("memoryindex = %d\n", memoryindex);
+        printf("mem_low = %d\n", mem_low);
+        printf("top of mem = %d\n", mem_high);
+        printf("mem_mid = %d\n", mem_mid);
     }
 #endif
 }
 
-PUBLIC void printnode(Node* p)
-{
-    printf("%10p:        %-10s %10p %10p\n", (void*)MEM2INT(p),
-        symtab[(int)p->op].name,
-        p->op == LIST_ ? (void*)MEM2INT(p->u.lis) : (void*)(size_t)p->u.num,
-        (void*)MEM2INT(p->next));
-}
-
-PRIVATE Node* copy(Node* n)
-{
-    Node* temp;
-
-    nodesinspected++;
 #ifdef ENABLE_TRACEGC
+PUBLIC void printnode(pEnv env, Index p)
+{
+    printf("%10d:\t%-10s %10d %10d\n", p, vec_at(env->symtab, nodetype(p)).name,
+        nodetype(p) == LIST_ ? nodevalue(p).lis : nodevalue(p).num,
+        nextnode1(p));
+}
+#endif
+
+/*
+    Copy a single node from from_space to to_space.
+*/
+PRIVATE Index copyone(pEnv env, Index n)
+{
+#ifdef ENABLE_TRACEGC
+    nodesinspected++;
     if (tracegc > 4)
         printf("copy ..\n");
 #endif
-    if (n == NULL)
-        return NULL;
     if (n < mem_low)
-        return n; /* later: combine with previous line */
-    if (n->op == ILLEGAL_) {
-        printf("copy: illegal node  ");
-        printnode(n);
-        return NULL;
-    }
-    if (n->op == COPIED_)
-        return n->u.lis;
-    temp = memoryindex;
-    memoryindex += direction;
-    temp->op = n->op;
-    /* Nick Forde recommmended replacing this line
-    temp->u.num = n->op == LIST_ ? (long)copy(n->u.lis) : n->u.num;
-   with the following case statement: */
-    switch (n->op) {
-    case COPIED_:
-    default:
-        temp->u.lis = n->u.lis;
-        break;
-    case USR_:
-        temp->u.ent = n->u.ent;
-        break;
-    case ANON_FUNCT_:
-        temp->u.proc = n->u.proc;
-        break;
-    case BOOLEAN_:
-    case CHAR_:
-    case INTEGER_:
-        temp->u.num = n->u.num;
-        break;
-    case SET_:
-        temp->u.set = n->u.set;
-        break;
-    case STRING_:
-        temp->u.str = n->u.str;
-        break;
-    case LIST_:
-        temp->u.lis = copy(n->u.lis);
-        break;
-    case FLOAT_:
-        temp->u.dbl = n->u.dbl;
-        break;
-    case FILE_:
-        temp->u.fil = n->u.fil;
-        break;
-    }
-    /* end of replacement */
-    temp->next = copy(n->next);
-    n->op = COPIED_;
-    n->u.lis = temp;
-    nodescopied++;
+        return n;
+    if (env->memory[n].op != COPIED_) {
+        env->memory[memoryindex] = env->memory[n];
+        env->memory[n].op = COPIED_;
+        env->memory[n].u.lis = memoryindex;
 #ifdef ENABLE_TRACEGC
-    if (tracegc > 3) {
-        printf("%5d -    ", nodescopied);
-        printnode(temp);
-    }
+        nodescopied++;
+        if (tracegc > 3) {
+            printf("%5d -    ", nodescopied);
+            printnode(env, memoryindex);
+        }
 #endif
-    return temp;
+        memoryindex += direction;
+    }
+    return env->memory[n].u.lis;
+}
+
+/*
+    Repeat copying single nodes until done.
+*/
+PRIVATE void copyall(pEnv env)
+{
+    Index scan;
+
+    scan = direction == 1 ? mem_low : mem_high;
+    for (; scan != memoryindex; scan += direction) {
+        if (env->memory[scan].op == LIST_)
+            env->memory[scan].u.lis = copyone(env, env->memory[scan].u.lis);
+        env->memory[scan].next = copyone(env, env->memory[scan].next);
+    }
 }
 
 #ifdef STATS
@@ -160,71 +131,67 @@ static void count_collect(void)
 #endif
 
 #ifdef ENABLE_TRACEGC
-PRIVATE void gc1(char* mess)
+PRIVATE void gc1(pEnv env, char *mess)
 #else
-PRIVATE void gc1(void)
+PRIVATE void gc1(pEnv env)
 #endif
 {
+    start_gc_clock = clock();
+    direction = -direction;
+    memoryindex = direction == 1 ? mem_low : mem_high;
+
 #ifdef STATS
     count_collect();
 #endif
-    start_gc_clock = clock();
 #ifdef ENABLE_TRACEGC
     if (tracegc > 1)
         printf("begin %s garbage collection\n", mess);
-#endif
-    direction = -direction;
-    memoryindex = (direction == 1) ? mem_low : &memory[MEM_HIGH];
-/*
-    if (tracegc > 1) {
-        printf("direction = %d\n", direction);
-        printf("memoryindex = %d : %d\n",
-                (long)memoryindex, MEM2INT(memoryindex));
-    }
-*/
     nodesinspected = nodescopied = 0;
-
-#ifdef ENABLE_TRACEGC
 #define COP(X, NAME)                                                           \
-    if (X != NULL) {                                                           \
-        if (tracegc > 2) {                                                     \
-            printf("old %s = ", NAME);                                         \
-            writeterm(X, stdout);                                              \
-            printf("\n");                                                      \
+    do                                                                         \
+        if (X) {                                                               \
+            if (tracegc > 2) {                                                 \
+                printf("old %s = ", NAME);                                     \
+                writeterm(env, X, stdout);                                     \
+                printf("\n");                                                  \
+            }                                                                  \
+            X = copyone(env, X);                                               \
+            if (tracegc > 2) {                                                 \
+                printf("new %s = ", NAME);                                     \
+                writeterm(env, X, stdout);                                     \
+                printf("\n");                                                  \
+            }                                                                  \
         }                                                                      \
-        X = copy(X);                                                           \
-        if (tracegc > 2) {                                                     \
-            printf("new %s = ", NAME);                                         \
-            writeterm(X, stdout);                                              \
-            printf("\n");                                                      \
-        }                                                                      \
-    }
+    while (0)
 #else
-#define COP(X, NAME) if (X) X = copy(X)
+#define COP(X, NAME) X = copyone(env, X)
 #endif
 
-    COP(stck, "stck");
-    COP(prog, "prog");
-    COP(conts, "conts");
-    COP(dump, "dump");
-    COP(dump1, "dump1");
-    COP(dump2, "dump2");
-    COP(dump3, "dump3");
-    COP(dump4, "dump4");
-    COP(dump5, "dump5");
+    COP(env->stck, "stck");
+    COP(env->prog, "prog");
+    COP(env->conts, "conts");
+    COP(env->dump, "dump");
+    COP(env->dump1, "dump1");
+    COP(env->dump2, "dump2");
+    COP(env->dump3, "dump3");
+    COP(env->dump4, "dump4");
+    COP(env->dump5, "dump5");
 }
 
 #ifdef ENABLE_TRACEGC
-PRIVATE void gc2(char* mess)
+PRIVATE void gc2(pEnv env, char *mess)
 #else
-PRIVATE void gc2(void)
+PRIVATE void gc2(pEnv env)
 #endif
 {
     int this_gc_clock;
 
+    copyall(env);
     this_gc_clock = clock() - start_gc_clock;
     if (this_gc_clock == 0)
         this_gc_clock = 1; /* correction */
+    gc_clock += this_gc_clock;
+
 #ifdef ENABLE_TRACEGC
     if (tracegc > 0)
         printf("gc - %d nodes inspected, %d nodes copied, clock: %d\n",
@@ -232,27 +199,23 @@ PRIVATE void gc2(void)
     if (tracegc > 1)
         printf("end %s garbage collection\n", mess);
 #endif
-    gc_clock += this_gc_clock;
 }
 
-PUBLIC void gc_(void)
+PUBLIC void gc_(pEnv env)
 {
 #ifdef ENABLE_TRACEGC
-    gc1("user requested");
-    gc2("user requested");
+    gc1(env, "user requested");
+    gc2(env, "user requested");
 #else
-    gc1();
-    gc2();
+    gc1(env);
+    gc2(env);
 #endif
 }
 
 #ifdef STATS
 static double nodes;
 
-static void report_nodes(void)
-{
-    fprintf(stderr, "%.0f nodes used\n", nodes);
-}
+static void report_nodes(void) { fprintf(stderr, "%.0f nodes used\n", nodes); }
 
 static void count_nodes(void)
 {
@@ -261,162 +224,164 @@ static void count_nodes(void)
 }
 #endif
 
-PUBLIC Node* newnode(Operator o, Types u, Node* r)
+PUBLIC Index newnode(pEnv env, Operator o, Types u, Index r)
 {
-    Node* p;
+    Index p;
 
     if (memoryindex == mem_mid) {
 #ifdef ENABLE_TRACEGC
-        gc1("automatic");
+        gc1(env, "automatic");
 #else
-        gc1();
+        gc1(env);
 #endif
         if (o == LIST_)
-            u.lis = copy(u.lis);
-        r = copy(r);
+            u.lis = copyone(env, u.lis);
+        r = copyone(env, r);
 #ifdef ENABLE_TRACEGC
-        gc2("automatic");
+        gc2(env, "automatic");
 #else
-        gc2();
+        gc2(env);
 #endif
         if ((direction == 1 && memoryindex >= mem_mid)
             || (direction == -1 && memoryindex <= mem_mid))
-            execerror("memory", "copying");
+            execerror(env, "memory", "copying");
     }
     p = memoryindex;
     memoryindex += direction;
-    p->op = o;
-    p->u = u;
-    p->next = r;
-    D(printnode(p);)
+    env->memory[p].op = o;
+    env->memory[p].u = u;
+    env->memory[p].next = r;
 #ifdef STATS
     count_nodes();
 #endif
     return p;
 }
 
-PUBLIC void memoryindex_(void)
+PUBLIC void memoryindex_(pEnv env)
 {
-    stck = INTEGER_NEWNODE(MEM2INT(memoryindex), stck);
+    env->stck = INTEGER_NEWNODE(memoryindex, env->stck);
 }
 
-PUBLIC void readfactor(int priv) /* read a JOY factor        	*/
+PUBLIC void memorymax_(pEnv env)
+{
+    env->stck = INTEGER_NEWNODE(mem_high + 1, env->stck);
+}
+
+PUBLIC void readfactor(pEnv env, int priv) /* read a JOY factor */
 {
     long_t set = 0;
+    pEntry mod_fields;
+    Entry ent;
 
     switch (symb) {
     case ATOM:
-        lookup(priv);
-        D(printf("readfactor: location = %p\n", (void*)location);)
-        while (location->is_module) {
-            Entry* mod_fields = location->u.module_fields;
-            getsym();
+        lookup(env, priv);
+        while (location) {
+            ent = vec_at(env->symtab, location);
+            if (!ent.is_module)
+                break;
+            mod_fields = ent.u.module_fields;
+            getsym(env);
             if (symb != PERIOD)
                 error("period '.' expected after module name");
             else
-                getsym();
+                getsym(env);
             if (symb != ATOM) {
                 error("atom expected as module field");
                 return;
             }
-            D(printf("looking for field %s\n", ident);)
-            while (mod_fields && strcmp(ident, mod_fields->name) != 0)
-                mod_fields = mod_fields->next;
+            while (mod_fields) {
+                ent = vec_at(env->symtab, mod_fields);
+                if (!strcmp(ident, ent.name))
+                    break;
+                mod_fields = ent.next;
+            }
             if (mod_fields == NULL) {
                 error("no such field in module");
-                abortexecution_();
+                abortexecution_(env);
             }
-            D(printf("found field: %s\n", mod_fields->name);)
             location = mod_fields;
         }
         if (!priv) {
             if (location < firstlibra) {
-                bucket.proc = location->u.proc;
-                stck = newnode(LOC2INT(location), bucket, stck);
+                env->yylval.proc = vec_at(env->symtab, location).u.proc;
+                env->stck = newnode(env, location, env->yylval, env->stck);
             } else
-                stck = USR_NEWNODE(location, stck);
+                env->stck = USR_NEWNODE(location, env->stck);
         }
         return;
     case BOOLEAN_:
     case CHAR_:
     case INTEGER_:
-        if (!priv) {
-            bucket.num = numb;
-            stck = newnode(symb, bucket, stck);
-        }
+        if (!priv)
+            env->stck = newnode(env, symb, env->yylval, env->stck);
         return;
     case STRING_:
-        if (!priv) {
-            bucket.str = strg;
-            stck = newnode(symb, bucket, stck);
-        }
+        if (!priv)
+            env->stck = newnode(env, symb, env->yylval, env->stck);
         return;
     case FLOAT_:
         if (!priv)
-            stck = FLOAT_NEWNODE(dblf, stck);
+            env->stck = FLOAT_NEWNODE(env->yylval.dbl, env->stck);
         return;
     case LBRACE:
-        while (getsym(), symb != RBRACE)
+        while (getsym(env), symb != RBRACE)
             if (symb == CHAR_ || symb == INTEGER_)
-                set |= ((long_t)1 << numb);
+                set |= ((long_t)1 << env->yylval.num);
             else
                 error("numeric expected in set");
         if (!priv)
-            stck = SET_NEWNODE(set, stck);
+            env->stck = SET_NEWNODE(set, env->stck);
         return;
     case LBRACK:
-        getsym();
-        readterm(priv);
+        getsym(env);
+        readterm(env, priv);
         if (symb != RBRACK)
             error("']' expected");
         return;
     case LPAREN:
         error("'(' not implemented");
-        getsym();
+        getsym(env);
         return;
     default:
         error("a factor cannot begin with this symbol");
     }
 }
 
-PUBLIC void readterm(int priv)
+PUBLIC void readterm(pEnv env, int priv)
 {
-    Node** my_dump = 0;
+    Index *my_dump = 0;
 
     if (!priv) {
-        stck = LIST_NEWNODE(0L, stck);
-        my_dump = &stck->u.lis;
+        env->stck = LIST_NEWNODE(0, env->stck);
+        my_dump = &nodevalue(env->stck).lis;
     }
     while (symb <= ATOM) {
-        readfactor(priv);
+        readfactor(env, priv);
         if (!priv) {
-            *my_dump = stck;
-            my_dump = &stck->next;
-            stck = *my_dump;
+            *my_dump = env->stck;
+            my_dump = &nextnode1(env->stck);
+            env->stck = *my_dump;
             *my_dump = 0;
         }
-        getsym();
+        getsym(env);
     }
 }
 
-PUBLIC void writefactor(Node* n, FILE* stm)
+PRIVATE void my_writefactor(pEnv env, Node *n, FILE *stm)
 {
     int i;
-    char* p;
+    char *p;
     long_t set;
 
     if (n == NULL)
-        execerror("non-empty stack", "print");
+        execerror(env, "non-empty stack", "print");
     switch (n->op) {
     case BOOLEAN_:
         fprintf(stm, "%s", n->u.num ? "true" : "false");
         return;
     case INTEGER_:
-#ifdef BIT_32
-        fprintf(stm, "%ld", (long)n->u.num);
-#else
-        fprintf(stm, "%lld", n->u.num);
-#endif
+        fprintf(stm, "%ld", (long)n->u.num); /* BIT_32 */
         return;
     case FLOAT_:
         fprintf(stm, "%g", n->u.dbl);
@@ -447,11 +412,11 @@ PUBLIC void writefactor(Node* n, FILE* stm)
         return;
     case LIST_:
         fprintf(stm, "%s", "[");
-        writeterm(n->u.lis, stm);
+        writeterm(env, n->u.lis, stm);
         fprintf(stm, "%s", "]");
         return;
     case USR_:
-        fprintf(stm, "%s", n->u.ent->name);
+        fprintf(stm, "%s", vec_at(env->symtab, n->u.ent).name);
         return;
     case FILE_:
         if (n->u.fil == NULL)
@@ -463,19 +428,24 @@ PUBLIC void writefactor(Node* n, FILE* stm)
         else if (n->u.fil == stderr)
             fprintf(stm, "file:stderr");
         else
-            fprintf(stm, "file:%p", (void*)n->u.fil);
+            fprintf(stm, "file:%p", (void *)n->u.fil);
         return;
     default:
-        fprintf(stm, "%s", symtab[n->op].name);
+        fprintf(stm, "%s", opername(n->op));
         return;
     }
 }
 
-PUBLIC void writeterm(Node* n, FILE* stm)
+PUBLIC void writefactor(pEnv env, Index n, FILE *stm)
+{
+    my_writefactor(env, &env->memory[n], stm);
+}
+
+PUBLIC void writeterm(pEnv env, Index n, FILE *stm)
 {
     while (n != NULL) {
-        writefactor(n, stm);
-        n = n->next;
+        my_writefactor(env, &env->memory[n], stm);
+        n = nextnode1(n);
         if (n != NULL)
             fprintf(stm, " ");
     }

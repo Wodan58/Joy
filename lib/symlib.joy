@@ -189,7 +189,7 @@ Note that operator classes u b b1 b2 b3 need to be user defined as lists:
 
     new-infra == cons [] swap infra;
 
-(* IN - R.W. *)
+IN (* R.W. *)
 
 (* Ideally the following should be inside the HIDE. But since currently
    HIDE definitions cannot be mutually recursive, they are placed here.	*)
@@ -256,7 +256,7 @@ Note that operator classes u b b1 b2 b3 need to be user defined as lists:
 	  [ ] ]
 	  cond;
 
-IN    (*  R.W.  *)
+(* IN - R.W. *)
 
       (*  In following, the fast reverselist is counted as  0.5 pass	*)
 
