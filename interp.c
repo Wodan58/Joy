@@ -1,8 +1,8 @@
 /* FILE: interp.c */
 /*
  *  module  : interp.c
- *  version : 1.30.1.15
- *  date    : 03/14/21
+ *  version : 1.30.1.16
+ *  date    : 04/12/21
  */
 
 /*
@@ -1649,7 +1649,7 @@ PRIVATE void opcase_(pEnv env)
             if (nodetype(ELEM) != CHAR_)                                       \
                 execerror(env, "character", NAME);                             \
             s = (char *)GC_malloc_atomic(strlen(nodevalue(AGGR).str) + 2);     \
-            s[0] = nodevalue(ELEM).num;                                        \
+            s[0] = (char)nodevalue(ELEM).num;                                  \
             strcpy(s + 1, nodevalue(AGGR).str);                                \
             BINARY(STRING_NEWNODE, s);                                         \
             break;                                                             \

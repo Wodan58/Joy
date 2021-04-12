@@ -1,8 +1,8 @@
 /* FILE: scan.c */
 /*
  *  module  : scan.c
- *  version : 1.18.1.7
- *  date    : 03/14/21
+ *  version : 1.18.1.8
+ *  date    : 04/12/21
  */
 #include <stdio.h>
 #include <string.h>
@@ -380,7 +380,7 @@ Start:
         }
         if (strcmp(ident, "maxint") == 0) {
             symb = INTEGER_;
-            env->yylval.num = MAXINT;
+            env->yylval.num = (long_t)MAXINT;
             return;
         }
         symb = ATOM;
