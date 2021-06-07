@@ -1,8 +1,8 @@
 /* FILE: scan.c */
 /*
  *  module  : scan.c
- *  version : 1.18.1.8
- *  date    : 04/12/21
+ *  version : 1.28
+ *  date    : 04/28/21
  */
 #include <stdio.h>
 #include <string.h>

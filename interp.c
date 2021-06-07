@@ -1,7 +1,7 @@
 /* FILE: interp.c */
 /*
  *  module  : interp.c
- *  version : 1.30.1.16
+ *  version : 1.30.1.17
  *  date    : 04/12/21
  */
 
@@ -2427,7 +2427,7 @@ PRIVATE void map_(pEnv env)
         for (s = nodevalue(SAVED2).str; *s != '\0'; s++) {
             env->stck = CHAR_NEWNODE((long_t)*s, SAVED3);
             exeterm(env, nodevalue(SAVED1).lis);
-            resultstring[j++] = nodevalue(env->stck).num;
+            resultstring[j++] = (char)nodevalue(env->stck).num;
         }
         resultstring[j] = '\0';
         env->stck = STRING_NEWNODE(resultstring, SAVED3);

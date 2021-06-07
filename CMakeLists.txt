@@ -1,11 +1,12 @@
 #
 #   module  : CMakeLists.txt
-#   version : 1.2
-#   date    : 03/05/21
+#   version : 1.3
+#   date    : 04/28/21
 #
 cmake_minimum_required(VERSION 3.0)
 project(Joy VERSION 1.0)
 set(CMAKE_BUILD_TYPE Release)
+add_definitions(-DNOBDW)
 if(WIN32)
 add_definitions(-DGC_NOT_DLL -D_CRT_SECURE_NO_WARNINGS)
 else()

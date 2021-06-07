@@ -1,8 +1,8 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.24.1.11
- *  date    : 03/14/21
+ *  version : 1.35
+ *  date    : 04/28/21
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -14,6 +14,7 @@
 #define NULL 0
 #endif
 
+#ifdef NOBDW
 #define nodetype(n) env->memory[(int)n].op
 #define nodevalue(n) env->memory[(int)n].u
 #define nextnode1(n) env->memory[(int)n].next
@@ -21,6 +22,10 @@
 #define nextnode3(n) env->memory[nextnode2(n)].next
 #define nextnode4(n) env->memory[nextnode3(n)].next
 #define nextnode5(n) env->memory[nextnode4(n)].next
+#else
+#define nodevalue(p)	(p)->u
+#define nextnode1(p)	(p)->next
+#endif
 
 #ifdef _MSC_VER
 #pragma warning(disable : 4267)
@@ -97,6 +102,7 @@ CORRECT_TREEGENREC_AUX
 CORRECT_TREEREC_AUX
 CHECK_EMPTY_STACK
 CORRECT_NULL_CASES
+MAKE_CONTS_OBSOLETE
 NO_HELP_LOCAL_SYMBOLS
 USE_UNKNOWN_SYMBOLS
 CORRECT_TYPE_COMPARE
@@ -219,7 +225,11 @@ typedef int Operator;
 typedef unsigned Index;
 #endif
 
+#ifdef NOBDW
 typedef Index pEntry;
+#else
+typedef unsigned pEntry;
+#endif
 
 typedef struct Env *pEnv;
 
@@ -229,7 +239,11 @@ typedef union {
     char *str;
     my_float_t dbl;
     FILE *fil;
+#ifdef NOBDW
     Index lis;
+#else
+    struct Node *lis;
+#endif
     pEntry ent;
     void (*proc)(pEnv);
 } Types;
@@ -237,7 +251,11 @@ typedef union {
 typedef struct Node {
     Types u;
     Operator op;
+#ifdef NOBDW
     Index next;
+#else
+    struct Node *next;
+#endif
 } Node;
 
 typedef struct Entry {
@@ -249,7 +267,11 @@ typedef struct Entry {
 #endif
     pEntry next;
     union {
+#ifdef NOBDW
         Index body;
+#else
+        Node *body;
+#endif
         pEntry module_fields;
         void (*proc)(pEnv);
     } u;
@@ -261,10 +283,16 @@ typedef struct Entry {
 KHASH_MAP_INIT_STR(Symtab, pEntry)
 
 typedef struct Env {
+#ifdef NOBDW
     Node *memory;
+#endif
     vector(Entry) *symtab;
     khash_t(Symtab) *hash;
+#ifdef NOBDW
     Index prog, stck, conts, dump, dump1, dump2, dump3, dump4, dump5;
+#else
+    Node *prog, *stck;
+#endif
     Types yylval, bucket;
 } Env;
 
@@ -281,7 +309,10 @@ CLASS int echoflag;
 CLASS int autoput;
 CLASS int undeferror;
 CLASS int tracegc;
-CLASS int startclock, gc_clock; /* main */
+CLASS int startclock; /* main */
+#ifdef NOBDW
+CLASS int gc_clock;
+#endif
 CLASS Symbol symb; /* scanner */
 CLASS char ident[ALEN];
 CLASS int display_enter;
@@ -307,7 +338,11 @@ CLASS pEntry /* symbol table */
 */
 
 /* Public procedures: */
+#ifdef NOBDW
 PUBLIC void exeterm(pEnv env, Index n);
+#else
+PUBLIC void exeterm(pEnv env, Node *n);
+#endif
 PUBLIC void inisymboltable(pEnv env); /* initialise */
 PUBLIC char *opername(int o);
 PUBLIC void (*operproc(int o))(pEnv env);
@@ -321,17 +356,30 @@ PUBLIC void resetlinebuffer(int linenum);
 PUBLIC void error(char *message);
 PUBLIC void doinclude(pEnv env, char *filnam);
 PUBLIC void getsym(pEnv env);
+#ifdef NOBDW
 PUBLIC void inimem1(pEnv env);
 PUBLIC void inimem2(pEnv env);
 PUBLIC void printnode(pEnv env, Index p);
+#else
+PUBLIC void printnode(pEnv env, Node *p);
+#endif
 PUBLIC void gc_(pEnv env);
+#ifdef NOBDW
 PUBLIC Index newnode(pEnv env, Operator o, Types u, Index r);
+#else
+PUBLIC Node *newnode(pEnv env, Operator o, Types u, Node *r);
+#endif
 PUBLIC void memorymax_(pEnv env);
 PUBLIC void memoryindex_(pEnv env);
 PUBLIC void readfactor(pEnv env, int priv); /* read a JOY factor */
 PUBLIC void readterm(pEnv env, int priv);
+#ifdef NOBDW
 PUBLIC void writefactor(pEnv env, Index n, FILE *stm);
 PUBLIC void writeterm(pEnv env, Index n, FILE *stm);
+#else
+PUBLIC void writefactor(pEnv env, Node *n, FILE *stm);
+PUBLIC void writeterm(pEnv env, Node *n, FILE *stm);
+#endif
 
 #ifdef FGET_FROM_FILE
 PUBLIC void redirect(pEnv env, FILE *);

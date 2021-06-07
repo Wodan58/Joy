@@ -1,8 +1,8 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.21.1.12
- *  date    : 03/14/21
+ *  version : 1.36
+ *  date    : 04/28/21
  */
 
 /*
@@ -119,6 +119,9 @@ Manfred von Thun, 2006
 #include <stdlib.h>
 #include <setjmp.h>
 #include <time.h>
+#ifdef GC_BDW
+#include <gc.h>
+#endif
 #include "gc.h"
 #define ALLOC
 #include "globals.h"
@@ -132,7 +135,9 @@ PUBLIC void inisymboltable(pEnv env) /* initialise */
     Entry ent;
     khiter_t key;
 
+#ifdef NOBDW
     env->memory = GC_malloc(MEMORYMAX * sizeof(Node));
+#endif
     env->symtab = 0;
     env->hash = kh_init(Symtab);
     for (i = 0; (ent.name = opername(i)) != 0; i++) {
@@ -215,6 +220,10 @@ PRIVATE void enteratom(pEnv env, int priv)
         lookup(env, 0);
 }
 
+/*
+    The rest of these procedures is not affected by the change of the symbol
+    table implementation.
+*/
 PRIVATE void defsequence(pEnv env, int priv); /* forward */
 PRIVATE void compound_def(pEnv env, int priv); /* forward */
 
@@ -357,8 +366,10 @@ jmp_buf begin;
 
 PUBLIC void abortexecution_(pEnv env)
 {
+#ifdef NOBDW
     env->conts = env->dump = NULL;
     env->dump1 = env->dump2 = env->dump3 = env->dump4 = env->dump5 = NULL;
+#endif
     longjmp(begin, 0);
 }
 
@@ -382,14 +393,22 @@ static int mustinclude = 1;
 #ifdef STATS
 static void report_clock(void)
 {
-    double timediff, gclock, gcdiff;
+    double timediff;
+
+#ifdef NOBDW
+    double gclock, gcdiff;
 
     timediff = clock() - startclock;
     gcdiff = (double)gc_clock * 100 / timediff;
     timediff /= CLOCKS_PER_SEC;
     gclock = (double)gc_clock / CLOCKS_PER_SEC;
+#else
+    timediff = (double)(clock() - startclock) / CLOCKS_PER_SEC;
+#endif
     fprintf(stderr, "%.2f seconds CPU to execute\n", timediff);
+#ifdef NOBDW
     fprintf(stderr, "%.2f seconds CPU for gc (=%.0f%%)\n", gclock, gcdiff);
+#endif
 }
 #endif
 
@@ -435,11 +454,21 @@ int start_main(int argc, char **argv)
     } else {
         srcfile = stdin;
         inilinebuffer(0);
+#ifdef NOBDW
         printf("JOY  -  compiled at %s on %s (NOBDW)\n", __TIME__, __DATE__);
+#else
+#ifdef GC_BDW
+        printf("JOY  -  compiled at %s on %s (BDW)\n", __TIME__, __DATE__);
+#else
+        printf("JOY  -  compiled at %s on %s (MINBDW)\n", __TIME__, __DATE__);
+#endif
+#endif
         printf("Copyright 2001 by Manfred von Thun\n");
     }
     startclock = clock();
+#ifdef NOBDW
     gc_clock = 0;
+#endif
 #ifdef STATS
     atexit(report_clock);
 #endif
@@ -449,8 +478,10 @@ int start_main(int argc, char **argv)
     inisymboltable(&env);
     display[0] = NULL;
     env.stck = NULL;
+#ifdef NOBDW
     inimem1(&env);
     inimem2(&env);
+#endif
     setjmp(begin);
     setbuf(stdout, 0);
     while (1) {
@@ -463,17 +494,27 @@ int start_main(int argc, char **argv)
         }
         getsym(&env);
         if (symb == LIBRA || symb == HIDE || symb == MODULE) {
+#ifdef NOBDW
             inimem1(&env);
+#endif
             compound_def(&env, 0);
+#ifdef NOBDW
             inimem2(&env);
+#endif
         } else {
             readterm(&env, 0);
             if (env.stck != NULL) {
+#ifdef NOBDW
                 env.prog = env.memory[env.stck].u.lis;
                 env.stck = env.memory[env.stck].next;
                 env.conts = NULL;
+#else
+                env.prog = env.stck->u.lis;
+                env.stck = env.stck->next;
+#endif
                 exeterm(&env, env.prog);
             }
+#ifdef NOBDW
             if (env.conts || env.dump || env.dump1 || env.dump2 || env.dump3
                 || env.dump4 || env.dump5) {
                 printf("the dumps are not empty\n");
@@ -485,13 +526,18 @@ int start_main(int argc, char **argv)
                 CHECK(env.dump4, "dump4");
                 CHECK(env.dump5, "dump5");
             }
+#endif
             if (autoput == 2 && env.stck != NULL) {
                 writeterm(&env, env.stck, stdout);
                 printf("\n");
             } else if (autoput == 1 && env.stck != NULL) {
                 writefactor(&env, env.stck, stdout);
                 printf("\n");
+#ifdef NOBDW
                 env.stck = env.memory[env.stck].next;
+#else
+                env.stck = env.stck->next;
+#endif
             }
         }
     }
@@ -501,6 +547,10 @@ int main(int argc, char **argv)
 {
     int (*volatile m)(int, char **) = start_main;
 
+#ifdef GC_BDW
+    GC_INIT();
+#else
     GC_init(&argc);
+#endif
     return (*m)(argc, argv);
 }
