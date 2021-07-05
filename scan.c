@@ -1,8 +1,8 @@
 /* FILE: scan.c */
 /*
  *  module  : scan.c
- *  version : 1.28
- *  date    : 04/28/21
+ *  version : 1.29
+ *  date    : 06/28/21
  */
 #include <stdio.h>
 #include <string.h>
@@ -325,6 +325,8 @@ Start:
             symb = INTEGER_;
             return;
         }
+	goto not_unary_minus;
+not_unary_minus:
     /* ELSE '-' is not unary minus, fall through */
     default:
         do {

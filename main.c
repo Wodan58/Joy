@@ -1,8 +1,8 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.36
- *  date    : 04/28/21
+ *  version : 1.38
+ *  date    : 06/28/21
  */
 
 /*
@@ -362,7 +362,7 @@ PRIVATE void compound_def(pEnv env, int priv)
     }
 }
 
-jmp_buf begin;
+static jmp_buf begin;
 
 PUBLIC void abortexecution_(pEnv env)
 {
@@ -378,8 +378,6 @@ PUBLIC void execerror(pEnv env, char *message, char *op)
     printf("run time error: %s needed for %s\n", message, op);
     abortexecution_(env);
 }
-
-PUBLIC void quit_(pEnv env) { exit(0); }
 
 static int mustinclude = 1;
 
@@ -423,8 +421,7 @@ int start_main(int argc, char **argv)
     if (argc > 1) {
         g_argc--;
         g_argv++;
-        srcfile = fopen(argv[1], "r");
-        if (!srcfile) {
+        if ((srcfile = fopen(argv[1], "r")) == 0) {
             printf("failed to open the file '%s'.\n", argv[1]);
             exit(0);
         }
@@ -473,12 +470,12 @@ int start_main(int argc, char **argv)
     atexit(report_clock);
 #endif
     echoflag = INIECHOFLAG;
-    tracegc = INITRACEGC;
     autoput = INIAUTOPUT;
     inisymboltable(&env);
     display[0] = NULL;
     env.stck = NULL;
 #ifdef NOBDW
+    tracegc = INITRACEGC;
     inimem1(&env);
     inimem2(&env);
 #endif
@@ -503,7 +500,7 @@ int start_main(int argc, char **argv)
 #endif
         } else {
             readterm(&env, 0);
-            if (env.stck != NULL) {
+            if (env.stck) {
 #ifdef NOBDW
                 env.prog = env.memory[env.stck].u.lis;
                 env.stck = env.memory[env.stck].next;
@@ -527,17 +524,18 @@ int start_main(int argc, char **argv)
                 CHECK(env.dump5, "dump5");
             }
 #endif
-            if (autoput == 2 && env.stck != NULL) {
-                writeterm(&env, env.stck, stdout);
-                printf("\n");
-            } else if (autoput == 1 && env.stck != NULL) {
-                writefactor(&env, env.stck, stdout);
-                printf("\n");
+            if (env.stck) {
+                if (autoput == 2)
+                    writeterm(&env, env.stck, stdout);
+                else if (autoput == 1) {
+                    writefactor(&env, env.stck, stdout);
 #ifdef NOBDW
-                env.stck = env.memory[env.stck].next;
+                    env.stck = env.memory[env.stck].next;
 #else
-                env.stck = env.stck->next;
+                    env.stck = env.stck->next;
 #endif
+                }
+                printf("\n");
             }
         }
     }

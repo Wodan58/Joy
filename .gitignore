@@ -6,3 +6,8 @@ CMakeCache.txt
 cmake_install.cmake
 Makefile
 CMakeFiles
+joy
+Makefile
+builtin.c
+builtin.h
+table.c

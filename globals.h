@@ -1,8 +1,8 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.35
- *  date    : 04/28/21
+ *  version : 1.37
+ *  date    : 06/28/21
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -15,16 +15,21 @@
 #endif
 
 #ifdef NOBDW
-#define nodetype(n) env->memory[(int)n].op
-#define nodevalue(n) env->memory[(int)n].u
-#define nextnode1(n) env->memory[(int)n].next
-#define nextnode2(n) env->memory[nextnode1(n)].next
-#define nextnode3(n) env->memory[nextnode2(n)].next
-#define nextnode4(n) env->memory[nextnode3(n)].next
-#define nextnode5(n) env->memory[nextnode4(n)].next
+#define nodetype(n)	env->memory[(int)n].op
+#define nodevalue(n)	env->memory[(int)n].u
+#define nextnode1(n)	env->memory[(int)n].next
+#define nextnode2(n)	env->memory[nextnode1(n)].next
+#define nextnode3(n)	env->memory[nextnode2(n)].next
+#define nextnode4(n)	env->memory[nextnode3(n)].next
+#define nextnode5(n)	env->memory[nextnode4(n)].next
 #else
+#define nodetype(p)	(p)->op
 #define nodevalue(p)	(p)->u
 #define nextnode1(p)	(p)->next
+#define nextnode2(p)	(nextnode1(p))->next
+#define nextnode3(p)	(nextnode2(p))->next
+#define nextnode4(p)	(nextnode3(p))->next
+#define nextnode5(p)	(nextnode4(p))->next
 #endif
 
 #ifdef _MSC_VER
@@ -35,9 +40,6 @@
     The following #defines are not available in the oldest ANSI standard.
 */
 #define USE_SNPRINTF
-#ifndef _MSC_VER
-#define USE_TIME_REC
-#endif
 
 /*
     The following #defines are NOT present in the source code.
@@ -114,7 +116,10 @@ CORRECT_FREAD_PARAM
 CORRECT_INTERN_LOOKUP
 REST_OF_UNIX_ESCAPES
 CORRECT_ALEN
+SAMETYPE_BUILTIN
+GETCH_AS_BUILTIN
 */
+
 /*
     The following #defines are NOT present in the source code.
     They have NOT been accepted.
@@ -128,6 +133,7 @@ NOT_ALSO_FOR_FLOAT
 NOT_ALSO_FOR_FILE
 DEBUG
 */
+
 /*
     The following #defines are present in the source code.
     They have NOT been accepted.
@@ -137,18 +143,18 @@ TRACING
 STATS
 ENABLE_TRACEGC
 */
+
 /*
     The following #defines are present in the source code.
-    They have been accepted.
+    They have been accepted as an addition to the original code.
     Note: strdup, snprintf, localtime_r, gmtime_r are not available
     when compiling with -ansi.
 */
 #define FGET_FROM_FILE
-#define SAMETYPE_BUILTIN
-#define GETCH_AS_BUILTIN
+
 /*
     The following #defines are present in the source code.
-    They have been accepted.
+    They have been accepted as original code.
 */
 #define USE_SHELL_ESCAPE
 
@@ -219,10 +225,18 @@ typedef int Symbol;
 
 #ifdef BIT_32
 typedef short Operator;
-typedef unsigned short Index;
 #else
 typedef int Operator;
+#endif
+
+#ifdef NOBDW
+#ifdef BIT_32
+typedef unsigned short Index;
+#else
 typedef unsigned Index;
+#endif
+#else
+typedef struct Node *Index;
 #endif
 
 #ifdef NOBDW
@@ -239,11 +253,7 @@ typedef union {
     char *str;
     my_float_t dbl;
     FILE *fil;
-#ifdef NOBDW
     Index lis;
-#else
-    struct Node *lis;
-#endif
     pEntry ent;
     void (*proc)(pEnv);
 } Types;
@@ -251,11 +261,7 @@ typedef union {
 typedef struct Node {
     Types u;
     Operator op;
-#ifdef NOBDW
     Index next;
-#else
-    struct Node *next;
-#endif
 } Node;
 
 typedef struct Entry {
@@ -267,11 +273,7 @@ typedef struct Entry {
 #endif
     pEntry next;
     union {
-#ifdef NOBDW
         Index body;
-#else
-        Node *body;
-#endif
         pEntry module_fields;
         void (*proc)(pEnv);
     } u;
@@ -308,9 +310,9 @@ CLASS char **g_argv;
 CLASS int echoflag;
 CLASS int autoput;
 CLASS int undeferror;
-CLASS int tracegc;
 CLASS int startclock; /* main */
 #ifdef NOBDW
+CLASS int tracegc;
 CLASS int gc_clock;
 #endif
 CLASS Symbol symb; /* scanner */
@@ -338,11 +340,7 @@ CLASS pEntry /* symbol table */
 */
 
 /* Public procedures: */
-#ifdef NOBDW
 PUBLIC void exeterm(pEnv env, Index n);
-#else
-PUBLIC void exeterm(pEnv env, Node *n);
-#endif
 PUBLIC void inisymboltable(pEnv env); /* initialise */
 PUBLIC char *opername(int o);
 PUBLIC void (*operproc(int o))(pEnv env);
@@ -359,27 +357,19 @@ PUBLIC void getsym(pEnv env);
 #ifdef NOBDW
 PUBLIC void inimem1(pEnv env);
 PUBLIC void inimem2(pEnv env);
+PUBLIC void my_gc(pEnv env);
+#endif
 PUBLIC void printnode(pEnv env, Index p);
-#else
-PUBLIC void printnode(pEnv env, Node *p);
-#endif
-PUBLIC void gc_(pEnv env);
-#ifdef NOBDW
 PUBLIC Index newnode(pEnv env, Operator o, Types u, Index r);
-#else
-PUBLIC Node *newnode(pEnv env, Operator o, Types u, Node *r);
-#endif
-PUBLIC void memorymax_(pEnv env);
-PUBLIC void memoryindex_(pEnv env);
 PUBLIC void readfactor(pEnv env, int priv); /* read a JOY factor */
 PUBLIC void readterm(pEnv env, int priv);
+PUBLIC void my_writefactor(pEnv env, Node *n, FILE *stm);
 #ifdef NOBDW
+PUBLIC void my_memorymax(pEnv env);
+PUBLIC void my_memoryindex(pEnv env);
+#endif
 PUBLIC void writefactor(pEnv env, Index n, FILE *stm);
 PUBLIC void writeterm(pEnv env, Index n, FILE *stm);
-#else
-PUBLIC void writefactor(pEnv env, Node *n, FILE *stm);
-PUBLIC void writeterm(pEnv env, Node *n, FILE *stm);
-#endif
 
 #ifdef FGET_FROM_FILE
 PUBLIC void redirect(pEnv env, FILE *);

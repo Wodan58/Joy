@@ -1,7 +1,7 @@
 /*
  *  module  : utils.c
- *  version : 1.19.1.12
- *  date    : 03/14/21
+ *  version : 1.2
+ *  date    : 07/03/21
  */
 #include <stdio.h>
 #include <string.h>
@@ -39,7 +39,7 @@ static void count_avail(void)
 
     if (!avail)
         atexit(report_avail);
-    new_avail = mem_high - mem_low + 1;
+    new_avail = mem_high - mem_low;
     if (avail > new_avail || !avail)
         avail = new_avail;
 }
@@ -131,9 +131,9 @@ static void count_collect(void)
 #endif
 
 #ifdef ENABLE_TRACEGC
-PRIVATE void gc1(pEnv env, char *mess)
+PUBLIC void gc1(pEnv env, char *mess)
 #else
-PRIVATE void gc1(pEnv env)
+PUBLIC void gc1(pEnv env)
 #endif
 {
     start_gc_clock = clock();
@@ -179,9 +179,9 @@ PRIVATE void gc1(pEnv env)
 }
 
 #ifdef ENABLE_TRACEGC
-PRIVATE void gc2(pEnv env, char *mess)
+PUBLIC void gc2(pEnv env, char *mess)
 #else
-PRIVATE void gc2(pEnv env)
+PUBLIC void gc2(pEnv env)
 #endif
 {
     int this_gc_clock;
@@ -201,7 +201,7 @@ PRIVATE void gc2(pEnv env)
 #endif
 }
 
-PUBLIC void gc_(pEnv env)
+PUBLIC void my_gc(pEnv env)
 {
 #ifdef ENABLE_TRACEGC
     gc1(env, "user requested");
@@ -257,182 +257,39 @@ PUBLIC Index newnode(pEnv env, Operator o, Types u, Index r)
     return p;
 }
 
-PUBLIC void memoryindex_(pEnv env)
+PUBLIC void my_memoryindex(pEnv env)
 {
     env->stck = INTEGER_NEWNODE(memoryindex, env->stck);
 }
 
-PUBLIC void memorymax_(pEnv env)
+PUBLIC void my_memorymax(pEnv env)
 {
-    env->stck = INTEGER_NEWNODE(mem_high + 1, env->stck);
-}
-
-PUBLIC void readfactor(pEnv env, int priv) /* read a JOY factor */
-{
-    long_t set = 0;
-    pEntry mod_fields;
-    Entry ent;
-
-    switch (symb) {
-    case ATOM:
-        lookup(env, priv);
-        while (location) {
-            ent = vec_at(env->symtab, location);
-            if (!ent.is_module)
-                break;
-            mod_fields = ent.u.module_fields;
-            getsym(env);
-            if (symb != PERIOD)
-                error("period '.' expected after module name");
-            else
-                getsym(env);
-            if (symb != ATOM) {
-                error("atom expected as module field");
-                return;
-            }
-            while (mod_fields) {
-                ent = vec_at(env->symtab, mod_fields);
-                if (!strcmp(ident, ent.name))
-                    break;
-                mod_fields = ent.next;
-            }
-            if (mod_fields == NULL) {
-                error("no such field in module");
-                abortexecution_(env);
-            }
-            location = mod_fields;
-        }
-        if (!priv) {
-            if (location < firstlibra) {
-                env->yylval.proc = vec_at(env->symtab, location).u.proc;
-                env->stck = newnode(env, location, env->yylval, env->stck);
-            } else
-                env->stck = USR_NEWNODE(location, env->stck);
-        }
-        return;
-    case BOOLEAN_:
-    case CHAR_:
-    case INTEGER_:
-        if (!priv)
-            env->stck = newnode(env, symb, env->yylval, env->stck);
-        return;
-    case STRING_:
-        if (!priv)
-            env->stck = newnode(env, symb, env->yylval, env->stck);
-        return;
-    case FLOAT_:
-        if (!priv)
-            env->stck = FLOAT_NEWNODE(env->yylval.dbl, env->stck);
-        return;
-    case LBRACE:
-        while (getsym(env), symb != RBRACE)
-            if (symb == CHAR_ || symb == INTEGER_)
-                set |= ((long_t)1 << env->yylval.num);
-            else
-                error("numeric expected in set");
-        if (!priv)
-            env->stck = SET_NEWNODE(set, env->stck);
-        return;
-    case LBRACK:
-        getsym(env);
-        readterm(env, priv);
-        if (symb != RBRACK)
-            error("']' expected");
-        return;
-    case LPAREN:
-        error("'(' not implemented");
-        getsym(env);
-        return;
-    default:
-        error("a factor cannot begin with this symbol");
-    }
+    env->stck = INTEGER_NEWNODE((mem_high - mem_low), env->stck);
 }
 
 PUBLIC void readterm(pEnv env, int priv)
 {
-    Index *my_dump = 0;
-
-    if (!priv) {
+    if (!priv)
         env->stck = LIST_NEWNODE(0, env->stck);
-        my_dump = &nodevalue(env->stck).lis;
-    }
-    while (symb <= ATOM) {
+    if (symb <= ATOM) {
         readfactor(env, priv);
         if (!priv) {
-            *my_dump = env->stck;
-            my_dump = &nextnode1(env->stck);
-            env->stck = *my_dump;
-            *my_dump = 0;
+            nodevalue(nextnode1(env->stck)).lis = env->stck;
+            env->stck = nextnode1(env->stck);
+            nextnode1(nodevalue(env->stck).lis) = 0;
+            env->dump = LIST_NEWNODE(nodevalue(env->stck).lis, env->dump);
         }
-        getsym(env);
-    }
-}
-
-PRIVATE void my_writefactor(pEnv env, Node *n, FILE *stm)
-{
-    int i;
-    char *p;
-    long_t set;
-
-    if (n == NULL)
-        execerror(env, "non-empty stack", "print");
-    switch (n->op) {
-    case BOOLEAN_:
-        fprintf(stm, "%s", n->u.num ? "true" : "false");
-        return;
-    case INTEGER_:
-        fprintf(stm, "%ld", (long)n->u.num); /* BIT_32 */
-        return;
-    case FLOAT_:
-        fprintf(stm, "%g", n->u.dbl);
-        return;
-    case SET_:
-        set = n->u.set;
-        fprintf(stm, "{");
-        for (i = 0; i < SETSIZE; i++)
-            if (set & ((long_t)1 << i)) {
-                fprintf(stm, "%d", i);
-                set &= ~((long_t)1 << i);
-                if (set != 0)
-                    fprintf(stm, " ");
+        while (getsym(env), symb <= ATOM) {
+            readfactor(env, priv);
+            if (!priv) {
+                nextnode1(nodevalue(env->dump).lis) = env->stck;
+                env->stck = nextnode1(env->stck);
+                nextnode2(nodevalue(env->dump).lis) = 0;
+                nodevalue(env->dump).lis = nextnode1(nodevalue(env->dump).lis);
             }
-        fprintf(stm, "}");
-        return;
-    case CHAR_:
-        fprintf(stm, "'%c", (char)n->u.num);
-        return;
-    case STRING_:
-        fputc('"', stm);
-        for (p = n->u.str; p && *p; p++) {
-            if (*p == '"' || *p == '\\' || *p == '\n')
-                fputc('\\', stm);
-            fputc(*p == '\n' ? 'n' : *p, stm);
         }
-        fputc('"', stm);
-        return;
-    case LIST_:
-        fprintf(stm, "%s", "[");
-        writeterm(env, n->u.lis, stm);
-        fprintf(stm, "%s", "]");
-        return;
-    case USR_:
-        fprintf(stm, "%s", vec_at(env->symtab, n->u.ent).name);
-        return;
-    case FILE_:
-        if (n->u.fil == NULL)
-            fprintf(stm, "file:NULL");
-        else if (n->u.fil == stdin)
-            fprintf(stm, "file:stdin");
-        else if (n->u.fil == stdout)
-            fprintf(stm, "file:stdout");
-        else if (n->u.fil == stderr)
-            fprintf(stm, "file:stderr");
-        else
-            fprintf(stm, "file:%p", (void *)n->u.fil);
-        return;
-    default:
-        fprintf(stm, "%s", opername(n->op));
-        return;
+        if (!priv)
+            env->dump = nextnode1(env->dump);
     }
 }
 
