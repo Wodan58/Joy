@@ -1,7 +1,7 @@
 /*
-    module  : %M%
-    version : %I%
-    date    : %G%
+    module  : case.c
+    version : 1.2
+    date    : 07/20/21
 */
 #ifndef CASE_C
 #define CASE_C

@@ -1,7 +1,7 @@
 /*
-    module  : %M%
-    version : %I%
-    date    : %G%
+    module  : equal.c
+    version : 1.2
+    date    : 07/20/21
 */
 #ifndef EQUAL_C
 #define EQUAL_C

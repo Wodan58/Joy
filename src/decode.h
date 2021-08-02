@@ -1,7 +1,7 @@
 /*
-    module  : %M%
-    version : %I%
-    date    : %G%
+    module  : decode.h
+    version : 1.2
+    date    : 07/20/21
 */
 #ifndef DECODE_H
 #define DECODE_H

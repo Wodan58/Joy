@@ -1,7 +1,7 @@
 /*
     module  : gc.c
-    version : 1.20
-    date    : 03/12/21
+    version : 1.21
+    date    : 07/20/21
 */
 #include <stdio.h>
 #include <string.h>
@@ -26,7 +26,7 @@ typedef struct mem_info {
 /*
     When pointers are 16 bit aligned, the lower 4 bits are always zero.
 */
-#define HASH_FUNCTION(key)	((key) >> 4)
+#define HASH_FUNCTION(key)	(khint_t)((key) >> 4)
 
 /*
     The map contains a pointer as key and mem_info as value.

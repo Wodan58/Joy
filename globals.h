@@ -1,8 +1,8 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.37
- *  date    : 06/28/21
+ *  version : 1.38
+ *  date    : 07/20/21
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -173,12 +173,12 @@ ENABLE_TRACEGC
 /* installation dependent	*/
 #ifdef BIT_32
 #define SETSIZE 32
-#define MAXINT 2147483647
+#define MAXINT (long_t)2147483647
 typedef int long_t;
 typedef float my_float_t;
 #else
 #define SETSIZE 64
-#define MAXINT 9223372036854775807
+#define MAXINT (long_t)9223372036854775807
 typedef long long_t;
 typedef double my_float_t;
 #endif

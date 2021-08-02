@@ -1,7 +1,7 @@
 /*
-    module  : %M%
-    version : %I%
-    date    : %G%
+    module  : helpdetail.c
+    version : 1.2
+    date    : 07/20/21
 */
 #ifndef HELPDETAIL_C
 #define HELPDETAIL_C

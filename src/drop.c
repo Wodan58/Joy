@@ -1,7 +1,7 @@
 /*
-    module  : %M%
-    version : %I%
-    date    : %G%
+    module  : drop.c
+    version : 1.2
+    date    : 07/20/21
 */
 #ifndef DROP_C
 #define DROP_C

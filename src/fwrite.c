@@ -1,7 +1,7 @@
 /*
-    module  : %M%
-    version : %I%
-    date    : %G%
+    module  : fwrite.c
+    version : 1.2
+    date    : 07/20/21
 */
 #ifndef FWRITE_C
 #define FWRITE_C

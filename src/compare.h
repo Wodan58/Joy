@@ -1,7 +1,7 @@
 /*
-    module  : %M%
-    version : %I%
-    date    : %G%
+    module  : compare.h
+    version : 1.3
+    date    : 07/20/21
 */
 #ifndef COMPARE_H
 #define COMPARE_H
@@ -38,8 +38,7 @@ PRIVATE double Compare(pEnv env, Index first, Index second, int *error)
         case USR_:
             break;
         case ANON_FUNCT_:
-            return (size_t)nodevalue(first).proc
-                - (size_t)nodevalue(second).proc;
+            return (double)(nodevalue(first).proc - nodevalue(second).proc);
         case BOOLEAN_:
         case CHAR_:
         case INTEGER_:
@@ -200,7 +199,7 @@ PRIVATE double Compare(pEnv env, Index first, Index second, int *error)
         case FLOAT_:
             break;
         case FILE_:
-            return nodevalue(first).fil - nodevalue(second).fil;
+            return (double)(nodevalue(first).fil - nodevalue(second).fil);
         default:
             break;
         }

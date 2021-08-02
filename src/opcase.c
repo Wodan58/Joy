@@ -1,7 +1,7 @@
 /*
-    module  : %M%
-    version : %I%
-    date    : %G%
+    module  : opcase.c
+    version : 1.2
+    date    : 07/20/21
 */
 #ifndef OPCASE_C
 #define OPCASE_C
