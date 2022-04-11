@@ -1,0 +1,7 @@
+(*
+    module  : choice.joy
+    version : 1.1
+    date    : 04/11/22
+*)
+true 1.5 2.5 choice.
+false 1.5 2.5 choice.

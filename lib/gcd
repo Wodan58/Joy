@@ -1,4 +1,4 @@
-#!./joy
+#!../joy
 
 argv rest [10 strtol] map uncons uncons pop    # get two params
 [0 >] [dup rollup rem] while pop               # find gcd

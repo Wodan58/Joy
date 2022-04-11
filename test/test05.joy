@@ -1,14 +1,18 @@
-#
-#  Read a file and print the contents.
-#
+(*
+    module  : test05.joy
+    version : 1.2
+    date    : 04/11/22
+
+    Read a file and print its contents.
+*)
 LIBRA
 	  seek-to-end == 0 2 fseek pop;
                rewind == 0 0 fseek pop.
 
 [argc 1 =]
 ["Use: " putchars argv 0 at putchars " <file>\n" putchars quit] [] ifte
-argv 1 at "rb" fopen
-[null]
+argv 1 at "r" fopen
+[dup null]
 ["Could not read " putchars argv 1 at putchars "\n" putchars quit] [] ifte
 seek-to-end
 ftell
@@ -16,3 +20,4 @@ ftell
 fread
 [putch] step
 fclose.
+1                                                                               2                                                                               3                                                                               4                                                                               5.

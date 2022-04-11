@@ -1,4 +1,4 @@
-0 __settracegc.							(* R.W. *)
+0 __settracegc.
 2 setecho.
 
 DEFINE

@@ -1,0 +1,8 @@
+(*
+    module  : first.joy
+    version : 1.1
+    date    : 04/11/22
+*)
+[1 2 3] first.
+"test" first.
+{1 2 3} first.

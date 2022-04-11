@@ -1,19 +1,131 @@
-false [nothing] first = .
+(*
+    module  : test13.joy
+    version : 1.2
+    date    : 04/11/22
+*)
+DEFINE	last == dup rest null [first] [rest last] branch.
 
-'A [nothing] first = .
+(* user defined function *)
+[last] first [last] first compare.
+[last] first [pop] first compare.
+[last] first true compare.
+[last] first 'A compare.
+[last] first 10 compare.
+[last] first {} compare.
+[last] first "" compare.
+[last] first [] compare.
+[last] first 3.14 compare.
+[last] first stdin compare.
 
-10 [nothing] first = .
+(* anonymous function *)
+[pop] first [last] first compare.
+[pop] first [pop] first compare.
+[pop] first true compare.
+[pop] first 'A compare.
+[pop] first 10 compare.
+[pop] first {} compare.
+[pop] first "" compare.
+[pop] first [] compare.
+[pop] first 3.14 compare.
+[pop] first stdin compare.
 
-{} 0 = .
-{} {0} = .
+(* truth value *)
+true [last] first compare.
+true [pop] first compare.
+true true compare.
+true 'A compare.
+true 10 compare.
+true {} compare.
+true "" compare.
+true [] compare.
+true 3.14 compare.
+true stdin compare.
 
-"nothing" [nothing] first = .
-"10" 10 = .
-"+" [+] first = .
+(* character *)
+'A [last] first compare.
+'A [pop] first compare.
+'A true compare.
+'A 'A compare.
+'A 10 compare.
+'A {} compare.
+'A "" compare.
+'A [] compare.
+'A 3.14 compare.
+'A stdin compare.
 
-0.0 [nothing] first = .
+(* integer *)
+10 [last] first compare.
+10 [pop] first compare.
+10 true compare.
+10 'A compare.
+10 10 compare.
+10 {} compare.
+10 "" compare.
+10 [] compare.
+10 3.14 compare.
+10 stdin compare.
 
-stdin [+] first = .
+(* set *)
+{} [last] first compare.
+{} [pop] first compare.
+{} true compare.
+{} 'A compare.
+{} 10 compare.
+{} {} compare.
+{} {} equal.
+{} {} =.
+{1 2 3} {4 5 6} compare.
+{1 2 3} {4 5 6} equal.
+{1 2 3} {4 5 6} =.
+{} "" compare.
+{} [] compare.
+{} 3.14 compare.
+{}  stdin compare.
 
-[+] first "+" = .
-[+] first stdin = .
+(* string *)
+"" [last] first compare.
+"" [pop] first compare.
+"" true compare.
+"" 'A compare.
+"" 10 compare.
+"" {} compare.
+"" "" compare.
+"" [] compare.
+"" 3.14 compare.
+"" stdin compare.
+
+(* list *)
+[] [last] first compare.
+[] [pop] first compare.
+[] true compare.
+[] 'A compare.
+[] 10 compare.
+[] {} compare.
+[] "" compare.
+[] [] compare.
+[] 3.14 compare.
+[] stdin compare.
+
+(* float *)
+3.14 [last] first compare.
+3.14 [pop] first compare.
+3.14 true compare.
+3.14 'A compare.
+3.14 10 compare.
+3.14 {} compare.
+3.14 "" compare.
+3.14 [] compare.
+3.14 3.14 compare.
+3.14 stdin compare.
+
+(* file *)
+stdin [last] first compare.
+stdin [pop] first compare.
+stdin true compare.
+stdin 'A compare.
+stdin 10 compare.
+stdin {} compare.
+stdin "" compare.
+stdin [] compare.
+stdin 3.14 compare.
+stdin stdin compare.

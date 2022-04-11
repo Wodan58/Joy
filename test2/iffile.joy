@@ -1,0 +1,7 @@
+(*
+    module  : iffile.joy
+    version : 1.1
+    date    : 04/11/22
+*)
+stdin [[file] first] [[nofile] first] iffile.
+10 [[file] first] [[nofile] first] iffile.

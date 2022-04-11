@@ -1,0 +1,7 @@
+(*
+    module  : fputchars.joy
+    version : 1.1
+    date    : 04/11/22
+*)
+"test" "w" fopen "test\n" fputchars fclose.
+$ cat test

@@ -1,0 +1,11 @@
+(*
+    module  : infra2.joy
+    version : 1.1
+    date    : 04/11/22
+*)
+DEFINE	test == [2 3 + 4 5 *] infra.
+
+argv 1 at 10 strtol
+argv 2 at 10 strtol
+stack
+test......

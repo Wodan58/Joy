@@ -1,0 +1,8 @@
+(*
+    module  : step.joy
+    version : 1.1
+    date    : 04/11/22
+*)
+0 [1 2 3] [+] step.
+0 "test" [+] step.
+0 {1 2 3} [+] step.

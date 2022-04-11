@@ -1,0 +1,14 @@
+(*
+    module  : %M%
+    version : %I%
+    date    : %G%
+*)
+1 __settracegc.
+__symtabindex.
+argc.
+autoput.
+echo.
+10 put.
+rand.
+time srand.
+undeferror.

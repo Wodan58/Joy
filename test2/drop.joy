@@ -1,0 +1,8 @@
+(*
+    module  : drop.joy
+    version : 1.1
+    date    : 04/11/22
+*)
+[1 2 3] 1 drop.
+"test" 1 drop.
+{1 2 3} 1 drop.

@@ -1,0 +1,24 @@
+(*
+    module  : test19.joy
+    version : 1.1
+    date    : 04/11/22
+*)
+MODULE m2
+PRIVATE
+  a == "A";
+  b == "B";
+PUBLIC
+  ab == a b concat;
+  ba == b a concat;
+  MODULE m1
+    PRIVATE
+      a == "a";
+      b == "b";
+    PUBLIC
+      ab == a b concat;
+      ba == b a concat;
+    PRIVATE; (* should be END *)
+  test == ab ba concat;
+END
+
+m2.ab.

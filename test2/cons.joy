@@ -1,0 +1,8 @@
+(*
+    module  : cons.joy
+    version : 1.1
+    date    : 04/11/22
+*)
+1 [2 3] cons.
+'t "est" cons.
+1 {2 3} cons.

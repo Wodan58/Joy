@@ -1,7 +1,7 @@
 /*
     module  : fget.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 04/11/22
 */
 #ifndef FGET_C
 #define FGET_C
@@ -12,14 +12,20 @@ Reads a factor from stream S and pushes it onto stack.
 */
 PRIVATE void fget_(pEnv env)
 {
-    FILE *stm;
+    FILE *fp;
+    int stdin_dup;
 
     ONEPARAM("fget");
-    if (nodetype(env->stck) != FILE_ || nodevalue(env->stck).fil == NULL)
+    fp = nodevalue(env->stck).fil;
+    if (nodetype(env->stck) != FILE_ || !fp)
         execerror(env, "file", "fget");
-    stm = nodevalue(env->stck).fil;
-    redirect(env, stm);
+    if ((stdin_dup = dup(0)) != -1)
+        dup2(fileno(fp), 0);
     getsym(env);
     readfactor(env, 0);
+    if (stdin_dup != -1) {
+        dup2(stdin_dup, 0);
+        close(stdin_dup);
+    }
 }
 #endif

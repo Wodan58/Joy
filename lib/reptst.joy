@@ -111,7 +111,7 @@ even-squares i i i i state.
 
 DEFINE
     ten-powers-log10 ==
-	 1.0 [10 *] [[] cons [dup log10] infra] rep.f-stream-d.  (* R.W. *)
+	 1 [10 *] [[] cons [dup log10] infra]  rep.f-stream-d.
 
 ten-powers-log10.
 
@@ -201,9 +201,9 @@ nfib-fix.
 6 nfib-fix-a i swap putln trace.
 
 0 __settracegc.
-(*
+
 30 nfib-fix-c i swap putln steps.
-*)
+
 
 (* -CONVENIENCE *)
 

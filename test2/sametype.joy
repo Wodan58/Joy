@@ -1,0 +1,18 @@
+(*
+    module  : sametype.joy
+    version : 1.1
+    date    : 04/11/22
+*)
+DEFINE 	sum == 0.0 [+] fold;
+	average == [sum] [size num2dbl] cleave /.
+
+[sum] first [average] first sametype.
+[pop] first [pop] first sametype.
+false true sametype.
+'\n 'A sametype.
+10 100 sametype.
+{1 2 3} {} sametype.
+"test" "" sametype.
+[1 2 3] [] sametype.
+-0.0 0.0 sametype.
+stdin stdout sametype.

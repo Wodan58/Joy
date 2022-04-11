@@ -42,8 +42,8 @@ int main()
 
 /*
     module  : kvec.h
-    version : 1.4
-    date    : 06/22/20
+    version : 1.5
+    date    : 04/09/22
 
  1. Change type of n, m from size_t to unsigned. Reason: takes less memory.
  2. Remove (type*) casts. Reason: not needed for C.
@@ -86,8 +86,8 @@ int main()
 #define vector(type)		struct { unsigned n, m; type *a; }
 #define vec_init(v)		do { (v) = GC_malloc(sizeof(*(v))); \
 				(v)->n = (v)->m = 0; (v)->a = 0; } while (0)
-#define vec_destroy(v)		do { free((v)->a); free((v)); } while (0)
-#define vec_at(v, i)		((v)->a[(i)])
+#define vec_destroy(v)		do { free((v)->a); free(v); } while (0)
+#define vec_at(v, i)		((v)->a[i])
 #define vec_pop(v)		((v)->a[--(v)->n])
 #define vec_back(v)		((v)->a[(v)->n - 1])
 #define vec_end(v)		((v)->a + (v)->n)
@@ -95,7 +95,7 @@ int main()
 #define vec_setsize(v, s)	((v)->n = (s))
 #define vec_max(v)		((v)->m)
 #define vec_grow(v, s)		((v)->m = (s), (v)->a = GC_realloc((v)->a, \
-				sizeof(*(v)->a) * (v)->m))
+				sizeof(*(v)->a) * (s)))
 #define vec_shrink(v)		do { if ((v)->n) { ((v)->m = (v)->n; (v)->a = \
 				GC_realloc((v)->a, sizeof(*(v)->a) * (v)->m));\
 				} } while (0)
@@ -105,16 +105,16 @@ int main()
 /* vec_copy assumes that v1 does not exist yet and needs to be created */
 #define vec_copy(v1, v0) 						\
 	do {								\
-	    vec_init((v1));						\
-	    if ((v1)->m < (v0)->n) vec_grow(v1, (v0)->n);		\
-	    (v1)->n = (v0)->n;						\
-	    memcpy((v1)->a, (v0)->a, sizeof(*(v0)->a) * (v0)->n);	\
+	    vec_init(v1);						\
+	    (v1)->n = (v1)->m = (v0)->n;				\
+	    (v1)->a = GC_malloc(sizeof(*(v1)->a) * (v1)->m);		\
+	    memcpy((v1)->a, (v0)->a, sizeof(*(v1)->a) * (v1)->m);	\
 	} while (0)
 
 /* vec_push assumes that v has been initialized to 0 before its called */
 #define vec_push(v, x) 							\
 	do {								\
-	    if (!(v)) vec_init((v));					\
+	    if (!(v)) vec_init(v);					\
 	    if ((v)->n == (v)->m) {					\
 		(v)->m = (v)->m ? (v)->m << 1 : 1;			\
 		(v)->a = GC_realloc((v)->a, sizeof(*(v)->a) * (v)->m);	\
@@ -124,11 +124,11 @@ int main()
 /* vec_reverse assumes that an extra element has been added as scratch */
 #define vec_reverse(v)							\
 	do {								\
-	    int i, j, k = vec_size((v)) - 1;				\
+	    int i, j, k = vec_size(v) - 1;				\
 	    for (i = 0, j = k - 1; i < j; i++, j--) {			\
 		vec_at((v), k) = vec_at((v), i);			\
 		vec_at((v), i) = vec_at((v), j);			\
 		vec_at((v), j) = vec_at((v), k);			\
-	    } vec_pop((v));						\
+	    } vec_setsize((v), k);					\
 	} while (0)
 #endif

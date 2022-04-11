@@ -1,0 +1,12 @@
+(*
+    module  : condnestrec.joy
+    version : 1.1
+    date    : 04/11/22
+*)
+DEFINE	over == swap dup swapd.
+
+DEFINE	cnr-ack == [[[over null] [popd succ]]
+		    [[dup null] [pop pred 1] []]
+		    [[[dup pred swap] dip pred] [] []]] condnestrec.
+
+3 4 cnr-ack.

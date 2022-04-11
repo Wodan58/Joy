@@ -1,0 +1,8 @@
+(*
+    module  : frename.joy
+    version : 1.1
+    date    : 04/11/22
+*)
+"test" "w" fopen fclose.
+"test" "dummy" frename.
+$ ls -l test dummy

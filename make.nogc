@@ -2,18 +2,32 @@
 .SUFFIXES:
 
 CC = gcc
-CFLAGS = -DNOBDW -O3 -Wall -Wextra -Wno-unused-parameter -Werror
+CFLAGS = -DNOBDW -DCOSMO -g -Os -static -nostdlib -nostdinc -fno-pie -no-pie \
+	 -mno-red-zone -fno-omit-frame-pointer -pg -mnop-mcount \
+	 -include cosmopolitan.h -Wall -Wextra -Wno-unused-parameter \
+	 -Wno-error=attributes -Wno-attributes -Werror \
+	 -DJVERSION="\"cosmo\"" -DTRACING -DNDEBUG
 LD = gcc
-LDLIBS = -static -lm
-OBJECTS = interp.o scan.o utils.o main.o srand.o rand.o factor.o gc.o
+LDLIBS = -fuse-ld=bfd -Wl,-T,ape.lds crt.o ape.o cosmopolitan.a
+OBJECTS = interp.o scan.o utils.o main.o factor.o module.o gc.o
 
-joy: $(OBJECTS)
-	$(LD) -o$@ $(OBJECTS) $(LDLIBS)
+joy.com: dummy $(OBJECTS)
+	$(LD) -o$@.dbg $(CFLAGS) $(OBJECTS) $(LDLIBS)
+	objcopy -S -O binary $@.dbg $@
+
+dummy:	cosmo prep
+
+cosmo:
+	wget https://justine.lol/cosmopolitan/cosmopolitan-amalgamation-1.0.zip
+	unzip cosmopolitan-amalgamation-1.0.zip
+	rm cosmopolitan-amalgamation-1.0.zip*
+	>cosmo
+
+prep:
+	sh prims.sh .
+	sh table.sh .
 
 $(OBJECTS): globals.h
-
-clean:
-	rm -f joy *.o
 
 .SUFFIXES: .c .o
 

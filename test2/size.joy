@@ -1,0 +1,11 @@
+(*
+    module  : size.joy
+    version : 1.1
+    date    : 04/11/22
+*)
+[1 2 3] size.
+"test" size.
+{1 2 3} size.
+[] size.
+"" size.
+{} size.

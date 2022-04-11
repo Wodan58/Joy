@@ -1,27 +1,31 @@
-DEFINE test01 == true false (* maxint *) ; undefined == .
-# scan.c
-3 setecho .
-$ echo use shell escape
-"\07" .
-"\b\r\f\'\"\v\\\a" .
-2 setautoput .
-0xFF
-0377
-2.55e+2 .
-# main.c
-1 setautoput .
-# utils.c
-gc .
-__memoryindex .
-"dummy.txt" "r" fopen .
-stdin .
-stdout .
-stderr .
-"test01.joy" "r" fopen .
-# interp.c
-[ true false (* maxint *) test01 undefined ] helpdetail .
-undefs .
-manual .
-__html_manual .
-__latex_manual .
-__manual_list .
+(*
+    module  : test01.joy
+    version : 1.2
+    date    : 04/11/22
+*)
+2 setautoput.
+3 setecho.
+
+(* yylex.c *)
+%PUT testing compile time output
+
+%INCLUDE setundeferror.joy
+
+(* testing escape sequences *)
+"\b\t\n\v\f\r\'\"\v\\\a".
+
+(* this should issue an error message if there are fewer than 3 digits *)
+"\007".
+
+(* floating point with signed exponent *)
+2.55e+2.
+
+(* module and member notation *)
+module.member.
+
+(* hexadecimal and octal constants *)
+0xFF.
+0377.
+
+(* testing empty definition *)
+DEFINE	defined == .

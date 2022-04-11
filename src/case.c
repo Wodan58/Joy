@@ -1,7 +1,7 @@
 /*
     module  : case.c
-    version : 1.2
-    date    : 07/20/21
+    version : 1.3
+    date    : 04/11/22
 */
 #ifndef CASE_C
 #define CASE_C
@@ -15,21 +15,17 @@ Indexing on the value of X, execute the matching Y.
 PRIVATE void case_(pEnv env)
 {
     Index n;
-    int error;
 
     TWOPARAMS("case");
     LIST("case");
     n = nodevalue(env->stck).lis;
     CHECKEMPTYLIST(n, "case");
-    while (nextnode1(n) != NULL
-        && nodevalue(nodevalue(n).lis).num
-            != nodevalue(nextnode1(env->stck)).num) {
-        if (!Compare(env, nodevalue(n).lis, nextnode1(env->stck), &error)
-            && !error)
+    while (nextnode1(n)) {
+        if (!Compare(env, nodevalue(n).lis, nextnode1(env->stck)))
             break;
         n = nextnode1(n);
     }
-    if (nextnode1(n) != NULL) {
+    if (nextnode1(n)) {
         env->stck = nextnode2(env->stck);
         exeterm(env, nextnode1(nodevalue(n).lis));
     } else {
