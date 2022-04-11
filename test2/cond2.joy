@@ -1,0 +1,10 @@
+(*
+    module  : cond2.joy
+    version : 1.1
+    date    : 04/11/22
+*)
+DEFINE	test == [[[dup 1 =] [one] first popd]
+		 [[dup 2 =] [two] first popd]
+		 [[other] first popd]] cond.
+
+argv 1 at 10 strtol test.

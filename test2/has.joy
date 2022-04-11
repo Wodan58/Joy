@@ -1,0 +1,11 @@
+(*
+    module  : has.joy
+    version : 1.1
+    date    : 04/11/22
+*)
+[1 2 3] 2 has.
+[1 2 3] 4 has.
+"test" 'e has.
+"test" 'a has.
+{1 2 3} 2 has.
+{1 2 3} 4 has.

@@ -1,17 +1,13 @@
 /*
  *  module  : utils.c
- *  version : 1.2
- *  date    : 07/03/21
+ *  version : 1.3
+ *  date    : 04/11/22
  */
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <time.h>
-#include "gc.h"
 #include "globals.h"
 
 static Index memoryindex, mem_low = 1, mem_mid, mem_high = MEMORYMAX - 1;
-static int direction = 1, start_gc_clock;
+static int direction = 1;
+static clock_t start_gc_clock;
 
 #ifdef ENABLE_TRACEGC
 static int nodesinspected, nodescopied;
@@ -54,7 +50,7 @@ PUBLIC void inimem2(pEnv env)
     count_avail();
 #endif
 #ifdef ENABLE_TRACEGC
-    if (tracegc > 1) {
+    if (env->tracegc > 1) {
         printf("memoryindex = %d\n", memoryindex);
         printf("mem_low = %d\n", mem_low);
         printf("top of mem = %d\n", mem_high);
@@ -79,7 +75,7 @@ PRIVATE Index copyone(pEnv env, Index n)
 {
 #ifdef ENABLE_TRACEGC
     nodesinspected++;
-    if (tracegc > 4)
+    if (env->tracegc > 4)
         printf("copy ..\n");
 #endif
     if (n < mem_low)
@@ -90,7 +86,7 @@ PRIVATE Index copyone(pEnv env, Index n)
         env->memory[n].u.lis = memoryindex;
 #ifdef ENABLE_TRACEGC
         nodescopied++;
-        if (tracegc > 3) {
+        if (env->tracegc > 3) {
             printf("%5d -    ", nodescopied);
             printnode(env, memoryindex);
         }
@@ -144,19 +140,19 @@ PUBLIC void gc1(pEnv env)
     count_collect();
 #endif
 #ifdef ENABLE_TRACEGC
-    if (tracegc > 1)
+    if (env->tracegc > 1)
         printf("begin %s garbage collection\n", mess);
     nodesinspected = nodescopied = 0;
 #define COP(X, NAME)                                                           \
     do                                                                         \
         if (X) {                                                               \
-            if (tracegc > 2) {                                                 \
+            if (env->tracegc > 2) {                                            \
                 printf("old %s = ", NAME);                                     \
                 writeterm(env, X, stdout);                                     \
                 printf("\n");                                                  \
             }                                                                  \
             X = copyone(env, X);                                               \
-            if (tracegc > 2) {                                                 \
+            if (env->tracegc > 2) {                                            \
                 printf("new %s = ", NAME);                                     \
                 writeterm(env, X, stdout);                                     \
                 printf("\n");                                                  \
@@ -184,19 +180,17 @@ PUBLIC void gc2(pEnv env, char *mess)
 PUBLIC void gc2(pEnv env)
 #endif
 {
-    int this_gc_clock;
+    clock_t this_gc_clock;
 
     copyall(env);
     this_gc_clock = clock() - start_gc_clock;
-    if (this_gc_clock == 0)
-        this_gc_clock = 1; /* correction */
     gc_clock += this_gc_clock;
 
 #ifdef ENABLE_TRACEGC
-    if (tracegc > 0)
+    if (env->tracegc > 0)
         printf("gc - %d nodes inspected, %d nodes copied, clock: %d\n",
             nodesinspected, nodescopied, this_gc_clock);
-    if (tracegc > 1)
+    if (env->tracegc > 1)
         printf("end %s garbage collection\n", mess);
 #endif
 }
@@ -224,6 +218,9 @@ static void count_nodes(void)
 }
 #endif
 
+/*
+    newnode - allocate a new node or error out if no nodes are available.
+*/
 PUBLIC Index newnode(pEnv env, Operator o, Types u, Index r)
 {
     Index p;
@@ -259,27 +256,35 @@ PUBLIC Index newnode(pEnv env, Operator o, Types u, Index r)
 
 PUBLIC void my_memoryindex(pEnv env)
 {
-    env->stck = INTEGER_NEWNODE(memoryindex, env->stck);
+    long_t num = memoryindex;
+
+    env->stck = newnode(env, INTEGER_, (Types)num, env->stck);
 }
 
 PUBLIC void my_memorymax(pEnv env)
 {
-    env->stck = INTEGER_NEWNODE((mem_high - mem_low), env->stck);
+    long_t num = mem_high - mem_low;
+
+    env->stck = newnode(env, INTEGER_, (Types)num, env->stck);
 }
 
+/*
+    readterm - read a term from srcfile and push this on the stack as a list.
+*/
 PUBLIC void readterm(pEnv env, int priv)
 {
     if (!priv)
-        env->stck = LIST_NEWNODE(0, env->stck);
-    if (symb <= ATOM) {
+        env->stck = newnode(env, LIST_, (Types)0.0, env->stck);
+    if (env->symb <= ATOM) {
         readfactor(env, priv);
         if (!priv) {
             nodevalue(nextnode1(env->stck)).lis = env->stck;
             env->stck = nextnode1(env->stck);
             nextnode1(nodevalue(env->stck).lis) = 0;
-            env->dump = LIST_NEWNODE(nodevalue(env->stck).lis, env->dump);
+            env->dump = newnode(
+                env, LIST_, (Types)nodevalue(env->stck).lis, env->dump);
         }
-        while (getsym(env), symb <= ATOM) {
+        while (getsym(env), env->symb <= ATOM) {
             readfactor(env, priv);
             if (!priv) {
                 nextnode1(nodevalue(env->dump).lis) = env->stck;
@@ -293,17 +298,23 @@ PUBLIC void readterm(pEnv env, int priv)
     }
 }
 
-PUBLIC void writefactor(pEnv env, Index n, FILE *stm)
+/*
+    my_writefactor - like writefactor but with Index instead of Node *.
+*/
+PUBLIC void my_writefactor(pEnv env, Index n, FILE *stm)
 {
-    my_writefactor(env, &env->memory[n], stm);
+    writefactor(env, &env->memory[n], stm);
 }
 
+/*
+    writeterm - print the contents of a list in readable format.
+*/
 PUBLIC void writeterm(pEnv env, Index n, FILE *stm)
 {
-    while (n != NULL) {
-        my_writefactor(env, &env->memory[n], stm);
+    while (n) {
+        writefactor(env, &env->memory[n], stm);
         n = nextnode1(n);
-        if (n != NULL)
-            fprintf(stm, " ");
+        if (n)
+            fputc(' ', stm);
     }
 }

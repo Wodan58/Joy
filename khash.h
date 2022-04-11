@@ -93,9 +93,11 @@ int main() {
 
 #define AC_VERSION_KHASH_H "0.2.8"
 
+#ifndef COSMO
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#endif
 
 /* compiler specific configuration */
 
@@ -215,7 +217,7 @@ static const double __ac_HASH_UPPER = 0.77;
             last = i;                                                          \
             while (!__ac_isempty(h->flags, i)                                  \
                 && (__ac_isdel(h->flags, i)                                    \
-                       || !__hash_equal(h->keys[i], key))) {                   \
+                    || !__hash_equal(h->keys[i], key))) {                      \
                 i = (i + (++step)) & mask;                                     \
                 if (i == last)                                                 \
                     return h->n_buckets;                                       \
@@ -236,7 +238,7 @@ static const double __ac_HASH_UPPER = 0.77;
             if (h->size >= (khint_t)(new_n_buckets * __ac_HASH_UPPER + 0.5))   \
                 j = 0; /* requested size is too small */                       \
             else { /* hash table size to be changed (shrink or expand); rehash \
-                      */                                                       \
+                    */                                                         \
                 new_flags = (khint32_t *)kmalloc(                              \
                     __ac_fsize(new_n_buckets) * sizeof(khint32_t));            \
                 if (!new_flags)                                                \
@@ -294,11 +296,11 @@ static const double __ac_HASH_UPPER = 0.77;
                                 h->vals[i] = val;                              \
                                 val = tmp;                                     \
                             }                                                  \
-                            __ac_set_isdel_true(h->flags,                      \
-                                i); /* mark it as deleted in the old hash      \
-                                       table */                                \
+                            __ac_set_isdel_true(                               \
+                                h->flags, i); /* mark it as deleted in the old \
+                                                 hash table */                                                                      \
                         } else { /* write the element and jump out of the loop \
-                                    */                                         \
+                                  */                                           \
                             h->keys[i] = key;                                  \
                             if (kh_is_map)                                     \
                                 h->vals[i] = val;                              \
@@ -350,7 +352,7 @@ static const double __ac_HASH_UPPER = 0.77;
                 last = i;                                                      \
                 while (!__ac_isempty(h->flags, i)                              \
                     && (__ac_isdel(h->flags, i)                                \
-                           || !__hash_equal(h->keys[i], key))) {               \
+                        || !__hash_equal(h->keys[i], key))) {                  \
                     if (__ac_isdel(h->flags, i))                               \
                         site = i;                                              \
                     i = (i + (++step)) & mask;                                 \

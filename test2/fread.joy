@@ -1,0 +1,6 @@
+(*
+    module  : fread.joy
+    version : 1.1
+    date    : 04/11/22
+*)
+"fread.joy" "r" fopen 100 fread.

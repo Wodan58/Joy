@@ -1,0 +1,8 @@
+(*
+    module  : x.joy
+    version : 1.1
+    date    : 04/11/22
+*)
+DEFINE	test == [pop succ] x.
+
+2 test.

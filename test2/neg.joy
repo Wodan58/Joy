@@ -1,0 +1,9 @@
+(*
+    module  : neg.joy
+    version : 1.1
+    date    : 04/11/22
+*)
+1 neg.
+1.5 neg.
+-1 neg.
+-1.5 neg.

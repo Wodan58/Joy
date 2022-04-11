@@ -1,15 +1,12 @@
 /* FILE: scan.c */
 /*
  *  module  : scan.c
- *  version : 1.29
- *  date    : 06/28/21
+ *  version : 1.30
+ *  date    : 04/11/22
  */
-#include <stdio.h>
-#include <string.h>
-#include <ctype.h>
-#include <stdlib.h>
-#include "gc.h"
 #include "globals.h"
+
+PUBLIC void quit_(pEnv env);
 
 static struct {
     FILE *fp;
@@ -18,24 +15,35 @@ static struct {
 #endif
     int linenum;
 } infile[INPSTACKMAX];
-static int ilevel = 0;
-static int linenumber = 0;
+static int ilevel;
+static int linenumber;
 static char linbuf[INPLINEMAX + 1];
-static int linelength = 0, currentcolumn = 0;
+static int linelength, currentcolumn;
 #if 0
-static int errorcount = 0;
+static int errorcount;
 #endif
 static int ch = ' ';
 
-PUBLIC void inilinebuffer(char *str)
+/*
+    inilinebuffer - initialise the stack of input files. The filename parameter
+                    is currently not used. It could be used in error messages.
+*/
+PUBLIC void inilinebuffer(pEnv env, char *str)
 {
-    infile[0].fp = srcfile;
+    infile[0].fp = env->srcfile;
 #if 0
-    strncpy(infile[0].name, str, ALEN);
-    infile[0].name[ALEN - 1] = 0;
+    if (!str)
+	strcpy(infile[0].name, "stdin");
+    else {
+	strncpy(infile[0].name, str, ALEN);
+	infile[0].name[ALEN - 1] = 0;
+    }
 #endif
 }
 
+/*
+    getlinenum - return the linenumber before reading a section the first time.
+*/
 PUBLIC int getlinenum(void)
 {
     int linenum;
@@ -45,6 +53,9 @@ PUBLIC int getlinenum(void)
     return linenum;
 }
 
+/*
+    resetlinebuffer - revert to an earlier line, when rereading the source file.
+*/
 PUBLIC void resetlinebuffer(int linenum)
 {
     linenumber = linenum;
@@ -54,60 +65,76 @@ PUBLIC void resetlinebuffer(int linenum)
     ch = ' ';
 }
 
-PRIVATE void putline(void)
+/*
+    putline - echo an input line.
+*/
+PRIVATE void putline(pEnv env)
 {
     int i;
 
     if (linenumber <= 0)
         return;
-    if (echoflag > 2)
+    if (env->echoflag > 2)
         printf("%4d", linenumber);
-    if (echoflag > 1)
+    if (env->echoflag > 1)
         putchar('\t');
     for (i = 0; linbuf[i] && linbuf[i] != '\n'; i++)
         putchar(linbuf[i]);
     putchar('\n');
 }
 
-PRIVATE void getch(void)
+/*
+    getch - return one character in ch.
+*/
+PRIVATE void getch(pEnv env)
 {
+    int i;
+
     if (currentcolumn == linelength) {
 #ifdef USE_SHELL_ESCAPE
-    Again:
+    again:
 #endif
         currentcolumn = linelength = 0;
         if (linenumber >= 0)
             linenumber++;
-        if (fgets(linbuf, INPLINEMAX, srcfile))
-            linelength = strlen(linbuf);
-        else if (ilevel > 0) {
+        if (fgets(linbuf, INPLINEMAX, env->srcfile)) {
+            for (i = 0; linbuf[i]; i++)
+                ;
+            linelength = i;
+        } else if (ilevel > 0) {
             fclose(infile[ilevel--].fp);
-            srcfile = infile[ilevel].fp;
+            env->srcfile = infile[ilevel].fp;
             linenumber = infile[ilevel].linenum;
         } else
             quit_(0);
         linbuf[linelength++] = ' '; /* to help getsym for numbers */
-        linbuf[linelength++] = '\0';
-        if (echoflag)
-            putline();
+        linbuf[linelength++] = 0;
+        if (env->echoflag)
+            putline(env);
 #ifdef USE_SHELL_ESCAPE
         if (linbuf[0] == SHELLESCAPE) {
             system(&linbuf[1]);
-            goto Again;
+            goto again;
         }
 #endif
     }
     ch = linbuf[currentcolumn++];
 }
 
+/*
+    endofbuffer - test whether the entire buffer has been processed.
+*/
 PRIVATE int endofbuffer(void) { return currentcolumn == linelength; }
 
-PUBLIC void error(char *message)
+/*
+    error - error processing during source file reads.
+*/
+PUBLIC void error(pEnv env, char *message)
 {
     int i;
 
-    putline();
-    if (echoflag > 1)
+    putline(env);
+    if (env->echoflag > 1)
         putchar('\t');
     for (i = 0; i < currentcolumn - 2; i++)
         if (linbuf[i] <= ' ')
@@ -120,20 +147,23 @@ PUBLIC void error(char *message)
 #endif
 }
 
+/*
+    doinclude - insert the contents of a file in the input.
+*/
 PUBLIC void doinclude(pEnv env, char *filnam)
 {
     FILE *fp;
 
     if (ilevel + 1 == INPSTACKMAX)
         execerror(env, "fewer include files", "include");
-    infile[ilevel].fp = srcfile;
+    infile[ilevel].fp = env->srcfile;
     infile[ilevel].linenum = linenumber;
     linenumber = 0;
     if ((fp = fopen(filnam, "r")) != 0) {
-        infile[++ilevel].fp = srcfile = fp;
+        infile[++ilevel].fp = env->srcfile = fp;
 #if 0
-	strncpy(infile[ilevel].name, filnam, ALEN);
-	infile[ilevel].name[ALEN - 1] = 0;
+        strncpy(infile[ilevel].name, filnam, ALEN);
+        infile[ilevel].name[ALEN - 1] = 0;
 #endif
         infile[ilevel].linenum = 0;
         return;
@@ -141,51 +171,39 @@ PUBLIC void doinclude(pEnv env, char *filnam)
     execerror(env, "valid file name", "include");
 }
 
-#ifdef FGET_FROM_FILE
-PUBLIC void redirect(pEnv env, FILE *fp)
+/*
+    specialchar - handle character escape sequences.
+*/
+PRIVATE int specialchar(pEnv env)
 {
-    if (infile[ilevel].fp == fp)
-        return;
-    if (ilevel + 1 == INPSTACKMAX)
-        execerror(env, "fewer include files", "redirect");
-    infile[++ilevel].fp = srcfile = fp;
-#if 0
-    infile[ilevel].name[0] = 0;
-#endif
-    infile[ilevel].linenum = 0;
-}
-#endif
-
-PRIVATE int specialchar(void)
-{
-    getch();
+    getch(env);
     switch (ch) {
-    case 'n':
-        return '\n';
-    case 't':
-        return '\t';
     case 'b':
         return '\b';
-    case 'r':
-        return '\r';
-    case 'f':
-        return '\f';
-    case '\'':
-        return '\'';
-    case '\"':
-        return '\"';
+    case 't':
+        return '\t';
+    case 'n':
+        return '\n';
     case 'v':
         return '\v';
+    case 'f':
+        return '\f';
+    case 'r':
+        return '\r';
+    case '\"':
+        return '\"';
+    case '\'':
+        return '\'';
     case '\\':
         return '\\';
     default:
         if (isdigit(ch)) {
             int i, num = ch - '0';
             for (i = 0; i < 2; i++) {
-                getch();
+                getch(env);
                 if (!isdigit(ch)) {
                     currentcolumn++; /* to get pointer OK */
-                    error("digit expected");
+                    error(env, "digit expected");
                     currentcolumn--;
                 }
                 num = 10 * num + ch - '0';
@@ -196,83 +214,90 @@ PRIVATE int specialchar(void)
     }
 }
 
+/*
+    peek - look at the next character.
+*/
 PRIVATE int peek(void) { return linbuf[currentcolumn]; }
 
+/*
+    getsym - lexical analyzer, filling env->yylval and returning the token type
+             in symb.
+*/
 PUBLIC void getsym(pEnv env)
 {
-    int i = 0;
+    int i = 0, start, next;
     char string[INPLINEMAX];
 
-Start:
+start:
     while (ch <= ' ')
-        getch();
+        getch(env);
     switch (ch) {
     case '(':
-        getch();
+        getch(env);
         if (ch == '*') {
-            getch();
+            getch(env);
             do {
                 while (ch != '*')
-                    getch();
-                getch();
+                    getch(env);
+                getch(env);
             } while (ch != ')');
-            getch();
-            goto Start;
+            getch(env);
+            goto start;
         }
-        symb = LPAREN;
+        env->symb = LPAREN;
         return;
     case '#':
         currentcolumn = linelength;
-        getch();
-        goto Start;
+        getch(env);
+        goto start;
     case ')':
-        symb = RPAREN;
-        getch();
+        env->symb = RPAREN;
+        getch(env);
         return;
     case '[':
-        symb = LBRACK;
-        getch();
+        env->symb = LBRACK;
+        getch(env);
         return;
     case ']':
-        symb = RBRACK;
-        getch();
+        env->symb = RBRACK;
+        getch(env);
         return;
     case '{':
-        symb = LBRACE;
-        getch();
+        env->symb = LBRACE;
+        getch(env);
         return;
     case '}':
-        symb = RBRACE;
-        getch();
+        env->symb = RBRACE;
+        getch(env);
         return;
     case '.':
-        symb = PERIOD;
-        getch();
+        env->symb = PERIOD;
+        getch(env);
         return;
     case ';':
-        symb = SEMICOL;
-        getch();
+        env->symb = SEMICOL;
+        getch(env);
         return;
     case '\'':
-        getch();
+        getch(env);
         if (ch == '\\')
-            ch = specialchar();
+            ch = specialchar(env);
         env->yylval.num = ch;
-        symb = CHAR_;
-        getch();
+        env->symb = CHAR_;
+        getch(env);
         return;
     case '"':
-        getch();
+        getch(env);
         while (ch != '"' && !endofbuffer()) {
             if (ch == '\\')
-                ch = specialchar();
+                ch = specialchar(env);
             string[i++] = ch;
-            getch();
+            getch(env);
         }
-        string[i] = '\0';
-        getch();
+        string[i] = 0;
+        getch(env);
         env->yylval.str = GC_strdup(string);
-        symb = STRING_;
+        env->symb = STRING_;
         return;
     case '-': /* PERHAPS unary minus */
     case '0':
@@ -286,106 +311,116 @@ Start:
     case '8':
     case '9':
         if (isdigit(ch) || isdigit(peek())) {
-            int start = currentcolumn - 1, next;
+            start = currentcolumn - 1;
             if (ch == '-')
-                getch();
+                getch(env);
             else if (ch == '0') {
                 if ((next = peek()) == 'x' || next == 'X') {
-                    getch();
+                    getch(env);
                     do
-                        getch();
+                        getch(env);
                     while (isxdigit(ch));
                     goto done;
                 } else if (isdigit(next)) {
                     do
-                        getch();
+                        getch(env);
                     while (ch >= '0' && ch <= '7');
                     goto done;
                 }
             }
             while (isdigit(ch))
-                getch();
+                getch(env);
             if (ch == '.' && isdigit(peek())) {
                 do
-                    getch();
+                    getch(env);
                 while (isdigit(ch));
                 if (ch == 'e' || ch == 'E') {
-                    getch();
+                    getch(env);
                     if (ch == '-' || ch == '+')
-                        getch();
+                        getch(env);
                     while (isdigit(ch))
-                        getch();
+                        getch(env);
                 }
-                env->yylval.dbl = strtod(&linbuf[start], NULL);
-                symb = FLOAT_;
+                env->yylval.dbl = strtod(&linbuf[start], 0);
+                env->symb = FLOAT_;
                 return;
             }
         done:
-            env->yylval.num = strtol(&linbuf[start], NULL, 0); /* BIT_32 */
-            symb = INTEGER_;
+            env->yylval.num = strtol(&linbuf[start], 0, 0); /* BIT_32 */
+            env->symb = INTEGER_;
             return;
         }
-	goto not_unary_minus;
-not_unary_minus:
+        goto not_unary_minus;
+    not_unary_minus:
     /* ELSE '-' is not unary minus, fall through */
     default:
         do {
             if (i < ALEN - 1)
-                ident[i++] = ch;
-            getch();
+                env->ident[i++] = ch;
+            getch(env);
         } while (isalnum(ch) || strchr("-=_", ch));
-        ident[i] = '\0';
-        if (isupper((int)ident[1])) {
-            if (strcmp(ident, "LIBRA") == 0 || strcmp(ident, "DEFINE") == 0) {
-                symb = LIBRA;
+        if (ch == '.') {
+            next = peek();
+            if (isalnum(next) || strchr("-=_", next)) {
+                do {
+                    if (i < ALEN - 1)
+                        env->ident[i++] = ch;
+                    getch(env);
+                } while (isalnum(ch) || strchr("-=_", ch));
+            }
+        }
+        env->ident[i] = 0;
+        if (isupper((int)env->ident[1])) {
+            if (!strcmp(env->ident, "LIBRA") || !strcmp(env->ident, "DEFINE")) {
+                env->symb = LIBRA;
                 return;
             }
-            if (strcmp(ident, "HIDE") == 0) {
-                symb = HIDE;
+            if (!strcmp(env->ident, "HIDE")) {
+                env->symb = HIDE;
                 return;
             }
-            if (strcmp(ident, "IN") == 0) {
-                symb = IN;
+            if (!strcmp(env->ident, "IN")) {
+                env->symb = IN;
                 return;
             }
-            if (strcmp(ident, "END") == 0) {
-                symb = END;
+            if (!strcmp(env->ident, "END")) {
+                env->symb = END;
                 return;
             }
-            if (strcmp(ident, "MODULE") == 0) {
-                symb = MODULE;
+            if (!strcmp(env->ident, "MODULE")) {
+                env->symb = MODULE;
                 return;
             }
-            if (strcmp(ident, "PRIVATE") == 0) {
-                symb = JPRIVATE;
+            if (!strcmp(env->ident, "PRIVATE")) {
+                env->symb = JPRIVATE;
                 return;
             }
-            if (strcmp(ident, "PUBLIC") == 0) {
-                symb = JPUBLIC;
+            if (!strcmp(env->ident, "PUBLIC")) {
+                env->symb = JPUBLIC;
                 return;
             }
             /* possibly other uppers here */
         }
-        if (strcmp(ident, "==") == 0) {
-            symb = EQDEF;
+        if (!strcmp(env->ident, "==")) {
+            env->symb = EQDEF;
             return;
         }
-        if (strcmp(ident, "true") == 0) {
-            symb = BOOLEAN_;
+        if (!strcmp(env->ident, "true")) {
+            env->symb = BOOLEAN_;
             env->yylval.num = 1;
             return;
         }
-        if (strcmp(ident, "false") == 0) {
-            symb = BOOLEAN_;
+        if (!strcmp(env->ident, "false")) {
+            env->symb = BOOLEAN_;
             env->yylval.num = 0;
             return;
         }
-        if (strcmp(ident, "maxint") == 0) {
-            symb = INTEGER_;
-            env->yylval.num = (long_t)MAXINT;
+        if (!strcmp(env->ident, "maxint")) {
+            env->symb = INTEGER_;
+            env->yylval.num = MAXINT;
             return;
         }
-        symb = ATOM;
+        env->symb = ATOM;
         return;
     }
 }

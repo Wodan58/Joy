@@ -1,0 +1,8 @@
+(*
+    module  : opcase.joy
+    version : 1.1
+    date    : 04/11/22
+*)
+'A [['A [char] first] [10 [integer] first] [[other] first]] opcase i.
+10 [['A [char] first] [10 [integer] first] [[other] first]] opcase i.
+1.1 [['A [char] first] [10 [integer] first] [[other] first]] opcase i.

@@ -1,0 +1,12 @@
+(*
+    module  : test18.joy
+    version : 1.1
+    date    : 04/11/22
+*)
+DEFINE	cnr-ack ==
+            [ [ [null]  [popd succ] ] (* memory error *)
+            [ [null]  [pop pred 1]  [] ]
+            [ [[dup pred swap] dip pred]  []  [] ] ]
+        condnestrec.
+
+3 4 cnr-ack.

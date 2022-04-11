@@ -1,7 +1,7 @@
 /*
     module  : setundeferror.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 04/11/22
 */
 #ifndef SETUNDEFERROR_C
 #define SETUNDEFERROR_C
@@ -12,8 +12,6 @@ Sets flag that controls behavior of undefined functions
 (0 = no error, 1 = error).
 */
 USETOP(setundeferror_, "setundeferror", NUMERICTYPE,
-    undeferror = nodevalue(env->stck).num)
-
-
+    env->undeferror = nodevalue(env->stck).num)
 
 #endif

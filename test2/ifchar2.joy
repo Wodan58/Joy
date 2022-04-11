@@ -1,0 +1,7 @@
+(*
+    module  : ifchar2.joy
+    version : 1.1
+    date    : 04/11/22
+*)
+# argv 1 at 10 strtol chr [[char] first] [[nochar] first] ifchar.
+argv 1 at 10 strtol [[char] first] [[nochar] first] ifchar.

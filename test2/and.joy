@@ -1,0 +1,11 @@
+(*
+    module  : and.joy
+    version : 1.1
+    date    : 04/11/22
+*)
+false false and.
+false true and.
+true false and.
+true true and.
+{1 2 3} {4 5 6} and.
+{1 2 3} {2 3 4} and.

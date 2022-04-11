@@ -2,7 +2,7 @@
 
 "jp-joyjoy" libload.						(* R.W. *)
 
-0 __settracegc.							(* R.W. *)
+0 __settracegc.
 1 setecho.
 (* testing the tracing versions of joy0:    joy0s  and  joy0l  *)
 

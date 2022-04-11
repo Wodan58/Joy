@@ -1,0 +1,7 @@
+(*
+    module  : unary42.joy
+    version : 1.1
+    date    : 04/11/22
+*)
+argv 1 at 10 strtol argv 2 at 10 strtol argv 3 at 10 strtol argv 4 at 10 strtol
+[succ] unary4....

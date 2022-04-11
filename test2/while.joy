@@ -1,0 +1,11 @@
+(*
+    module  : while.joy
+    version : 1.1
+    date    : 04/11/22
+*)
+DEFINE	prime == 2 [[[dup * >] nullary [rem 0 >] dip and] nullary] [succ]
+	while dup * <;
+	space == 32 putch;
+	nl == '\n putch.
+
+2 20 [dup put space dup prime put nl succ] times pop.

@@ -1,0 +1,8 @@
+(*
+    module  : of.joy
+    version : 1.1
+    date    : 04/11/22
+*)
+2 [4 5 6] of.
+2 "test" of.
+2 {4 5 6} of.

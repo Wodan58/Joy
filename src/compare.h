@@ -1,14 +1,13 @@
 /*
     module  : compare.h
-    version : 1.4
-    date    : 08/02/21
+    version : 1.5
+    date    : 04/11/22
 */
 #ifndef COMPARE_H
 #define COMPARE_H
 
-PRIVATE double Compare(pEnv env, Index first, Index second, int *error)
+PRIVATE double Compare(pEnv env, Index first, Index second)
 {
-    *error = 0;
     switch (nodetype(first)) {
     case USR_:
         switch (nodetype(second)) {
@@ -33,6 +32,7 @@ PRIVATE double Compare(pEnv env, Index first, Index second, int *error)
                 opername(nodetype(second)));
         }
         break;
+#if 0
     case ANON_FUNCT_:
         switch (nodetype(second)) {
         case USR_:
@@ -52,6 +52,7 @@ PRIVATE double Compare(pEnv env, Index first, Index second, int *error)
             break;
         }
         break;
+#endif
     case BOOLEAN_:
         switch (nodetype(second)) {
         case USR_:
@@ -228,7 +229,6 @@ PRIVATE double Compare(pEnv env, Index first, Index second, int *error)
         }
         break;
     }
-    *error = 1;
-    return 0;
+    return 1.0; /* uncomparable is different */
 }
 #endif

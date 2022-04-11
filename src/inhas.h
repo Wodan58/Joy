@@ -1,7 +1,7 @@
 /*
     module  : inhas.h
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 04/11/22
 */
 #ifndef INHAS_H
 #define INHAS_H
@@ -9,7 +9,7 @@
 #define INHAS(PROCEDURE, NAME, AGGR, ELEM)                                     \
     PRIVATE void PROCEDURE(pEnv env)                                           \
     {                                                                          \
-        int found = 0, error;                                                  \
+        int found = 0;                                                         \
         TWOPARAMS(NAME);                                                       \
         switch (nodetype(AGGR)) {                                              \
         case SET_:                                                             \
@@ -27,7 +27,7 @@
         }                                                                      \
         case LIST_: {                                                          \
             Index n = nodevalue(AGGR).lis;                                     \
-            while (n != NULL && (Compare(env, n, ELEM, &error) || error))      \
+            while (n && Compare(env, n, ELEM))                                 \
                 n = nextnode1(n);                                              \
             found = n != NULL;                                                 \
             break;                                                             \

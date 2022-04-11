@@ -1,0 +1,11 @@
+(*
+    module  : fget.joy
+    version : 1.1
+    date    : 04/11/22
+*)
+"fget.joy" "r" fopen fget.
+"factor from fget.joy"
+fget.
+"another factor from fget.joy"
+fget.
+"and yet another factor"

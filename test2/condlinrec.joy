@@ -1,0 +1,12 @@
+(*
+    module  : condlinrec.joy
+    version : 1.1
+    date    : 04/11/22
+*)
+DEFINE	over == swap dup swapd.
+
+DEFINE	ack == [[[dup null] [pop succ]]
+		[[over null] [popd pred 1 swap] []]
+		[[dup rollup [pred] dip] [swap pred ack]]] condlinrec.
+
+[[4 0]] [i swap ack] map.

@@ -1,8 +1,8 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.38
- *  date    : 06/28/21
+ *  version : 1.39
+ *  date    : 04/11/22
  */
 
 /*
@@ -114,21 +114,18 @@ some of the code.
 
 Manfred von Thun, 2006
 */
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <setjmp.h>
-#include <time.h>
-#ifdef GC_BDW
-#include <gc.h>
-#endif
-#include "gc.h"
 #define ALLOC
 #include "globals.h"
 
+#define DONT_READ_AHEAD 0
+#define READ_PRIV_AHEAD 1
+
+static jmp_buf begin;
+
 /*
-    Initialize the symbol table with builtins.
-*/
+ *   Initialise the symbol table with builtins. There is no need to classify
+ *   builtins.
+ */
 PUBLIC void inisymboltable(pEnv env) /* initialise */
 {
     int i, rv;
@@ -138,92 +135,76 @@ PUBLIC void inisymboltable(pEnv env) /* initialise */
 #ifdef NOBDW
     env->memory = GC_malloc(MEMORYMAX * sizeof(Node));
 #endif
-    env->symtab = 0;
     env->hash = kh_init(Symtab);
     for (i = 0; (ent.name = opername(i)) != 0; i++) {
-        ent.is_module = ent.is_local = 0;
         ent.u.proc = operproc(i);
-        ent.next = 0;
         key = kh_put(Symtab, env->hash, ent.name, &rv);
         kh_value(env->hash, key) = i;
         vec_push(env->symtab, ent);
     }
-    firstlibra = symtabindex = i;
+    env->firstlibra = i;
 }
 
 /*
-    Global identifiers are stored at location.
-*/
-PRIVATE void enterglobal(pEnv env)
+ *   Global identifiers are stored at location. The hash table uses a classified
+ *   name. The name parameter has already been allocated.
+ */
+PRIVATE void enterglobal(pEnv env, char *name)
 {
     int rv;
     Entry ent;
     khiter_t key;
 
-    ent.name = GC_strdup(ident);
-    ent.is_module = ent.is_local = 0;
+    env->location = vec_size(env->symtab);
+    ent.name = name;
     ent.u.body = 0; /* may be assigned in definition */
-    ent.next = 0;
     key = kh_put(Symtab, env->hash, ent.name, &rv);
-    kh_value(env->hash, key) = location = symtabindex++;
+    kh_value(env->hash, key) = env->location;
     vec_push(env->symtab, ent);
 }
 
 /*
-    Lookup first searches ident in the local symbol tables; if not found in the
-    global symbol table; if still not found enters ident in the global table.
-*/
-PUBLIC void lookup(pEnv env, int priv)
+ *   Lookup first searches ident in the local symbol tables, if not found in the
+ *   global symbol table, if still not found enters ident in the global table.
+ */
+PUBLIC void lookup(pEnv env)
 {
-    int i;
-    khiter_t key;
-    Entry ent;
-
-    location = 0;
-    for (i = display_lookup; i > 0; i--) {
-        location = display[i];
-        while (location) {
-            ent = vec_at(env->symtab, location);
-            if (!strcmp(ident, ent.name)) /* found in local table */
-                return;
-            location = ent.next;
-        }
-    }
-
-    if ((key = kh_get(Symtab, env->hash, ident)) != kh_end(env->hash))
-        location = kh_value(env->hash, key);
-
-    if (!priv && (!location || vec_at(env->symtab, location).is_local))
-        enterglobal(env); /* not found, enter in global */
+    /*
+     * Sequential search in the local tables is replaced by a search in the
+     * hash table, where each entry receives a unique key built from module +
+     * name, or section number + name, separated by a full stop. The hash table
+     * thus contains local symbols, but each local section has its own numeric
+     * identifier. Local symbols are only accessable from their accompanying
+     * public sections. In case a qualified symbol cannot be found, it is
+     * entered as classified symbol in the symbol table. Global symbols are not
+     * added during the first time read of private sections.
+     */
+    if ((env->location = qualify(env, env->ident)) == 0)
+        /* not found, enter in global */
+        enterglobal(env, GC_strdup(env->ident));
 }
 
 /*
-    Enteratom enters a symbol in the symbol table, maybe a local symbol.
-*/
+ *   Enteratom enters a symbol in the symbol table, maybe a local symbol. This
+ *   local symbol is also added to the hash table, but in its classified form.
+ */
 PRIVATE void enteratom(pEnv env, int priv)
 {
-    int rv;
-    Entry ent;
-    khiter_t key;
-
-    if (priv && display_enter > 0) {
-        ent.name = GC_strdup(ident);
-        ent.is_local = 1;
-        ent.is_module = 0;
-        ent.u.body = 0; /* may be assigned later */
-        ent.next = display[display_enter];
-        display[display_enter] = symtabindex;
-        key = kh_put(Symtab, env->hash, ent.name, &rv);
-        kh_value(env->hash, key) = location = symtabindex++;
-        vec_push(env->symtab, ent);
-    } else
-        lookup(env, 0);
+    /*
+     *   Local symbols are only added during the first read of private sections
+     *   and plublic sections of a module.
+     *   They should be found during the second read.
+     */
+    if (priv)
+        enterglobal(env, classify(env, env->ident));
+    else
+        lookup(env);
 }
 
 /*
-    The rest of these procedures is not affected by the change of the symbol
-    table implementation.
-*/
+ *   The rest of these procedures is not affected by the change of the symbol
+ *   table implementation.
+ */
 PRIVATE void defsequence(pEnv env, int priv); /* forward */
 PRIVATE void compound_def(pEnv env, int priv); /* forward */
 
@@ -231,18 +212,19 @@ PRIVATE void definition(pEnv env, int priv)
 {
     pEntry here = NULL;
 
-    if (symb == LIBRA || symb == JPRIVATE || symb == HIDE || symb == MODULE) {
+    if (env->symb == LIBRA || env->symb == JPRIVATE || env->symb == HIDE
+        || env->symb == MODULE) {
         compound_def(env, priv);
-        if (symb == END || symb == PERIOD)
+        if (env->symb == END || env->symb == PERIOD)
             getsym(env);
         else
-            error(" END or period '.' expected in compound definition");
+            error(env, " END or period '.' expected in compound definition");
         return;
     }
 
-    if (symb != ATOM)
+    if (env->symb != ATOM)
         /*   NOW ALLOW EMPTY DEFINITION:
-              { error("atom expected at start of definition");
+              { error(env, "atom expected at start of definition");
                 abortexecution_(); }
         */
         return;
@@ -250,105 +232,83 @@ PRIVATE void definition(pEnv env, int priv)
     /* symb == ATOM : */
     if (!priv) {
         enteratom(env, priv);
-        if (location < firstlibra) {
+        if (env->location < env->firstlibra) {
             printf("warning: overwriting inbuilt '%s'\n",
-                vec_at(env->symtab, location).name);
-            enterglobal(env);
+                vec_at(env->symtab, env->location).name);
+            enterglobal(env, GC_strdup(env->ident));
         }
-        here = location;
+        here = env->location;
     }
     getsym(env);
-    if (symb == EQDEF)
+    if (env->symb == EQDEF)
         getsym(env);
     else
-        error(" == expected in definition");
+        error(env, " == expected in definition");
     readterm(env, priv);
     if (!priv) {
-        if (here != NULL)
+        if (here)
             vec_at(env->symtab, here).u.body = nodevalue(env->stck).lis;
         env->stck = nextnode1(env->stck);
     }
 }
 
+/*
+ *   defsequence - when reading the private section ahead, symbols are entered
+ *                 in the symbol table, such that local symbols can call each
+ *                 other.
+ */
 PRIVATE void defsequence(pEnv env, int priv)
 {
     if (priv)
         enteratom(env, priv);
     definition(env, priv);
-    while (symb == SEMICOL) {
+    while (env->symb == SEMICOL) {
         getsym(env);
-        if (priv && symb <= ATOM)
+        if (priv && env->symb == ATOM)
             enteratom(env, priv);
         definition(env, priv);
     }
-}
-
-PRIVATE void enterdisplay(pEnv env)
-{
-    if (++display_enter >= DISPLAYMAX)
-        execerror(env, "index", "display");
 }
 
 PRIVATE void compound_def(pEnv env, int priv)
 {
     int linenum;
     long offset;
-    pEntry here = NULL, oldplace;
 
-    switch (symb) {
+    switch (env->symb) {
     case MODULE:
         getsym(env);
-        if (symb != ATOM) {
-            error("atom expected as name of module");
+        if (env->symb != ATOM) {
+            error(env, "atom expected as name of module");
             abortexecution_(env);
         }
-        if (!priv) {
-            enteratom(env, priv);
-            here = location;
-        }
+        /* initmod adds ident to the module stack */
+        initmod(env, env->ident);
         getsym(env);
-        ++display_lookup;
-        enterdisplay(env);
-        if (priv)
-            display[display_enter] = NULL;
         compound_def(env, priv);
-        if (!priv) {
-            vec_at(env->symtab, here).is_module = 1;
-            vec_at(env->symtab, here).u.module_fields = display[display_enter];
-        }
-        --display_enter;
-        --display_lookup;
+        /* exitmod deregisters a module */
+        exitmod();
         break;
     case JPRIVATE:
     case HIDE:
-        if (!priv) {
-            if ((offset = ftell(srcfile)) < 0)
+        if (!priv && !isatty(fileno(env->srcfile))) {
+            if ((offset = ftell(env->srcfile)) < 0)
                 execerror(env, "ftell", "HIDE");
             linenum = getlinenum();
-            compound_def(env, 1);
-            if (fseek(srcfile, offset, 0))
+            compound_def(env, READ_PRIV_AHEAD);
+            if (fseek(env->srcfile, offset, 0))
                 execerror(env, "fseek", "HIDE");
             resetlinebuffer(linenum);
         }
         getsym(env);
-        if (display_lookup > display_enter) {
-            /* already inside module or hide */
-            oldplace = display[display_lookup];
-            enterdisplay(env);
-            defsequence(env, priv);
-            --display_enter;
-            compound_def(env, priv);
-            display[display_lookup] = oldplace;
-        } else {
-            ++display_lookup;
-            enterdisplay(env);
-            if (priv)
-                display[display_enter] = NULL;
-            defsequence(env, priv);
-            --display_enter;
-            compound_def(env, priv);
-            --display_lookup;
-        }
+        /* initpriv adds the hide number to the hide stack */
+        initpriv(env, priv);
+        defsequence(env, priv);
+        /* stoppriv registers the transition from private to public */
+        stoppriv();
+        compound_def(env, priv);
+        /* exitpriv lowers the hide stack after reading the public section */
+        exitpriv();
         break;
     case JPUBLIC:
     case LIBRA:
@@ -361,8 +321,6 @@ PRIVATE void compound_def(pEnv env, int priv)
         break;
     }
 }
-
-static jmp_buf begin;
 
 PUBLIC void abortexecution_(pEnv env)
 {
@@ -379,9 +337,7 @@ PUBLIC void execerror(pEnv env, char *message, char *op)
     abortexecution_(env);
 }
 
-static int mustinclude = 1;
-
-#define CHECK(D, NAME)                                                         \
+#define DUMP_CHECK(D, NAME)                                                    \
     if (D) {                                                                   \
         printf("->  %s is not empty:\n", NAME);                                \
         writeterm(&env, D, stdout);                                            \
@@ -389,125 +345,175 @@ static int mustinclude = 1;
     }
 
 #ifdef STATS
-static void report_clock(void)
+PRIVATE void report_clock(void)
 {
     double timediff;
-
 #ifdef NOBDW
-    double gclock, gcdiff;
+    double gcdiff, gclock;
+#endif
 
     timediff = clock() - startclock;
+#ifdef NOBDW
     gcdiff = (double)gc_clock * 100 / timediff;
-    timediff /= CLOCKS_PER_SEC;
-    gclock = (double)gc_clock / CLOCKS_PER_SEC;
-#else
-    timediff = (double)(clock() - startclock) / CLOCKS_PER_SEC;
 #endif
+    timediff /= CLOCKS_PER_SEC;
     fprintf(stderr, "%.2f seconds CPU to execute\n", timediff);
 #ifdef NOBDW
+    gclock = (double)gc_clock / CLOCKS_PER_SEC;
     fprintf(stderr, "%.2f seconds CPU for gc (=%.0f%%)\n", gclock, gcdiff);
 #endif
 }
 #endif
 
+/*
+ *   copyright - Print all copyright notices, even the historical ones.
+ *
+ *   The version must be set on the commandline: -DJVERSION="\"alpha\""
+ *   or whatever.
+ */
+PRIVATE void copyright(char *file)
+{
+    int i;
+    char str[INPLINEMAX];
+
+    static struct {
+        char *file;
+        time_t stamp;
+        char *gc;
+    } table[] = { { "jp-joytst.joy", 994075177, "NOBDW" },
+        { "joytut.inp", 994075177, "NOBDW" },
+        { "laztst.joy", 1005579152, "BDW" },
+        { "symtst.joy", 1012575285, "BDW" },
+        { "plgtst.joy", 1012575285, "BDW" },
+        { "lsptst.joy", 1012575285, "BDW" },
+        { "mtrtst.joy", 1017847160, "BDW" },
+        { "grmtst.joy", 1017847160, "BDW" },
+        { "reptst.joy", 1047653638, "NOBDW" },
+        { "jp-reprodtst.joy", 1047653638, "NOBDW" },
+        { "flatjoy.joy", 1047653638, "NOBDW" },
+        { "modtst.joy", 1047920271, "BDW" }, { 0, 1056113062, "NOBDW" },
+        { 0, 0, 0 } };
+
+    if (file) {
+        for (i = 0;; i++) {
+            if (!table[i].file || !strcmp(file, table[i].file)) {
+                strftime(str, sizeof(str), "%H:%M:%S on %b %e %Y",
+                    gmtime(&table[i].stamp));
+                printf("JOY  -  compiled at %s (%s)\n", str, table[i].gc);
+                break;
+            }
+        }
+    } else {
+        printf("JOY  -  compiled at %s on %s", __TIME__, __DATE__);
+        printf(JVERSION ? " (%s)\n" : "\n", JVERSION);
+    }
+    printf("Copyright 2001 by Manfred von Thun\n");
+}
+
 int start_main(int argc, char **argv)
 {
+    int i, j;
     FILE *fp;
+    char *filename = 0;
+    unsigned char verbose = 0, mustinclude = 1;
 
     Env env; /* memory, symbol table, stack, and buckets */
 
-    g_argc = argc;
-    g_argv = argv;
-    if (argc > 1) {
-        g_argc--;
-        g_argv++;
-        if ((srcfile = fopen(argv[1], "r")) == 0) {
-            printf("failed to open the file '%s'.\n", argv[1]);
-            exit(0);
-        }
-        inilinebuffer(argv[1]);
-        if (!strcmp(argv[1], "joytut.inp")
-            || !strcmp(argv[1], "jp-joytst.joy")) {
-            printf("JOY  -  compiled at 11:59:37 on Jul  2 2001 (NOBDW)\n");
-            printf("Copyright 2001 by Manfred von Thun\n");
-        }
-        if (!strcmp(argv[1], "laztst.joy")) {
-            printf("JOY  -  compiled at 15:32:32 on Nov 12 2001 (BDW)\n");
-            printf("Copyright 2001 by Manfred von Thun\n");
-        }
-        if (!strcmp(argv[1], "lsptst.joy") || !strcmp(argv[1], "plgtst.joy")
-            || !strcmp(argv[1], "symtst.joy")) {
-            printf("JOY  -  compiled at 14:54:45 on Feb  1 2002 (BDW)\n");
-            printf("Copyright 2001 by Manfred von Thun\n");
-        }
-        if (!strcmp(argv[1], "grmtst.joy") || !strcmp(argv[1], "mtrtst.joy")) {
-            printf("JOY  -  compiled at 15:19:20 on Apr  3 2002 (BDW)\n");
-            printf("Copyright 2001 by Manfred von Thun\n");
-        }
-        if (!strcmp(argv[1], "modtst.joy")) {
-            printf("JOY  -  compiled at 16:57:51 on Mar 17 2003 (BDW)\n");
-            printf("Copyright 2001 by Manfred von Thun\n");
-        }
-    } else {
-        srcfile = stdin;
-        inilinebuffer(0);
-#ifdef NOBDW
-        printf("JOY  -  compiled at %s on %s (NOBDW)\n", __TIME__, __DATE__);
-#else
-#ifdef GC_BDW
-        printf("JOY  -  compiled at %s on %s (BDW)\n", __TIME__, __DATE__);
-#else
-        printf("JOY  -  compiled at %s on %s (MINBDW)\n", __TIME__, __DATE__);
-#endif
-#endif
-        printf("Copyright 2001 by Manfred von Thun\n");
-    }
+    /*
+     *    Start the clock. The clock is a global variable, because it is read
+     *    during atexit(). Atexit is needed, because scan.c calls quit_ that
+     *    calls exit when reading end of file.
+     */
     startclock = clock();
-#ifdef NOBDW
-    gc_clock = 0;
-#endif
 #ifdef STATS
     atexit(report_clock);
 #endif
-    echoflag = INIECHOFLAG;
-    autoput = INIAUTOPUT;
+    /*
+     *    Initialize srcfile and other environmental parameters.
+     */
+    memset(&env, 0, sizeof(env));
+    env.srcfile = stdin;
+    /*
+     *    First look for options. They start with -.
+     */
+    for (i = 0; i < argc; i++)
+        if (argv[i][0] == '-') {
+            for (j = 1; argv[i][j]; j++) {
+                if (argv[i][j] == 'd')
+                    env.debugging = 1;
+                if (argv[i][j] == 'v')
+                    verbose = 1;
+            }
+            /*
+                Overwrite the options with subsequent parameters.
+            */
+            for (--argc; i < argc; i++)
+                argv[i] = argv[i + 1];
+            break;
+        }
+    /*
+     *    Look for a possible filename parameter. Filenames cannot start with -
+     *    and cannot start with a digit, unless quoted.
+     */
+    for (i = 1; i < argc; i++)
+        if (!isdigit(argv[i][0])) {
+            if ((env.srcfile = freopen(filename = argv[i], "r", stdin)) == 0) {
+                fprintf(stderr, "failed to open the file '%s'.\n", filename);
+                return 0;
+            }
+            /*
+             *    Overwrite argv[0] with the filename and shift subsequent
+             *   parameters.
+             */
+            argv[0] = filename;
+            for (--argc; i < argc; i++)
+                argv[i] = argv[i + 1];
+            break;
+        }
+    env.g_argc = argc;
+    env.g_argv = argv;
+    if (verbose)
+        copyright(filename);
+    env.autoput = INIAUTOPUT;
+    env.echoflag = INIECHOFLAG;
+    env.undeferror = INIUNDEFERROR;
+    inilinebuffer(&env, filename);
     inisymboltable(&env);
-    display[0] = NULL;
     env.stck = NULL;
 #ifdef NOBDW
-    tracegc = INITRACEGC;
+    env.tracegc = INITRACEGC;
+    gc_clock = 0;
     inimem1(&env);
     inimem2(&env);
 #endif
     setjmp(begin);
-    setbuf(stdout, 0);
-    while (1) {
-        if (mustinclude) {
-            mustinclude = 0;
-            if ((fp = fopen("usrlib.joy", "r")) != 0) {
-                fclose(fp);
-                doinclude(&env, "usrlib.joy");
-            }
+    if (mustinclude) {
+        mustinclude = 0;
+        if ((fp = fopen("usrlib.joy", "r")) != 0) {
+            fclose(fp);
+            doinclude(&env, "usrlib.joy");
         }
+    }
+    while (1) {
         getsym(&env);
-        if (symb == LIBRA || symb == HIDE || symb == MODULE) {
+        if (env.symb == LIBRA || env.symb == HIDE || env.symb == MODULE) {
 #ifdef NOBDW
             inimem1(&env);
 #endif
-            compound_def(&env, 0);
+            compound_def(&env, DONT_READ_AHEAD);
 #ifdef NOBDW
             inimem2(&env);
 #endif
         } else {
-            readterm(&env, 0);
+            readterm(&env, DONT_READ_AHEAD);
             if (env.stck) {
 #ifdef NOBDW
                 env.prog = env.memory[env.stck].u.lis;
                 env.stck = env.memory[env.stck].next;
                 env.conts = NULL;
 #else
-                env.prog = env.stck->u.lis;
-                env.stck = env.stck->next;
+                env.prog = nodevalue(env.stck).lis;
+                env.stck = nextnode1(env.stck);
 #endif
                 exeterm(&env, env.prog);
             }
@@ -515,27 +521,27 @@ int start_main(int argc, char **argv)
             if (env.conts || env.dump || env.dump1 || env.dump2 || env.dump3
                 || env.dump4 || env.dump5) {
                 printf("the dumps are not empty\n");
-                CHECK(env.conts, "conts");
-                CHECK(env.dump, "dump");
-                CHECK(env.dump1, "dump1");
-                CHECK(env.dump2, "dump2");
-                CHECK(env.dump3, "dump3");
-                CHECK(env.dump4, "dump4");
-                CHECK(env.dump5, "dump5");
+                DUMP_CHECK(env.conts, "conts");
+                DUMP_CHECK(env.dump, "dump");
+                DUMP_CHECK(env.dump1, "dump1");
+                DUMP_CHECK(env.dump2, "dump2");
+                DUMP_CHECK(env.dump3, "dump3");
+                DUMP_CHECK(env.dump4, "dump4");
+                DUMP_CHECK(env.dump5, "dump5");
             }
 #endif
             if (env.stck) {
-                if (autoput == 2)
+                if (env.autoput == 2)
                     writeterm(&env, env.stck, stdout);
-                else if (autoput == 1) {
-                    writefactor(&env, env.stck, stdout);
+                else if (env.autoput == 1) {
+                    my_writefactor(&env, env.stck, stdout);
 #ifdef NOBDW
                     env.stck = env.memory[env.stck].next;
 #else
-                    env.stck = env.stck->next;
+                    env.stck = nextnode1(env.stck);
 #endif
                 }
-                printf("\n");
+                putchar('\n');
             }
         }
     }

@@ -1,0 +1,17 @@
+(*
+    module  : linrec.joy
+    version : 1.1
+    date    : 04/11/22
+*)
+DEFINE	over == swap dup swapd.
+
+DEFINE	from-to == [] cons [pop pop] swoncat [over over >] swap
+	[[dup succ] dip] [cons] linrec;
+	swoncat == swap concat;
+	from-to-list == [] from-to.
+1 10 from-to-list .
+
+1 1000 [over over >] [pop pop []] [[dup succ] dip] [cons] linrec.
+
+__memorymax.	(* report maximum stack used *)
+__memoryindex.	(* report current stack size *)

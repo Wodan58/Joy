@@ -1,0 +1,14 @@
+(*
+    module  : some.joy
+    version : 1.1
+    date    : 04/11/22
+*)
+[1 2 3] [2 <] some.
+[1 2 3] [4 <] some.
+[1 2 3] [1 <] some.
+{1 2 3} [2 <] some.
+{1 2 3} [4 <] some.
+{1 2 3} [1 <] some.
+"test" ['t <] some.
+"test" ['u <] some.
+"test" ['e <] some.

@@ -1,0 +1,17 @@
+(*
+    module  : small.joy
+    version : 1.1
+    date    : 04/11/22
+*)
+[] small.
+[1] small.
+[1 2] small.
+"" small.
+"t" small.
+"test" small.
+{} small.
+{1} small.
+{1 2} small.
+0 small.
+1 small.
+2 small.

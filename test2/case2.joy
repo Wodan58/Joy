@@ -1,0 +1,10 @@
+(*
+    module  : case2.joy
+    version : 1.1
+    date    : 04/11/22
+*)
+DEFINE	test == [[1 [one] first]
+		 [2 [two] first]
+		 [pop [other] first]] case.
+
+argv 1 at 10 strtol test.

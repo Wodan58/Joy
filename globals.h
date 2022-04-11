@@ -1,13 +1,33 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.38
- *  date    : 07/20/21
+ *  version : 1.39
+ *  date    : 04/11/22
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
-/* #define BIT_32	*/
+#ifndef COSMO
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+#include <stdlib.h>
+#include <limits.h>
+#include <stdint.h>
+#include <setjmp.h>
+#include <assert.h>
+#include <math.h>
+#include <time.h>
+
+#ifdef _MSC_VER
+#include <io.h>
+#pragma warning(disable : 4267)
+#else
+#include <unistd.h>
+#endif
+#endif
+
+/* #define BIT_32 */
 
 #ifdef NULL
 #undef NULL
@@ -15,25 +35,21 @@
 #endif
 
 #ifdef NOBDW
-#define nodetype(n)	env->memory[(int)n].op
-#define nodevalue(n)	env->memory[(int)n].u
-#define nextnode1(n)	env->memory[(int)n].next
-#define nextnode2(n)	env->memory[nextnode1(n)].next
-#define nextnode3(n)	env->memory[nextnode2(n)].next
-#define nextnode4(n)	env->memory[nextnode3(n)].next
-#define nextnode5(n)	env->memory[nextnode4(n)].next
+#define nodetype(n) env->memory[(int)n].op
+#define nodevalue(n) env->memory[(int)n].u
+#define nextnode1(n) env->memory[(int)n].next
+#define nextnode2(n) env->memory[nextnode1(n)].next
+#define nextnode3(n) env->memory[nextnode2(n)].next
+#define nextnode4(n) env->memory[nextnode3(n)].next
+#define nextnode5(n) env->memory[nextnode4(n)].next
 #else
-#define nodetype(p)	(p)->op
-#define nodevalue(p)	(p)->u
-#define nextnode1(p)	(p)->next
-#define nextnode2(p)	(nextnode1(p))->next
-#define nextnode3(p)	(nextnode2(p))->next
-#define nextnode4(p)	(nextnode3(p))->next
-#define nextnode5(p)	(nextnode4(p))->next
-#endif
-
-#ifdef _MSC_VER
-#pragma warning(disable : 4267)
+#define nodetype(p) (p)->op
+#define nodevalue(p) (p)->u
+#define nextnode1(p) (p)->next
+#define nextnode2(p) (nextnode1(p))->next
+#define nextnode3(p) (nextnode2(p))->next
+#define nextnode4(p) (nextnode3(p))->next
+#define nextnode5(p) (nextnode4(p))->next
 #endif
 
 /*
@@ -118,6 +134,7 @@ REST_OF_UNIX_ESCAPES
 CORRECT_ALEN
 SAMETYPE_BUILTIN
 GETCH_AS_BUILTIN
+CORRECT_SETMEMBER
 */
 
 /*
@@ -131,18 +148,24 @@ REMOVE_UNUSED_ERRORCOUNT
 CHECK_END_SYMBOL
 NOT_ALSO_FOR_FLOAT
 NOT_ALSO_FOR_FILE
+FGET_FROM_FILE
+TRACK_USED_SYMBOLS
 DEBUG
 */
 
 /*
     The following #defines are present in the source code.
-    They have NOT been accepted.
+    They have NOT been accepted. They can be enabled when compiling.
 
-TRACK_USED_SYMBOLS
+ENABLE_TRACEGC
 TRACING
 STATS
-ENABLE_TRACEGC
 */
+#ifndef NOBDW
+#ifdef ENABLE_TRACEGC
+#undef ENABLE_TRACEGC
+#endif
+#endif
 
 /*
     The following #defines are present in the source code.
@@ -150,7 +173,6 @@ ENABLE_TRACEGC
     Note: strdup, snprintf, localtime_r, gmtime_r are not available
     when compiling with -ansi.
 */
-#define FGET_FROM_FILE
 
 /*
     The following #defines are present in the source code.
@@ -162,13 +184,14 @@ ENABLE_TRACEGC
 #define SHELLESCAPE '$'
 #define INPSTACKMAX 10
 #define INPLINEMAX 255
-#define ALEN 22
+#define ALEN 99
 #define SYMTABMAX 0
-#define DISPLAYMAX 10 /* nesting in HIDE & MODULE	*/
+#define DISPLAYMAX 10 /* nesting in HIDE & MODULE */
 #define MEMORYMAX 20000
 #define INIECHOFLAG 0
 #define INIAUTOPUT 1
 #define INITRACEGC 1
+#define INIUNDEFERROR 0
 
 /* installation dependent	*/
 #ifdef BIT_32
@@ -247,16 +270,18 @@ typedef unsigned pEntry;
 
 typedef struct Env *pEnv;
 
+/* clang-format off */
 typedef union {
-    long_t num;
-    long_t set;
-    char *str;
-    my_float_t dbl;
-    FILE *fil;
-    Index lis;
-    pEntry ent;
-    void (*proc)(pEnv);
+    long_t num;         /* USR, BOOLEAN, CHAR, INTEGER */
+    long_t set;         /* SET */
+    char *str;          /* STRING */
+    Index lis;          /* LIST */
+    my_float_t dbl;     /* FLOAT */
+    FILE *fil;          /* FILE */
+    pEntry ent;         /* SYMBOL */
+    void (*proc)(pEnv); /* ANON_FUNCT */
 } Types;
+/* clang-format on */
 
 typedef struct Node {
     Types u;
@@ -266,36 +291,42 @@ typedef struct Node {
 
 typedef struct Entry {
     char *name;
-    unsigned char is_local;
-    unsigned char is_module;
-#ifdef TRACK_USED_SYMBOLS
-    unsigned char is_used;
-#endif
-    pEntry next;
     union {
         Index body;
-        pEntry module_fields;
         void (*proc)(pEnv);
     } u;
 } Entry;
 
-#include "khash.h"
+#include "gc.h"
 #include "kvec.h"
+#include "khash.h"
 
 KHASH_MAP_INIT_STR(Symtab, pEntry)
 
 typedef struct Env {
+    vector(Entry) * symtab; /* symbol table */
+    khash_t(Symtab) * hash;
 #ifdef NOBDW
-    Node *memory;
-#endif
-    vector(Entry) *symtab;
-    khash_t(Symtab) *hash;
-#ifdef NOBDW
+    Node *memory; /* dynamic memory */
     Index prog, stck, conts, dump, dump1, dump2, dump3, dump4, dump5;
 #else
     Node *prog, *stck;
 #endif
-    Types yylval, bucket;
+    Types yylval, bucket; /* used by NEWNODE defines */
+    char *hide_stack[DISPLAYMAX];
+    char *module_stack[DISPLAYMAX];
+    FILE *srcfile; /* main */
+    char **g_argv;
+    int g_argc;
+    pEntry firstlibra; /* inioptable */
+    pEntry location; /* getsym */
+    Symbol symb; /* scanner */
+    char ident[ALEN];
+    unsigned char autoput;
+    unsigned char echoflag;
+    unsigned char undeferror;
+    unsigned char tracegc;
+    unsigned char debugging;
 } Env;
 
 #ifdef ALLOC
@@ -304,26 +335,10 @@ typedef struct Env {
 #define CLASS extern
 #endif
 
-CLASS FILE *srcfile;
-CLASS int g_argc;
-CLASS char **g_argv;
-CLASS int echoflag;
-CLASS int autoput;
-CLASS int undeferror;
-CLASS int startclock; /* main */
+CLASS clock_t startclock; /* main */
 #ifdef NOBDW
-CLASS int tracegc;
-CLASS int gc_clock;
+CLASS clock_t gc_clock;
 #endif
-CLASS Symbol symb; /* scanner */
-CLASS char ident[ALEN];
-CLASS int display_enter;
-CLASS int display_lookup;
-
-CLASS pEntry /* symbol table */
-    symtabindex,
-    display[DISPLAYMAX], firstlibra, /* inioptable */
-    location; /* getsym */
 
 /* GOOD REFS:
         005.133l H4732		A LISP interpreter in C
@@ -340,59 +355,46 @@ CLASS pEntry /* symbol table */
 */
 
 /* Public procedures: */
+/* interp.c */
 PUBLIC void exeterm(pEnv env, Index n);
-PUBLIC void inisymboltable(pEnv env); /* initialise */
 PUBLIC char *opername(int o);
 PUBLIC void (*operproc(int o))(pEnv env);
-PUBLIC void lookup(pEnv env, int priv);
+PUBLIC int opertype(int o);
+/* main.c */
+PUBLIC void inisymboltable(pEnv env); /* initialise */
+PUBLIC void lookup(pEnv env);
 PUBLIC void abortexecution_(pEnv env);
 PUBLIC void execerror(pEnv env, char *message, char *op);
-PUBLIC void quit_(pEnv env);
-PUBLIC void inilinebuffer(char *filnam);
+/* scan.c */
+PUBLIC void inilinebuffer(pEnv env, char *filnam);
 PUBLIC int getlinenum(void);
 PUBLIC void resetlinebuffer(int linenum);
-PUBLIC void error(char *message);
+PUBLIC void error(pEnv env, char *message);
 PUBLIC void doinclude(pEnv env, char *filnam);
 PUBLIC void getsym(pEnv env);
+/* utils.c */
+PUBLIC Index newnode(pEnv env, Operator o, Types u, Index r);
+PUBLIC void readterm(pEnv env, int priv);
+PUBLIC void my_writefactor(pEnv env, Index n, FILE *stm);
+PUBLIC void writeterm(pEnv env, Index n, FILE *stm);
+/* factor.c */
+PUBLIC void readfactor(pEnv env, int priv); /* read a JOY factor */
+PUBLIC void writefactor(pEnv env, Node *n, FILE *stm);
+/* module.c */
+PUBLIC void initmod(pEnv env, char *name);
+PUBLIC void initpriv(pEnv env, int priv);
+PUBLIC void stoppriv(void);
+PUBLIC void exitpriv(void);
+PUBLIC void exitmod(void);
+PUBLIC char *classify(pEnv env, char *name);
+PUBLIC pEntry qualify(pEnv env, char *name);
 #ifdef NOBDW
+/* utils.c */
+PUBLIC void printnode(pEnv env, Index p);
 PUBLIC void inimem1(pEnv env);
 PUBLIC void inimem2(pEnv env);
 PUBLIC void my_gc(pEnv env);
-#endif
-PUBLIC void printnode(pEnv env, Index p);
-PUBLIC Index newnode(pEnv env, Operator o, Types u, Index r);
-PUBLIC void readfactor(pEnv env, int priv); /* read a JOY factor */
-PUBLIC void readterm(pEnv env, int priv);
-PUBLIC void my_writefactor(pEnv env, Node *n, FILE *stm);
-#ifdef NOBDW
 PUBLIC void my_memorymax(pEnv env);
 PUBLIC void my_memoryindex(pEnv env);
 #endif
-PUBLIC void writefactor(pEnv env, Index n, FILE *stm);
-PUBLIC void writeterm(pEnv env, Index n, FILE *stm);
-
-#ifdef FGET_FROM_FILE
-PUBLIC void redirect(pEnv env, FILE *);
-#endif
-
-#define NEWNODE(o, u, r)                                                       \
-    (env->bucket.lis = newnode(env, o, u, r), env->bucket.lis)
-#define USR_NEWNODE(u, r) (env->bucket.ent = u, NEWNODE(USR_, env->bucket, r))
-#define ANON_FUNCT_NEWNODE(u, r)                                               \
-    (env->bucket.proc = u, NEWNODE(ANON_FUNCT_, env->bucket, r))
-#define BOOLEAN_NEWNODE(u, r)                                                  \
-    (env->bucket.num = u, NEWNODE(BOOLEAN_, env->bucket, r))
-#define CHAR_NEWNODE(u, r)                                                     \
-    (env->bucket.num = u, NEWNODE(CHAR_, env->bucket, r))
-#define INTEGER_NEWNODE(u, r)                                                  \
-    (env->bucket.num = u, NEWNODE(INTEGER_, env->bucket, r))
-#define SET_NEWNODE(u, r) (env->bucket.num = u, NEWNODE(SET_, env->bucket, r))
-#define STRING_NEWNODE(u, r)                                                   \
-    (env->bucket.str = u, NEWNODE(STRING_, env->bucket, r))
-#define LIST_NEWNODE(u, r)                                                     \
-    (env->bucket.lis = u, NEWNODE(LIST_, env->bucket, r))
-#define FLOAT_NEWNODE(u, r)                                                    \
-    (env->bucket.dbl = u, NEWNODE(FLOAT_, env->bucket, r))
-#define FILE_NEWNODE(u, r)                                                     \
-    (env->bucket.fil = u, NEWNODE(FILE_, env->bucket, r))
 #endif

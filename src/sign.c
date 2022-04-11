@@ -1,19 +1,10 @@
 /*
     module  : sign.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 04/11/22
 */
 #ifndef SIGN_C
 #define SIGN_C
-
-PRIVATE double fsgn(double f)
-{
-    if (f < 0)
-        return -1.0;
-    if (f > 0)
-        return 1.0;
-    return 0.0;
-}
 
 /**
 1440  sign  :  N1  ->  N2
@@ -22,6 +13,8 @@ or float N2 is the sign (-1.0 or 0.0 or 1.0) of float N1.
 */
 PRIVATE void sign_(pEnv env)
 {
+    double dbl;
+
     ONEPARAM("sign");
     /* start new */
     FLOAT("sign");
@@ -31,6 +24,15 @@ PRIVATE void sign_(pEnv env)
         return;
     }
     /* end new */
-    FLOAT_U(fsgn);
+    if (FLOATABLE) {
+        dbl = FLOATVAL;
+        if (dbl > 0.0)
+            dbl = 1.0;
+        else if (dbl < 0.0)
+            dbl = -1.0;
+        else
+            dbl = 0.0;
+        UNARY(FLOAT_NEWNODE, dbl);
+    }
 }
 #endif

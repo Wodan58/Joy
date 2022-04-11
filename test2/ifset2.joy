@@ -1,0 +1,8 @@
+(*
+    module  : ifset2.joy
+    version : 1.1
+    date    : 04/11/22
+*)
+argv 1 at 10 strtol argv 1 at 10 strtol argv 1 at 10 strtol {} cons cons cons
+[[set] first] [[noset] first] ifset.
+argv 1 at 10 strtol [[set] first] [[noset] first] ifset.

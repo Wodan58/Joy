@@ -1,8 +1,8 @@
 /* FILE: interp.c */
 /*
  *  module  : interp.c
- *  version : 1.49
- *  date    : 06/28/21
+ *  version : 1.50
+ *  date    : 04/11/22
  */
 
 /*
@@ -32,24 +32,25 @@
       b) fputchars (analogous, for specified file)
          fputstring (== fputchars for Heiko Kuhrt's program)
 */
-#include <stdio.h>
-#include <string.h>
-#include <ctype.h>
-#include <stdlib.h>
-#include <time.h>
-#include <math.h>
-#include "gc.h"
 #include "globals.h"
 
-void my_srand(unsigned num);
-int my_rand(void);
-
-#if 0
-PRIVATE void helpdetail_(pEnv env); /* this file */
-PRIVATE void undefs_(pEnv env);
-PRIVATE void make_manual(int style /* 0=plain, 1=html, 2=latex */);
-PRIVATE void manual_list_(pEnv env);
-#endif
+#define NEWNODE(o, u, r)                                                       \
+    (env->bucket.lis = newnode(env, o, u, r), env->bucket.lis)
+#define USR_NEWNODE(u, r) (env->bucket.ent = u, NEWNODE(USR_, env->bucket, r))
+#define ANON_FUNCT_NEWNODE(u, r)                                               \
+    (env->bucket.proc = u, NEWNODE(ANON_FUNCT_, env->bucket, r))
+#define BOOLEAN_NEWNODE(u, r)                                                  \
+    (env->bucket.num = u, NEWNODE(BOOLEAN_, env->bucket, r))
+#define CHAR_NEWNODE(u, r) (env->bucket.num = u, NEWNODE(CHAR_, env->bucket, r))
+#define INTEGER_NEWNODE(u, r)                                                  \
+    (env->bucket.num = u, NEWNODE(INTEGER_, env->bucket, r))
+#define SET_NEWNODE(u, r) (env->bucket.num = u, NEWNODE(SET_, env->bucket, r))
+#define STRING_NEWNODE(u, r)                                                   \
+    (env->bucket.str = u, NEWNODE(STRING_, env->bucket, r))
+#define LIST_NEWNODE(u, r) (env->bucket.lis = u, NEWNODE(LIST_, env->bucket, r))
+#define FLOAT_NEWNODE(u, r)                                                    \
+    (env->bucket.dbl = u, NEWNODE(FLOAT_, env->bucket, r))
+#define FILE_NEWNODE(u, r) (env->bucket.fil = u, NEWNODE(FILE_, env->bucket, r))
 
 #define ONEPARAM(NAME)                                                         \
     if (env->stck == NULL)                                                     \
@@ -121,15 +122,16 @@ PRIVATE void manual_list_(pEnv env);
     ((nodetype(env->stck) == FLOAT_                                            \
          && nodetype(nextnode1(env->stck)) == FLOAT_)                          \
         || (nodetype(env->stck) == FLOAT_                                      \
-               && nodetype(nextnode1(env->stck)) == INTEGER_)                  \
+            && nodetype(nextnode1(env->stck)) == INTEGER_)                     \
         || (nodetype(env->stck) == INTEGER_                                    \
-               && nodetype(nextnode1(env->stck)) == FLOAT_))
+            && nodetype(nextnode1(env->stck)) == FLOAT_))
 #define FLOAT(NAME)                                                            \
     if (!FLOATABLE)                                                            \
         execerror(env, "float or integer", NAME);
 #define FLOAT2(NAME)                                                           \
-    if (!(FLOATABLE2 || (nodetype(env->stck) == INTEGER_                       \
-                            && nodetype(nextnode1(env->stck)) == INTEGER_)))   \
+    if (!(FLOATABLE2                                                           \
+            || (nodetype(env->stck) == INTEGER_                                \
+                && nodetype(nextnode1(env->stck)) == INTEGER_)))               \
     execerror(env, "two floats or integers", NAME)
 #define FLOATVAL                                                               \
     (nodetype(env->stck) == FLOAT_ ? nodevalue(env->stck).dbl                  \
@@ -173,7 +175,7 @@ PRIVATE void manual_list_(pEnv env);
     execerror(env, "internal list", NAME)
 #define CHECKSETMEMBER(NODE, NAME)                                             \
     if ((nodetype(NODE) != INTEGER_ && nodetype(NODE) != CHAR_)                \
-        || nodevalue(NODE).num >= SETSIZE)                                     \
+        || nodevalue(NODE).num < 0 || nodevalue(NODE).num >= SETSIZE)          \
     execerror(env, "small numeric", NAME)
 #define CHECKEMPTYSET(SET, NAME)                                               \
     if (SET == 0)                                                              \
@@ -222,84 +224,58 @@ PRIVATE void manual_list_(pEnv env);
             : (nodetype(NODE) == USR_ ? nodevalue(NODE).ent->name              \
                                       : opername(NODE->op)))
 
-#ifdef TRACING
-PUBLIC void printfactor(pEnv env, Index n, FILE *stm)
-{
-    switch (nodetype(n)) {
-    case BOOLEAN_:
-    case CHAR_:
-    case INTEGER_:
-    case SET_:
-    case STRING_:
-    case LIST_:
-    case FLOAT_:
-    case FILE_:
-        fprintf(stm, "%s", opername(nodetype(n)));
-        return;
-    case USR_:
-        fprintf(stm, n->u.ent->name);
-        return;
-    default:
-        fprintf(stm, "%s", env->symtab[nodetype(n)].name);
-        return;
-    }
-}
-#endif
-
-#ifdef TRACK_USED_SYMBOLS
-static void report_symbols(void)
-{
-    Entry *n;
-
-    for (n = symtab; n->name; n++)
-        if (n->is_used)
-            fprintf(stderr, "%s\n", n->name);
-}
-#endif
-
 #ifdef STATS
 static double calls, opers;
 
-static void report_stats(void)
+PRIVATE void report_stats(void)
 {
     fprintf(stderr, "%.0f calls to joy interpreter\n", calls);
     fprintf(stderr, "%.0f operations executed\n", opers);
 }
 #endif
 
+#ifdef TRACING
+PRIVATE void writestack(pEnv env, Index n, FILE *stm)
+{
+    if (n) {
+        writestack(env, nextnode1(n), stm);
+        if (nextnode1(n))
+            fputc(' ', stm);
+        my_writefactor(env, n, stm);
+    }
+}
+#endif
+
+PUBLIC void dummy_(pEnv env)
+{ /* never called */
+}
+
 PUBLIC void exeterm(pEnv env, Index n)
 {
     Entry ent;
     Index stepper;
+    int type, index;
 
-#ifdef TRACK_USED_SYMBOLS
-    static int first;
-
-    if (!first) {
-        first = 1;
-        atexit(report_symbols);
-    }
-#endif
 start:
-    if (!n)
-        return;
 #ifdef STATS
     if (++calls == 1)
         atexit(report_stats);
 #endif
+    if (!n)
+        return;
 #ifdef NOBDW
-    env->conts = LIST_NEWNODE(n, env->conts);
-    while (nodevalue(env->conts).lis != NULL) {
+    env->conts = newnode(env, LIST_, (Types)n, env->conts);
+    while (nodevalue(env->conts).lis) {
 #else
     while (n) {
 #endif
-#ifdef NOBDW
 #ifdef ENABLE_TRACEGC
-        if (tracegc > 5) {
+        if (env->tracegc > 5) {
             printf("exeterm1: %d ", nodevalue(env->conts).lis);
             printnode(env, nodevalue(env->conts).lis);
         }
 #endif
+#ifdef NOBDW
         stepper = nodevalue(env->conts).lis;
         nodevalue(env->conts).lis = nextnode1(nodevalue(env->conts).lis);
 #else
@@ -308,36 +284,31 @@ start:
 #ifdef STATS
         ++opers;
 #endif
+        type = opertype(nodetype(stepper));
 #ifdef TRACING
-        printfactor(env, stepper, stdout);
-        printf(" . ");
-        writeterm(env, env->stck, stdout);
-        printf("\n");
+        if (env->debugging) {
+            writestack(env, env->stck, stdout);
+            printf(" : ");
+            if (type == ILLEGAL_)
+                printf("%s", opername(type));
+            else
+                writeterm(env, stepper, stdout);
+            putchar('\n');
+        }
 #endif
-        switch (nodetype(stepper)) {
+        switch (type) {
         case ILLEGAL_:
         case COPIED_:
             printf("exeterm: attempting to execute bad node\n");
-#ifdef NOBDW
 #ifdef ENABLE_TRACEGC
             printnode(env, stepper);
 #endif
-#endif
-            break;
-        case BOOLEAN_:
-        case CHAR_:
-        case INTEGER_:
-        case SET_:
-        case STRING_:
-        case LIST_:
-        case FLOAT_:
-        case FILE_:
-            env->stck = newnode(
-                env, nodetype(stepper), nodevalue(stepper), env->stck);
-            break;
+            dummy_(env);
+            return;
         case USR_:
-            ent = vec_at(env->symtab, nodevalue(stepper).ent);
-            if (!ent.u.body && undeferror)
+            index = nodevalue(stepper).ent;
+            ent = vec_at(env->symtab, index);
+            if (!ent.u.body && env->undeferror)
                 execerror(env, "definition", ent.name);
             if (!nextnode1(stepper)) {
 #ifdef NOBDW
@@ -348,21 +319,30 @@ start:
             }
             exeterm(env, ent.u.body);
             break;
+        case BOOLEAN_:
+        case CHAR_:
+        case INTEGER_:
+        case SET_:
+        case STRING_:
+        case LIST_:
+        case FLOAT_:
+        case FILE_:
+            env->stck = newnode(env, type, nodevalue(stepper), env->stck);
+            break;
+            /*
+                Builtins have their own type.
+            */
         default:
             (*nodevalue(stepper).proc)(env);
-#ifdef TRACK_USED_SYMBOLS
-            symtab[nodetype(stepper)].is_used = 1;
-#endif
             break;
         }
-#ifdef NOBDW
 #ifdef ENABLE_TRACEGC
-        if (tracegc > 5) {
+        if (env->tracegc > 5) {
             printf("exeterm2: %d ", stepper);
             printnode(env, stepper);
         }
 #endif
-#else
+#ifndef NOBDW
         n = n->next;
 #endif
     }
@@ -395,50 +375,48 @@ start:
 #include "src/usetop.h"
 #include "builtin.h"
 
-PUBLIC void dummy_(pEnv env) { /* never called */}
-
 static struct {
     char *name;
     void (*proc)(pEnv env);
     char *messg1, *messg2;
 } optable[] = {
     /* THESE MUST BE DEFINED IN THE ORDER OF THEIR VALUES */
-{"__ILLEGAL",		dummy_,		"->",
+{"__ILLEGAL",           dummy_,                "->",
 "internal error, cannot happen - supposedly."},
 
-{"__COPIED",		dummy_,		"->",
+{"__COPIED",            dummy_,                "->",
 "no message ever, used for gc."},
 
-{"__USR",		dummy_,		"->",
+{"__USR",               dummy_,                "->",
 "user node."},
 
-{"__ANON_FUNCT",	dummy_,		"->",
+{"__ANON_FUNCT",        dummy_,                "->",
 "op for anonymous function call."},
 
 /* LITERALS */
 
-{" truth value type",	dummy_,		"->  B",
+{" truth value type",   dummy_,                "->  B",
 "The logical type, or the type of truth values.\nIt has just two literals: true and false."},
 
-{" character type",	dummy_,		"->  C",
+{" character type",     dummy_,                "->  C",
 "The type of characters. Literals are written with a single quote.\nExamples:  'A  '7  ';  and so on. Unix style escapes are allowed."},
 
-{" integer type",	dummy_,		"->  I",
+{" integer type",       dummy_,                "->  I",
 "The type of negative, zero or positive integers.\nLiterals are written in decimal notation. Examples:  -123   0   42."},
 
-{" set type",		dummy_,		"->  {...}",
+{" set type",           dummy_,                "->  {...}",
 "The type of sets of small non-negative integers.\nThe maximum is platform dependent, typically the range is 0..31.\nLiterals are written inside curly braces.\nExamples:  {}  {0}  {1 3 5}  {19 18 17}."},
 
-{" string type",	dummy_,		"->  \"...\" ",
+{" string type",        dummy_,                "->  \"...\" ",
 "The type of strings of characters. Literals are written inside double quotes.\nExamples: \"\"  \"A\"  \"hello world\" \"123\".\nUnix style escapes are accepted."},
 
-{" list type",		dummy_,		"->  [...]",
+{" list type",          dummy_,                "->  [...]",
 "The type of lists of values of any type (including lists),\nor the type of quoted programs which may contain operators or combinators.\nLiterals of this type are written inside square brackets.\nExamples: []  [3 512 -7]  [john mary]  ['A 'C ['B]]  [dup *]."},
 
-{" float type",		dummy_,		"->  F",
-"The type of floating-point numbers.\nLiterals of this type are written with embedded decimal points (like 1.2)\nand optional exponent specifiers (like 1.5E2)"},
+{" float type",         dummy_,                "->  F",
+"The type of floating-point numbers.\nLiterals of this type are written with embedded decimal points (like 1.2)\nand optional exponent specifiers (like 1.5E2)."},
 
-{" file type",		dummy_,		"->  FILE:",
+{" file type",          dummy_,                "->  FILE:",
 "The type of references to open I/O streams,\ntypically but not necessarily files.\nThe only literals of this type are stdin, stdout, and stderr."},
 
 #include "table.c"
@@ -456,5 +434,17 @@ PUBLIC char *opername(int o)
     return optable[ANON_FUNCT_].name;
 }
 
-PUBLIC void (*operproc(int o))(pEnv) { return optable[o].proc; }
+PUBLIC void (*operproc(int o))(pEnv)
+{
+    if (o >= 0 && o < (int)(sizeof(optable) / sizeof(optable[0])))
+        return optable[o].proc;
+    return optable[ANON_FUNCT_].proc;
+}
+
+PUBLIC int opertype(int o)
+{
+    if (o >= 0 && o < (int)(sizeof(optable) / sizeof(optable[0])))
+        return o;
+    return ILLEGAL_;
+}
 /* END of INTERP.C */

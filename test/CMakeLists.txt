@@ -1,42 +1,42 @@
-add_custom_target(test01.txt ALL
-		  DEPENDS joy
-		  COMMAND joy test01.joy >test01.txt)
-add_custom_target(test02.txt ALL
-		  DEPENDS joy
-		  COMMAND joy test02.joy >test02.txt)
-add_custom_target(test03.txt ALL
-		  DEPENDS joy
-		  COMMAND joy test03.joy >test03.txt)
-add_custom_target(test04.txt ALL
-		  DEPENDS joy
-		  COMMAND joy test04.joy >test04.txt)
-add_custom_target(test05.txt ALL
-		  DEPENDS joy
-		  COMMAND joy test05.joy test05.joy >test05.txt)
-add_custom_target(test06.txt ALL
-		  DEPENDS joy
-		  COMMAND joy test06.joy >test06.txt)
-add_custom_target(test07.txt ALL
-		  DEPENDS joy
-		  COMMAND joy <test07.joy >test07.txt)
-add_custom_target(test08.txt ALL
-		  DEPENDS joy
-		  COMMAND joy test08.joy >test08.txt)
-add_custom_target(test09.txt ALL
-		  DEPENDS joy
-		  COMMAND joy test09.joy >test09.txt)
-add_custom_target(test10.txt ALL
-		  DEPENDS joy
-		  COMMAND joy test10.joy >test10.txt)
-add_custom_target(test11.txt ALL
-		  DEPENDS joy
-		  COMMAND joy test11.joy >test11.txt)
-add_custom_target(test12.txt ALL
-		  DEPENDS joy
-		  COMMAND joy test12.joy >test12.txt)
-add_custom_target(test13.txt ALL
-		  DEPENDS joy
-		  COMMAND joy test13.joy >test13.txt)
-add_custom_target(test14.txt ALL
-		  DEPENDS joy
-		  COMMAND joy test14.joy >test14.txt)
+#
+#   module  : CMakeLists.txt
+#   version : 1.4
+#   date    : 04/11/22
+#
+macro(exe9 src)
+add_custom_target(${src}.out ALL
+		  DEPENDS joy ${src}.joy
+		  COMMAND joy ${src}.joy >${src}.out 2>&1)
+endmacro(exe9)
+
+exe9(test01)
+exe9(test02)
+exe9(test03)
+exe9(test06)
+exe9(test07)
+exe9(test08)
+exe9(test09)
+exe9(test10)
+exe9(test11)
+exe9(test12)
+exe9(test13)
+exe9(test14)
+exe9(test15)
+exe9(test16)
+exe9(test17)
+exe9(test18)
+exe9(test19)
+
+#
+#  Taking parameter 10 and redirecting
+#
+add_custom_target(test04.out ALL
+		  DEPENDS joy test04.joy
+		  COMMAND joy 10 -vd <${CMAKE_SOURCE_DIR}/test/test04.joy >test04.out)
+
+#
+#  Taking parameter test05.joy
+#
+add_custom_target(test05.out ALL
+		  DEPENDS joy test05.joy
+		  COMMAND joy -vd test05.joy test05.joy >test05.out)

@@ -1,0 +1,17 @@
+(*
+    module  : typeof.joy
+    version : 1.1
+    date    : 04/11/22
+*)
+DEFINE	last == dup rest null [first] [rest last] branch.
+
+[last] first typeof.
+[pop] first typeof.
+true typeof.
+'A typeof.
+10 typeof.
+{1 2 3} typeof.
+"test" typeof.
+[1 2 3] typeof.
+1.1 typeof.
+stdin typeof.
