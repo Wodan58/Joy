@@ -1,12 +1,12 @@
 #
 #   module  : CMakeLists.txt
-#   version : 1.4
+#   version : 1.5
 #   date    : 04/11/22
 #
 macro(exe9 src)
 add_custom_target(${src}.out ALL
-		  DEPENDS joy ${src}.joy
-		  COMMAND joy ${src}.joy >${src}.out 2>&1)
+		  DEPENDS joy ${CMAKE_SOURCE_DIR}/test/${src}.joy
+		  COMMAND joy ${CMAKE_SOURCE_DIR}/test/${src}.joy >${src}.out)
 endmacro(exe9)
 
 exe9(test01)
@@ -31,12 +31,14 @@ exe9(test19)
 #  Taking parameter 10 and redirecting
 #
 add_custom_target(test04.out ALL
-		  DEPENDS joy test04.joy
-		  COMMAND joy 10 -vd <${CMAKE_SOURCE_DIR}/test/test04.joy >test04.out)
+		  DEPENDS joy ${CMAKE_SOURCE_DIR}/test/test04.joy
+		  COMMAND joy 10 -vd <${CMAKE_SOURCE_DIR}/test/test04.joy
+                          >test04.out)
 
 #
 #  Taking parameter test05.joy
 #
 add_custom_target(test05.out ALL
-		  DEPENDS joy test05.joy
-		  COMMAND joy -vd test05.joy test05.joy >test05.out)
+		  DEPENDS joy ${CMAKE_SOURCE_DIR}/test/test05.joy
+		  COMMAND joy -vd ${CMAKE_SOURCE_DIR}/test/test05.joy
+                          ${CMAKE_SOURCE_DIR}/test/test05.joy >test05.out)

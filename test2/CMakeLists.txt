@@ -1,12 +1,12 @@
 #
 #   module  : CMakeLists.txt
-#   version : 1.1
+#   version : 1.2
 #   date    : 04/11/22
 #
 macro(exe9 src)
 add_custom_target(${src}.out ALL
-		  DEPENDS joy ${src}.joy
-		  COMMAND joy ${src}.joy >${src}.out 2>&1)
+		  DEPENDS joy ${CMAKE_SOURCE_DIR}/test2/${src}.joy
+		  COMMAND joy ${CMAKE_SOURCE_DIR}/test2/${src}.joy >${src}.out)
 endmacro(exe9)
 
 exe9(abort)

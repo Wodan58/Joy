@@ -45,5 +45,5 @@ Binaries
 The binary `joy.exe` is a 32-bit Windows executable; it was compiled by me in
 2005 and should still work under Windows; it uses the BDW garbage collector.
 The binary `joy.com` is a 64-bit executable that should work on most x86_64
-systems. The [support vector](http://github.com/jart/cosmopolitan/README.md)
-tells what systems exactly.
+systems. The [support vector](http://github.com/jart/cosmopolitan)
+at the end of the README.md tells what systems exactly.

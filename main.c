@@ -1,8 +1,8 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.39
- *  date    : 04/11/22
+ *  version : 1.40
+ *  date    : 04/12/22
  */
 
 /*
@@ -117,6 +117,7 @@ Manfred von Thun, 2006
 #define ALLOC
 #include "globals.h"
 
+#define ERROR_ON_USRLIB 0
 #define DONT_READ_AHEAD 0
 #define READ_PRIV_AHEAD 1
 
@@ -192,7 +193,7 @@ PRIVATE void enteratom(pEnv env, int priv)
 {
     /*
      *   Local symbols are only added during the first read of private sections
-     *   and plublic sections of a module.
+     *   and public sections of a module.
      *   They should be found during the second read.
      */
     if (priv)
@@ -245,7 +246,7 @@ PRIVATE void definition(pEnv env, int priv)
     else
         error(env, " == expected in definition");
     readterm(env, priv);
-    if (!priv) {
+    if (!priv && env->stck) {
         if (here)
             vec_at(env->symtab, here).u.body = nodevalue(env->stck).lis;
         env->stck = nextnode1(env->stck);
@@ -341,7 +342,7 @@ PUBLIC void execerror(pEnv env, char *message, char *op)
     if (D) {                                                                   \
         printf("->  %s is not empty:\n", NAME);                                \
         writeterm(&env, D, stdout);                                            \
-        printf("\n");                                                          \
+        putchar('\n');                                                         \
     }
 
 #ifdef STATS
@@ -413,7 +414,6 @@ PRIVATE void copyright(char *file)
 int start_main(int argc, char **argv)
 {
     int i, j;
-    FILE *fp;
     char *filename = 0;
     unsigned char verbose = 0, mustinclude = 1;
 
@@ -462,7 +462,7 @@ int start_main(int argc, char **argv)
                 return 0;
             }
             /*
-             *    Overwrite argv[0] with the filename and shift subsequent
+             *   Overwrite argv[0] with the filename and shift subsequent
              *   parameters.
              */
             argv[0] = filename;
@@ -489,10 +489,7 @@ int start_main(int argc, char **argv)
     setjmp(begin);
     if (mustinclude) {
         mustinclude = 0;
-        if ((fp = fopen("usrlib.joy", "r")) != 0) {
-            fclose(fp);
-            doinclude(&env, "usrlib.joy");
-        }
+        doinclude(&env, "usrlib.joy", ERROR_ON_USRLIB);
     }
     while (1) {
         getsym(&env);
