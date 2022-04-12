@@ -1,7 +1,7 @@
 /*
  *  module  : utils.c
- *  version : 1.3
- *  date    : 04/11/22
+ *  version : 1.4
+ *  date    : 04/12/22
  */
 #include "globals.h"
 
@@ -256,16 +256,14 @@ PUBLIC Index newnode(pEnv env, Operator o, Types u, Index r)
 
 PUBLIC void my_memoryindex(pEnv env)
 {
-    long_t num = memoryindex;
-
-    env->stck = newnode(env, INTEGER_, (Types)num, env->stck);
+    env->bucket.num = memoryindex;
+    env->stck = newnode(env, INTEGER_, env->bucket, env->stck);
 }
 
 PUBLIC void my_memorymax(pEnv env)
 {
-    long_t num = mem_high - mem_low;
-
-    env->stck = newnode(env, INTEGER_, (Types)num, env->stck);
+    env->bucket.num = mem_high - mem_low;
+    env->stck = newnode(env, INTEGER_, env->bucket, env->stck);
 }
 
 /*
@@ -273,16 +271,18 @@ PUBLIC void my_memorymax(pEnv env)
 */
 PUBLIC void readterm(pEnv env, int priv)
 {
-    if (!priv)
-        env->stck = newnode(env, LIST_, (Types)0.0, env->stck);
+    if (!priv) {
+        env->bucket.lis = 0;
+        env->stck = newnode(env, LIST_, env->bucket, env->stck);
+    }
     if (env->symb <= ATOM) {
         readfactor(env, priv);
         if (!priv) {
             nodevalue(nextnode1(env->stck)).lis = env->stck;
             env->stck = nextnode1(env->stck);
             nextnode1(nodevalue(env->stck).lis) = 0;
-            env->dump = newnode(
-                env, LIST_, (Types)nodevalue(env->stck).lis, env->dump);
+            env->bucket.lis = nodevalue(env->stck).lis;
+            env->dump = newnode(env, LIST_, env->bucket, env->dump);
         }
         while (getsym(env), env->symb <= ATOM) {
             readfactor(env, priv);

@@ -1,7 +1,7 @@
 /* FILE: scan.c */
 /*
  *  module  : scan.c
- *  version : 1.31
+ *  version : 1.32
  *  date    : 04/12/22
  */
 #include "globals.h"
@@ -159,8 +159,10 @@ PUBLIC void error(pEnv env, char *message)
 PUBLIC void doinclude(pEnv env, char *filnam, int error)
 {
     FILE *fp;
-    size_t leng;
+#ifdef SEARCH_ARGV0_DIRECTORY
+    int leng;
     char *path, *str;
+#endif
 
     if (ilevel + 1 == INPSTACKMAX)
         execerror(env, "fewer include files", "include");
