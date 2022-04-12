@@ -1,8 +1,8 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.39
- *  date    : 04/11/22
+ *  version : 1.40
+ *  date    : 04/12/22
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -173,6 +173,7 @@ STATS
     Note: strdup, snprintf, localtime_r, gmtime_r are not available
     when compiling with -ansi.
 */
+#define SEARCH_ARGV0_DIRECTORY
 
 /*
     The following #defines are present in the source code.
@@ -370,7 +371,7 @@ PUBLIC void inilinebuffer(pEnv env, char *filnam);
 PUBLIC int getlinenum(void);
 PUBLIC void resetlinebuffer(int linenum);
 PUBLIC void error(pEnv env, char *message);
-PUBLIC void doinclude(pEnv env, char *filnam);
+PUBLIC void doinclude(pEnv env, char *filnam, int error);
 PUBLIC void getsym(pEnv env);
 /* utils.c */
 PUBLIC Index newnode(pEnv env, Operator o, Types u, Index r);

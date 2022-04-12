@@ -1,7 +1,7 @@
 #
-#   module  : %M%
-#   version : %I%
-#   date    : %G%
+#   module  : CMakeLists.txt
+#   version : 1.8
+#   date    : 04/11/22
 #
 cmake_minimum_required(VERSION 3.0)
 project(Joy VERSION 1.0)
@@ -20,9 +20,13 @@ endif()
 endif()
 add_executable(joy interp.c scan.c utils.c main.c factor.c module.c gc.c)
 if(WIN32)
+add_dependencies(joy always)
+add_custom_target(always
+		  COMMAND sh ${CMAKE_SOURCE_DIR}/table.sh ${CMAKE_SOURCE_DIR}
+		  COMMAND sh ${CMAKE_SOURCE_DIR}/prims.sh ${CMAKE_SOURCE_DIR}
+		 )
 else()
 target_link_libraries(joy m)
-endif()
 add_dependencies(joy always)
 add_custom_target(always
 		  COMMAND sh ${CMAKE_SOURCE_DIR}/banner.sh ${PROJECT_NAME}
@@ -34,4 +38,5 @@ if(RUN_TESTS)
 add_subdirectory(lib)
 add_subdirectory(test)
 add_subdirectory(test2)
+endif()
 endif()

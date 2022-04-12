@@ -1,8 +1,8 @@
 /* FILE: scan.c */
 /*
  *  module  : scan.c
- *  version : 1.30
- *  date    : 04/11/22
+ *  version : 1.31
+ *  date    : 04/12/22
  */
 #include "globals.h"
 
@@ -149,10 +149,18 @@ PUBLIC void error(pEnv env, char *message)
 
 /*
     doinclude - insert the contents of a file in the input.
+                Files are read in the current directory or if that fails
+                from the same directory as argv[0]. This argv[0] contains
+                a filename parameter, or the JOY executable. If that path
+                also fails an error is generated unless error is set to 0.
+                Reading the directory from argv[0] was added in order to
+                supports tests during out-of-source builds.
 */
-PUBLIC void doinclude(pEnv env, char *filnam)
+PUBLIC void doinclude(pEnv env, char *filnam, int error)
 {
     FILE *fp;
+    size_t leng;
+    char *path, *str;
 
     if (ilevel + 1 == INPSTACKMAX)
         execerror(env, "fewer include files", "include");
@@ -168,7 +176,24 @@ PUBLIC void doinclude(pEnv env, char *filnam)
         infile[ilevel].linenum = 0;
         return;
     }
-    execerror(env, "valid file name", "include");
+#ifdef SEARCH_ARGV0_DIRECTORY
+    if ((path = strrchr(env->g_argv[0], '/')) != 0) {
+	leng = path - env->g_argv[0];
+	str = GC_malloc_atomic(leng + strlen(filnam) + 2);
+	sprintf(str, "%.*s/%s", leng, env->g_argv[0], filnam);
+        if ((fp = fopen(str, "r")) != 0) {
+            infile[++ilevel].fp = env->srcfile = fp;
+#if 0
+            strncpy(infile[ilevel].name, str, ALEN);
+            infile[ilevel].name[ALEN - 1] = 0;
+#endif
+            infile[ilevel].linenum = 0;
+            return;
+        }
+    }
+#endif
+    if (error)
+        execerror(env, "valid file name", "include");
 }
 
 /*

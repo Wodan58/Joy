@@ -1,7 +1,7 @@
 # makefile for Joy
 
 HDRS = globals.h
-SRCS = interp.c scan.c utils.c main.c srand.c rand.c factor.obj gc.c
+SRCS = interp.c scan.c utils.c main.c srand.c rand.c factor.c gc.c
 OBJS = interp.obj scan.obj utils.obj main.obj srand.obj rand.obj factor.obj gc.obj
 
 CC = cl.exe
