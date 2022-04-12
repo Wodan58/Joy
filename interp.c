@@ -1,8 +1,8 @@
 /* FILE: interp.c */
 /*
  *  module  : interp.c
- *  version : 1.50
- *  date    : 04/11/22
+ *  version : 1.51
+ *  date    : 04/12/22
  */
 
 /*
@@ -264,7 +264,8 @@ start:
     if (!n)
         return;
 #ifdef NOBDW
-    env->conts = newnode(env, LIST_, (Types)n, env->conts);
+    env->bucket.lis = n;
+    env->conts = newnode(env, LIST_, env->bucket, env->conts);
     while (nodevalue(env->conts).lis) {
 #else
     while (n) {

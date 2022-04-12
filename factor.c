@@ -1,8 +1,8 @@
 /* FILE: factor.c */
 /*
  *  module  : factor.c
- *  version : 1.3
- *  date    : 04/11/22
+ *  version : 1.4
+ *  date    : 04/12/22
  */
 #include "globals.h"
 
@@ -22,8 +22,10 @@ PUBLIC void readfactor(pEnv env, int priv) /* read a JOY factor */
             if (env->location < env->firstlibra) {
                 env->yylval.proc = vec_at(env->symtab, env->location).u.proc;
                 env->stck = newnode(env, env->location, env->yylval, env->stck);
-            } else
-                env->stck = newnode(env, USR_, (Types)env->location, env->stck);
+            } else {
+                env->bucket.ent = env->location;
+                env->stck = newnode(env, USR_, env->bucket, env->stck);
+            }
         }
         return;
     case BOOLEAN_:
@@ -41,8 +43,10 @@ PUBLIC void readfactor(pEnv env, int priv) /* read a JOY factor */
                 error(env, "small numeric expected in set");
             else
                 set |= ((long_t)1 << env->yylval.num);
-        if (!priv)
-            env->stck = newnode(env, SET_, (Types)set, env->stck);
+        if (!priv) {
+            env->bucket.set = set;
+            env->stck = newnode(env, SET_, env->bucket, env->stck);
+        }
         return;
     case LBRACK:
         getsym(env);
