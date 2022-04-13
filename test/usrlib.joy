@@ -1,0 +1,6 @@
+(*
+    module  : %M%
+    version : %I%
+    date    : %G%
+*)
+"This is test/usrlib.joy\n" putchars.

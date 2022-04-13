@@ -53,8 +53,7 @@ results in the following error message:
     run time error: memory needed for copying.
 
 Needless to say, increasing MEMORYMAX and recompiling does not help in this
-case. The BDW version allocates all physical memory, all swap memory and then
-has to wait until the OOM killer comes along.
+case. The BDW version runs into a call stack overflow.
 
 More comparisons
 ================
@@ -69,7 +68,7 @@ to the following testfile:
     123.
 
 The 123 at the end is present to see whether the entire file is processed.
-Here is the response from Joy:
+Here is the response from the original Joy:
 
     "\07".
         ^
@@ -88,11 +87,13 @@ Here is the response from Joy:
       ^
 	    ']' expected
     []
+    [ } ].
+        ^
+            END or period '.' expected
     [[]]
-    123
 
-The error detection from Joy, and also joy1, is excellent. joy1 implements the
-same language as Joy, but the output is different:
+The error detection from the original Joy is excellent. The new versions, joy1
+and Joy implement the same language, but the output is different:
 
     "\07".
         ^
@@ -110,14 +111,15 @@ same language as Joy, but the output is different:
     [ } ].
       ^
 	    ']' expected
-    exeterm: attempting to execute bad node
+    "8.\n "
     123
 
 Handling of memory is different in joy1 compared to Joy and also exeterm is a
-bit different: joy1 does not use conts. All the same it is surprising. Moy and
-Coy implement a language that is a little different and they do so with a
-different code base, so some differences are expected. Here is the output from
-Moy:
+bit different: joy1 does not use conts. It is good to know that these versions
+agree about the result.
+Moy and Coy implement a language that is a little different and they do so with
+a different code base, so some differences are expected. Here is the output
+from Moy:
 
     syntax error in file t.joy line 6 : "\07".
     syntax error in file t.joy line 7 : { true }.

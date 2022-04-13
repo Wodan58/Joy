@@ -1,7 +1,7 @@
 /*
     module  : fput.c
-    version : 1.2
-    date    : 04/11/22
+    version : 1.3
+    date    : 04/12/22
 */
 #ifndef FPUT_C
 #define FPUT_C
@@ -19,7 +19,7 @@ PRIVATE void fput_(pEnv env)
         || !nodevalue(nextnode1(env->stck)).fil)
         execerror(env, "file", "fput");
     stm = nodevalue(nextnode1(env->stck)).fil;
-    my_writefactor(env, env->stck, stm);
+    writefactor(env, env->stck, stm);
     fputc(' ', stm);
     POP(env->stck);
 }
