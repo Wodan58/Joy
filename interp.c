@@ -1,8 +1,8 @@
 /* FILE: interp.c */
 /*
  *  module  : interp.c
- *  version : 1.51
- *  date    : 04/12/22
+ *  version : 1.54
+ *  date    : 04/13/22
  */
 
 /*
@@ -241,28 +241,31 @@ PRIVATE void writestack(pEnv env, Index n, FILE *stm)
         writestack(env, nextnode1(n), stm);
         if (nextnode1(n))
             fputc(' ', stm);
-        my_writefactor(env, n, stm);
+        writefactor(env, n, stm);
     }
 }
 #endif
 
-PUBLIC void dummy_(pEnv env)
-{ /* never called */
-}
-
+/*
+    exeterm starts with n. If during execution n comes up again, the function
+    is directly recursive. That is allowed, except when the very first factor
+    is also n. In that case there is recursion without an end condition. It is
+    possible to discover that specific case.
+*/
 PUBLIC void exeterm(pEnv env, Index n)
 {
     Entry ent;
-    Index stepper;
     int type, index;
+    Index stepper, root = 0;
 
 start:
 #ifdef STATS
     if (++calls == 1)
         atexit(report_stats);
 #endif
-    if (!n)
+    if (root == n)
         return;
+    root = n;
 #ifdef NOBDW
     env->bucket.lis = n;
     env->conts = newnode(env, LIST_, env->bucket, env->conts);
@@ -290,10 +293,7 @@ start:
         if (env->debugging) {
             writestack(env, env->stck, stdout);
             printf(" : ");
-            if (type == ILLEGAL_)
-                printf("%s", opername(type));
-            else
-                writeterm(env, stepper, stdout);
+            writeterm(env, stepper, stdout);
             putchar('\n');
         }
 #endif
@@ -304,7 +304,6 @@ start:
 #ifdef ENABLE_TRACEGC
             printnode(env, stepper);
 #endif
-            dummy_(env);
             return;
         case USR_:
             index = nodevalue(stepper).ent;
@@ -318,7 +317,8 @@ start:
                 n = ent.u.body;
                 goto start;
             }
-            exeterm(env, ent.u.body);
+            if (ent.u.body != root)
+                exeterm(env, ent.u.body);
             break;
         case BOOLEAN_:
         case CHAR_:
@@ -382,47 +382,47 @@ static struct {
     char *messg1, *messg2;
 } optable[] = {
     /* THESE MUST BE DEFINED IN THE ORDER OF THEIR VALUES */
-{"__ILLEGAL",           dummy_,                "->",
+{"__ILLEGAL",           id_,            "->",
 "internal error, cannot happen - supposedly."},
 
-{"__COPIED",            dummy_,                "->",
+{"__COPIED",            id_,            "->",
 "no message ever, used for gc."},
 
-{"__USR",               dummy_,                "->",
+{"__USR",               id_,            "->",
 "user node."},
 
-{"__ANON_FUNCT",        dummy_,                "->",
+{"__ANON_FUNCT",        id_,            "->",
 "op for anonymous function call."},
 
 /* LITERALS */
 
-{" truth value type",   dummy_,                "->  B",
+{" truth value type",   id_,            "->  B",
 "The logical type, or the type of truth values.\nIt has just two literals: true and false."},
 
-{" character type",     dummy_,                "->  C",
+{" character type",     id_,            "->  C",
 "The type of characters. Literals are written with a single quote.\nExamples:  'A  '7  ';  and so on. Unix style escapes are allowed."},
 
-{" integer type",       dummy_,                "->  I",
+{" integer type",       id_,            "->  I",
 "The type of negative, zero or positive integers.\nLiterals are written in decimal notation. Examples:  -123   0   42."},
 
-{" set type",           dummy_,                "->  {...}",
+{" set type",           id_,            "->  {...}",
 "The type of sets of small non-negative integers.\nThe maximum is platform dependent, typically the range is 0..31.\nLiterals are written inside curly braces.\nExamples:  {}  {0}  {1 3 5}  {19 18 17}."},
 
-{" string type",        dummy_,                "->  \"...\" ",
+{" string type",        id_,            "->  \"...\" ",
 "The type of strings of characters. Literals are written inside double quotes.\nExamples: \"\"  \"A\"  \"hello world\" \"123\".\nUnix style escapes are accepted."},
 
-{" list type",          dummy_,                "->  [...]",
+{" list type",          id_,            "->  [...]",
 "The type of lists of values of any type (including lists),\nor the type of quoted programs which may contain operators or combinators.\nLiterals of this type are written inside square brackets.\nExamples: []  [3 512 -7]  [john mary]  ['A 'C ['B]]  [dup *]."},
 
-{" float type",         dummy_,                "->  F",
+{" float type",         id_,            "->  F",
 "The type of floating-point numbers.\nLiterals of this type are written with embedded decimal points (like 1.2)\nand optional exponent specifiers (like 1.5E2)."},
 
-{" file type",          dummy_,                "->  FILE:",
+{" file type",          id_,            "->  FILE:",
 "The type of references to open I/O streams,\ntypically but not necessarily files.\nThe only literals of this type are stdin, stdout, and stderr."},
 
 #include "table.c"
 
-{0, dummy_, "->", "->"}
+{0, id_, "->", "->"}
 };
 
 #include "builtin.c"

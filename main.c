@@ -1,7 +1,7 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.40
+ *  version : 1.41
  *  date    : 04/12/22
  */
 
@@ -246,9 +246,8 @@ PRIVATE void definition(pEnv env, int priv)
     else
         error(env, " == expected in definition");
     readterm(env, priv);
-    if (!priv && env->stck) {
-        if (here)
-            vec_at(env->symtab, here).u.body = nodevalue(env->stck).lis;
+    if (!priv && here && env->stck && nodetype(env->stck) == LIST_) {
+        vec_at(env->symtab, here).u.body = nodevalue(env->stck).lis;
         env->stck = nextnode1(env->stck);
     }
 }
@@ -503,12 +502,13 @@ int start_main(int argc, char **argv)
 #endif
         } else {
             readterm(&env, DONT_READ_AHEAD);
-            if (env.stck) {
 #ifdef NOBDW
+            if (env.stck && env.memory[env.stck].op == LIST_) {
                 env.prog = env.memory[env.stck].u.lis;
                 env.stck = env.memory[env.stck].next;
                 env.conts = NULL;
 #else
+            if (env.stck && nodetype(env.stck) == LIST_) {
                 env.prog = nodevalue(env.stck).lis;
                 env.stck = nextnode1(env.stck);
 #endif
@@ -531,7 +531,7 @@ int start_main(int argc, char **argv)
                 if (env.autoput == 2)
                     writeterm(&env, env.stck, stdout);
                 else if (env.autoput == 1) {
-                    my_writefactor(&env, env.stck, stdout);
+                    writefactor(&env, env.stck, stdout);
 #ifdef NOBDW
                     env.stck = env.memory[env.stck].next;
 #else

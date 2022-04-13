@@ -1,7 +1,7 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.40
+ *  version : 1.41
  *  date    : 04/12/22
  */
 #ifndef GLOBALS_H
@@ -373,14 +373,11 @@ PUBLIC void resetlinebuffer(int linenum);
 PUBLIC void error(pEnv env, char *message);
 PUBLIC void doinclude(pEnv env, char *filnam, int error);
 PUBLIC void getsym(pEnv env);
-/* utils.c */
-PUBLIC Index newnode(pEnv env, Operator o, Types u, Index r);
-PUBLIC void readterm(pEnv env, int priv);
-PUBLIC void my_writefactor(pEnv env, Index n, FILE *stm);
-PUBLIC void writeterm(pEnv env, Index n, FILE *stm);
 /* factor.c */
 PUBLIC void readfactor(pEnv env, int priv); /* read a JOY factor */
-PUBLIC void writefactor(pEnv env, Node *n, FILE *stm);
+PUBLIC void readterm(pEnv env, int priv);
+PUBLIC void writefactor(pEnv env, Index n, FILE *stm);
+PUBLIC void writeterm(pEnv env, Index n, FILE *stm);
 /* module.c */
 PUBLIC void initmod(pEnv env, char *name);
 PUBLIC void initpriv(pEnv env, int priv);
@@ -389,8 +386,9 @@ PUBLIC void exitpriv(void);
 PUBLIC void exitmod(void);
 PUBLIC char *classify(pEnv env, char *name);
 PUBLIC pEntry qualify(pEnv env, char *name);
-#ifdef NOBDW
 /* utils.c */
+PUBLIC Index newnode(pEnv env, Operator o, Types u, Index r);
+#ifdef NOBDW
 PUBLIC void printnode(pEnv env, Index p);
 PUBLIC void inimem1(pEnv env);
 PUBLIC void inimem2(pEnv env);

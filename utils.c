@@ -1,6 +1,6 @@
 /*
  *  module  : utils.c
- *  version : 1.4
+ *  version : 1.5
  *  date    : 04/12/22
  */
 #include "globals.h"
@@ -264,57 +264,4 @@ PUBLIC void my_memorymax(pEnv env)
 {
     env->bucket.num = mem_high - mem_low;
     env->stck = newnode(env, INTEGER_, env->bucket, env->stck);
-}
-
-/*
-    readterm - read a term from srcfile and push this on the stack as a list.
-*/
-PUBLIC void readterm(pEnv env, int priv)
-{
-    if (!priv) {
-        env->bucket.lis = 0;
-        env->stck = newnode(env, LIST_, env->bucket, env->stck);
-    }
-    if (env->symb <= ATOM) {
-        readfactor(env, priv);
-        if (!priv) {
-            nodevalue(nextnode1(env->stck)).lis = env->stck;
-            env->stck = nextnode1(env->stck);
-            nextnode1(nodevalue(env->stck).lis) = 0;
-            env->bucket.lis = nodevalue(env->stck).lis;
-            env->dump = newnode(env, LIST_, env->bucket, env->dump);
-        }
-        while (getsym(env), env->symb <= ATOM) {
-            readfactor(env, priv);
-            if (!priv) {
-                nextnode1(nodevalue(env->dump).lis) = env->stck;
-                env->stck = nextnode1(env->stck);
-                nextnode2(nodevalue(env->dump).lis) = 0;
-                nodevalue(env->dump).lis = nextnode1(nodevalue(env->dump).lis);
-            }
-        }
-        if (!priv)
-            env->dump = nextnode1(env->dump);
-    }
-}
-
-/*
-    my_writefactor - like writefactor but with Index instead of Node *.
-*/
-PUBLIC void my_writefactor(pEnv env, Index n, FILE *stm)
-{
-    writefactor(env, &env->memory[n], stm);
-}
-
-/*
-    writeterm - print the contents of a list in readable format.
-*/
-PUBLIC void writeterm(pEnv env, Index n, FILE *stm)
-{
-    while (n) {
-        writefactor(env, &env->memory[n], stm);
-        n = nextnode1(n);
-        if (n)
-            fputc(' ', stm);
-    }
 }

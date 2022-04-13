@@ -1,0 +1,27 @@
+(*
+    module  : %M%
+    version : %I%
+    date    : %G%
+*)
+MODULE m1
+  MODULE m2
+    MODULE m3
+      MODULE m4
+        MODULE m5
+          MODULE m6
+            MODULE m7
+              MODULE m8
+                MODULE m9
+                  MODULE m10
+                    MODULE m11
+                    END;
+                  END;
+                END;
+              END;
+            END;
+          END;
+        END;
+      END;
+    END;
+  END;
+END.

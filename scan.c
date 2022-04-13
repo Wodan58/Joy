@@ -1,8 +1,8 @@
 /* FILE: scan.c */
 /*
  *  module  : scan.c
- *  version : 1.32
- *  date    : 04/12/22
+ *  version : 1.33
+ *  date    : 04/13/22
  */
 #include "globals.h"
 
@@ -147,6 +147,16 @@ PUBLIC void error(pEnv env, char *message)
 #endif
 }
 
+PRIVATE void my_include(pEnv env, char *filnam, FILE *fp)
+{
+    infile[++ilevel].fp = env->srcfile = fp;
+#if 0
+    strncpy(infile[ilevel].name, filnam, ALEN);
+    infile[ilevel].name[ALEN - 1] = 0;
+#endif
+    infile[ilevel].linenum = 0;
+}
+
 /*
     doinclude - insert the contents of a file in the input.
                 Files are read in the current directory or if that fails
@@ -170,12 +180,7 @@ PUBLIC void doinclude(pEnv env, char *filnam, int error)
     infile[ilevel].linenum = linenumber;
     linenumber = 0;
     if ((fp = fopen(filnam, "r")) != 0) {
-        infile[++ilevel].fp = env->srcfile = fp;
-#if 0
-        strncpy(infile[ilevel].name, filnam, ALEN);
-        infile[ilevel].name[ALEN - 1] = 0;
-#endif
-        infile[ilevel].linenum = 0;
+        my_include(env, filnam, fp);
         return;
     }
 #ifdef SEARCH_ARGV0_DIRECTORY
@@ -184,12 +189,7 @@ PUBLIC void doinclude(pEnv env, char *filnam, int error)
 	str = GC_malloc_atomic(leng + strlen(filnam) + 2);
 	sprintf(str, "%.*s/%s", leng, env->g_argv[0], filnam);
         if ((fp = fopen(str, "r")) != 0) {
-            infile[++ilevel].fp = env->srcfile = fp;
-#if 0
-            strncpy(infile[ilevel].name, str, ALEN);
-            infile[ilevel].name[ALEN - 1] = 0;
-#endif
-            infile[ilevel].linenum = 0;
+            my_include(env, filnam, fp);
             return;
         }
     }

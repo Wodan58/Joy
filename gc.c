@@ -1,7 +1,7 @@
 /*
     module  : gc.c
-    version : 1.22
-    date    : 04/09/22
+    version : 1.23
+    date    : 04/13/22
 */
 #ifndef COSMO
 #include <stdio.h>
@@ -274,8 +274,6 @@ static void *mem_block(size_t size, int f)
 {
     void *ptr;
 
-    if (!size)
-	return 0;
     if ((ptr = malloc(size)) == 0)
 	mem_fatal();
     memset(ptr, 0, size);

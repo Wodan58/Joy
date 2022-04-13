@@ -1,6 +1,5 @@
 cosmo*
 *.o
-*.a
 *.lds
 joy.com.dbg
 build
