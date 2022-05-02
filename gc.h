@@ -6,7 +6,9 @@
 #ifndef GC_H
 #define GC_H
 
+#ifdef __linux__
 #define SIGNAL_HANDLING
+#endif
 #define FREE_ON_EXIT
 /* #define SCAN_BSS_MEMORY */
 /* #define STACK_GROWS_UPWARD */
