@@ -1,7 +1,7 @@
 /*
-    module  : 
-    version : 1.1
-    date    : 05/21/21
+    module  : __latex_manual.c
+    version : 1.2
+    date    : 05/02/22
 */
 #ifndef __LATEX_MANUAL_C
 #define __LATEX_MANUAL_C

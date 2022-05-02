@@ -1,7 +1,7 @@
 #
 #   module  : CMakeLists.txt
-#   version : 1.2
-#   date    : 04/11/22
+#   version : 1.3
+#   date    : 05/02/22
 #
 macro(exe9 src)
 add_custom_target(${src}.out ALL
@@ -120,6 +120,7 @@ exe9(include)
 exe9(index)
 exe9(infra)
 exe9(in)
+exe9(_in)
 exe9(integer)
 exe9(intern)
 exe9(__latex_manual)

@@ -1,0 +1,6 @@
+(*
+    Symbol table dump.
+*)
+DEFINE	last == dup rest null [first] [rest last] branch.
+
+[1 2 3 4] last.

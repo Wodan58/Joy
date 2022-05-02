@@ -1,0 +1,9 @@
+(*
+    Module with only a public definition.
+*)
+MODULE m14
+  PUBLIC
+    a == "a"
+END
+
+m14.a.

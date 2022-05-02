@@ -1,7 +1,7 @@
 /*
     module  : format.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 05/02/22
 */
 #ifndef FORMAT_C
 #define FORMAT_C
@@ -21,8 +21,7 @@ PRIVATE void format_(pEnv env)
     int leng;
 #endif
     FOURPARAMS("format");
-    INTEGER("format");
-    INTEGER2("format");
+    INTEGERS2("format");
     prec = nodevalue(env->stck).num;
     POP(env->stck);
     width = nodevalue(env->stck).num;
@@ -30,8 +29,7 @@ PRIVATE void format_(pEnv env)
     CHARACTER("format");
     spec = (char)nodevalue(env->stck).num;
     POP(env->stck);
-    if (!strchr("dioxX", spec))
-        execerror(env, "one of: d i o x X", "format");
+    CHECKFORMAT(spec, "format");
     strcpy(format, "%*.*ld");
     format[5] = spec;
     NUMERICTYPE("format");

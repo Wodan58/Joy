@@ -1,7 +1,7 @@
 /*
     module  : while.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 05/02/22
 */
 #ifndef WHILE_C
 #define WHILE_C
@@ -18,6 +18,7 @@ PRIVATE void while_(pEnv env)
     do {
         env->stck = SAVED3;
         exeterm(env, nodevalue(SAVED2).lis); /* TEST */
+        CHECKSTACK("while");
         if (!nodevalue(env->stck).num)
             break;
         env->stck = SAVED3;

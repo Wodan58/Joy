@@ -1,7 +1,7 @@
 /*
     module  : formatf.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 05/02/22
 */
 #ifndef FORMATF_C
 #define FORMATF_C
@@ -21,8 +21,7 @@ PRIVATE void formatf_(pEnv env)
     int leng;
 #endif
     FOURPARAMS("formatf");
-    INTEGER("formatf");
-    INTEGER2("formatf");
+    INTEGERS2("formatf");
     prec = nodevalue(env->stck).num;
     POP(env->stck);
     width = nodevalue(env->stck).num;
@@ -30,8 +29,7 @@ PRIVATE void formatf_(pEnv env)
     CHARACTER("formatf");
     spec = (char)nodevalue(env->stck).num;
     POP(env->stck);
-    if (!strchr("eEfgG", spec))
-        execerror(env, "one of: e E f g G", "formatf");
+    CHECKFORMATF(spec, "formatf");
     strcpy(format, "%*.*lg");
     format[5] = spec;
     FLOAT("formatf");

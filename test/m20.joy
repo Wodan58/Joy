@@ -1,0 +1,15 @@
+(*
+    module  : %M%
+    version : %I%
+    date    : %G%
+*)
+1 setundeferror.
+
+HIDE
+    twenty == thirty 10 -;
+    thirty == 30;
+IN
+    fifty == twenty thirty +;
+END
+
+fifty.

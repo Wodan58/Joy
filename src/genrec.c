@@ -1,7 +1,7 @@
 /*
     module  : genrec.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 05/02/22
 */
 #ifndef GENREC_C
 #define GENREC_C
@@ -17,6 +17,7 @@ PRIVATE void genrecaux(pEnv env)
     SAVESTACK;
     POP(env->stck);
     exeterm(env, nodevalue(nodevalue(SAVED1).lis).lis); /*        [I]        */
+    CHECKSTACK("genrec");
     result = nodevalue(env->stck).num;
     env->stck = SAVED2;
     if (result)

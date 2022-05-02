@@ -1,7 +1,7 @@
 /*
  *  module  : utils.c
- *  version : 1.5
- *  date    : 04/12/22
+ *  version : 1.6
+ *  date    : 05/02/22
  */
 #include "globals.h"
 
@@ -45,7 +45,6 @@ PUBLIC void inimem2(pEnv env)
 {
     mem_low = memoryindex;
     mem_mid = mem_low + (mem_high - mem_low) / 2;
-
 #ifdef STATS
     count_avail();
 #endif
@@ -135,7 +134,6 @@ PUBLIC void gc1(pEnv env)
     start_gc_clock = clock();
     direction = -direction;
     memoryindex = direction == 1 ? mem_low : mem_high;
-
 #ifdef STATS
     count_collect();
 #endif
@@ -162,7 +160,6 @@ PUBLIC void gc1(pEnv env)
 #else
 #define COP(X, NAME) X = copyone(env, X)
 #endif
-
     COP(env->stck, "stck");
     COP(env->prog, "prog");
     COP(env->conts, "conts");
@@ -184,8 +181,7 @@ PUBLIC void gc2(pEnv env)
 
     copyall(env);
     this_gc_clock = clock() - start_gc_clock;
-    gc_clock += this_gc_clock;
-
+    env->gc_clock += this_gc_clock;
 #ifdef ENABLE_TRACEGC
     if (env->tracegc > 0)
         printf("gc - %d nodes inspected, %d nodes copied, clock: %d\n",
@@ -209,7 +205,10 @@ PUBLIC void my_gc(pEnv env)
 #ifdef STATS
 static double nodes;
 
-static void report_nodes(void) { fprintf(stderr, "%.0f nodes used\n", nodes); }
+static void report_nodes(void)
+{
+    fprintf(stderr, "%.0f nodes used\n", nodes);
+}
 
 static void count_nodes(void)
 {
@@ -241,7 +240,7 @@ PUBLIC Index newnode(pEnv env, Operator o, Types u, Index r)
 #endif
         if ((direction == 1 && memoryindex >= mem_mid)
             || (direction == -1 && memoryindex <= mem_mid))
-            execerror(env, "memory", "copying");
+            execerror("memory", "copying");
     }
     p = memoryindex;
     memoryindex += direction;

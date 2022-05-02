@@ -1,7 +1,7 @@
 #
-#   module  : %M%
-#   version : %I%
-#   date    : %G%
+#   module  : CMakeLists.txt
+#   version : 1.7
+#   date    : 05/02/22
 #
 macro(exe9 src)
 add_custom_target(${src}.out ALL
@@ -29,6 +29,31 @@ exe9(test19)
 exe9(test20)
 exe9(test21)
 exe9(test22)
+exe9(test24)
+exe9(test25)
+exe9(test28)
+exe9(m0)
+exe9(m1)
+exe9(m2)
+exe9(m3)
+exe9(m4)
+exe9(m5)
+exe9(m6)
+exe9(m7)
+exe9(m8)
+exe9(m9)
+exe9(m10)
+exe9(m11)
+exe9(m12)
+exe9(m13)
+exe9(m14)
+exe9(m15)
+exe9(m16)
+exe9(m17)
+exe9(m18)
+exe9(m19)
+exe9(m20)
+exe9(modtst)
 
 #
 #  Taking parameter 10 and redirecting
@@ -45,3 +70,21 @@ add_custom_target(test05.out ALL
 		  DEPENDS joy ${CMAKE_SOURCE_DIR}/test/test05.joy
 		  COMMAND joy -vd ${CMAKE_SOURCE_DIR}/test/test05.joy
                           ${CMAKE_SOURCE_DIR}/test/test05.joy >test05.out)
+
+#
+#  Test help
+#
+add_custom_target(test23.out ALL
+		  DEPENDS joy ${CMAKE_SOURCE_DIR}/test/test23.joy
+		  COMMAND joy -h ${CMAKE_SOURCE_DIR}/test/test23.joy >test23.out)
+
+#
+#  Test rest of options
+#
+add_custom_target(test26.out ALL
+		  DEPENDS joy ${CMAKE_SOURCE_DIR}/test/test26.joy
+		  COMMAND joy -sd <${CMAKE_SOURCE_DIR}/test/test26.joy >test26.out)
+
+add_custom_target(test27.out ALL
+		  DEPENDS joy ${CMAKE_SOURCE_DIR}/test/test27.joy
+		  COMMAND joy -hs ${CMAKE_SOURCE_DIR}/test/test27.joy >test27.out)

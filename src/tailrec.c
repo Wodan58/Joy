@@ -1,7 +1,7 @@
 /*
     module  : tailrec.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 05/02/22
 */
 #ifndef TAILREC_C
 #define TAILREC_C
@@ -17,6 +17,7 @@ PRIVATE void tailrecaux(pEnv env)
 tailrec:
     env->dump1 = LIST_NEWNODE(env->stck, env->dump1);
     exeterm(env, nodevalue(SAVED3).lis);
+    CHECKSTACK("tailrec");
     result = nodevalue(env->stck).num;
     env->stck = DMP1;
     POP(env->dump1);

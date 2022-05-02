@@ -1,8 +1,8 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.41
- *  date    : 04/12/22
+ *  version : 1.43
+ *  date    : 05/02/22
  */
 
 /*
@@ -121,13 +121,15 @@ Manfred von Thun, 2006
 #define DONT_READ_AHEAD 0
 #define READ_PRIV_AHEAD 1
 
+PRIVATE void dump_table(pEnv env);
+
 static jmp_buf begin;
 
 /*
  *   Initialise the symbol table with builtins. There is no need to classify
  *   builtins.
  */
-PUBLIC void inisymboltable(pEnv env) /* initialise */
+PRIVATE void inisymboltable(pEnv env) /* initialise */
 {
     int i, rv;
     Entry ent;
@@ -138,12 +140,12 @@ PUBLIC void inisymboltable(pEnv env) /* initialise */
 #endif
     env->hash = kh_init(Symtab);
     for (i = 0; (ent.name = opername(i)) != 0; i++) {
+        ent.is_user = 0;
         ent.u.proc = operproc(i);
         key = kh_put(Symtab, env->hash, ent.name, &rv);
         kh_value(env->hash, key) = i;
         vec_push(env->symtab, ent);
     }
-    env->firstlibra = i;
 }
 
 /*
@@ -158,6 +160,7 @@ PRIVATE void enterglobal(pEnv env, char *name)
 
     env->location = vec_size(env->symtab);
     ent.name = name;
+    ent.is_user = 1;
     ent.u.body = 0; /* may be assigned in definition */
     key = kh_put(Symtab, env->hash, ent.name, &rv);
     kh_value(env->hash, key) = env->location;
@@ -181,8 +184,9 @@ PUBLIC void lookup(pEnv env)
      * added during the first time read of private sections.
      */
     if ((env->location = qualify(env, env->ident)) == 0)
-        /* not found, enter in global */
-        enterglobal(env, GC_strdup(env->ident));
+        /* not found, enter in global, unless it is a module-member  */
+        if (strchr(env->ident, '.') == 0)
+            enterglobal(env, GC_strdup(env->ident));
 }
 
 /*
@@ -196,10 +200,10 @@ PRIVATE void enteratom(pEnv env, int priv)
      *   and public sections of a module.
      *   They should be found during the second read.
      */
-    if (priv)
-        enterglobal(env, classify(env, env->ident));
-    else
+    if (!priv)
         lookup(env);
+    else if ((env->location = qualify(env, env->ident)) == 0)
+        enterglobal(env, classify(env, env->ident));
 }
 
 /*
@@ -209,8 +213,13 @@ PRIVATE void enteratom(pEnv env, int priv)
 PRIVATE void defsequence(pEnv env, int priv); /* forward */
 PRIVATE void compound_def(pEnv env, int priv); /* forward */
 
+/*
+ *   Read a definition. Instead of a definition, an embedded compound definition
+ *   is also possible.
+ */
 PRIVATE void definition(pEnv env, int priv)
 {
+    Entry ent;
     pEntry here = NULL;
 
     if (env->symb == LIBRA || env->symb == JPRIVATE || env->symb == HIDE
@@ -233,10 +242,10 @@ PRIVATE void definition(pEnv env, int priv)
     /* symb == ATOM : */
     if (!priv) {
         enteratom(env, priv);
-        if (env->location < env->firstlibra) {
-            printf("warning: overwriting inbuilt '%s'\n",
-                vec_at(env->symtab, env->location).name);
-            enterglobal(env, GC_strdup(env->ident));
+        ent = vec_at(env->symtab, env->location);
+        if (!ent.is_user) {
+            fprintf(stderr, "warning: overwriting inbuilt '%s'\n", ent.name);
+            enterglobal(env, classify(env, env->ident));
         }
         here = env->location;
     }
@@ -259,7 +268,7 @@ PRIVATE void definition(pEnv env, int priv)
  */
 PRIVATE void defsequence(pEnv env, int priv)
 {
-    if (priv)
+    if (priv && env->symb == ATOM)
         enteratom(env, priv);
     definition(env, priv);
     while (env->symb == SEMICOL) {
@@ -270,45 +279,61 @@ PRIVATE void defsequence(pEnv env, int priv)
     }
 }
 
-PRIVATE void compound_def(pEnv env, int priv)
+/*
+    In case of a HIDE section or a MODULE, some read ahead is necessary.
+*/
+#ifdef READ_PRIVATE_AHEAD
+PRIVATE void read_priv_ahead(pEnv env, int priv)
 {
     int linenum;
     long offset;
 
+    if (!priv && !isatty(fileno(env->srcfile))) {
+        if ((offset = ftell(env->srcfile)) < 0)
+            execerror("ftell", "HIDE");
+        linenum = getlinenum();
+        compound_def(env, READ_PRIV_AHEAD);
+        if (fseek(env->srcfile, offset, SEEK_SET))
+            execerror("fseek", "HIDE");
+        resetlinebuffer(linenum);
+    }
+}
+#endif
+
+/*
+    Handle a compound definition.
+*/
+PRIVATE void compound_def(pEnv env, int priv)
+{
     switch (env->symb) {
     case MODULE:
         getsym(env);
         if (env->symb != ATOM) {
             error(env, "atom expected as name of module");
-            abortexecution_(env);
+            abortexecution_();
         }
-        /* initmod adds ident to the module stack */
-        initmod(env, env->ident);
+        initmod(env, env->ident); /* initmod adds ident to the module stack */
         getsym(env);
+#ifdef READ_PRIVATE_AHEAD
+        if (env->symb == JPUBLIC) { /* MODULE with only a public section */
+            ungetsym(JPUBLIC);
+            env->symb = JPRIVATE;
+        }
+#endif
         compound_def(env, priv);
-        /* exitmod deregisters a module */
-        exitmod();
+        exitmod(); /* exitmod deregisters a module */
         break;
     case JPRIVATE:
     case HIDE:
-        if (!priv && !isatty(fileno(env->srcfile))) {
-            if ((offset = ftell(env->srcfile)) < 0)
-                execerror(env, "ftell", "HIDE");
-            linenum = getlinenum();
-            compound_def(env, READ_PRIV_AHEAD);
-            if (fseek(env->srcfile, offset, 0))
-                execerror(env, "fseek", "HIDE");
-            resetlinebuffer(linenum);
-        }
+#ifdef READ_PRIVATE_AHEAD
+        read_priv_ahead(env, priv);
+#endif
         getsym(env);
-        /* initpriv adds the hide number to the hide stack */
-        initpriv(env, priv);
+        initpriv(env, priv); /* initpriv increases the hide number */
         defsequence(env, priv);
-        /* stoppriv registers the transition from private to public */
-        stoppriv();
+        stoppriv(); /* stoppriv changes the section from private to public */
         compound_def(env, priv);
-        /* exitpriv lowers the hide stack after reading the public section */
-        exitpriv();
+        exitpriv(); /* exitpriv lowers the hide stack */
         break;
     case JPUBLIC:
     case LIBRA:
@@ -317,49 +342,71 @@ PRIVATE void compound_def(pEnv env, int priv)
         defsequence(env, priv);
         break;
     default:
-        printf("warning: empty compound definition\n");
+        fprintf(stderr, "warning: empty compound definition\n");
         break;
     }
 }
 
-PUBLIC void abortexecution_(pEnv env)
+/*
+    abort execution and restart reading from srcfile. In the NOBDW version the
+    stack is cleared as well.
+*/
+PUBLIC void abortexecution_(void)
 {
-#ifdef NOBDW
-    env->conts = env->dump = NULL;
-    env->dump1 = env->dump2 = env->dump3 = env->dump4 = env->dump5 = NULL;
+    longjmp(begin, 1);
+}
+
+/*
+    fatal terminates the program after a stack overflow, likely to result in
+    heap corruption that makes it impossible to continue.
+*/
+#ifndef GC_BDW
+PRIVATE void fatal(void)
+{
+    fprintf(stderr, "fatal error: stack overflow\n");
+    _exit(0);
+}
 #endif
-    longjmp(begin, 0);
-}
 
-PUBLIC void execerror(pEnv env, char *message, char *op)
+/*
+    print a runtime error to stderr and abort the execution of current program.
+*/
+PUBLIC void execerror(char *message, char *op)
 {
-    printf("run time error: %s needed for %s\n", message, op);
-    abortexecution_(env);
+    fprintf(stderr, "run time error: %s needed for %s\n", message, op);
+    abortexecution_();
 }
 
+/*
+    DUMP_CHECK - check that the dumps are not empty.
+*/
 #define DUMP_CHECK(D, NAME)                                                    \
     if (D) {                                                                   \
         printf("->  %s is not empty:\n", NAME);                                \
-        writeterm(&env, D, stdout);                                            \
+        writeterm(&env, D);                                                    \
         putchar('\n');                                                         \
     }
 
+/*
+    report_clock - report the amount of time spent and in case of NOBDW also
+                   report the time spent while doing garbage collection.
+*/
 #ifdef STATS
-PRIVATE void report_clock(void)
+PRIVATE void report_clock(pEnv env)
 {
     double timediff;
 #ifdef NOBDW
     double gcdiff, gclock;
 #endif
 
-    timediff = clock() - startclock;
+    timediff = clock() - env->startclock;
 #ifdef NOBDW
-    gcdiff = (double)gc_clock * 100 / timediff;
+    gcdiff = (double)env->gc_clock * 100 / timediff;
 #endif
     timediff /= CLOCKS_PER_SEC;
     fprintf(stderr, "%.2f seconds CPU to execute\n", timediff);
 #ifdef NOBDW
-    gclock = (double)gc_clock / CLOCKS_PER_SEC;
+    gclock = (double)env->gc_clock / CLOCKS_PER_SEC;
     fprintf(stderr, "%.2f seconds CPU for gc (=%.0f%%)\n", gclock, gcdiff);
 #endif
 }
@@ -368,20 +415,21 @@ PRIVATE void report_clock(void)
 /*
  *   copyright - Print all copyright notices, even the historical ones.
  *
- *   The version must be set on the commandline: -DJVERSION="\"alpha\""
- *   or whatever.
+ *   The version must be set on the commandline when compiling:
+ *   -DJVERSION="\"alpha\"" or whatever.
  */
 PRIVATE void copyright(char *file)
 {
-    int i;
-    char str[INPLINEMAX];
+    int i, j = 0;
+    char str[INPLINEMAX], *ptr;
 
     static struct {
         char *file;
         time_t stamp;
         char *gc;
-    } table[] = { { "jp-joytst.joy", 994075177, "NOBDW" },
+    } table[] = {
         { "joytut.inp", 994075177, "NOBDW" },
+        { "jp-joytst.joy", 994075177, "NOBDW" },
         { "laztst.joy", 1005579152, "BDW" },
         { "symtst.joy", 1012575285, "BDW" },
         { "plgtst.joy", 1012575285, "BDW" },
@@ -391,58 +439,83 @@ PRIVATE void copyright(char *file)
         { "reptst.joy", 1047653638, "NOBDW" },
         { "jp-reprodtst.joy", 1047653638, "NOBDW" },
         { "flatjoy.joy", 1047653638, "NOBDW" },
-        { "modtst.joy", 1047920271, "BDW" }, { 0, 1056113062, "NOBDW" },
-        { 0, 0, 0 } };
+        { "modtst.joy", 1047920271, "BDW" },
+        { 0, 1056113062, "NOBDW" } };
 
     if (file) {
-        for (i = 0;; i++) {
-            if (!table[i].file || !strcmp(file, table[i].file)) {
+        if ((ptr = strrchr(file, '/')) != 0)
+            file = ptr + 1;
+        for (i = 0; table[i].file; i++) {
+            if (!strcmp(file, table[i].file)) {
                 strftime(str, sizeof(str), "%H:%M:%S on %b %e %Y",
                     gmtime(&table[i].stamp));
                 printf("JOY  -  compiled at %s (%s)\n", str, table[i].gc);
+                j = 1;
                 break;
             }
         }
     } else {
         printf("JOY  -  compiled at %s on %s", __TIME__, __DATE__);
         printf(JVERSION ? " (%s)\n" : "\n", JVERSION);
+        j = 1;
     }
-    printf("Copyright 2001 by Manfred von Thun\n");
+    if (j)
+        printf("Copyright 2001 by Manfred von Thun\n");
+}
+
+/*
+    options - print help on startup options and exit: options are those that
+              cannot be set from within the language itself.
+*/
+PRIVATE void options(void)
+{
+    printf("Usage: joy [options] [filename] [parameters]\n");
+    printf("options, filename, parameters can be given in any order\n");
+    printf("options start with '-' and are all given together\n");
+    printf("parameters start with a digit\n");
+    printf("the filename parameter cannot start with '-' or a digit\n");
+    printf("Options:\n");
+    printf("  -h : print this help text and exit\n");
+    printf("  -d : print a trace of program execution\n");
+    printf("  -s : dump user-defined functions after execution\n");
+    printf("  -v : do not print a copyright notice\n");
+    exit(0);
 }
 
 int start_main(int argc, char **argv)
 {
+    static unsigned char mustinclude = 1;
     int i, j;
     char *filename = 0;
-    unsigned char verbose = 0, mustinclude = 1;
+    unsigned char verbose = 1, symdump = 0, helping = 0;
 
     Env env; /* memory, symbol table, stack, and buckets */
+    memset(&env, 0, sizeof(env));
 
     /*
-     *    Start the clock. The clock is a global variable, because it is read
-     *    during atexit(). Atexit is needed, because scan.c calls quit_ that
-     *    calls exit when reading end of file.
+     *    Start the clock. my_atexit is called from quit_ that is called in
+     *    scan.c after reading EOF on the first input file.
      */
-    startclock = clock();
+    env.startclock = clock();
 #ifdef STATS
-    atexit(report_clock);
+    my_atexit(report_clock);
 #endif
     /*
      *    Initialize srcfile and other environmental parameters.
      */
-    memset(&env, 0, sizeof(env));
     env.srcfile = stdin;
     /*
      *    First look for options. They start with -.
      */
     for (i = 0; i < argc; i++)
         if (argv[i][0] == '-') {
-            for (j = 1; argv[i][j]; j++) {
-                if (argv[i][j] == 'd')
-                    env.debugging = 1;
-                if (argv[i][j] == 'v')
-                    verbose = 1;
-            }
+            for (j = 1; argv[i][j]; j++)
+                switch (argv[i][j]) {
+                case 'd' : env.debugging = 1; break;
+                case 'h' : helping = 1; break;
+                case 's' : symdump = 1; break;
+                case 'v' : verbose = 0; break;
+                }
             /*
                 Overwrite the options with subsequent parameters.
             */
@@ -452,7 +525,7 @@ int start_main(int argc, char **argv)
         }
     /*
      *    Look for a possible filename parameter. Filenames cannot start with -
-     *    and cannot start with a digit, unless quoted.
+     *    and cannot start with a digit, unless preceded by a path: e.g. './'.
      */
     for (i = 1; i < argc; i++)
         if (!isdigit(argv[i][0])) {
@@ -473,19 +546,23 @@ int start_main(int argc, char **argv)
     env.g_argv = argv;
     if (verbose)
         copyright(filename);
-    env.autoput = INIAUTOPUT;
+    if (symdump)
+        my_atexit(dump_table);
+    if (helping)
+        options();
     env.echoflag = INIECHOFLAG;
+#ifdef NOBDW
+    env.tracegc = INITRACEGC;
+#endif
+    env.autoput = INIAUTOPUT;
     env.undeferror = INIUNDEFERROR;
     inilinebuffer(&env, filename);
     inisymboltable(&env);
-    env.stck = NULL;
+    setjmp(begin);
 #ifdef NOBDW
-    env.tracegc = INITRACEGC;
-    gc_clock = 0;
     inimem1(&env);
     inimem2(&env);
 #endif
-    setjmp(begin);
     if (mustinclude) {
         mustinclude = 0;
         doinclude(&env, "usrlib.joy", ERROR_ON_USRLIB);
@@ -529,9 +606,9 @@ int start_main(int argc, char **argv)
 #endif
             if (env.stck) {
                 if (env.autoput == 2)
-                    writeterm(&env, env.stck, stdout);
+                    writeterm(&env, env.stck);
                 else if (env.autoput == 1) {
-                    writefactor(&env, env.stck, stdout);
+                    writefactor(&env, env.stck);
 #ifdef NOBDW
                     env.stck = env.memory[env.stck].next;
 #else
@@ -551,7 +628,26 @@ int main(int argc, char **argv)
 #ifdef GC_BDW
     GC_INIT();
 #else
-    GC_init(&argc);
+    GC_init(&argc, fatal);
 #endif
     return (*m)(argc, argv);
+}
+
+/*
+    dump the symbol table - accessed from quit_, because env is needed;
+    do this only for user defined symbols.
+*/
+PRIVATE void dump_table(pEnv env)
+{
+    int i;
+    Entry ent;
+
+    for (i = vec_size(env->symtab) - 1; i >= 0; i--) {
+        ent = vec_at(env->symtab, i);
+        if (!ent.is_user)
+            break;
+        printf("%s == ", ent.name);
+        writeterm(env, ent.u.body);
+        putchar('\n');
+    }
 }

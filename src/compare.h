@@ -1,234 +1,189 @@
 /*
     module  : compare.h
-    version : 1.5
-    date    : 04/11/22
+    version : 1.6
+    date    : 05/02/22
 */
 #ifndef COMPARE_H
 #define COMPARE_H
 
-PRIVATE double Compare(pEnv env, Index first, Index second)
+PUBLIC int Compare(pEnv env, Index first, Index second)
 {
-    switch (nodetype(first)) {
+    FILE *fp1, *fp2;
+    int type1, type2;
+    char *name1, *name2;
+    double dbl, dbl1, dbl2;
+    int64_t num, num1, num2;
+
+    type1 = nodetype(first);
+    type2 = nodetype(second);
+    switch (type1) {
     case USR_:
-        switch (nodetype(second)) {
+        name1 = vec_at(env->symtab, nodevalue(first).ent).name;
+        switch (type2) {
         case USR_:
-            return strcmp(vec_at(env->symtab, nodevalue(first).ent).name,
-                vec_at(env->symtab, nodevalue(second).ent).name);
+            name2 = vec_at(env->symtab, nodevalue(second).ent).name;
+            goto cmpstr;
         case ANON_FUNCT_:
         case BOOLEAN_:
         case CHAR_:
         case INTEGER_:
         case SET_:
-            break;
-        case STRING_:
-            return strcmp(vec_at(env->symtab, nodevalue(first).ent).name,
-                nodevalue(second).str);
         case LIST_:
         case FLOAT_:
         case FILE_:
-            break;
+            return 1; /* unequal */
+        case STRING_:
+            name2 = nodevalue(second).str;
+            goto cmpstr;
         default:
-            return strcmp(vec_at(env->symtab, nodevalue(first).ent).name,
-                opername(nodetype(second)));
+            name2 = opername(type2);
+            goto cmpstr;
         }
         break;
-#if 0
     case ANON_FUNCT_:
-        switch (nodetype(second)) {
-        case USR_:
-            break;
-        case ANON_FUNCT_:
-            return (double)((size_t)nodevalue(first).proc -
-			    (size_t)nodevalue(second).proc);
-        case BOOLEAN_:
-        case CHAR_:
-        case INTEGER_:
-        case SET_:
-        case STRING_:
-        case LIST_:
-        case FLOAT_:
-        case FILE_:
-        default:
-            break;
-        }
+        return 1; /* unequal */
         break;
-#endif
     case BOOLEAN_:
-        switch (nodetype(second)) {
-        case USR_:
-        case ANON_FUNCT_:
-            break;
+        num1 = nodevalue(first).num;
+        switch (type2) {
         case BOOLEAN_:
         case CHAR_:
         case INTEGER_:
-            return nodevalue(first).num - nodevalue(second).num;
-        case SET_:
-        case STRING_:
-        case LIST_:
-            break;
+            num2 = nodevalue(second).num;
+            goto cmpnum;
         case FLOAT_:
-            return nodevalue(first).num - nodevalue(second).dbl;
-        case FILE_:
+            dbl1 = num1;
+            dbl2 = nodevalue(second).dbl;
+            goto cmpdbl;
         default:
-            break;
+            return 1; /* unequal */
         }
         break;
     case CHAR_:
-        switch (nodetype(second)) {
-        case USR_:
-        case ANON_FUNCT_:
-            break;
+        num1 = nodevalue(first).num;
+        switch (type2) {
         case BOOLEAN_:
         case CHAR_:
         case INTEGER_:
-            return nodevalue(first).num - nodevalue(second).num;
-        case SET_:
-        case STRING_:
-        case LIST_:
-            break;
+            num2 = nodevalue(second).num;
+            goto cmpnum;
         case FLOAT_:
-            return nodevalue(first).num - nodevalue(second).dbl;
-        case FILE_:
+            dbl1 = num1;
+            dbl2 = nodevalue(second).dbl;
+            goto cmpdbl;
         default:
-            break;
+            return 1; /* unequal */
         }
         break;
     case INTEGER_:
-        switch (nodetype(second)) {
-        case USR_:
-        case ANON_FUNCT_:
-            break;
+        num1 = nodevalue(first).num;
+        switch (type2) {
         case BOOLEAN_:
         case CHAR_:
         case INTEGER_:
-            return nodevalue(first).num - nodevalue(second).num;
-        case SET_:
-        case STRING_:
-        case LIST_:
-            break;
+            num2 = nodevalue(second).num;
+            goto cmpnum;
         case FLOAT_:
-            return nodevalue(first).num - nodevalue(second).dbl;
-        case FILE_:
+            dbl1 = num1;
+            dbl2 = nodevalue(second).dbl;
+            goto cmpdbl;
         default:
-            break;
+            return 1;
         }
         break;
     case SET_:
-        switch (nodetype(second)) {
-        case USR_:
-        case ANON_FUNCT_:
-        case BOOLEAN_:
-        case CHAR_:
-        case INTEGER_:
-            break;
+        num1 = nodevalue(first).num;
+        switch (type2) {
         case SET_:
-            return nodevalue(first).set - nodevalue(second).set;
-        case STRING_:
-        case LIST_:
-        case FLOAT_:
-        case FILE_:
+            num2 = nodevalue(second).set;
+            goto cmpnum;
         default:
-            break;
+            return 1; /* unequal */
         }
         break;
     case STRING_:
-        switch (nodetype(second)) {
+        name1 = nodevalue(first).str;
+        switch (type2) {
         case USR_:
-            return strcmp(nodevalue(first).str,
-                vec_at(env->symtab, nodevalue(second).ent).name);
+            name2 = vec_at(env->symtab, nodevalue(second).ent).name;
+            goto cmpstr;
         case ANON_FUNCT_:
         case BOOLEAN_:
         case CHAR_:
         case INTEGER_:
         case SET_:
-            break;
-        case STRING_:
-            return strcmp(nodevalue(first).str, nodevalue(second).str);
         case LIST_:
         case FLOAT_:
         case FILE_:
-            break;
+            return 1; /* unequal */
+        case STRING_:
+            name2 = nodevalue(second).str;
+            goto cmpstr;
         default:
-            return strcmp(nodevalue(first).str, opername(nodetype(second)));
+            name2 = opername(type2);
+            goto cmpstr;
         }
         break;
     case LIST_:
-        switch (nodetype(second)) {
-        case USR_:
-        case ANON_FUNCT_:
-        case BOOLEAN_:
-        case CHAR_:
-        case INTEGER_:
-        case SET_:
-        case STRING_:
-        case LIST_:
-        case FLOAT_:
-        case FILE_:
-        default:
-            break;
-        }
+        return 1; /* unequal */
         break;
     case FLOAT_:
-        switch (nodetype(second)) {
-        case USR_:
-        case ANON_FUNCT_:
-            break;
+        dbl1 = nodevalue(first).dbl;
+        switch (type2) {
         case BOOLEAN_:
         case CHAR_:
         case INTEGER_:
-            return nodevalue(first).dbl - nodevalue(second).num;
-        case SET_:
-        case STRING_:
-        case LIST_:
-            break;
+            dbl2 = nodevalue(second).num;
+            goto cmpdbl;
         case FLOAT_:
-            return nodevalue(first).dbl - nodevalue(second).dbl;
-        case FILE_:
+            dbl2 = nodevalue(second).dbl;
+            goto cmpdbl;
         default:
-            break;
+            return 1; /* unequal */
         }
         break;
     case FILE_:
-        switch (nodetype(second)) {
-        case USR_:
-        case ANON_FUNCT_:
-        case BOOLEAN_:
-        case CHAR_:
-        case INTEGER_:
-        case SET_:
-        case STRING_:
-        case LIST_:
-        case FLOAT_:
-            break;
+        fp1 = nodevalue(first).fil;
+        switch (type2) {
         case FILE_:
-            return (double)(nodevalue(first).fil - nodevalue(second).fil);
+            fp2 = nodevalue(second).fil;
+            return fp1 - fp2 < 0 ? -1 : fp1 - fp2 > 0;
         default:
-            break;
+            return 1; /* unequal */
         }
         break;
     default:
-        switch (nodetype(second)) {
+        name1 = opername(type1);
+        switch (type2) {
         case USR_:
-            return strcmp(opername(nodetype(first)),
-                vec_at(env->symtab, nodevalue(second).ent).name);
+            name2 = vec_at(env->symtab, nodevalue(second).ent).name;
+            goto cmpstr;
         case ANON_FUNCT_:
         case BOOLEAN_:
         case CHAR_:
         case INTEGER_:
         case SET_:
-            break;
-        case STRING_:
-            return strcmp(opername(nodetype(first)), nodevalue(second).str);
         case LIST_:
         case FLOAT_:
         case FILE_:
-            break;
+            return 1; /* unequal */
+        case STRING_:
+            name2 = nodevalue(second).str;
+            goto cmpstr;
         default:
-            return strcmp(
-                opername(nodetype(first)), opername(nodetype(second)));
+            name2 = opername(type2);
+            goto cmpstr;
         }
         break;
     }
-    return 1.0; /* uncomparable is different */
+cmpdbl:
+    dbl = dbl1 - dbl2;
+    return dbl < 0 ? -1 : dbl > 0;
+cmpstr:
+    num = strcmp(name1, name2);
+    return num < 0 ? -1 : num > 0;
+cmpnum:
+    num = num1 - num2;
+    return num < 0 ? -1 : num > 0;
 }
 #endif

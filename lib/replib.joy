@@ -88,7 +88,7 @@ PUBLIC
         [ifte] cons cons cons;          # [ .. .. .. ifte ]
 
     linear == [i] _expand;
-    binary == [dip swap i] _expand
+    _binary == [dip swap i] _expand	(* R.W. *)
 
 END;     # MODULE rep
 

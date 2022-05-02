@@ -210,7 +210,7 @@ nfib-fix.
 DEFINE
     fact-lin == [null] [pop 1] [dup pred] [*] rep.linear;
     length-lin == [null] [pop 0] [rest] [succ] rep.linear;
-    nfib-bin == [small] [pop 1] [pred dup pred] [+] rep.binary;
+    nfib-bin == [small] [pop 1] [pred dup pred] [+] rep._binary; (* R.W. *)
 
     fact-fix == fact-lin rep.fix;
     length-fix-a == length-lin rep.fix-a;
@@ -225,7 +225,7 @@ DEFINE
 6 nfib-bin [] [[dup put] dip] rep.fix-i i newline pop.
 
 DEFINE
-    qsort-bin == [small] [] [uncons [>] split] [enconcat] rep.binary;
+    qsort-bin == [small] [] [uncons [>] split] [enconcat] rep._binary;(* R.W. *)
     qsort-fix-c == qsort-bin rep.fix-c;
     qtest == qsort-fix-c i state.
 

@@ -1,7 +1,7 @@
 /*
     module  : linrec.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 05/02/22
 */
 #ifndef LINREC_C
 #define LINREC_C
@@ -16,6 +16,7 @@ PRIVATE void linrecaux(pEnv env)
     int result;
     env->dump1 = LIST_NEWNODE(env->stck, env->dump1);
     exeterm(env, nodevalue(SAVED4).lis);
+    CHECKSTACK("linrec");
     result = nodevalue(env->stck).num;
     env->stck = DMP1;
     POP(env->dump1);

@@ -1,7 +1,7 @@
 /*
     module  : fget.c
-    version : 1.2
-    date    : 04/11/22
+    version : 1.3
+    date    : 05/02/22
 */
 #ifndef FGET_C
 #define FGET_C
@@ -16,9 +16,8 @@ PRIVATE void fget_(pEnv env)
     int stdin_dup;
 
     ONEPARAM("fget");
+    FILE("fget");
     fp = nodevalue(env->stck).fil;
-    if (nodetype(env->stck) != FILE_ || !fp)
-        execerror(env, "file", "fget");
     if ((stdin_dup = dup(0)) != -1)
         dup2(fileno(fp), 0);
     getsym(env);

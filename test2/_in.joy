@@ -1,0 +1,11 @@
+(*
+    module  : %M%
+    version : %I%
+    date    : %G%
+*)
+2 [1 2 3] _in.
+4 [1 2 3] _in.
+'e "test" _in.
+'a "test" _in.
+2 {1 2 3} _in.
+4 {1 2 3} _in.

@@ -1,7 +1,7 @@
 /*
     module  : someall.h
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 05/02/22
 */
 #ifndef SOMEALL_H
 #define SOMEALL_H
@@ -20,6 +20,7 @@
                 if (nodevalue(SAVED2).set & ((long_t)1 << j)) {                \
                     env->stck = INTEGER_NEWNODE(j, SAVED3);                    \
                     exeterm(env, nodevalue(SAVED1).lis);                       \
+                    CHECKSTACK(NAME);                                          \
                     if (nodevalue(env->stck).num != INITIAL)                   \
                         result = 1 - INITIAL;                                  \
                 }                                                              \
@@ -32,6 +33,7 @@
                  s++) {                                                        \
                 env->stck = CHAR_NEWNODE(*s, SAVED3);                          \
                 exeterm(env, nodevalue(SAVED1).lis);                           \
+                CHECKSTACK(NAME);                                              \
                 if (nodevalue(env->stck).num != INITIAL)                       \
                     result = 1 - INITIAL;                                      \
             }                                                                  \
@@ -43,6 +45,7 @@
                 env->stck                                                      \
                     = newnode(env, nodetype(DMP1), nodevalue(DMP1), SAVED3);   \
                 exeterm(env, nodevalue(SAVED1).lis);                           \
+                CHECKSTACK(NAME);                                              \
                 if (nodevalue(env->stck).num != INITIAL)                       \
                     result = 1 - INITIAL;                                      \
                 DMP1 = nextnode1(DMP1);                                        \

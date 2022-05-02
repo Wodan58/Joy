@@ -1,7 +1,7 @@
 /*
     module  : module.c
-    version : 1.2
-    date    : 04/12/22
+    version : 1.3
+    date    : 05/02/22
 */
 #include "globals.h"
 
@@ -26,9 +26,10 @@ void initmod(pEnv env, char *name)
 {
     if (++module_index >= DISPLAYMAX) {
         module_index = DISPLAYMAX - 1;
-        execerror(env, "index", "display");
+        execerror("index", "display");
     }
-    env->module_stack[module_index] = GC_strdup(name);
+    env->module_stack[module_index].name = GC_strdup(name);
+    env->module_stack[module_index].hide = hide_index;
 }
 
 /*
@@ -47,7 +48,7 @@ void initpriv(pEnv env, int priv)
 
     if (++hide_index >= DISPLAYMAX) {
         hide_index = DISPLAYMAX - 1;
-        execerror(env, "index", "display");
+        execerror("index", "display");
     }
     if (priv) {
         sprintf(str, "%d", ++hide_count);
@@ -60,7 +61,10 @@ void initpriv(pEnv env, int priv)
  * stoppriv registers the transition from private to public definitions. Names
  * should no longer be prefixed with the name of the private section.
  */
-void stoppriv(void) { inside_hide = 0; }
+void stoppriv(void)
+{
+    inside_hide = 0;
+}
 
 /*
  * exitpriv lowers the hide_index after reading the public section.
@@ -108,7 +112,7 @@ char *classify(pEnv env, char *name)
      * accessing the symbol.
      */
     else if (module_index >= 0)
-        buf = env->module_stack[module_index];
+        buf = env->module_stack[module_index].name;
     /*
      * buf, when filled, contains either a module identifier, or a number
      * string.
@@ -138,27 +142,34 @@ char *classify(pEnv env, char *name)
  */
 pEntry qualify(pEnv env, char *name)
 {
-    int index;
     size_t leng;
     khiter_t key;
     char *buf, *str;
+    int index, limit;
 
     /*
      * if ident has a prefix, it is already a fully qualified name and can be
      * searched in the symbol table right away. The prefix can only be a module
      * name. If the name is not found, there is an error and a 0 is returned.
      */
-    if (strchr(name, '.'))
+    if (strchr(name, '.')) {
         if ((key = kh_get(Symtab, env->hash, name)) != kh_end(env->hash))
             return kh_value(env->hash, key);
         else
             return 0;
+    }
     /*
      * the hide stack is searched, trying each of the hidden sections. The
-     * return value from lookup is returned.
+     * return value from lookup is returned. In case of a module, only the
+     * hide stack that is active at module creation is searched, leaving out
+     * the search through the hide stack of enclosing modules.
      */
-    if (hide_index >= 0)
-        for (index = hide_index; index >= 0; index--) {
+    if (hide_index >= 0) {
+        if (module_index >= 0)
+            limit = env->module_stack[module_index].hide;
+        else
+            limit = -1;
+        for (index = hide_index; index > limit; index--) {
             buf = env->hide_stack[index];
             leng = strlen(buf) + strlen(name) + 2;
             str = GC_malloc_atomic(leng);
@@ -166,12 +177,13 @@ pEntry qualify(pEnv env, char *name)
             if ((key = kh_get(Symtab, env->hash, str)) != kh_end(env->hash))
                 return kh_value(env->hash, key);
         }
+    }
     /*
      * if the name can not be found in the local tables, it should be searched
      * in the currently active module, if there is one.
      */
     if (module_index >= 0) {
-        buf = env->module_stack[module_index];
+        buf = env->module_stack[module_index].name;
         leng = strlen(buf) + strlen(name) + 2;
         str = GC_malloc_atomic(leng);
         sprintf(str, "%s.%s", buf, name);

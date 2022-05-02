@@ -1,7 +1,7 @@
 /*
     module  : map.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 05/02/22
 */
 #ifndef MAP_C
 #define MAP_C
@@ -25,8 +25,7 @@ PRIVATE void map_(pEnv env)
         while (DMP1 != NULL) {
             env->stck = newnode(env, nodetype(DMP1), nodevalue(DMP1), SAVED3);
             exeterm(env, nodevalue(SAVED1).lis);
-            if (env->stck == NULL)
-                execerror(env, "non-empty stack", "map");
+            CHECKSTACK("map");
             if (DMP2 == NULL) /* first */
             {
                 DMP2 = NEWNODE(nodetype(env->stck), nodevalue(env->stck), NULL);
@@ -53,6 +52,7 @@ PRIVATE void map_(pEnv env)
         for (s = nodevalue(SAVED2).str; *s != '\0'; s++) {
             env->stck = CHAR_NEWNODE((long_t)*s, SAVED3);
             exeterm(env, nodevalue(SAVED1).lis);
+            CHECKSTACK("map");
             resultstring[j++] = (char)nodevalue(env->stck).num;
         }
         resultstring[j] = '\0';
@@ -66,6 +66,7 @@ PRIVATE void map_(pEnv env)
             if (nodevalue(SAVED2).set & ((long_t)1 << i)) {
                 env->stck = INTEGER_NEWNODE(i, SAVED3);
                 exeterm(env, nodevalue(SAVED1).lis);
+                CHECKSTACK("map");
                 resultset |= ((long_t)1 << nodevalue(env->stck).num);
             }
         env->stck = SET_NEWNODE(resultset, SAVED3);

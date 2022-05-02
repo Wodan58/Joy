@@ -1,0 +1,6 @@
+(*
+    Module with only private section, that is empty.
+*)
+MODULE m10
+  PRIVATE
+END

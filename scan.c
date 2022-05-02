@@ -1,8 +1,8 @@
 /* FILE: scan.c */
 /*
  *  module  : scan.c
- *  version : 1.33
- *  date    : 04/13/22
+ *  version : 1.34
+ *  date    : 05/02/22
  */
 #include "globals.h"
 
@@ -23,6 +23,9 @@ static int linelength, currentcolumn;
 static int errorcount;
 #endif
 static int ch = ' ';
+#ifdef READ_PRIVATE_AHEAD
+static Symbol unget_symb;
+#endif
 
 /*
     inilinebuffer - initialise the stack of input files. The filename parameter
@@ -33,16 +36,19 @@ PUBLIC void inilinebuffer(pEnv env, char *str)
     infile[0].fp = env->srcfile;
 #if 0
     if (!str)
-	strcpy(infile[0].name, "stdin");
+        strcpy(infile[0].name, "stdin");
     else {
-	strncpy(infile[0].name, str, ALEN);
-	infile[0].name[ALEN - 1] = 0;
+        strncpy(infile[0].name, str, ALEN);
+        infile[0].name[ALEN - 1] = 0;
     }
 #endif
 }
 
+#ifdef READ_PRIVATE_AHEAD
 /*
     getlinenum - return the linenumber before reading a section the first time.
+                 echoing the lines read is suppressed, because they will be
+                 read again, in the normal case.
 */
 PUBLIC int getlinenum(void)
 {
@@ -64,6 +70,7 @@ PUBLIC void resetlinebuffer(int linenum)
     currentcolumn = 0;
     ch = ' ';
 }
+#endif
 
 /*
     putline - echo an input line.
@@ -92,7 +99,7 @@ PRIVATE void getch(pEnv env)
 
     if (currentcolumn == linelength) {
 #ifdef USE_SHELL_ESCAPE
-    again:
+again:
 #endif
         currentcolumn = linelength = 0;
         if (linenumber >= 0)
@@ -106,7 +113,7 @@ PRIVATE void getch(pEnv env)
             env->srcfile = infile[ilevel].fp;
             linenumber = infile[ilevel].linenum;
         } else
-            quit_(0);
+            quit_(env);
         linbuf[linelength++] = ' '; /* to help getsym for numbers */
         linbuf[linelength++] = 0;
         if (env->echoflag)
@@ -124,7 +131,10 @@ PRIVATE void getch(pEnv env)
 /*
     endofbuffer - test whether the entire buffer has been processed.
 */
-PRIVATE int endofbuffer(void) { return currentcolumn == linelength; }
+PRIVATE int endofbuffer(void)
+{
+    return currentcolumn == linelength;
+}
 
 /*
     error - error processing during source file reads.
@@ -175,7 +185,7 @@ PUBLIC void doinclude(pEnv env, char *filnam, int error)
 #endif
 
     if (ilevel + 1 == INPSTACKMAX)
-        execerror(env, "fewer include files", "include");
+        execerror("fewer include files", "include");
     infile[ilevel].fp = env->srcfile;
     infile[ilevel].linenum = linenumber;
     linenumber = 0;
@@ -185,9 +195,9 @@ PUBLIC void doinclude(pEnv env, char *filnam, int error)
     }
 #ifdef SEARCH_ARGV0_DIRECTORY
     if ((path = strrchr(env->g_argv[0], '/')) != 0) {
-	leng = path - env->g_argv[0];
-	str = GC_malloc_atomic(leng + strlen(filnam) + 2);
-	sprintf(str, "%.*s/%s", leng, env->g_argv[0], filnam);
+        leng = path - env->g_argv[0];
+        str = GC_malloc_atomic(leng + strlen(filnam) + 2);
+        sprintf(str, "%.*s/%s", leng, env->g_argv[0], filnam);
         if ((fp = fopen(str, "r")) != 0) {
             my_include(env, filnam, fp);
             return;
@@ -195,7 +205,7 @@ PUBLIC void doinclude(pEnv env, char *filnam, int error)
     }
 #endif
     if (error)
-        execerror(env, "valid file name", "include");
+        execerror("valid file name", "include");
 }
 
 /*
@@ -244,17 +254,39 @@ PRIVATE int specialchar(pEnv env)
 /*
     peek - look at the next character.
 */
-PRIVATE int peek(void) { return linbuf[currentcolumn]; }
+PRIVATE int peek(void)
+{
+    return linbuf[currentcolumn];
+}
+
+/*
+    ungetsym - insert a symbol in the input stream. The symbol has already been
+               read, but needs to be read again, because another symbol must be
+               processed first.
+*/
+#ifdef READ_PRIVATE_AHEAD
+PUBLIC void ungetsym(Symbol symb)
+{
+    unget_symb = symb;
+}
+#endif
 
 /*
     getsym - lexical analyzer, filling env->yylval and returning the token type
-             in symb.
+             in env->symb.
 */
 PUBLIC void getsym(pEnv env)
 {
-    int i = 0, start, next;
-    char string[INPLINEMAX];
+    int i = 0, begin, next;
+    char string[INPLINEMAX + 1];
 
+#ifdef READ_PRIVATE_AHEAD
+    if (unget_symb) {
+        env->symb = unget_symb;
+        unget_symb = 0;
+        return;
+    }
+#endif
 start:
     while (ch <= ' ')
         getch(env);
@@ -338,7 +370,7 @@ start:
     case '8':
     case '9':
         if (isdigit(ch) || isdigit(peek())) {
-            start = currentcolumn - 1;
+            begin = currentcolumn - 1;
             if (ch == '-')
                 getch(env);
             else if (ch == '0') {
@@ -368,17 +400,17 @@ start:
                     while (isdigit(ch))
                         getch(env);
                 }
-                env->yylval.dbl = strtod(&linbuf[start], 0);
+                env->yylval.dbl = strtod(&linbuf[begin], 0);
                 env->symb = FLOAT_;
                 return;
             }
-        done:
-            env->yylval.num = strtol(&linbuf[start], 0, 0); /* BIT_32 */
+done:
+            env->yylval.num = strtol(&linbuf[begin], 0, 0); /* BIT_32 */
             env->symb = INTEGER_;
             return;
         }
         goto not_unary_minus;
-    not_unary_minus:
+not_unary_minus:
     /* ELSE '-' is not unary minus, fall through */
     default:
         do {

@@ -1,0 +1,6 @@
+(*
+    Module with a definition outside sections. It is processed ?
+*)
+MODULE m12
+  a == "a"
+END

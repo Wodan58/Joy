@@ -1,6 +1,19 @@
 (*
     module  : gc.joy
-    version : 1.1
-    date    : 04/11/22
+    version : 1.2
+    date    : 05/02/22
 *)
+
+DEFINE
+    swoncat == swap concat;
+    from-to ==		(*  lo  hi  agg  *)
+	[] cons  [pop pop] swoncat
+	[>] swap
+	[ [dup succ] dip ]
+	[cons]
+	linrec;
+    from-to-list == [] from-to.
+
+1 9000 from-to-list.
+
 gc.

@@ -1,7 +1,7 @@
 /*
     module  : drop.c
-    version : 1.2
-    date    : 07/20/21
+    version : 1.3
+    date    : 05/02/22
 */
 #ifndef DROP_C
 #define DROP_C
@@ -12,8 +12,11 @@ Aggregate B is the result of deleting the first N elements of A.
 */
 PRIVATE void drop_(pEnv env)
 {
-    int n = nodevalue(env->stck).num;
+    int n;
+
     TWOPARAMS("drop");
+    POSITIVEINDEX(env->stck, "drop");
+    n = nodevalue(env->stck).num;
     switch (nodetype(nextnode1(env->stck))) {
     case SET_: {
         int i;

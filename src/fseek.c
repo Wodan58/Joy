@@ -1,7 +1,7 @@
 /*
     module  : fseek.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 05/02/22
 */
 #ifndef FSEEK_C
 #define FSEEK_C
@@ -17,8 +17,7 @@ PRIVATE void fseek_(pEnv env)
     int whence;
 
     THREEPARAMS("fseek");
-    INTEGER("fseek");
-    INTEGER2("fseek");
+    INTEGERS2("fseek");
     whence = nodevalue(env->stck).num;
     POP(env->stck);
     pos = nodevalue(env->stck).num;

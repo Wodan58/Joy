@@ -2,11 +2,11 @@
 .SUFFIXES:
 
 CC = gcc
-CFLAGS = -DNOBDW -DCOSMO -g -Os -static -nostdlib -nostdinc -fno-pie -no-pie \
-	 -mno-red-zone -fno-omit-frame-pointer -pg -mnop-mcount \
-	 -include cosmopolitan.h -Wall -Wextra -Wno-unused-parameter \
-	 -Wno-error=attributes -Wno-attributes -Werror \
-	 -DJVERSION="\"cosmo\"" -DTRACING -DNDEBUG
+CFLAGS = -g -Os -static -nostdlib -nostdinc -fno-pie -no-pie -mno-red-zone \
+         -fno-omit-frame-pointer -pg -mnop-mcount -include cosmopolitan.h -I. \
+         -Wall -Wextra -Wno-unused-parameter -Wno-error=attributes \
+         -Wno-attributes -Werror -DNOBDW -DJVERSION="\"cosmo\"" -DTRACING \
+         -DCOSMO
 LD = gcc
 LDLIBS = -fuse-ld=bfd -Wl,-T,ape.lds crt.o ape.o cosmopolitan.a
 OBJECTS = interp.o scan.o utils.o main.o factor.o module.o gc.o

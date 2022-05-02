@@ -1,0 +1,94 @@
+2 setecho.
+1 setundeferror.
+DEFINE
+#	English		French		German
+	zero == 0 0 pop;
+	one == zero 1 +;
+			HIDE
+			un == one;
+			deux == zero one un + +
+			IN
+	two == deux;
+	three == zero un + deux +;
+			END;
+	four == two three + one -;
+			HIDE
+			trois == two succ;
+					HIDE
+					eins == one;
+					zwei == one dup +;
+					drei == eins zwei +;
+					IN
+			quatre == drei eins +;
+					END;
+			cinq == two trois +
+			IN
+	five == cinq;
+	six == trois three +;
+	seven == trois drei + succ;
+			END;
+END
+
+zero.
+one.
+two.
+three.
+four.
+five.
+six.
+seven.		# should complain about undefined drei !
+
+HIDE
+    twenty == 20; thirty == 30;
+IN
+    fifty == twenty thirty +;
+END
+
+fifty.
+thirty.		# should complain about undefined thirty !
+
+MODULE m1
+    PRIVATE
+	a == "a"; b == "b"
+    PUBLIC
+	ab == a b concat; ba == b a concat;
+	abba == ab ba concat
+    END
+
+			# correct usage of fields:
+m1.ab .
+m1.ba .
+m1.abba .
+			# incorrect usage of fields:  no such field
+m1.a .
+m1.b .
+
+MODULE m2
+    PRIVATE
+	a == "A"; b == "B"
+    PUBLIC
+	ab == a b concat; ba == b a concat;
+	abba == ab ba concat;
+	    HIDE
+	    c == "C"; d == "D"
+	    IN
+	cd == c d concat;
+	abc == a b concat c concat
+	    END;
+	bcd == b cd concat
+    END
+
+			# correct usage of fields:
+m2.ab .
+m2.ba .
+m2.abba .
+m2.cd .
+m2.abc .
+m2.bcd .
+
+			# incorrect usage of fields:  no such field
+m2.a .
+m2.b .
+m2.c .
+m2.d .
+

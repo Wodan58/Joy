@@ -1,7 +1,7 @@
 /*
     module  : helpdetail.c
-    version : 1.2
-    date    : 07/20/21
+    version : 1.3
+    date    : 05/02/22
 */
 #ifndef HELPDETAIL_C
 #define HELPDETAIL_C
@@ -23,7 +23,7 @@ PRIVATE void helpdetail_(pEnv env)
         if (nodetype(n) == USR_) {
             ent = vec_at(env->symtab, nodevalue(n).ent);
             printf("%s  ==\n    ", ent.name);
-            writeterm(env, ent.u.body, stdout);
+            writeterm(env, ent.u.body);
             printf("\n");
             break;
         } else {

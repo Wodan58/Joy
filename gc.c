@@ -1,7 +1,7 @@
 /*
     module  : gc.c
-    version : 1.23
-    date    : 04/13/22
+    version : 1.24
+    date    : 05/02/22
 */
 #ifndef COSMO
 #include <stdio.h>
@@ -10,6 +10,10 @@
 #include <limits.h>
 #include <stdint.h>
 #include <setjmp.h>
+#include <signal.h>
+#ifdef __linux__
+#include <unistd.h>
+#endif
 
 #ifdef __APPLE__
 #include <mach-o/getsect.h>
@@ -25,29 +29,29 @@
 #include "gc.h"
 
 #ifdef _MSC_VER
-#define DOWN_64K	~0xFFFF
-#define PEPOINTER	15
-#define IMAGE_BASE	13
-#define BASE_OF_CODE	11
-#define SIZE_OF_CODE	7
-#define SIZE_OF_DATA	8
-#define SIZE_OF_BSS	9
+#define DOWN_64K        ~0xFFFF
+#define PEPOINTER       15
+#define IMAGE_BASE      13
+#define BASE_OF_CODE    11
+#define SIZE_OF_CODE     7
+#define SIZE_OF_DATA     8
+#define SIZE_OF_BSS      9
 #endif
 
-#define GC_COLL		0
-#define GC_LEAF		1
-#define GC_SAVE		2
-#define GC_MARK		4
+#define GC_COLL          0
+#define GC_LEAF          1
+#define GC_SAVE          2
+#define GC_MARK          4
 
-#define BSS_ALIGN	4
-#define MIN_ITEMS	4
-#define MAX_ITEMS	2
-#define FULL_MASK	(uint64_t)0x0000ffffffffffff
+#define BSS_ALIGN        4
+#define MIN_ITEMS        4
+#define MAX_ITEMS        2
+#define FULL_MASK        (uint64_t)0x0000fffffffffffe
 
 /*
     When pointers are 16 bit aligned, the lower 4 bits are always zero.
 */
-#define HASH_FUNCTION(key)	(khint_t)((key) >> 4)
+#define HASH_FUNCTION(key)        (khint_t)((key) >> 4)
 
 typedef struct mem_info {
     unsigned flags: 3;
@@ -59,43 +63,28 @@ typedef struct mem_info {
 */
 KHASH_INIT(Backup, uint64_t, mem_info, 1, HASH_FUNCTION, kh_int64_hash_equal)
 
-static khint_t max_items;		/* max. items before gc      */
-static khash_t(Backup) *MEM;		/* backup of pointers        */
-static uint64_t bottom, lower, upper;	/* stack bottom, heap bounds */
+static khint_t max_items;                /* max. items before gc      */
+static khash_t(Backup) *MEM;             /* backup of pointers        */
+static uint64_t bottom, lower, upper;    /* stack bottom, heap bounds */
 
 /*
     Pointers to memory segments.
 */
 #ifdef SCAN_BSS_MEMORY
 static uint64_t start_of_text,
-		start_of_data,
-		start_of_bss,
-		start_of_heap;
+                start_of_data,
+                start_of_bss,
+                start_of_heap;
 #endif
 
 /*
-    Report a fatal error and abort execution.
+    mem_fatal - Report a fatal error and abort execution.
 */
 static void mem_fatal(void)
 {
-    fprintf(stderr, "Out of memory\n");
-    abort();
+    fprintf(stderr, "Out Of Memory\n");
+    exit(0);
 }
-
-/*
-    Report of the amount of memory allocated is delegated to valgrind.
-*/
-#ifdef FREE_ON_EXIT
-static void mem_exit(void)
-{
-    khiter_t key;
-
-    for (key = kh_begin(MEM); key != kh_end(MEM); key++)
-	if (kh_exist(MEM, key))
-	    free((void *)kh_key(MEM, key));
-    kh_destroy(Backup, MEM);
-}
-#endif
 
 /*
     Determine sections of memory.
@@ -130,39 +119,65 @@ static void init_heap(void)
 }
 #endif
 
+#ifdef SIGNAL_HANDLING
+#ifdef COSMO
+int sigaltstack(const struct sigaltstack *neu, struct sigaltstack *old);
+#endif
 /*
-    Initialise gc memory.
+    setupsignal - setup signal handler, protecting against call stack overflow;
+                  also setup an alternative stack, to be used during signal
+                  handling. It is not possible to recover from a stack
+                  overflow but at least a friendly message can be given.
 */
-void GC_init(void *ptr)
+static void setupsignal(void (*proc)())
 {
-#ifdef SCAN_BSS_MEMORY
-    init_heap();
-#endif
-    bottom = (uint64_t)ptr;
-    MEM = kh_init(Backup);
-    max_items = MIN_ITEMS;
-#ifdef FREE_ON_EXIT
-    atexit(mem_exit);
-#endif
+    struct sigaction sa;
+    struct sigaltstack ss;
+
+    memset(&ss, 0, sizeof(ss));
+    ss.ss_sp = malloc(SIGSTKSZ);
+    ss.ss_size = SIGSTKSZ;
+    sigaltstack(&ss, 0);
+
+    memset(&sa, 0, sizeof(sa));
+    sa.sa_sigaction = proc;
+    sa.sa_flags = SA_NODEFER | SA_ONSTACK;
+    sigaction(SIGSEGV, &sa, 0);
 }
+#endif
 
 /*
-    Walk registered blocks and free those that have not been marked, unless
-    they are marked as uncollectable.
+    Report of the amount of memory allocated is delegated to valgrind.
 */
-static void scan(void)
+#ifdef FREE_ON_EXIT
+static void mem_exit(void)
 {
     khiter_t key;
 
     for (key = kh_begin(MEM); key != kh_end(MEM); key++)
-	if (kh_exist(MEM, key)) {
-	    if (kh_value(MEM, key).flags & GC_MARK)
-		kh_value(MEM, key).flags &= ~GC_MARK;
-	    else if ((kh_value(MEM, key).flags & GC_SAVE) == 0) {
-		free((void *)kh_key(MEM, key));
-		kh_del(Backup, MEM, key);
-	    }
-	}
+        if (kh_exist(MEM, key))
+            free((void *)kh_key(MEM, key));
+    kh_destroy(Backup, MEM);
+}
+#endif
+
+/*
+    Initialise gc memory.
+*/
+void GC_init(void *ptr, void (*proc)(void))
+{
+#ifdef SCAN_BSS_MEMORY
+    init_heap();
+#endif
+#ifdef SIGNAL_HANDLING
+    setupsignal(proc);
+#endif
+#ifdef FREE_ON_EXIT
+    atexit(mem_exit);
+#endif
+    bottom = (uint64_t)ptr;
+    MEM = kh_init(Backup);
+    max_items = MIN_ITEMS;
 }
 
 /*
@@ -177,16 +192,16 @@ static void mark_ptr(char *ptr)
     value = (uint64_t)ptr;
     value &= FULL_MASK;
     if (value < lower || value > upper)
-	return;
+        return;
     if ((key = kh_get(Backup, MEM, value)) != kh_end(MEM)) {
-	if (kh_value(MEM, key).flags & GC_MARK)
-	    return;
-	kh_value(MEM, key).flags |= GC_MARK;
-	if (kh_value(MEM, key).flags & GC_LEAF)
-	    return;
-	size = kh_value(MEM, key).size / sizeof(char *);
-	for (i = 0; i < size; i++)
-	    mark_ptr(((char **)value)[i]);
+        if (kh_value(MEM, key).flags & GC_MARK)
+            return;
+        kh_value(MEM, key).flags |= GC_MARK;
+        if (kh_value(MEM, key).flags & GC_LEAF)
+            return;
+        size = kh_value(MEM, key).size / sizeof(char *);
+        for (i = 0; i < size; i++)
+            mark_ptr(((char **)value)[i]);
     }
 }
 
@@ -199,12 +214,12 @@ static void mark_stk(void)
   
 #ifdef STACK_GROWS_UPWARD
     if (ptr > bottom)
-	for (; ptr > bottom; ptr -= sizeof(char *))
-	    mark_ptr(*(char **)ptr);
+        for (; ptr > bottom; ptr -= sizeof(char *))
+            mark_ptr(*(char **)ptr);
     else
 #endif
-	for (; ptr < bottom; ptr += sizeof(char *))
-	    mark_ptr(*(char **)ptr);
+        for (; ptr < bottom; ptr += sizeof(char *))
+            mark_ptr(*(char **)ptr);
 }
 
 /*
@@ -216,10 +231,29 @@ static void mark_bss(void)
     uint64_t ptr;
 
     for (ptr = start_of_bss; ptr < start_of_heap; ptr += BSS_ALIGN) {
-	mark_ptr(*(char **)ptr);
+        mark_ptr(*(char **)ptr);
 }
 }
 #endif
+
+/*
+    Walk registered blocks and free those that have not been marked, unless
+    they are marked as uncollectable.
+*/
+static void scan(void)
+{
+    khiter_t key;
+
+    for (key = kh_begin(MEM); key != kh_end(MEM); key++)
+        if (kh_exist(MEM, key)) {
+            if (kh_value(MEM, key).flags & GC_MARK)
+                kh_value(MEM, key).flags &= ~GC_MARK;
+            else if ((kh_value(MEM, key).flags & GC_SAVE) == 0) {
+                free((void *)kh_key(MEM, key));
+                kh_del(Backup, MEM, key);
+            }
+        }
+}
 
 /*
     Collect garbage.
@@ -255,15 +289,15 @@ static void remind(char *ptr, size_t size, int flags)
 
     value = (uint64_t)ptr;
     if (lower > value || !lower)
-	lower = value;
+        lower = value;
     if (upper < value + size)
-	upper = value + size;
+        upper = value + size;
     key = kh_put(Backup, MEM, value, &rv);
     kh_value(MEM, key).flags = flags;
     kh_value(MEM, key).size = size;
     if (max_items < kh_n_buckets(MEM)) {
-	GC_gcollect();
-	max_items = kh_n_buckets(MEM) * MAX_ITEMS;
+        GC_gcollect();
+        max_items = kh_n_buckets(MEM) * MAX_ITEMS;
     }
 }
 
@@ -275,22 +309,11 @@ static void *mem_block(size_t size, int f)
     void *ptr;
 
     if ((ptr = malloc(size)) == 0)
-	mem_fatal();
+        mem_fatal();
     memset(ptr, 0, size);
     remind(ptr, size, f);
     return ptr;
 }
-
-/*
-    Register a memory block that may contain other blocks but that is not
-    itself collectable.
-*/
-#ifdef USE_GC_MALLOC_UNCOLLECTABLE
-void *GC_malloc_uncollectable(size_t size)
-{
-    return mem_block(size, GC_SAVE);
-}
-#endif
 
 /*
     Register a memory block that contains no other blocks.
@@ -321,7 +344,7 @@ static void update(void *ptr, size_t size)
     khiter_t key;
 
     if ((key = kh_get(Backup, MEM, (uint64_t)ptr)) != kh_end(MEM))
-	kh_value(MEM, key).size = size;
+        kh_value(MEM, key).size = size;
 }
 
 /*
@@ -333,7 +356,7 @@ static unsigned char inspect(void *ptr)
     unsigned char flags = 0;
 
     if ((key = kh_get(Backup, MEM, (uint64_t)ptr)) != kh_end(MEM))
-	flags = kh_value(MEM, key).flags;
+        flags = kh_value(MEM, key).flags;
     return flags;
 }
 
@@ -345,7 +368,7 @@ static void forget(void *ptr)
     khiter_t key;
 
     if ((key = kh_get(Backup, MEM, (uint64_t)ptr)) != kh_end(MEM))
-	kh_del(Backup, MEM, key);
+        kh_del(Backup, MEM, key);
 }
 
 /*
@@ -356,26 +379,14 @@ void *GC_realloc(void *old, size_t size)
     void *ptr;
 
     if ((ptr = realloc(old, size)) == 0)
-	mem_fatal();
+        mem_fatal();
     if (ptr == old)
-	update(ptr, size);
+        update(ptr, size);
     else {
-	remind(ptr, size, inspect(old));
-	forget(old);
+        remind(ptr, size, inspect(old));
+        forget(old);
     }
     return ptr;
-}
-#endif
-
-/*
-    Allocate a memory block and set it to uncollectable. This is necessary
-    for khash.h, that starts allocating with realloc instead of malloc and
-    the hash tables should exist until the end of the program.
-*/
-#ifdef USE_GC_MALLOC_UNCOLLECTABLE
-void *GC_realloc_uncollectable(void *old, size_t size)
-{
-    return old ? GC_realloc(old, size) : GC_malloc_uncollectable(size);
 }
 #endif
 
@@ -390,7 +401,30 @@ char *GC_strdup(const char *str)
 
     leng = strlen(str);
     if ((ptr = GC_malloc_atomic(leng + 1)) != 0)
-	strcpy(ptr, str);
+        strcpy(ptr, str);
     return ptr;
+}
+#endif
+
+/*
+    Register a memory block that may contain other blocks but that is not
+    itself collectable.
+*/
+#ifdef USE_GC_MALLOC_UNCOLLECTABLE
+void *GC_malloc_uncollectable(size_t size)
+{
+    return mem_block(size, GC_SAVE);
+}
+#endif
+
+/*
+    Allocate a memory block and set it to uncollectable. This is necessary
+    for khash.h, that starts allocating with realloc instead of malloc and
+    the hash tables should exist until the end of the program.
+*/
+#ifdef USE_GC_MALLOC_UNCOLLECTABLE
+void *GC_realloc_uncollectable(void *old, size_t size)
+{
+    return old ? GC_realloc(old, size) : GC_malloc_uncollectable(size);
 }
 #endif

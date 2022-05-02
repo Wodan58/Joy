@@ -1,7 +1,7 @@
 /*
     module  : take.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 05/02/22
 */
 #ifndef TAKE_C
 #define TAKE_C
@@ -12,9 +12,11 @@ Aggregate B is the result of retaining just the first N elements of A.
 */
 PRIVATE void take_(pEnv env)
 {
-    int n = nodevalue(env->stck).num;
+    int n;
 
     TWOPARAMS("take");
+    POSITIVEINDEX(env->stck, "take");
+    n = nodevalue(env->stck).num;
     switch (nodetype(nextnode1(env->stck))) {
     case SET_: {
         int i;
@@ -37,8 +39,10 @@ PRIVATE void take_(pEnv env)
         old = nodevalue(nextnode1(env->stck)).str;
         POP(env->stck);
         /* do not swap the order of the next two statements ! ! ! */
+#if 0
         if (i < 0)
             i = 0;
+#endif
         if ((size_t)i >= strlen(old))
             return; /* the old string unchanged */
         p = result = (char *)GC_malloc_atomic(i + 1);

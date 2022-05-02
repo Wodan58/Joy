@@ -1,7 +1,7 @@
 /*
     module  : if_type.h
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 05/02/22
 */
 #ifndef IF_TYPE_H
 #define IF_TYPE_H
@@ -9,7 +9,7 @@
 #define IF_TYPE(PROCEDURE, NAME, TYP)                                          \
     PRIVATE void PROCEDURE(pEnv env)                                           \
     {                                                                          \
-        TWOPARAMS(NAME);                                                       \
+        THREEPARAMS(NAME);                                                     \
         TWOQUOTES(NAME);                                                       \
         SAVESTACK;                                                             \
         env->stck = SAVED3;                                                    \

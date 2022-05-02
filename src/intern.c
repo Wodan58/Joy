@@ -1,7 +1,7 @@
 /*
     module  : intern.c
-    version : 1.2
-    date    : 04/11/22
+    version : 1.3
+    date    : 05/02/22
 */
 #ifndef INTERN_C
 #define INTERN_C
@@ -12,22 +12,23 @@ Pushes the item whose name is "sym".
 */
 PRIVATE void intern_(pEnv env)
 {
-    char *p;
+    Entry ent;
+    char *ptr;
 
     ONEPARAM("intern");
     STRING("intern");
     strncpy(env->ident, nodevalue(env->stck).str, ALEN);
     env->ident[ALEN - 1] = 0;
-    p = 0;
-    if (*env->ident == '-' || !strchr("(#)[]{}.;'\"0123456789", *env->ident))
-        for (p = env->ident + 1; *p; p++)
-            if (!isalnum((int)*p) && !strchr("=_-", *p))
+    ptr = 0;
+    if (*env->ident == '-' || !strchr("\"#'().0123456789;[]{}", *env->ident))
+        for (ptr = env->ident + 1; *ptr; ptr++)
+            if (!isalnum((int)*ptr) && !strchr("-=_", *ptr))
                 break;
-    if (!p || *p)
-        execerror(env, "valid name", env->ident);
+    CHECKNAME(ptr, "intern");
     lookup(env);
-    if (env->location < env->firstlibra) {
-        env->yylval.proc = vec_at(env->symtab, env->location).u.proc;
+    ent = vec_at(env->symtab, env->location);
+    if (!ent.is_user) {
+        env->yylval.proc = ent.u.proc;
         GUNARY(env->location, env->yylval);
     } else
         UNARY(USR_NEWNODE, env->location);

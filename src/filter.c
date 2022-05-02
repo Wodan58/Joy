@@ -1,7 +1,7 @@
 /*
     module  : filter.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 05/02/22
 */
 #ifndef FILTER_C
 #define FILTER_C
@@ -23,6 +23,7 @@ PRIVATE void filter_(pEnv env)
             if (nodevalue(SAVED2).set & ((long_t)1 << j)) {
                 env->stck = INTEGER_NEWNODE(j, SAVED3);
                 exeterm(env, nodevalue(SAVED1).lis);
+                CHECKSTACK("filter");
                 if (nodevalue(env->stck).num)
                     resultset |= ((long_t)1 << j);
             }
@@ -38,6 +39,7 @@ PRIVATE void filter_(pEnv env)
         for (s = nodevalue(SAVED2).str; *s != '\0'; s++) {
             env->stck = CHAR_NEWNODE((long_t)*s, SAVED3);
             exeterm(env, nodevalue(SAVED1).lis);
+            CHECKSTACK("filter");
             if (nodevalue(env->stck).num)
                 resultstring[j++] = *s;
         }
@@ -53,6 +55,7 @@ PRIVATE void filter_(pEnv env)
         while (DMP1 != NULL) {
             env->stck = newnode(env, nodetype(DMP1), nodevalue(DMP1), SAVED3);
             exeterm(env, nodevalue(SAVED1).lis);
+            CHECKSTACK("filter");
             if (nodevalue(env->stck).num) /* test */
             {
                 if (DMP2 == NULL) /* first */

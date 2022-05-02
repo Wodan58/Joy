@@ -1,0 +1,11 @@
+(*
+    Module with an embedded module in the private section.
+*)
+MODULE m18
+  PRIVATE
+    MODULE m19.
+  PUBLIC
+    a == "a"
+END
+
+m18.a.

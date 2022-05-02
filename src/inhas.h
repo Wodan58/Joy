@@ -1,7 +1,7 @@
 /*
     module  : inhas.h
-    version : 1.2
-    date    : 04/11/22
+    version : 1.3
+    date    : 05/02/22
 */
 #ifndef INHAS_H
 #define INHAS_H
@@ -13,6 +13,7 @@
         TWOPARAMS(NAME);                                                       \
         switch (nodetype(AGGR)) {                                              \
         case SET_:                                                             \
+            CHECKSETMEMBER(ELEM, NAME);                                        \
             found                                                              \
                 = ((nodevalue(AGGR).set) & ((long_t)1 << nodevalue(ELEM).num)) \
                 > 0;                                                           \
@@ -20,9 +21,9 @@
         case STRING_: {                                                        \
             char *s;                                                           \
             for (s = nodevalue(AGGR).str;                                      \
-                 s && *s != '\0' && *s != nodevalue(ELEM).num; s++)            \
+                 *s != '\0' && *s != nodevalue(ELEM).num; s++)                 \
                 ;                                                              \
-            found = s && *s != '\0';                                           \
+            found = *s != '\0';                                                \
             break;                                                             \
         }                                                                      \
         case LIST_: {                                                          \

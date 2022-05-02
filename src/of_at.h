@@ -1,7 +1,7 @@
 /*
     module  : of_at.h
-    version : 1.2
-    date    : 07/20/21
+    version : 1.3
+    date    : 05/02/22
 */
 #ifndef OF_AT_H
 #define OF_AT_H
@@ -10,8 +10,7 @@
     PRIVATE void PROCEDURE(pEnv env)                                           \
     {                                                                          \
         TWOPARAMS(NAME);                                                       \
-        if (nodetype(INDEX) != INTEGER_ || nodevalue(INDEX).num < 0)           \
-            execerror(env, "non-negative integer", NAME);                      \
+        POSITIVEINDEX(INDEX, NAME);                                            \
         switch (nodetype(AGGR)) {                                              \
         case SET_: {                                                           \
             int i, indx = nodevalue(INDEX).num;                                \

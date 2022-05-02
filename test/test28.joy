@@ -1,0 +1,4 @@
+DEFINE	zzz == zzz.
+
+zzz.
+"Done sleeping\n" putchars.

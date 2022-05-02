@@ -1,7 +1,7 @@
 /*
     module  : opcase.c
-    version : 1.2
-    date    : 07/20/21
+    version : 1.3
+    date    : 05/02/22
 */
 #ifndef OPCASE_C
 #define OPCASE_C
@@ -14,7 +14,7 @@ PRIVATE void opcase_(pEnv env)
 {
     Index n;
 
-    ONEPARAM("opcase");
+    TWOPARAMS("opcase");
     LIST("opcase");
     n = nodevalue(env->stck).lis;
     CHECKEMPTYLIST(n, "opcase");

@@ -1,0 +1,20 @@
+(*
+    Module within public section with the same names as in the private section
+    of the enclosing module and access to those names.
+*)
+MODULE m7
+  PRIVATE
+    a == "a";
+    b == "b";
+  PUBLIC
+    ab == a b concat;
+    ba == b a concat;
+    MODULE m8
+      PUBLIC
+        a == "A";
+        b == "B";
+    END;
+    test == m8.a m8.b a b concat concat concat;
+END
+
+m7.test.

@@ -1,0 +1,15 @@
+(*
+    Public section with forward calling and access to private section.
+*)
+MODULE m4
+  PRIVATE
+    a == "a";
+    b == "b";
+  PUBLIC
+    test == ab ba concat;
+    ab == a b concat;
+    ba == b a concat;
+END
+
+m4.a.
+m4.test.

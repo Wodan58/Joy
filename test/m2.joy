@@ -1,0 +1,10 @@
+(*
+    Public section with forward calling.
+*)
+MODULE m2
+  PUBLIC
+    ab == a "b" concat;
+    a == "a";
+END
+
+m2.ab.

@@ -1,7 +1,7 @@
 /*
     module  : split.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 05/02/22
 */
 #ifndef SPLIT_C
 #define SPLIT_C
@@ -23,6 +23,7 @@ PRIVATE void split_(pEnv env)
             if (nodevalue(SAVED2).set & ((long_t)1 << j)) {
                 env->stck = INTEGER_NEWNODE(j, SAVED3);
                 exeterm(env, nodevalue(SAVED1).lis);
+                CHECKSTACK("split");
                 if (nodevalue(env->stck).num)
                     yes_set |= ((long_t)1 << j);
                 else
@@ -41,6 +42,7 @@ PRIVATE void split_(pEnv env)
         for (s = nodevalue(SAVED2).str; *s != '\0'; s++) {
             env->stck = CHAR_NEWNODE((long_t)*s, SAVED3);
             exeterm(env, nodevalue(SAVED1).lis);
+            CHECKSTACK("split");
             if (nodevalue(env->stck).num)
                 yesstring[yesptr++] = *s;
             else
@@ -62,6 +64,7 @@ PRIVATE void split_(pEnv env)
         while (DMP1 != NULL) {
             env->stck = newnode(env, nodetype(DMP1), nodevalue(DMP1), SAVED3);
             exeterm(env, nodevalue(SAVED1).lis);
+            CHECKSTACK("split");
             if (nodevalue(env->stck).num) /* pass */
                 if (DMP2 == NULL) /* first */
                 {

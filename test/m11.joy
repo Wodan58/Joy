@@ -1,0 +1,6 @@
+(*
+    Module with only public section, that is empty.
+*)
+MODULE m11
+  PUBLIC
+END

@@ -1,7 +1,7 @@
 /*
     module  : fwrite.c
-    version : 1.2
-    date    : 07/20/21
+    version : 1.3
+    date    : 05/02/22
 */
 #ifndef FWRITE_C
 #define FWRITE_C
@@ -20,8 +20,7 @@ PRIVATE void fwrite_(pEnv env)
     LIST("fwrite");
     for (n = nodevalue(env->stck).lis, length = 0; n;
          n = nextnode1(n), length++)
-        if (nodetype(n) != INTEGER_)
-            execerror(env, "numeric list", "fwrite");
+        CHECKNUMERIC(n, "fwrite");
     buff = GC_malloc_atomic(length);
     for (n = nodevalue(env->stck).lis, i = 0; n; n = nextnode1(n), i++)
         buff[i] = (char)nodevalue(n).num;

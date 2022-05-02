@@ -54,7 +54,7 @@
 	[ MEMBER  Bob  [QUOTE [Peter Bob Mary]] ]
 
 	[ DEFUN   SUM  [lis]
-	    FOLDR lis 0 [LAMBDA [x y] [+ x y]] ]
+	    FOLDR lis 0 [LAMBDA [x y] + x y] ]		(* R.W. *)
 	[ SUM  [QUOTE [1 2 3 4]] ]
 
 	[ DEFUN  LIST-TO-FLOAT  [lis]

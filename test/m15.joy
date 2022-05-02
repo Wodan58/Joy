@@ -1,0 +1,11 @@
+(*
+    Module with an embedded module outside sections. It gives an error and
+    should not do that. After m16 is processed, m15 is active again.
+*)
+MODULE m15
+  MODULE m16.
+  PUBLIC
+    a == "a"
+END
+
+m15.a.

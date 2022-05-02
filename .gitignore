@@ -1,6 +1,7 @@
 cosmo*
 *.o
 *.lds
+*.jar
 joy.com.dbg
 build
 builtin.c

@@ -1,13 +1,19 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.41
- *  date    : 04/12/22
+ *  version : 1.42
+ *  date    : 05/02/22
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
-#ifndef COSMO
+/* #define BIT_32 */
+
+#ifdef COSMO
+#ifdef BIT_32
+#undef BIT_32
+#endif
+#else
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -25,13 +31,6 @@
 #else
 #include <unistd.h>
 #endif
-#endif
-
-/* #define BIT_32 */
-
-#ifdef NULL
-#undef NULL
-#define NULL 0
 #endif
 
 #ifdef NOBDW
@@ -53,7 +52,10 @@
 #endif
 
 /*
-    The following #defines are not available in the oldest ANSI standard.
+    The following #defines are not available in the oldest ANSI/ISO standard.
+
+    Note: strdup, snprintf, localtime_r, gmtime_r are not available when
+    compiling with -ansi.
 */
 #define USE_SNPRINTF
 
@@ -170,9 +172,8 @@ STATS
 /*
     The following #defines are present in the source code.
     They have been accepted as an addition to the original code.
-    Note: strdup, snprintf, localtime_r, gmtime_r are not available
-    when compiling with -ansi.
 */
+#define READ_PRIVATE_AHEAD
 #define SEARCH_ARGV0_DIRECTORY
 
 /*
@@ -181,12 +182,11 @@ STATS
 */
 #define USE_SHELL_ESCAPE
 
-/* configure			*/
+/* configure                        */
 #define SHELLESCAPE '$'
 #define INPSTACKMAX 10
 #define INPLINEMAX 255
-#define ALEN 99
-#define SYMTABMAX 0
+#define ALEN 45 /* module + member */
 #define DISPLAYMAX 10 /* nesting in HIDE & MODULE */
 #define MEMORYMAX 20000
 #define INIECHOFLAG 0
@@ -194,7 +194,7 @@ STATS
 #define INITRACEGC 1
 #define INIUNDEFERROR 0
 
-/* installation dependent	*/
+/* installation dependent        */
 #ifdef BIT_32
 #define SETSIZE 32
 #define MAXINT (long_t)2147483647
@@ -207,7 +207,7 @@ typedef long long_t;
 typedef double my_float_t;
 #endif
 
-/* symbols from getsym		*/
+/* symbols from getsym                */
 #define ILLEGAL_ 0
 #define COPIED_ 1
 #define USR_ 2
@@ -244,7 +244,7 @@ typedef double my_float_t;
 #define PRIVATE
 #define PUBLIC
 
-/* types			*/
+/* types                        */
 typedef int Symbol;
 
 #ifdef BIT_32
@@ -276,38 +276,45 @@ typedef union {
     long_t num;         /* USR, BOOLEAN, CHAR, INTEGER */
     long_t set;         /* SET */
     char *str;          /* STRING */
-    Index lis;          /* LIST */
     my_float_t dbl;     /* FLOAT */
     FILE *fil;          /* FILE */
+    Index lis;          /* LIST */
     pEntry ent;         /* SYMBOL */
     void (*proc)(pEnv); /* ANON_FUNCT */
 } Types;
 /* clang-format on */
 
 typedef struct Node {
-    Types u;
     Operator op;
+    Types u;
     Index next;
 } Node;
 
 typedef struct Entry {
-    char *name;
+    char *name, is_user;
     union {
         Index body;
         void (*proc)(pEnv);
     } u;
 } Entry;
 
-#include "gc.h"
+#include <gc.h>
 #include "kvec.h"
 #include "khash.h"
+
+#ifdef NULL
+#undef NULL
+#define NULL 0
+#endif
 
 KHASH_MAP_INIT_STR(Symtab, pEntry)
 
 typedef struct Env {
     vector(Entry) * symtab; /* symbol table */
     khash_t(Symtab) * hash;
+    clock_t startclock; /* main */
 #ifdef NOBDW
+    clock_t gc_clock;
     Node *memory; /* dynamic memory */
     Index prog, stck, conts, dump, dump1, dump2, dump3, dump4, dump5;
 #else
@@ -315,11 +322,13 @@ typedef struct Env {
 #endif
     Types yylval, bucket; /* used by NEWNODE defines */
     char *hide_stack[DISPLAYMAX];
-    char *module_stack[DISPLAYMAX];
+    struct module {
+        char *name;
+        int hide;
+    } module_stack[DISPLAYMAX];
     FILE *srcfile; /* main */
     char **g_argv;
     int g_argc;
-    pEntry firstlibra; /* inioptable */
     pEntry location; /* getsym */
     Symbol symb; /* scanner */
     char ident[ALEN];
@@ -327,22 +336,11 @@ typedef struct Env {
     unsigned char echoflag;
     unsigned char undeferror;
     unsigned char tracegc;
-    unsigned char debugging;
+    unsigned char debugging; /* options */
 } Env;
 
-#ifdef ALLOC
-#define CLASS
-#else
-#define CLASS extern
-#endif
-
-CLASS clock_t startclock; /* main */
-#ifdef NOBDW
-CLASS clock_t gc_clock;
-#endif
-
 /* GOOD REFS:
-        005.133l H4732		A LISP interpreter in C
+        005.133l H4732                A LISP interpreter in C
         Manna p139  recursive Ackermann SCHEMA
 
    OTHER DATA TYPES
@@ -362,22 +360,23 @@ PUBLIC char *opername(int o);
 PUBLIC void (*operproc(int o))(pEnv env);
 PUBLIC int opertype(int o);
 /* main.c */
-PUBLIC void inisymboltable(pEnv env); /* initialise */
 PUBLIC void lookup(pEnv env);
-PUBLIC void abortexecution_(pEnv env);
-PUBLIC void execerror(pEnv env, char *message, char *op);
+PUBLIC void abortexecution_(void);
+PUBLIC void execerror(char *message, char *op);
 /* scan.c */
+PUBLIC void my_atexit(void (*proc)(pEnv));
 PUBLIC void inilinebuffer(pEnv env, char *filnam);
 PUBLIC int getlinenum(void);
 PUBLIC void resetlinebuffer(int linenum);
 PUBLIC void error(pEnv env, char *message);
 PUBLIC void doinclude(pEnv env, char *filnam, int error);
+PUBLIC void ungetsym(Symbol symb);
 PUBLIC void getsym(pEnv env);
 /* factor.c */
 PUBLIC void readfactor(pEnv env, int priv); /* read a JOY factor */
 PUBLIC void readterm(pEnv env, int priv);
-PUBLIC void writefactor(pEnv env, Index n, FILE *stm);
-PUBLIC void writeterm(pEnv env, Index n, FILE *stm);
+PUBLIC void writefactor(pEnv env, Index n);
+PUBLIC void writeterm(pEnv env, Index n);
 /* module.c */
 PUBLIC void initmod(pEnv env, char *name);
 PUBLIC void initpriv(pEnv env, int priv);
