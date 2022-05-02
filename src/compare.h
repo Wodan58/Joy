@@ -1,6 +1,6 @@
 /*
     module  : compare.h
-    version : 1.6
+    version : 1.7
     date    : 05/02/22
 */
 #ifndef COMPARE_H
@@ -39,9 +39,6 @@ PUBLIC int Compare(pEnv env, Index first, Index second)
             name2 = opername(type2);
             goto cmpstr;
         }
-        break;
-    case ANON_FUNCT_:
-        return 1; /* unequal */
         break;
     case BOOLEAN_:
         num1 = nodevalue(first).num;
