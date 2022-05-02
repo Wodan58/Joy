@@ -3,4 +3,4 @@
     version : 1.1
     date    : 04/14/22
 *)
-"This is test/usrlib.joy\n" putchars.
+"This is test2/usrlib.joy\n" putchars.
