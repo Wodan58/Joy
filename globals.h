@@ -1,8 +1,8 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.42
- *  date    : 05/02/22
+ *  version : 1.43
+ *  date    : 05/03/22
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -387,12 +387,12 @@ PUBLIC char *classify(pEnv env, char *name);
 PUBLIC pEntry qualify(pEnv env, char *name);
 /* utils.c */
 PUBLIC Index newnode(pEnv env, Operator o, Types u, Index r);
+PUBLIC void my_memorymax(pEnv env);
+PUBLIC void my_memoryindex(pEnv env);
 #ifdef NOBDW
 PUBLIC void printnode(pEnv env, Index p);
 PUBLIC void inimem1(pEnv env);
 PUBLIC void inimem2(pEnv env);
 PUBLIC void my_gc(pEnv env);
-PUBLIC void my_memorymax(pEnv env);
-PUBLIC void my_memoryindex(pEnv env);
 #endif
 #endif

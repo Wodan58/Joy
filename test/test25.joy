@@ -1,4 +1,8 @@
-
+(*
+    module  : test25.joy
+    version : 1.1
+    date    : 05/03/22
+*)
 MODULE m1
   PUBLIC
     MODULE m2

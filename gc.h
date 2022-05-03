@@ -1,11 +1,12 @@
 /*
     module  : gc.h
-    version : 1.11
-    date    : 05/02/22
+    version : 1.12
+    date    : 05/03/22
 */
 #ifndef GC_H
 #define GC_H
 
+#define USE_GC_GET_HEAP_SIZE
 #ifdef __linux__
 #define SIGNAL_HANDLING
 #endif
@@ -24,6 +25,8 @@ void *GC_malloc_atomic(size_t size);
 void *GC_malloc(size_t size);
 void *GC_realloc(void *old, size_t size);
 char *GC_strdup(const char *str);
+size_t GC_get_heap_size(void);
+size_t GC_get_memory_use(void);
 void *GC_malloc_uncollectable(size_t size);
 void *GC_realloc_uncollectable(void *old, size_t size);
 #endif

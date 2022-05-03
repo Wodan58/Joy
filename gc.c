@@ -1,7 +1,7 @@
 /*
     module  : gc.c
-    version : 1.24
-    date    : 05/02/22
+    version : 1.25
+    date    : 05/03/22
 */
 #ifndef COSMO
 #include <stdio.h>
@@ -17,11 +17,6 @@
 
 #ifdef __APPLE__
 #include <mach-o/getsect.h>
-#endif
-
-#if 0
-#define MALLOC_DEBUG
-#include "rmalloc.h"
 #endif
 #endif
 
@@ -66,6 +61,9 @@ KHASH_INIT(Backup, uint64_t, mem_info, 1, HASH_FUNCTION, kh_int64_hash_equal)
 static khint_t max_items;                /* max. items before gc      */
 static khash_t(Backup) *MEM;             /* backup of pointers        */
 static uint64_t bottom, lower, upper;    /* stack bottom, heap bounds */
+#ifdef SIGNAL_HANDLING
+static void *alt_stack;
+#endif
 
 /*
     Pointers to memory segments.
@@ -135,7 +133,7 @@ static void setupsignal(void (*proc)())
     struct sigaltstack ss;
 
     memset(&ss, 0, sizeof(ss));
-    ss.ss_sp = malloc(SIGSTKSZ);
+    ss.ss_sp = alt_stack = malloc(SIGSTKSZ);
     ss.ss_size = SIGSTKSZ;
     sigaltstack(&ss, 0);
 
@@ -158,6 +156,10 @@ static void mem_exit(void)
         if (kh_exist(MEM, key))
             free((void *)kh_key(MEM, key));
     kh_destroy(Backup, MEM);
+#ifdef SIGNAL_HANDLING
+    if (alt_stack)
+        free(alt_stack);
+#endif
 }
 #endif
 
@@ -403,6 +405,22 @@ char *GC_strdup(const char *str)
     if ((ptr = GC_malloc_atomic(leng + 1)) != 0)
         strcpy(ptr, str);
     return ptr;
+}
+#endif
+
+/*
+    Return the size of allocated memory in bytes. That is memory_use;
+    heap_size returns the number of buckets. The unit is not bytes.
+*/
+#ifdef USE_GC_GET_HEAP_SIZE
+size_t GC_get_heap_size(void)
+{
+    return max_items;
+}
+
+size_t GC_get_memory_use(void)
+{
+    return upper - lower;
 }
 #endif
 

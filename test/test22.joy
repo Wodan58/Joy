@@ -1,7 +1,7 @@
 (*
-    module  : %M%
-    version : %I%
-    date    : %G%
+    module  : test22.joy
+    version : 1.1
+    date    : 05/03/22
 *)
 MODULE m1
   MODULE m2
