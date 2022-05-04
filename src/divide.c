@@ -1,13 +1,13 @@
 /*
     module  : divide.c
-    version : 1.2
-    date    : 05/02/22
+    version : 1.3
+    date    : 05/04/22
 */
 #ifndef DIVIDE_C
 #define DIVIDE_C
 
 /**
-1410  /  :  I J  ->  K
+1410  /\0sol  :  I J  ->  K
 Integer K is the (rounded) ratio of integers I and J.  Also supports float.
 */
 PRIVATE void divide_(pEnv env)

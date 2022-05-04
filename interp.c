@@ -1,8 +1,8 @@
 /* FILE: interp.c */
 /*
  *  module  : interp.c
- *  version : 1.55
- *  date    : 05/02/22
+ *  version : 1.56
+ *  date    : 05/04/22
  */
 
 /*
@@ -436,7 +436,6 @@ start:
 #include "src/help.h"
 #include "src/if_type.h"
 #include "src/inhas.h"
-#include "src/_inhas.h"
 #include "src/maxmin.h"
 #include "src/n_ary.h"
 #include "src/of_at.h"
@@ -503,23 +502,63 @@ static struct {
 #include "builtin.c"
 /* clang-format on */
 
+/*
+    nickname - return the name of an operator. If the operator starts with a
+               character that is not part of an identifier, then the nick name
+               is the part of the string after the first \0.
+*/
+PUBLIC char *nickname(int o)
+{
+    int size;
+    char *str;
+
+    size = sizeof(optable) / sizeof(optable[0]) - 1;
+    if (o >= 0 && o < size) {
+        str = optable[o].name;
+        if (isalnum((int)*str) || strchr(" -=_", *str))
+            return str;
+        while (*str)
+            str++;
+        return str + 1;
+    }
+    return 0;
+}
+
+/*
+    opername - return the name of an operator.
+*/
 PUBLIC char *opername(int o)
 {
-    if (o >= 0 && o < (int)(sizeof(optable) / sizeof(optable[0])))
+    int size;
+
+    size = sizeof(optable) / sizeof(optable[0]) - 1;
+    if (o >= 0 && o < size)
         return optable[o].name;
     return 0;
 }
 
+/*
+    operproc - return the procedure at index o.
+*/
 PUBLIC void (*operproc(int o))(pEnv)
 {
-    if (o >= 0 && o < (int)(sizeof(optable) / sizeof(optable[0])))
+    int size;
+
+    size = sizeof(optable) / sizeof(optable[0]) - 1;
+    if (o >= 0 && o < size)
         return optable[o].proc;
     return 0;
 }
 
+/*
+    opertype - return o, after doing array bounds checking.
+*/
 PUBLIC int opertype(int o)
 {
-    if (o >= 0 && o < (int)(sizeof(optable) / sizeof(optable[0])))
+    int size;
+
+    size = sizeof(optable) / sizeof(optable[0]) - 1;
+    if (o >= 0 && o < size)
         return o;
     return 0;
 }

@@ -1,7 +1,7 @@
 /*
     module  : compare.h
-    version : 1.7
-    date    : 05/02/22
+    version : 1.8
+    date    : 05/04/22
 */
 #ifndef COMPARE_H
 #define COMPARE_H
@@ -36,7 +36,7 @@ PUBLIC int Compare(pEnv env, Index first, Index second)
             name2 = nodevalue(second).str;
             goto cmpstr;
         default:
-            name2 = opername(type2);
+            name2 = nickname(type2);
             goto cmpstr;
         }
         break;
@@ -117,7 +117,7 @@ PUBLIC int Compare(pEnv env, Index first, Index second)
             name2 = nodevalue(second).str;
             goto cmpstr;
         default:
-            name2 = opername(type2);
+            name2 = nickname(type2);
             goto cmpstr;
         }
         break;
@@ -150,7 +150,7 @@ PUBLIC int Compare(pEnv env, Index first, Index second)
         }
         break;
     default:
-        name1 = opername(type1);
+        name1 = nickname(type1);
         switch (type2) {
         case USR_:
             name2 = vec_at(env->symtab, nodevalue(second).ent).name;
@@ -168,7 +168,7 @@ PUBLIC int Compare(pEnv env, Index first, Index second)
             name2 = nodevalue(second).str;
             goto cmpstr;
         default:
-            name2 = opername(type2);
+            name2 = nickname(type2);
             goto cmpstr;
         }
         break;

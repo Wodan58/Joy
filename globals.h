@@ -1,8 +1,8 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.43
- *  date    : 05/03/22
+ *  version : 1.44
+ *  date    : 05/04/22
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -161,6 +161,7 @@ DEBUG
 
 ENABLE_TRACEGC
 TRACING
+NDEBUG
 STATS
 */
 #ifndef NOBDW
@@ -182,7 +183,7 @@ STATS
 */
 #define USE_SHELL_ESCAPE
 
-/* configure                        */
+/* configure                     */
 #define SHELLESCAPE '$'
 #define INPSTACKMAX 10
 #define INPLINEMAX 255
@@ -207,7 +208,7 @@ typedef long long_t;
 typedef double my_float_t;
 #endif
 
-/* symbols from getsym                */
+/* symbols from getsym           */
 #define ILLEGAL_ 0
 #define COPIED_ 1
 #define USR_ 2
@@ -244,7 +245,7 @@ typedef double my_float_t;
 #define PRIVATE
 #define PUBLIC
 
-/* types                        */
+/* types                         */
 typedef int Symbol;
 
 #ifdef BIT_32
@@ -356,6 +357,7 @@ typedef struct Env {
 /* Public procedures: */
 /* interp.c */
 PUBLIC void exeterm(pEnv env, Index n);
+PUBLIC char *nickname(int o);
 PUBLIC char *opername(int o);
 PUBLIC void (*operproc(int o))(pEnv env);
 PUBLIC int opertype(int o);

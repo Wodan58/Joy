@@ -6,8 +6,10 @@
 DEFINE old_in == in;
            in == [[string] [pop false]] dip [old_in] cons ifte.
 *)
+(*
 DEFINE old_in == in;
            in == _in.
+*)
 
 "grmlib" libload.
 0 __settracegc.
