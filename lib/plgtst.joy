@@ -1,12 +1,13 @@
 (* FILE:   plgtst.joy *)
 
-"\ntesting the propositional logic library in file  plglib.joy\n\n" putchars.
+"\ntesting the propositional logic library in file  plglib.joy\n\n"
+putchars.
 
 0 __settracegc.
 "plglib" libload.
 1 setecho.
 
-(* There are many notations. Begin using minimally bracketed infix:	*)
+(* There are many notations. Begin using minimally bracketed infix:   *)
 
 DEFINE   m-show == Min2Tre taut-show-all.
 
@@ -18,19 +19,19 @@ DEFINE   m-show == Min2Tre taut-show-all.
 
 [ [p or q] imp [p and q] ]				m-show.
 
-(* Really using minimal bracketing on the last two examples:		*)
+(* Really using minimal bracketing on the last two examples:	      *)
 
 [ p and q  imp  p or q ]				m-show.
 
 [ p or q  imp  p and q ]				m-show.
 
-(* Longer examples show the benefit of minimal bracketing:		*)
+(* Longer examples show the benefit of minimal bracketing:	      *)
 
 [ p and q and r imp  p or r or q ]			m-show.
 
 [ p and q and r iff  p or r or q ]			m-show.
 
-(* Using a more compact single symbol notation:				*)
+(* Using a more compact single symbol notation:			      *)
 
 [ p & q & r & s  >  p v r v q v s ]			m-show.
 
@@ -56,8 +57,8 @@ DEFINE   m-show == Min2Tre taut-show-all.
 
 [ [p v q] & [p > r] & [q > s]   >   [r & s] ]		m-show.
 
-(* The original Polish notation, used by Polish logicians in the 1920's	*)
-(* N = not, K = and, A = or, C = imp, E = iff :				*)
+(* The original Polish notation used by Polish logicians in the 1920s *)
+(* N = not, K = and, A = or, C = imp, E = iff :			      *)
 
 DEFINE   p-show == Pol2Tre taut-show-all.
 
@@ -73,7 +74,7 @@ DEFINE   p-show == Pol2Tre taut-show-all.
 
 [  C  K  K  A p q  C p r  C q s   K r s  ]		p-show.
 
-(* But we can also use the other symbols for Polish notation:		*)
+(* But we can also use the other symbols for Polish notation:	      *)
 
 [ imp  and  imp p q  imp q r   imp p r ]		p-show.
 
@@ -83,7 +84,7 @@ DEFINE   p-show == Pol2Tre taut-show-all.
 
 [ >  v p & q r   v & p q & p r ]			p-show.
 
-(* Using reverse Polish (postfix, Joy) notation:			*)
+(* Using reverse Polish (postfix, Joy) notation:		      *)
 
 DEFINE   r-show == Rev2Tre taut-show-all.
 
@@ -91,10 +92,10 @@ DEFINE   r-show == Rev2Tre taut-show-all.
 
 [ p not q not and r imp   q p and not   and  r  imp ]	r-show.
 
-(* The remaining tests only use minimally bracketed infix for input.	*)
-(* There are four additional versions of the possible output:		*)
+(* The remaining tests only use minimally bracketed infix for input.  *)
+(* There are four additional versions of the possible output:	      *)
 
-(* 1. Instead of showing all countermodels, show only one:		*)
+(* 1. Instead of showing all countermodels, show only one:	      *)
 
 DEFINE   m-show1 == Min2Tre taut-show-first.
 
@@ -104,7 +105,7 @@ DEFINE   m-show1 == Min2Tre taut-show-first.
 
 [ p v q v r  >  p & q & r ]				m-show1.
 
-(* 2. Do not show, but collect into  list (for further processing ?):	*)
+(* 2. Do not show, but collect into  list (for further processing ?): *)
 
 DEFINE   m-collect  == Min2Tre taut-collect-all;
 	 m-collect1 == Min2Tre taut-collect-first.
@@ -115,7 +116,7 @@ DEFINE   m-collect  == Min2Tre taut-collect-all;
 
 [ [p > q] & [q > s]   >   [s > p] ]			m-collect1.
 
-(* 3. Do not show or collect, just return number of countermodels:	*)
+(* 3. Do not show or collect, just return number of countermodels:    *)
 
 DEFINE   m-count == Min2Tre taut-count.
 
@@ -125,7 +126,7 @@ DEFINE   m-count == Min2Tre taut-count.
 
 [ [p > q] & [r > s]   >  [[p v r] > [q & s]] ]		m-show.
 
-(* 4. Disregard countermodels, just determine whether tautology:	*)
+(* 4. Disregard countermodels, just determine whether tautology:      *)
 
 DEFINE   m-test == Min2Tre taut-test.
 
@@ -137,8 +138,8 @@ DEFINE   m-test == Min2Tre taut-test.
 
 [ [p v q v r]  >  [p = q = r] ]				m-test.
 
-(* Finally, for big formulas it can be useful to give a definition:	*)
-(* Also, it can help to set them out over several lines:		*)
+(* Finally, for big formulas it can be useful to give a definition:   *)
+(* Also, it can help to set them out over several lines:	      *)
 
 DEFINE big-formula ==
   [  [ CEO-sells-shares
@@ -159,6 +160,6 @@ big-formula  m-test.
 
 big-formula  m-show.
 
-(* So, it ain't half as bad as long as you let them get away with it...	*)
+(* So, it ain't half as bad as long as you let them get away with it. *)
 
 (* end  plgtst.joy *)

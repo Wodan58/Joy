@@ -1,7 +1,7 @@
 /*
     module  : concat.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 05/17/22
 */
 #ifndef CONCAT_C
 #define CONCAT_C
@@ -30,7 +30,7 @@ PRIVATE void concat_(pEnv env)
         return;
     }
     case LIST_:
-        if (nodevalue(nextnode1(env->stck)).lis == NULL) {
+        if (!nodevalue(nextnode1(env->stck)).lis) {
             BINARY(LIST_NEWNODE, nodevalue(env->stck).lis);
             return;
         }
@@ -38,15 +38,13 @@ PRIVATE void concat_(pEnv env)
             nodevalue(nextnode1(env->stck)).lis, env->dump1); /* old */
         env->dump2 = LIST_NEWNODE(0L, env->dump2); /* head */
         env->dump3 = LIST_NEWNODE(0L, env->dump3); /* last */
-        while (DMP1 != NULL) {
-            if (DMP2 == NULL) /* first */
-            {
-                DMP2 = NEWNODE(nodetype(DMP1), nodevalue(DMP1), NULL);
+        while (DMP1) {
+            if (!DMP2) { /* first */
+                DMP2 = NEWNODE(nodetype(DMP1), nodevalue(DMP1), 0);
                 DMP3 = DMP2;
-            } else /* further */
-            {
+            } else { /* further */
                 nextnode1(DMP3)
-                    = NEWNODE(nodetype(DMP1), nodevalue(DMP1), NULL);
+                    = NEWNODE(nodetype(DMP1), nodevalue(DMP1), 0);
                 DMP3 = nextnode1(DMP3);
             };
             DMP1 = nextnode1(DMP1);

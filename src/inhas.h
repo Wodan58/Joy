@@ -1,7 +1,7 @@
 /*
     module  : inhas.h
-    version : 1.3
-    date    : 05/02/22
+    version : 1.4
+    date    : 05/17/22
 */
 #ifndef INHAS_H
 #define INHAS_H
@@ -15,7 +15,7 @@
         case SET_:                                                             \
             CHECKSETMEMBER(ELEM, NAME);                                        \
             found                                                              \
-                = ((nodevalue(AGGR).set) & ((long_t)1 << nodevalue(ELEM).num)) \
+                = ((nodevalue(AGGR).set) & ((long)1 << nodevalue(ELEM).num))   \
                 > 0;                                                           \
             break;                                                             \
         case STRING_: {                                                        \
@@ -30,7 +30,7 @@
             Index n = nodevalue(AGGR).lis;                                     \
             while (n && Compare(env, n, ELEM))                                 \
                 n = nextnode1(n);                                              \
-            found = n != NULL;                                                 \
+            found = n != 0;                                                    \
             break;                                                             \
         }                                                                      \
         default:                                                               \

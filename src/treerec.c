@@ -1,7 +1,7 @@
 /*
     module  : treerec.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 05/17/22
 */
 #ifndef TREEREC_C
 #define TREEREC_C
@@ -13,7 +13,7 @@ T is a tree. If T is a leaf, executes O. Else executes [[[O] C] treerec] C.
 PRIVATE void treerecaux(pEnv env)
 {
     if (nodetype(nextnode1(env->stck)) == LIST_) {
-        NULLARY(LIST_NEWNODE, ANON_FUNCT_NEWNODE(treerecaux, NULL));
+        NULLARY(LIST_NEWNODE, ANON_FUNCT_NEWNODE(treerecaux, 0));
         cons_(env); /*  D  [[[O] C] ANON_FUNCT_]        */
         exeterm(env, nextnode1(nodevalue(nodevalue(env->stck).lis).lis));
     } else {

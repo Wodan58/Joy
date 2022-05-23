@@ -1,7 +1,7 @@
 /*
     module  : condlinrec.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 05/17/22
 */
 #ifndef CONDLINREC_C
 #define CONDLINREC_C
@@ -20,7 +20,7 @@ PRIVATE void condlinrecaux(pEnv env)
     int result = 0;
     env->dump1 = newnode(env, LIST_, nodevalue(SAVED1), env->dump1);
     env->dump2 = LIST_NEWNODE(env->stck, env->dump2);
-    while (result == 0 && DMP1 != NULL && nextnode1(DMP1) != NULL) {
+    while (!result && DMP1 && nextnode1(DMP1)) {
         env->stck = DMP2;
         exeterm(env, nodevalue(nodevalue(DMP1).lis).lis);
         result = nodevalue(env->stck).num;
@@ -30,13 +30,13 @@ PRIVATE void condlinrecaux(pEnv env)
     env->stck = DMP2;
     if (result) {
         exeterm(env, nodevalue(nextnode1(nodevalue(DMP1).lis)).lis);
-        if (nextnode2(nodevalue(DMP1).lis) != NULL) {
+        if (nextnode2(nodevalue(DMP1).lis)) {
             condlinrecaux(env);
             exeterm(env, nodevalue(nextnode2(nodevalue(DMP1).lis)).lis);
         }
     } else {
         exeterm(env, nodevalue(nodevalue(DMP1).lis).lis);
-        if (nextnode1(nodevalue(DMP1).lis) != NULL) {
+        if (nextnode1(nodevalue(DMP1).lis)) {
             condlinrecaux(env);
             exeterm(env, nodevalue(nextnode1(nodevalue(DMP1).lis)).lis);
         }

@@ -1,7 +1,7 @@
 /*
     module  : comprel.h
-    version : 1.3
-    date    : 05/02/22
+    version : 1.4
+    date    : 05/17/22
 */
 #ifndef COMPREL_H
 #define COMPREL_H
@@ -9,7 +9,7 @@
 #define COMPREL(PROCEDURE, NAME, CONSTRUCTOR, OPR, SETCMP)                     \
     PRIVATE void PROCEDURE(pEnv env)                                           \
     {                                                                          \
-        long_t i, j;                                                           \
+        long i, j;                                                             \
         int comp = 0;                                                          \
         TWOPARAMS(NAME);                                                       \
         if (nodetype(env->stck) == SET_) {                                     \

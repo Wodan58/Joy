@@ -1,7 +1,7 @@
 /*
     module  : uncons.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 05/17/22
 */
 #ifndef UNCONS_C
 #define UNCONS_C
@@ -16,12 +16,12 @@ PRIVATE void uncons_(pEnv env)
     switch (nodetype(env->stck)) {
     case SET_: {
         int i = 0;
-        long_t set = nodevalue(env->stck).set;
+        long set = nodevalue(env->stck).set;
         CHECKEMPTYSET(set, "uncons");
-        while (!(set & ((long_t)1 << i)))
+        while (!(set & ((long)1 << i)))
             i++;
         UNARY(INTEGER_NEWNODE, i);
-        NULLARY(SET_NEWNODE, set & ~((long_t)1 << i));
+        NULLARY(SET_NEWNODE, set & ~((long)1 << i));
         break;
     }
     case STRING_: {

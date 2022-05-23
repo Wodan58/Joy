@@ -1,10 +1,14 @@
 (*
     module  : take.joy
-    version : 1.1
-    date    : 04/11/22
+    version : 1.2
+    date    : 05/17/22
 *)
 [1 2 3] 2 take.
+[1 2 3] -1 take.
+[1 2 3] 5 take.
 "test" 2 take.
 "test" -1 take.
 "test" 5 take.
+{1 2 3} -1 take.
 {1 2 3} 2 take.
+{1 2 3} 5 take.

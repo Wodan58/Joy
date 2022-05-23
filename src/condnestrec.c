@@ -1,7 +1,7 @@
 /*
     module  : condnestrec.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 05/17/22
 */
 #ifndef CONDNESTREC_C
 #define CONDNESTREC_C
@@ -19,7 +19,7 @@ PRIVATE void condnestrecaux(pEnv env)
     int result = 0;
     env->dump1 = newnode(env, LIST_, nodevalue(SAVED1), env->dump1);
     env->dump2 = LIST_NEWNODE(env->stck, env->dump2);
-    while (result == 0 && DMP1 != NULL && nextnode1(DMP1) != NULL) {
+    while (!result && DMP1 && nextnode1(DMP1)) {
         env->stck = DMP2;
         exeterm(env, nodevalue(nodevalue(DMP1).lis).lis);
         result = nodevalue(env->stck).num;
@@ -31,11 +31,9 @@ PRIVATE void condnestrecaux(pEnv env)
         (result ? nextnode1(nodevalue(DMP1).lis) : nodevalue(DMP1).lis),
         env->dump3);
     exeterm(env, nodevalue(DMP3).lis);
-    DMP3 = nextnode1(DMP3);
-    while (DMP3 != NULL) {
+    for (DMP3 = nextnode1(DMP3); DMP3; DMP3 = nextnode1(DMP3)) {
         condnestrecaux(env);
         exeterm(env, nodevalue(DMP3).lis);
-        DMP3 = nextnode1(DMP3);
     }
     POP(env->dump3);
     POP(env->dump2);

@@ -6,15 +6,15 @@
 0 __settracegc.
 1 setecho.
 
-(* The translations will use the following unary and binary operators:	*)
+(* The translations will use the following unary and binary operators:*)
 
 DEFINE
   unops == [not succ pred fact fib first rest reverse i intern];
   binops == [and or + - * / = < > cons concat map filter].
 
-(* Translations from Reverse Polish (= postfix, Joy, but no dup swap ..	*)
+(* Translations from Reverse Polish (= postfix, Joy, but no dup swap. *)
 
-				(* to Cambridge (= Lisp without lambda	*)
+			       (* to Cambridge (= Lisp without lambda *)
 
 [2  3  *  4  5  +  -]					Rev2Cam.
 
@@ -30,7 +30,7 @@ DEFINE
 
 [[6 7 8 9]  [prime] filter]				Rev2Cam.
 
-				(* to Tree, = Cam but bracketed atoms	*)
+				(* to Tree, = Cam but bracketed atoms *)
 
 [2  3  *  4  5  +  -]					Rev2Tre.
 
@@ -46,7 +46,7 @@ DEFINE
 
 [[6 7 8 9]  [prime] filter]				Rev2Tre.
 
-				(* to Infix, bracketed infix binaries	*)
+				(* to Infix, bracketed infix binaries *)
 
 [2  3  *  4  5  +  -]					Rev2Inf.
 
@@ -62,7 +62,7 @@ DEFINE
 
 [[6 7 8 9]  [prime] filter]				Rev2Inf.
 
-				(* to Polish, prefix for all operators	*)
+			       (* to Polish, prefix for all operators *)
 
 [2  3  *  4  5  +  -]					Rev2Pol.
 
@@ -81,7 +81,7 @@ DEFINE
 
 (* Various Translations	*)
 
-						(* Cambridge to Infix	*)
+						(* Cambridge to Infix *)
  
 [- [* 2 3] [+ 4 5]]					Cam2Inf.
  
@@ -97,7 +97,7 @@ DEFINE
  
 [filter [QUOTE [6 7 8 9]] [QUOTE [prime]]]		Cam2Inf.
  
-						(* Infix to Polish	*)
+						   (* Infix to Polish *)
 
 [[[2 * 3] - [4 + 5]]]					Inf2Pol.
  
@@ -113,7 +113,7 @@ DEFINE
  
 [[QUOTE [6 7 8 9] filter QUOTE [prime]]]		Inf2Pol.
  
-					(* Polish to Reverse Polish	*)
+					  (* Polish to Reverse Polish *)
  
 [- * 2 3 + 4 5]						Pol2Rev.
  
@@ -129,9 +129,9 @@ DEFINE
  
 [filter [6 7 8 9] [prime]]				Pol2Rev.
  
-(* Translation to Reverse Polish, followed by evaluation in Joy		*)
+(* Translation to Reverse Polish, followed by evaluation in Joy	*)
 
-						(* Cambridge evaluation	*)
+					      (* Cambridge evaluation *)
  
 [- [* 2 3] [+ 4 5]]					Cam2Rev i.
  
@@ -147,7 +147,7 @@ DEFINE
  
 [filter [QUOTE [6 7 8 9]] [QUOTE [prime]]]		Cam2Rev i.
  
-						(* Infix evaluation	*)
+						  (* Infix evaluation *)
 
 [[[2 * 3] - [4 + 5]]]					Inf2Rev i.
  
@@ -163,7 +163,7 @@ DEFINE
  
 [[QUOTE [6 7 8 9] filter QUOTE [prime]]]		Inf2Rev i.
  
-						(* Polish evaluation	*)
+						 (* Polish evaluation *)
  
 [- * 2 3 + 4 5]						Pol2Rev i.
  
@@ -179,7 +179,7 @@ DEFINE
  
 [filter [6 7 8 9] [prime]]				Pol2Rev i.
  
-(* the following are only for Min (minimally bracketed infix notation	*)
+(* the following are only for Min (minimally bracketed infix notation *)
 
 DEFINE
   bin1ops == [ = < > ];
@@ -198,7 +198,7 @@ DEFINE
 
 [ 1 * 2 + 3 * 4 + 5 * 6  <  100 ]			Min2Rev i.
 
-(* for some final light relief:						*)
+(* for some final light relief:					      *)
 
 [cons [intern [reverse [cons 't "iuq"]]] [QUOTE []]]	Cam2Tre.
 

@@ -117,7 +117,8 @@ DEFINE
 
 [ [3 0] [3 1] [3 2] [3 3] [3 4] [3 5] ]   [i x-ack]  map.
 
-(* the following is for a non-recursive definition using the y-combinator *)
+(* the following is for a non-recursive definition using the
+   y-combinator *)
 DEFINE
     y ==
 	[dup cons] swoncat dup cons i;
@@ -193,7 +194,7 @@ DEFINE
 	linrec.
 
 
-[ -7 42 99 100 101 102 345 ]  [l-mcc91]  map.			(* R.W. *)
+[ -7 42 99 100 101 102 345 ]  [l-mcc91]  map.		      (* R.W. *)
 
 (*
     r-ack ==
@@ -254,7 +255,7 @@ DEFINE
 [{3}]  3  lr-grayseq.
 [{1 2 3}]  3 lr-grayseq.
 
-(* N E S T E D  R E C U R S I O N   C O M B I N A T O R :  condnestrec  *)
+(* N E S T E D  R E C U R S I O N   C O M B I N A T O R : condnestrec *)
 
 DEFINE
     cnr-hamilhyp ==
@@ -300,7 +301,7 @@ DEFINE
 
 [source destination temp]  2  cnr-hanoi.
 		#
-[S D T]  5  cnr-hanoi newline.					(* R.W. *)
+[S D T]  5  cnr-hanoi newline.				      (* R.W. *)
   
 DEFINE
     cnr-fact ==

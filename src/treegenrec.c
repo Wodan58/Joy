@@ -1,7 +1,7 @@
 /*
     module  : treegenrec.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 05/17/22
 */
 #ifndef TREEGENREC_C
 #define TREEGENREC_C
@@ -20,7 +20,7 @@ PRIVATE void treegenrecaux(pEnv env)
             nodevalue(nextnode1(nodevalue(SAVED1).lis)).lis); /*        [O2] */
         GNULLARY(nodetype(SAVED1), nodevalue(SAVED1));
         POP(env->dump); /*   end DIP        */
-        NULLARY(LIST_NEWNODE, ANON_FUNCT_NEWNODE(treegenrecaux, NULL));
+        NULLARY(LIST_NEWNODE, ANON_FUNCT_NEWNODE(treegenrecaux, 0));
         cons_(env);
         exeterm(env, nextnode2(nodevalue(nodevalue(env->stck).lis).lis));
     } /*        [C]        */

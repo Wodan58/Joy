@@ -1,7 +1,7 @@
 /*
     module  : drop.c
-    version : 1.3
-    date    : 05/02/22
+    version : 1.4
+    date    : 05/17/22
 */
 #ifndef DROP_C
 #define DROP_C
@@ -20,11 +20,11 @@ PRIVATE void drop_(pEnv env)
     switch (nodetype(nextnode1(env->stck))) {
     case SET_: {
         int i;
-        long_t result = 0;
+        long result = 0;
         for (i = 0; i < SETSIZE; i++)
-            if (nodevalue(nextnode1(env->stck)).set & ((long_t)1 << i)) {
+            if (nodevalue(nextnode1(env->stck)).set & ((long)1 << i)) {
                 if (n < 1)
-                    result |= ((long_t)1 << i);
+                    result |= ((long)1 << i);
                 else
                     n--;
             }
@@ -40,7 +40,7 @@ PRIVATE void drop_(pEnv env)
     }
     case LIST_: {
         Index result = nodevalue(nextnode1(env->stck)).lis;
-        while (n-- > 0 && result != NULL)
+        while (n-- > 0 && result)
             result = nextnode1(result);
         BINARY(LIST_NEWNODE, result);
         return;

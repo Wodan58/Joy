@@ -1,7 +1,7 @@
 #
 #   module  : CMakeLists.txt
-#   version : 1.9
-#   date    : 05/02/22
+#   version : 1.11
+#   date    : 05/18/22
 #
 cmake_minimum_required(VERSION 3.0)
 project(Joy VERSION 1.0)
@@ -9,6 +9,7 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "")
 set(CMAKE_BUILD_TYPE "Debug")
 endif()
 option(RUN_TESTS "Run standard tests" ON)
+#add_definitions(-ansi -pedantic "-Dkh_inline=""" -DULLONG_MAX=ULONG_MAX)
 add_definitions(-DNOBDW -DTRACING -DJVERSION="NOBDW ${CMAKE_BUILD_TYPE} ${CMAKE_PROJECT_VERSION}")
 if(WIN32)
 add_definitions(-DGC_NOT_DLL -D_CRT_SECURE_NO_WARNINGS)

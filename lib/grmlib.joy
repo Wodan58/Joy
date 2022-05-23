@@ -1,7 +1,7 @@
 (* FILE:   grmlib.joy *)
 
 (* uses the Min2Tre translator of the symbolic library to transform
-   regular expressions (RE) and grammars from infix to tree notation	*)
+   regular expressions (RE) and grammars from infix to tree notation *)
 
     "symlib" libload.
 
@@ -9,7 +9,7 @@ LIBRA
 
     _grmlib == true;
 
-(* define the operators used by regular expressions and grammars:	*)
+(* define the operators used by regular expressions and grammars: *)
     unops == [ ? * +  $ ];
     binops == [ | _ ];
     bin1ops == [ | ];
@@ -17,14 +17,15 @@ LIBRA
     bin3ops == [ ];
 
 # This library currently contains two parts:
-# 1 GENERATING all strings in the language of a regular expression or grammar
+# 1 GENERATING all strings in the language of a regular expression or
+#   grammar
 # 2 PARSING a given input string in accordance with a R.E. or grammar
 
-(* - - - - -              G E N E R A T I N G                  - - - - - *)
+(* - - - - -              G E N E R A T I N G               - - - - - *)
 
 HIDE
 
-(* the various initial continuations:					*)
+(* the various initial continuations:				      *)
 
     show-put ==
 	pop put newline pop;
@@ -41,7 +42,7 @@ HIDE
 
 IN
 
-    generate ==	(* length-limit  accumulator  continuation  expression	*)
+    generate ==	(* length-limit accumulator continuation expression   *)
       [ pop pop size <= ]
       [ pop pop pop pop ] (* got enough *)
       [
@@ -106,9 +107,9 @@ IN
     gen-trace == pop;
 #   gen-trace == gen-trace-default;
 
-(*   the four basic wrappers						*)
+(*   the four basic wrappers					      *)
 
-    gen-put ==					(* count  Min-exp	*)
+    gen-put ==					(* count  Min-exp     *)
 	Min2Tre  [ [] [[show-put]] ] dip generate;
     gen-put-step ==
 	Min2Tre  [ [] [[show-put-step]] ] dip generate;
@@ -122,11 +123,11 @@ IN
 
 END; (* HIDE, generator *)
 
-(* - - - - -               P A R S I N G                      - - - - - *)
+(* - - - - -               P A R S I N G                    - - - - - *)
 
 HIDE
 
-(* the various initial continuations:					*)
+(* the various initial continuations:				      *)
 
     parse-string-residues ==
 	pop [ succ dup put ": " putchars ] dip [putch] step newline;
@@ -139,7 +140,7 @@ HIDE
 
 IN
 
-    parse ==	(*  N  list-to-be-parsed   continuation  expression	*)
+    parse ==	(*  N  list-to-be-parsed   continuation  expression   *)
 	"parse B" prs-trace
 	unswons
 						# binary operators
@@ -216,7 +217,7 @@ END; (* HIDE, parser *)
 
     GRMLIB == "grmlib.joy - grammar (generating/parsing) library\n".
 
-							(*  end LIBRA	*)
+							 (* end LIBRA *)
 "grmlib  is loaded\n" putchars.
 
 (* END  grmlib.joy *)

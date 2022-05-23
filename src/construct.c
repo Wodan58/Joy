@@ -1,7 +1,7 @@
 /*
     module  : construct.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 05/17/22
 */
 #ifndef CONSTRUCT_C
 #define CONSTRUCT_C
@@ -23,7 +23,7 @@ PRIVATE void construct_(pEnv env)
     env->dump3 = LIST_NEWNODE(env->stck, env->dump3); /* save current stack */
     env->dump4
         = newnode(env, LIST_, nodevalue(SAVED1), env->dump4); /* step [..] */
-    while (DMP4 != NULL) {
+    while (DMP4) {
         env->stck = DMP3; /* restore new stack        */
         exeterm(env, nodevalue(DMP4).lis);
         env->dump2 = newnode(env, nodetype(env->stck), nodevalue(env->stck),

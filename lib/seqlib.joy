@@ -82,7 +82,8 @@ LIBRA
 	[swapd cons concat]
 	binrec;
     qsort1 ==
-	[small] [] [uncons [[first] unary2 >] split] [swapd cons concat] binrec;
+	[small] [] [uncons [[first] unary2 >] split] [swapd cons concat]
+        binrec;
     mk_qsort ==
 	[ [small] [] ] dip
 	[ unary2 >] cons [split] cons [uncons] swoncat
@@ -140,7 +141,7 @@ LIBRA
     treesample == [ [1 2 [3 4] 5 [[[6]]] 7 ] 8 ];
 
     SEQLIB == "seqlib.joy - sequence library, assumes agglib.joy\n".
-							(* end LIBRA *)
+							 (* end LIBRA *)
 
 "seqlib  is loaded\n" putchars.
 

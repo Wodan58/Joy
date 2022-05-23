@@ -1,7 +1,7 @@
 /*
     module  : cond.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 05/17/22
 */
 #ifndef COND_C
 #define COND_C
@@ -25,7 +25,7 @@ PRIVATE void cond_(pEnv env)
         CHECKLIST(nodetype(nodevalue(my_dump).lis), "cond");
     SAVESTACK;
     env->dump1 = newnode(env, LIST_, nodevalue(env->stck), env->dump1);
-    while (result == 0 && DMP1 != NULL && nextnode1(DMP1) != NULL) {
+    while (!result && DMP1 && nextnode1(DMP1)) {
         env->stck = SAVED2;
         exeterm(env, nodevalue(nodevalue(DMP1).lis).lis);
         result = nodevalue(env->stck).num;

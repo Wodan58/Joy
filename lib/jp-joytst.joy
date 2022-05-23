@@ -1,6 +1,6 @@
 (* FILE:  jp-joytst.joy  -  test file for jp-joyjoy.joy *)
 
-"jp-joyjoy" libload.						(* R.W. *)
+"jp-joyjoy" libload.					      (* R.W. *)
 
 0 __settracegc.
 1 setecho.

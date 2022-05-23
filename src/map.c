@@ -1,7 +1,7 @@
 /*
     module  : map.c
-    version : 1.2
-    date    : 05/02/22
+    version : 1.3
+    date    : 05/17/22
 */
 #ifndef MAP_C
 #define MAP_C
@@ -22,18 +22,16 @@ PRIVATE void map_(pEnv env)
             = newnode(env, LIST_, nodevalue(SAVED2), env->dump1); /* step old */
         env->dump2 = LIST_NEWNODE(0L, env->dump2); /* head new */
         env->dump3 = LIST_NEWNODE(0L, env->dump3); /* last new */
-        while (DMP1 != NULL) {
+        while (DMP1) {
             env->stck = newnode(env, nodetype(DMP1), nodevalue(DMP1), SAVED3);
             exeterm(env, nodevalue(SAVED1).lis);
             CHECKSTACK("map");
-            if (DMP2 == NULL) /* first */
-            {
-                DMP2 = NEWNODE(nodetype(env->stck), nodevalue(env->stck), NULL);
+            if (!DMP2) { /* first */
+                DMP2 = NEWNODE(nodetype(env->stck), nodevalue(env->stck), 0);
                 DMP3 = DMP2;
-            } else /* further */
-            {
+            } else { /* further */
                 nextnode1(DMP3)
-                    = NEWNODE(nodetype(env->stck), nodevalue(env->stck), NULL);
+                    = NEWNODE(nodetype(env->stck), nodevalue(env->stck), 0);
                 DMP3 = nextnode1(DMP3);
             }
             DMP1 = nextnode1(DMP1);
@@ -50,7 +48,7 @@ PRIVATE void map_(pEnv env)
         resultstring
             = (char *)GC_malloc_atomic(strlen(nodevalue(SAVED2).str) + 1);
         for (s = nodevalue(SAVED2).str; *s != '\0'; s++) {
-            env->stck = CHAR_NEWNODE((long_t)*s, SAVED3);
+            env->stck = CHAR_NEWNODE((long)*s, SAVED3);
             exeterm(env, nodevalue(SAVED1).lis);
             CHECKSTACK("map");
             resultstring[j++] = (char)nodevalue(env->stck).num;
@@ -61,13 +59,13 @@ PRIVATE void map_(pEnv env)
     }
     case SET_: {
         int i;
-        long_t resultset = 0;
+        long resultset = 0;
         for (i = 0; i < SETSIZE; i++)
-            if (nodevalue(SAVED2).set & ((long_t)1 << i)) {
+            if (nodevalue(SAVED2).set & ((long)1 << i)) {
                 env->stck = INTEGER_NEWNODE(i, SAVED3);
                 exeterm(env, nodevalue(SAVED1).lis);
                 CHECKSTACK("map");
-                resultset |= ((long_t)1 << nodevalue(env->stck).num);
+                resultset |= ((long)1 << nodevalue(env->stck).num);
             }
         env->stck = SET_NEWNODE(resultset, SAVED3);
         break;

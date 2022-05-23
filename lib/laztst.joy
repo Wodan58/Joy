@@ -1,5 +1,5 @@
 (* FILE:  laztst.joy *)
-"numlib" libload.						(* R.W. *)
+"numlib" libload.					      (* R.W. *)
 
 "\nTesting lazy lists in the library lazlib.joy\n" putchars.
 
@@ -84,7 +84,7 @@ Naturals  [prime] Filter  [dup *] Map  10 Take.
 
 
 1000001 From.                       (*     naturals > 1 Million	*)
-1000001 From [prime] Filter.        (*       primes > 1 Million  *)
+1000001 From [prime] Filter.        (*       primes > 1 Million *)
 1000001 From [prime] Filter Third.  (* third prime  > 1 Million	*)
 1000001 From [prime] Filter 50 Take.(* fifty primes > 1 Million	*)
 

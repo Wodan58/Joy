@@ -14,7 +14,7 @@ decent language and needs a ditto
 Changes
 -------
 
-Some changes were done that make the build environment happy. The only new
+Some changes were done that make ~the build environment~ me happy. The only new
 thing is a portable makefile, following this [advice](http://nullprogram.com/blog/2017/08/20).
 There is something different in these sources compared to the ones that can be
 downloaded from the original [site](http://www.latrobe.edu.au/humanities/research/research-projects/past-projects/joy-programming-language) and that is the
@@ -32,7 +32,7 @@ Installation
 
     mkdir build
     cd build
-    cmake ..
+    CC=../gcc.sh cmake ..
     cmake --build .
 
 or:

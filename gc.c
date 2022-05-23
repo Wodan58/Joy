@@ -1,7 +1,7 @@
 /*
     module  : gc.c
-    version : 1.25
-    date    : 05/03/22
+    version : 1.26
+    date    : 05/18/22
 */
 #ifndef COSMO
 #include <stdio.h>
@@ -42,6 +42,7 @@
 #define MIN_ITEMS        4
 #define MAX_ITEMS        2
 #define FULL_MASK        (uint64_t)0x0000fffffffffffe
+#define MAX_BLOCK        536870912
 
 /*
     When pointers are 16 bit aligned, the lower 4 bits are always zero.
@@ -310,6 +311,8 @@ static void *mem_block(size_t size, int f)
 {
     void *ptr;
 
+    if (size > MAX_BLOCK)
+        mem_fatal();
     if ((ptr = malloc(size)) == 0)
         mem_fatal();
     memset(ptr, 0, size);
@@ -350,27 +353,18 @@ static void update(void *ptr, size_t size)
 }
 
 /*
-    Before discarding a memory block, return its flags.
+    Forget about a memory block and return its flags.
 */
-static unsigned char inspect(void *ptr)
+static unsigned char forget(void *ptr)
 {
     khiter_t key;
     unsigned char flags = 0;
 
-    if ((key = kh_get(Backup, MEM, (uint64_t)ptr)) != kh_end(MEM))
+    if ((key = kh_get(Backup, MEM, (uint64_t)ptr)) != kh_end(MEM)) {
         flags = kh_value(MEM, key).flags;
-    return flags;
-}
-
-/*
-    Forget about a memory block.
-*/
-static void forget(void *ptr)
-{
-    khiter_t key;
-
-    if ((key = kh_get(Backup, MEM, (uint64_t)ptr)) != kh_end(MEM))
         kh_del(Backup, MEM, key);
+    }
+    return flags;
 }
 
 /*
@@ -380,14 +374,14 @@ void *GC_realloc(void *old, size_t size)
 {
     void *ptr;
 
+    if (size > MAX_BLOCK)
+        mem_fatal();
     if ((ptr = realloc(old, size)) == 0)
         mem_fatal();
     if (ptr == old)
         update(ptr, size);
-    else {
-        remind(ptr, size, inspect(old));
-        forget(old);
-    }
+    else
+        remind(ptr, size, forget(old));
     return ptr;
 }
 #endif

@@ -1,7 +1,7 @@
 /*
     module  : unmktime.h
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 05/17/22
 */
 #ifndef UNMKTIME_H
 #define UNMKTIME_H
@@ -10,7 +10,7 @@
     PRIVATE void PROCEDURE(pEnv env)                                           \
     {                                                                          \
         struct tm t;                                                           \
-        long_t wday;                                                           \
+        long wday;                                                             \
         time_t timval;                                                         \
         ONEPARAM(NAME);                                                        \
         INTEGER(NAME);                                                         \
@@ -19,7 +19,7 @@
         wday = t.tm_wday;                                                      \
         if (wday == 0)                                                         \
             wday = 7;                                                          \
-        env->dump1 = LIST_NEWNODE(NULL, env->dump1);                           \
+        env->dump1 = LIST_NEWNODE(0, env->dump1);                              \
         DMP1 = INTEGER_NEWNODE(wday, DMP1);                                    \
         DMP1 = INTEGER_NEWNODE(t.tm_yday, DMP1);                               \
         DMP1 = BOOLEAN_NEWNODE(t.tm_isdst, DMP1);                              \

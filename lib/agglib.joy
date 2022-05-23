@@ -34,7 +34,7 @@ LIBRA
     unswonsd == [unswons] dip;
     firstd == [first] dip;
     restd == [rest] dip;
-    secondd == [second] dip;					(* R.W. *)
+    secondd == [second] dip;				(* R.W. *)
     thirdd == [third] dip;
 
 (* on two operands *)
@@ -47,7 +47,7 @@ LIBRA
 
     zip == [null2] [pop2 []] [uncons2] [[pairlist] dip cons] linrec;
 
-    from-to ==		(*  lo  hi  agg		*)
+    from-to ==		(*  lo  hi  agg  *)
 	[] cons  [pop pop] swoncat
 	[>] swap
 	[ [dup succ] dip ]

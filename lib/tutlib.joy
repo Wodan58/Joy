@@ -4,12 +4,12 @@ LIBRA
 
     _tutlib == true;
     pause ==
-	bell "\nTo return, hit  Control-" putchars control-eof putch newline
-	terminal include;
+	bell "\nTo return, hit  Control-" putchars control-eof putch
+        newline terminal include;
     pausing == putchars pause;
     praise ==
 	[ "Good." "Splendid." "Excellent." "Great." "Terrific." ]
-	(* rand 5 rem *) 0 at putchars newline;			(* R.W. *)
+	(* rand 5 rem *) 0 at putchars newline;		      (* R.W. *)
     get-integer ==
 	get
 	[ integer not ]
@@ -34,8 +34,8 @@ LIBRA
     expecting-from ==
 	[ [equal] some ]
 	[ pop pop praise [succ] dip]
-	[ "No, the right answer must be one of the following:\n\t" putchars
-	  [put "  " putchars] step pop newline ]
+	[ "No, the right answer must be one of the following:\n\t"
+          putchars [put "  " putchars] step pop newline ]
 	ifte
 	succ;
     ini-stats ==
@@ -58,7 +58,7 @@ where each Qi is a quote, each Hi is a section heading. *)
     toc-one-heading ==
 	toc-of-tutorial of second putchars newline newline;
     toc-do-section0 ==
-#	terminal include					(* R.W. *)
+#	terminal include				      (* R.W. *)
 	newline
 	0 toc-one-heading
 	"Contents:\n" putchars toc-all-headings newline

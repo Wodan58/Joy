@@ -37,45 +37,45 @@ LIBRA
     tandeg == radians tan;
 
     (* find roots of the quadratic equation with coefficients a b c :
-				  a * X^2  +  b * X   +  c  =  0	*)
-    qroots ==					(*  a  b  c		*)
-	[	pop pop null ]			(* a = 0 ?		*)
-						(* degenerate cases:	*)
-	[	[   pop null ]			(* b = 0 ?		*)
-		[   [ null   ]			(* c = 0 ?		*)
-		    [ [_INF] ]			(* =>  [_INF]		*)
-		    [ [] ]			(* =>  []		*)
+				  a * X^2  +  b * X   +  c  =  0      *)
+    qroots ==					(*  a  b  c	      *)
+	[	pop pop null ]			(* a = 0 ?	      *)
+						(* degenerate cases:  *)
+	[	[   pop null ]			(* b = 0 ?	      *)
+		[   [ null   ]			(* c = 0 ?	      *)
+		    [ [_INF] ]			(* =>  [_INF]	      *)
+		    [ [] ]			(* =>  []	      *)
 		    ifte
 		    [ pop pop pop ] dip ]
-		[   0 swap - swap 1.0 * /	(* float divisor	*)
-		    [] cons popd ]		(* =>  [ -c/b ]		*)
+		[   0 swap - swap 1.0 * /	(* float divisor      *)
+		    [] cons popd ]		(* =>  [ -c/b ]	      *)
 		ifte ]
-						(* standard cases:	*)
+						(* standard cases:    *)
 	[	[   [ dup * swap ] dip
-		      4 * * - ] unary		(* b^2 - 4ac		*)
-		[   0 < ]			(* b^2 - 4ac negative ?	*)
-		[   pop pop pop [_COMPLEX] ]	(* =>  [_COMPLEX]	*)
-		[   [ 0 swap - 1.0 *		(* -b  (floated)	*)
-		      swap 2 * ] dip		(* 2a			*)
-		    [ 0 = ]			(* b^2 - 4ac zero ?	*)
-		    [ pop / [] cons ]		(* =>  [-b / 2a]	*)
-		    [ sqrt swapd dup2 - [+] dip	(*   -b+s      -b-s     *)
-			[] cons cons 		(* [ -b+s      -b-s    ]*)
-		      swap [/] cons map ]   (* =>  [(-b+s)/2a (-b-s)/2a]*)
+		      4 * * - ] unary		(* b^2 - 4ac	      *)
+		[   0 < ]			(* b^2 - 4ac neg ?    *)
+		[   pop pop pop [_COMPLEX] ]	(* =>  [_COMPLEX]     *)
+		[   [ 0 swap - 1.0 *		(* -b  (floated)      *)
+		      swap 2 * ] dip		(* 2a		      *)
+		    [ 0 = ]			(* b^2 - 4ac zero ?   *)
+		    [ pop / [] cons ]		(* =>  [-b / 2a]      *)
+		    [ sqrt swapd dup2 - [+] dip	(*   -b+s      -b-s   *)
+			[] cons cons 		(* [ -b+s      -b-s ] *)
+		      swap [/] cons map ] (* => [(-b+s)/2a (-b-s)/2a] *)
 		    ifte ]
 		ifte ]
 	ifte;
 
     (* a simpler version, FEB 05 : *)
 
-    quadratic-formula  ==                          # a b c => [root1 root2 ]
-        [ [ [ pop pop 2 * ]                        # divisor
-            [ pop 0 swap - ]                       # minusb
-            [ swap dup * rollup * 4 * - sqrt ] ]   # radical
+    quadratic-formula  ==                       # a b c => [root1 root2]
+        [ [ [ pop pop 2 * ]                     # divisor
+            [ pop 0 swap - ]                    # minusb
+            [ swap dup * rollup * 4 * - sqrt] ] # radical
           [i] map ]
         ternary i
-        [ [ [ + swap / ]                           # root1
-            [ - swap / ] ]                         # root2
+        [ [ [ + swap / ]                        # root1
+            [ - swap / ] ]                      # root2
           [i] map ]
         ternary;
 
@@ -93,7 +93,7 @@ LIBRA
 *)
     newton ==		(*  Usage: guess [F] newton		*)
 	dup deriv		(* guess [F] [D]		*)
-	[ pop i abs 0.001 > ]	(* too big ?			*)  (* R.W. *)
+	[ pop i abs 0.001 > ]	(* too big ?		R.W.	*)
 	[ [dupd] dip      	(* guess guess [F] [D]		*)
 	  dup2			(* guess guess [F] [D] [F] [D]	*)
 	  [[cleave / - ] dip]

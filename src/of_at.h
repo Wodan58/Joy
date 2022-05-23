@@ -1,7 +1,7 @@
 /*
     module  : of_at.h
-    version : 1.3
-    date    : 05/02/22
+    version : 1.4
+    date    : 05/17/22
 */
 #ifndef OF_AT_H
 #define OF_AT_H
@@ -16,7 +16,7 @@
             int i, indx = nodevalue(INDEX).num;                                \
             CHECKEMPTYSET(nodevalue(AGGR).set, NAME);                          \
             for (i = 0; i < SETSIZE; i++) {                                    \
-                if (nodevalue(AGGR).set & ((long_t)1 << i)) {                  \
+                if (nodevalue(AGGR).set & ((long)1 << i)) {                    \
                     if (indx == 0) {                                           \
                         BINARY(INTEGER_NEWNODE, i);                            \
                         return;                                                \
@@ -37,7 +37,7 @@
             int i = nodevalue(INDEX).num;                                      \
             CHECKEMPTYLIST(n, NAME);                                           \
             while (i > 0) {                                                    \
-                if (nextnode1(n) == NULL)                                      \
+                if (!nextnode1(n))                                             \
                     INDEXTOOLARGE(NAME);                                       \
                 n = nextnode1(n);                                              \
                 i--;                                                           \

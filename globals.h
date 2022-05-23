@@ -1,8 +1,8 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.44
- *  date    : 05/04/22
+ *  version : 1.50
+ *  date    : 05/18/22
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -31,18 +31,21 @@
 #else
 #include <unistd.h>
 #endif
+#ifdef __linux__
+#include <sys/resource.h>
+#endif
 #endif
 
 #ifdef NOBDW
-#define nodetype(n) env->memory[(int)n].op
-#define nodevalue(n) env->memory[(int)n].u
-#define nextnode1(n) env->memory[(int)n].next
-#define nextnode2(n) env->memory[nextnode1(n)].next
-#define nextnode3(n) env->memory[nextnode2(n)].next
-#define nextnode4(n) env->memory[nextnode3(n)].next
-#define nextnode5(n) env->memory[nextnode4(n)].next
+#define nodetype(n)  vec_at(env->memory, n).op
+#define nodevalue(n) vec_at(env->memory, n).u
+#define nextnode1(n) vec_at(env->memory, n).next
+#define nextnode2(n) vec_at(env->memory, nextnode1(n)).next
+#define nextnode3(n) vec_at(env->memory, nextnode2(n)).next
+#define nextnode4(n) vec_at(env->memory, nextnode3(n)).next
+#define nextnode5(n) vec_at(env->memory, nextnode4(n)).next
 #else
-#define nodetype(p) (p)->op
+#define nodetype(p)  (p)->op
 #define nodevalue(p) (p)->u
 #define nextnode1(p) (p)->next
 #define nextnode2(p) (nextnode1(p))->next
@@ -54,8 +57,8 @@
 /*
     The following #defines are not available in the oldest ANSI/ISO standard.
 
-    Note: strdup, snprintf, localtime_r, gmtime_r are not available when
-    compiling with -ansi.
+    Note: strdup, snprintf, localtime_r, gmtime_r are sometimes not available
+    when compiling with -ansi.
 */
 #define USE_SNPRINTF
 
@@ -131,12 +134,13 @@ CORRECT_INHAS_COMPARE
 RUNTIME_CHECKS
 ONLY_LOGICAL_NOT
 CORRECT_FREAD_PARAM
-CORRECT_INTERN_LOOKUP
 REST_OF_UNIX_ESCAPES
 CORRECT_ALEN
-SAMETYPE_BUILTIN
+FGET_FROM_FILE
 GETCH_AS_BUILTIN
+SAMETYPE_BUILTIN
 CORRECT_SETMEMBER
+CLEAR_STACK_ON_ERROR
 */
 
 /*
@@ -150,7 +154,6 @@ REMOVE_UNUSED_ERRORCOUNT
 CHECK_END_SYMBOL
 NOT_ALSO_FOR_FLOAT
 NOT_ALSO_FOR_FILE
-FGET_FROM_FILE
 TRACK_USED_SYMBOLS
 DEBUG
 */
@@ -174,6 +177,7 @@ STATS
     The following #defines are present in the source code.
     They have been accepted as an addition to the original code.
 */
+#define CORRECT_INTERN_LOOKUP
 #define READ_PRIVATE_AHEAD
 #define SEARCH_ARGV0_DIRECTORY
 
@@ -189,7 +193,7 @@ STATS
 #define INPLINEMAX 255
 #define ALEN 45 /* module + member */
 #define DISPLAYMAX 10 /* nesting in HIDE & MODULE */
-#define MEMORYMAX 20000
+#define MEMORYMAX (unsigned long)3000000000
 #define INIECHOFLAG 0
 #define INIAUTOPUT 1
 #define INITRACEGC 1
@@ -198,14 +202,10 @@ STATS
 /* installation dependent        */
 #ifdef BIT_32
 #define SETSIZE 32
-#define MAXINT (long_t)2147483647
-typedef int long_t;
-typedef float my_float_t;
+#define MAXINT (long)2147483647
 #else
 #define SETSIZE 64
-#define MAXINT (long_t)9223372036854775807
-typedef long long_t;
-typedef double my_float_t;
+#define MAXINT (long)9223372036854775807
 #endif
 
 /* symbols from getsym           */
@@ -274,10 +274,10 @@ typedef struct Env *pEnv;
 
 /* clang-format off */
 typedef union {
-    long_t num;         /* USR, BOOLEAN, CHAR, INTEGER */
-    long_t set;         /* SET */
+    long num;           /* USR, BOOLEAN, CHAR, INTEGER */
+    long set;           /* SET */
     char *str;          /* STRING */
-    my_float_t dbl;     /* FLOAT */
+    double dbl;         /* FLOAT */
     FILE *fil;          /* FILE */
     Index lis;          /* LIST */
     pEntry ent;         /* SYMBOL */
@@ -286,8 +286,8 @@ typedef union {
 /* clang-format on */
 
 typedef struct Node {
-    Operator op;
     Types u;
+    Operator op;
     Index next;
 } Node;
 
@@ -303,20 +303,15 @@ typedef struct Entry {
 #include "kvec.h"
 #include "khash.h"
 
-#ifdef NULL
-#undef NULL
-#define NULL 0
-#endif
-
 KHASH_MAP_INIT_STR(Symtab, pEntry)
 
 typedef struct Env {
-    vector(Entry) * symtab; /* symbol table */
-    khash_t(Symtab) * hash;
+    vector(Entry) *symtab; /* symbol table */
+    khash_t(Symtab) *hash;
     clock_t startclock; /* main */
 #ifdef NOBDW
     clock_t gc_clock;
-    Node *memory; /* dynamic memory */
+    vector(Node) *memory; /* dynamic memory */
     Index prog, stck, conts, dump, dump1, dump2, dump3, dump4, dump5;
 #else
     Node *prog, *stck;
@@ -379,6 +374,7 @@ PUBLIC void readfactor(pEnv env, int priv); /* read a JOY factor */
 PUBLIC void readterm(pEnv env, int priv);
 PUBLIC void writefactor(pEnv env, Index n);
 PUBLIC void writeterm(pEnv env, Index n);
+PUBLIC void writedump(pEnv env, Index n);
 /* module.c */
 PUBLIC void initmod(pEnv env, char *name);
 PUBLIC void initpriv(pEnv env, int priv);

@@ -1,8 +1,8 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.43
- *  date    : 05/02/22
+ *  version : 1.48
+ *  date    : 05/22/22
  */
 
 /*
@@ -135,9 +135,6 @@ PRIVATE void inisymboltable(pEnv env) /* initialise */
     Entry ent;
     khiter_t key;
 
-#ifdef NOBDW
-    env->memory = GC_malloc(MEMORYMAX * sizeof(Node));
-#endif
     env->hash = kh_init(Symtab);
     for (i = 0; (ent.name = opername(i)) != 0; i++) {
         ent.is_user = 0;
@@ -220,7 +217,7 @@ PRIVATE void compound_def(pEnv env, int priv); /* forward */
 PRIVATE void definition(pEnv env, int priv)
 {
     Entry ent;
-    pEntry here = NULL;
+    pEntry here = 0;
 
     if (env->symb == LIBRA || env->symb == JPRIVATE || env->symb == HIDE
         || env->symb == MODULE) {
@@ -358,13 +355,14 @@ PUBLIC void abortexecution_(void)
 
 /*
     fatal terminates the program after a stack overflow, likely to result in
-    heap corruption that makes it impossible to continue.
+    heap corruption that makes it impossible to continue. And exit instead of
+    _exit may fail too.
 */
 #ifndef GC_BDW
 PRIVATE void fatal(void)
 {
     fprintf(stderr, "fatal error: stack overflow\n");
-    _exit(0);
+    exit(EXIT_FAILURE);
 }
 #endif
 
@@ -383,7 +381,7 @@ PUBLIC void execerror(char *message, char *op)
 #define DUMP_CHECK(D, NAME)                                                    \
     if (D) {                                                                   \
         printf("->  %s is not empty:\n", NAME);                                \
-        writeterm(&env, D);                                                    \
+        writedump(&env, D);                                                    \
         putchar('\n');                                                         \
     }
 
@@ -488,9 +486,21 @@ int start_main(int argc, char **argv)
     int i, j;
     char *filename = 0;
     unsigned char verbose = 1, symdump = 0, helping = 0;
+#ifdef __linux__
+    struct rlimit l;
+#endif
 
     Env env; /* memory, symbol table, stack, and buckets */
     memset(&env, 0, sizeof(env));
+#ifdef __linux__
+    getrlimit(RLIMIT_STACK, &l);
+    l.rlim_cur = l.rlim_max;
+    setrlimit(RLIMIT_STACK, &l);
+
+    getrlimit(RLIMIT_AS, &l);
+    l.rlim_cur = MEMORYMAX;
+    setrlimit(RLIMIT_AS, &l);
+#endif
 
     /*
      *    Start the clock. my_atexit is called from quit_ that is called in
@@ -580,10 +590,10 @@ int start_main(int argc, char **argv)
         } else {
             readterm(&env, DONT_READ_AHEAD);
 #ifdef NOBDW
-            if (env.stck && env.memory[env.stck].op == LIST_) {
-                env.prog = env.memory[env.stck].u.lis;
-                env.stck = env.memory[env.stck].next;
-                env.conts = NULL;
+            if (env.stck && vec_at(env.memory, env.stck).op == LIST_) {
+                env.prog = vec_at(env.memory, env.stck).u.lis;
+                env.stck = vec_at(env.memory, env.stck).next;
+                env.conts = 0;
 #else
             if (env.stck && nodetype(env.stck) == LIST_) {
                 env.prog = nodevalue(env.stck).lis;
@@ -610,7 +620,7 @@ int start_main(int argc, char **argv)
                 else if (env.autoput == 1) {
                     writefactor(&env, env.stck);
 #ifdef NOBDW
-                    env.stck = env.memory[env.stck].next;
+                    env.stck = vec_at(env.memory, env.stck).next;
 #else
                     env.stck = nextnode1(env.stck);
 #endif

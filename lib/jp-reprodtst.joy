@@ -48,7 +48,7 @@ str-prim 10 str-drop 10 str-take.
 
 DEFINE
     dureco == dup rest cons;
-    rep-maker  ==  #  n [N]  => [ [n [N] infra dureco] [N] infra dureco ]
+    rep-maker  ==  # n [N]  => [ [n [N] infra dureco] [N] infra dureco ]
         [infra dureco] cons cons  dureco;
     rep-first == first first;
     rep-rest  == i.

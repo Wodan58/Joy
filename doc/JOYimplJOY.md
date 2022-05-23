@@ -33,9 +33,7 @@ makes the BDW version easier to extend with new builtins. Performance between
 the BDW version and the NOBDW version is similar. Only the MINBDW version that
 removes the extra dependency on the BDW collector is slower.
 
-This version also uses MEMORYMAX. While this may seem a disadvantage - try
-reading a 10 kilobyte file or build a list with 10000 integers - there is also
-an advantage. Consider the following program:
+Consider the following program:
 
     DEFINE
         cnr-ack ==
@@ -47,13 +45,17 @@ an advantage. Consider the following program:
     3 4 cnr-ack.
 
 The program is defective. The first condition should read `[pop null]` instead
-of `[null]`. Thanks to MEMORYMAX, running this program with the NOBDW version
-results in the following error message:
+of `[null]`. Running this program with the NOBDW version results in the
+following error message:
 
     run time error: memory needed for copying.
 
-Needless to say, increasing MEMORYMAX and recompiling does not help in this
-case. The BDW version runs into a call stack overflow.
+Joy1 responds differently. The MINBDW version does not give any error message.
+It simply runs forever. The BDW version responds with the following error
+messages:
+
+    GC Warning: Out of Memory! Heap size: 1940 MiB. Returning NULL!
+    run time error: memory needed for allocator.
 
 More comparisons
 ================
@@ -65,7 +67,7 @@ to the following testfile:
     { true }.
     [ ( ].
     [ } ].
-    123.
+    123 .
 
 The 123 at the end is present to see whether the entire file is processed.
 Here is the response from the original Joy:
@@ -88,12 +90,12 @@ Here is the response from the original Joy:
 	    ']' expected
     []
     [ } ].
-        ^
-            END or period '.' expected
+        ^    END or period '.' expected
     [[]]
+    123
 
 The error detection from the original Joy is excellent. The new versions, joy1
-and Joy implement the same language, but the output is different:
+and Joy implement the same language and the output is now also the same:
 
     "\07".
         ^
@@ -101,7 +103,6 @@ and Joy implement the same language, but the output is different:
     { true }.
          ^
 	    small numeric expected in set
-    {}
     [ ( ].
       ^
 	    '(' not implemented
@@ -111,20 +112,19 @@ and Joy implement the same language, but the output is different:
     [ } ].
       ^
 	    ']' expected
-    "8.\n "
     123
 
-Handling of memory is different in joy1 compared to Joy and also exeterm is a
-bit different: joy1 does not use conts. It is good to know that these versions
-agree about the result.
+In case of an error the stack is cleared. Handling of memory is different in
+joy1 compared to Joy and also exeterm is a bit different: joy1 does not use
+conts. It is good to know that these versions agree about the result.
+
 Moy and Coy implement a language that is a little different and they do so with
 a different code base, so some differences are expected. Here is the output
 from Moy:
 
-    syntax error in file t.joy line 6 : "\07".
-    syntax error in file t.joy line 7 : { true }.
-    syntax error in file t.joy line 8 : [ ( ].
-    syntax error in file t.joy line 9 : [ } ].
+    syntax error in file ./17.joy line 2 : { true }.
+    syntax error in file ./17.joy line 3 : [ ( ].
+    syntax error in file ./17.joy line 4 : [ } ].
     123 
 
 Errors are sent to stderr, by the way. The text "syntax error" comes from yacc.
@@ -165,5 +165,3 @@ Summary
 =======
 
 This updated version of Joy is slowly drifting away from the legacy version.
-
-- C89 support has been dropped.

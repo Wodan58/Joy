@@ -61,14 +61,14 @@ ini-stats
 [ "Combinators are similar to operators, they expect something\n"
   "on the stack. But combinators always expect a quoted program\n"
   "and perhaps something else. For example, the   map   combinator\n"
-  "expects a single program and below that an aggregate, e.g. a list.\n" ]
-putstrings
+  "expects a single program and below that an aggregate, e.g. a list.\n"
+] putstrings
 [get-list  [6 4 8]      ]  "[3 2 4] [dup +] map"	q1
 [get-quote [10 + ]      ]
   "[13 12 14]"		    "[3 2 4]  ...  map"		q2
-[ "Another example is the   filter   combinator, which expects\n"
-  "a program that computes a truth value, and below that an aggregate.\n" ]
-putstrings
+[ "Another example is the   filter   combinator, which expects a\n"
+  "program that computes a truth value, and below that an aggregate.\n"
+] putstrings
 [get-list  [5 3 7]	 ]  "\n\t[5 16 3 7 14]  [10 <]  filter"	q1
 "For the next question, provide the shortest answer\n" putchars
 [get-quote [20 <]	 ]
@@ -78,9 +78,9 @@ put-stats;
 sec3 == 3 toc-one-heading
 ini-stats
 [ "Two more complicated combinators are the  ifte  and the  linrec\n"
-  "combinators.  The  ifte  combinator expects three quotation parameters\n"
-  "on the stack. In most cases they have been pushed just beforehand.\n" ]
-putstrings
+  "combinators.  The  ifte  combinator expects three quotation "
+  "parameters\non the stack. In most cases they have been pushed just"
+  " beforehand.\n" ] putstrings
 [get-integer 15 ]  "5  [7 <]  [10 +]  [10 -]  ifte"	q1
 [get-integer -2 ]  "8  [7 <]  [10 +]  [10 -]  ifte"	q1
 [ "A programmer wants to write a recursive definition of the\n"
@@ -99,8 +99,8 @@ get-quote [[pop 1][succ][1 +]]  expecting-from
 "What could be used as the third quote?\n" putchars
 get-quote [[dup pred factorial *][dup 1 - factorial *]] expecting-from
 [ "Later the programmer realises that the factorial function\n"
-  "is only needed in one place of the program, so it would be good\n"
-  "not to have the definition at all, by using the  linrec  combinator:\n"
+  "is only needed in one place of the program, so it would be good\nnot"
+  "to have the definition at all, by using the  linrec  combinator:\n"
   "      [ null ] 			(* first  quote *)\n"
   "      [ succ ]                       (* second quote *)\n"
   "      ...                            (* third  quote *)\n"

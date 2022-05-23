@@ -1,7 +1,7 @@
 /*
     module  : helpdetail.c
-    version : 1.3
-    date    : 05/02/22
+    version : 1.4
+    date    : 05/17/22
 */
 #ifndef HELPDETAIL_C
 #define HELPDETAIL_C
@@ -19,7 +19,7 @@ PRIVATE void helpdetail_(pEnv env)
     LIST("HELP");
     printf("\n");
     n = nodevalue(env->stck).lis;
-    while (n != NULL) {
+    while (n) {
         if (nodetype(n) == USR_) {
             ent = vec_at(env->symtab, nodevalue(n).ent);
             printf("%s  ==\n    ", ent.name);

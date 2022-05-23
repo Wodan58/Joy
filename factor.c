@@ -1,8 +1,8 @@
 /* FILE: factor.c */
 /*
  *  module  : factor.c
- *  version : 1.8
- *  date    : 05/02/22
+ *  version : 1.11
+ *  date    : 05/17/22
  */
 #include "globals.h"
 
@@ -13,7 +13,7 @@
 PUBLIC void readfactor(pEnv env, int priv) /* read a JOY factor */
 {
     Entry ent;
-    long_t set = 0;
+    long set = 0;
 
     switch (env->symb) {
     case ATOM:
@@ -47,7 +47,7 @@ PUBLIC void readfactor(pEnv env, int priv) /* read a JOY factor */
                 || env->yylval.num < 0 || env->yylval.num >= SETSIZE)
                 error(env, "small numeric expected in set");
             else
-                set |= ((long_t)1 << env->yylval.num);
+                set |= ((long)1 << env->yylval.num);
         if (!priv) {
             env->bucket.set = set;
             env->stck = newnode(env, SET_, env->bucket, env->stck);
@@ -73,6 +73,40 @@ PUBLIC void readfactor(pEnv env, int priv) /* read a JOY factor */
 /*
     readterm - read a term from srcfile and push this on the stack as a list.
 */
+#ifdef NOBDW
+PUBLIC void readterm(pEnv env, int priv)
+{
+    if (!priv) {
+        env->bucket.lis = 0;
+        env->stck = newnode(env, LIST_, env->bucket, env->stck);
+    }
+    if (env->symb <= ATOM) {
+        readfactor(env, priv);
+        if (!priv && env->stck) {
+            nodevalue(nextnode1(env->stck)).lis = env->stck;
+            env->stck = nextnode1(env->stck);
+            nextnode1(nodevalue(env->stck).lis) = 0;
+            env->dump = newnode(env, LIST_, nodevalue(env->stck), env->dump);
+        }
+        getsym(env);
+        while (env->symb <= ATOM) {
+            readfactor(env, priv);
+            if (!priv && env->stck) {
+                nextnode1(nodevalue(env->dump).lis) = env->stck;
+                env->stck = nextnode1(env->stck);
+                nextnode2(nodevalue(env->dump).lis) = 0;
+                nodevalue(env->dump).lis = nextnode1(nodevalue(env->dump).lis);
+            }
+            getsym(env);
+        }
+        if (!priv)
+            env->dump = nextnode1(env->dump);
+    }
+}
+#else
+/*
+    readterm - read a term from srcfile and push this on the stack as a list.
+*/
 PUBLIC void readterm(pEnv env, int priv)
 {
     Index *dump = 0;
@@ -93,6 +127,7 @@ PUBLIC void readterm(pEnv env, int priv)
         getsym(env);
     }
 }
+#endif
 
 /*
     writefactor - print a factor in readable format to stdout.
@@ -101,7 +136,7 @@ PUBLIC void writefactor(pEnv env, Index n)
 {
     int i;
     char *p;
-    long_t set;
+    long set;
 
 /*
     This cannot happen. Factor has a small number of customers: writeterm,
@@ -123,14 +158,14 @@ PUBLIC void writefactor(pEnv env, Index n)
         printf("'%c", (char)nodevalue(n).num);
         return;
     case INTEGER_:
-        printf("%ld", (long)nodevalue(n).num); /* BIT_32 */
+        printf("%ld", (long)nodevalue(n).num);
         return;
     case SET_:
         putchar('{');
         for (i = 0, set = nodevalue(n).set; i < SETSIZE; i++)
-            if (set & ((long_t)1 << i)) {
+            if (set & ((long)1 << i)) {
                 printf("%d", i);
-                set &= ~((long_t)1 << i);
+                set &= ~((long)1 << i);
                 if (set)
                     putchar(' ');
             }
@@ -180,6 +215,22 @@ PUBLIC void writefactor(pEnv env, Index n)
 PUBLIC void writeterm(pEnv env, Index n)
 {
     while (n) {
+        writefactor(env, n);
+        if ((n = nextnode1(n)) != 0)
+            putchar(' ');
+    }
+}
+
+/*
+    writedump - print the contents of a dump in readable format to stdout,
+                thereby limiting the write to 10 factors. It is possible that
+                the dump contains circular references.
+*/
+PUBLIC void writedump(pEnv env, Index n)
+{
+    int i = 0;
+
+    for (i = 0; n && i < 10; i++) {
         writefactor(env, n);
         if ((n = nextnode1(n)) != 0)
             putchar(' ');

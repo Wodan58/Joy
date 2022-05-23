@@ -1,7 +1,7 @@
 /*
     module  : strtod.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 05/17/22
 */
 #ifndef STRTOD_C
 #define STRTOD_C
@@ -14,6 +14,6 @@ PRIVATE void strtod_(pEnv env)
 {
     ONEPARAM("strtod");
     STRING("strtod");
-    UNARY(FLOAT_NEWNODE, strtod(nodevalue(env->stck).str, NULL));
+    UNARY(FLOAT_NEWNODE, strtod(nodevalue(env->stck).str, 0));
 }
 #endif

@@ -1,7 +1,7 @@
 /*
     module  : primrec.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 05/17/22
 */
 #ifndef PRIMREC_C
 #define PRIMREC_C
@@ -23,7 +23,7 @@ PRIVATE void primrec_(pEnv env)
     switch (nodetype(SAVED3)) {
     case LIST_: {
         env->dump1 = newnode(env, LIST_, nodevalue(SAVED3), env->dump1);
-        while (DMP1 != NULL) {
+        while (DMP1) {
             env->stck
                 = newnode(env, nodetype(DMP1), nodevalue(DMP1), env->stck);
             DMP1 = nextnode1(DMP1);
@@ -35,23 +35,23 @@ PRIVATE void primrec_(pEnv env)
     case STRING_: {
         char *s;
         for (s = nodevalue(SAVED3).str; *s != '\0'; s++) {
-            env->stck = CHAR_NEWNODE((long_t)*s, env->stck);
+            env->stck = CHAR_NEWNODE((long)*s, env->stck);
             n++;
         }
         break;
     }
     case SET_: {
         int j;
-        long_t set = nodevalue(SAVED3).set;
+        long set = nodevalue(SAVED3).set;
         for (j = 0; j < SETSIZE; j++)
-            if (set & ((long_t)1 << j)) {
+            if (set & ((long)1 << j)) {
                 env->stck = INTEGER_NEWNODE(j, env->stck);
                 n++;
             }
         break;
     }
     case INTEGER_: {
-        long_t j;
+        long j;
         for (j = nodevalue(SAVED3).num; j > 0; j--) {
             env->stck = INTEGER_NEWNODE(j, env->stck);
             n++;

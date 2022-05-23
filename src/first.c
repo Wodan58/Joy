@@ -1,7 +1,7 @@
 /*
     module  : first.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 05/17/22
 */
 #ifndef FIRST_C
 #define FIRST_C
@@ -26,7 +26,7 @@ PRIVATE void first_(pEnv env)
     case SET_: {
         int i = 0;
         CHECKEMPTYSET(nodevalue(env->stck).set, "first");
-        while (!(nodevalue(env->stck).set & ((long_t)1 << i)))
+        while (!(nodevalue(env->stck).set & ((long)1 << i)))
             i++;
         UNARY(INTEGER_NEWNODE, i);
         return;

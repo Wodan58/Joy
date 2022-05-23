@@ -1,7 +1,7 @@
 /*
     module  : step.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 05/17/22
 */
 #ifndef STEP_C
 #define STEP_C
@@ -20,7 +20,7 @@ PRIVATE void step_(pEnv env)
     switch (nodetype(SAVED2)) {
     case LIST_: {
         env->dump1 = newnode(env, LIST_, nodevalue(SAVED2), env->dump1);
-        while (DMP1 != NULL) {
+        while (DMP1) {
             GNULLARY(nodetype(DMP1), nodevalue(DMP1));
             exeterm(env, nodevalue(SAVED1).lis);
             DMP1 = nextnode1(DMP1);
@@ -31,7 +31,7 @@ PRIVATE void step_(pEnv env)
     case STRING_: {
         char *s;
         for (s = nodevalue(SAVED2).str; *s != '\0'; s++) {
-            env->stck = CHAR_NEWNODE((long_t)*s, env->stck);
+            env->stck = CHAR_NEWNODE((long)*s, env->stck);
             exeterm(env, nodevalue(SAVED1).lis);
         }
         break;
@@ -39,7 +39,7 @@ PRIVATE void step_(pEnv env)
     case SET_: {
         int i;
         for (i = 0; i < SETSIZE; i++)
-            if (nodevalue(SAVED2).set & ((long_t)1 << i)) {
+            if (nodevalue(SAVED2).set & ((long)1 << i)) {
                 env->stck = INTEGER_NEWNODE(i, env->stck);
                 exeterm(env, nodevalue(SAVED1).lis);
             }

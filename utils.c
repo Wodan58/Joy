@@ -1,24 +1,40 @@
 /*
  *  module  : utils.c
- *  version : 1.6
- *  date    : 05/02/22
+ *  version : 1.9
+ *  date    : 05/16/22
  */
 #include "globals.h"
 
-static Index memoryindex, mem_low = 1, mem_mid, mem_high = MEMORYMAX - 1;
-static int direction = 1;
+#define LOWER_LIMIT     (200000 / sizeof(Node))
+#define UPPER_LIMIT	(40000000 / sizeof(Node))
+
 static clock_t start_gc_clock;
+static vector(Node) *orig_memory;
+static long memorymax = LOWER_LIMIT;
+static Index memoryindex, mem_low = 1;
 
 #ifdef ENABLE_TRACEGC
 static int nodesinspected, nodescopied;
 #endif
 
+/*
+    Initialize memory at the start and before reading a definition.
+    Definitions clear all other memory; they are themselves permanent.
+    Memory is initialized with 1 node, acting as a null pointer.
+*/
 PUBLIC void inimem1(pEnv env)
 {
-    env->stck = env->conts = env->dump = NULL;
-    env->dump1 = env->dump2 = env->dump3 = env->dump4 = env->dump5 = NULL;
-    direction = 1;
-    memoryindex = mem_low;
+    static int init;
+    Node node;
+
+    if (!init) {
+        init = 1;
+        memset(&node, 0, sizeof(Node));
+        vec_push(env->memory, node);
+    }
+    env->stck = env->conts = env->dump = 0;
+    env->dump1 = env->dump2 = env->dump3 = env->dump4 = env->dump5 = 0;
+    vec_setsize(env->memory, mem_low);
 }
 
 #ifdef STATS
@@ -35,25 +51,27 @@ static void count_avail(void)
 
     if (!avail)
         atexit(report_avail);
-    new_avail = mem_high - mem_low;
+    new_avail = memorymax - mem_low;
     if (avail > new_avail || !avail)
         avail = new_avail;
 }
 #endif
 
+/*
+    Initialize mem_low after reading a definition.
+*/
 PUBLIC void inimem2(pEnv env)
 {
-    mem_low = memoryindex;
-    mem_mid = mem_low + (mem_high - mem_low) / 2;
+    mem_low = vec_size(env->memory);
+
 #ifdef STATS
     count_avail();
 #endif
 #ifdef ENABLE_TRACEGC
     if (env->tracegc > 1) {
-        printf("memoryindex = %d\n", memoryindex);
         printf("mem_low = %d\n", mem_low);
-        printf("top of mem = %d\n", mem_high);
-        printf("mem_mid = %d\n", mem_mid);
+        printf("memoryindex = %d\n", memoryindex);
+        printf("top of mem = %d\n", memorymax);
     }
 #endif
 }
@@ -61,9 +79,12 @@ PUBLIC void inimem2(pEnv env)
 #ifdef ENABLE_TRACEGC
 PUBLIC void printnode(pEnv env, Index p)
 {
-    printf("%10d:\t%-10s %10d %10d\n", p, vec_at(env->symtab, nodetype(p)).name,
-        nodetype(p) == LIST_ ? nodevalue(p).lis : nodevalue(p).num,
-        nextnode1(p));
+    printf("%5d: %10s ", p, vec_at(env->symtab, nodetype(p)).name);
+    if (nodetype(p) == USR_)
+        printf("%10s", vec_at(env->symtab, nodevalue(p).num).name);
+    else
+        printf("%10d", nodevalue(p).num);
+    printf(" %5d\n", nextnode1(p));
 }
 #endif
 
@@ -75,14 +96,14 @@ PRIVATE Index copyone(pEnv env, Index n)
 #ifdef ENABLE_TRACEGC
     nodesinspected++;
     if (env->tracegc > 4)
-        printf("copy ..\n");
+        printf("copy .. (%d)\n", n);
 #endif
     if (n < mem_low)
         return n;
-    if (env->memory[n].op != COPIED_) {
-        env->memory[memoryindex] = env->memory[n];
-        env->memory[n].op = COPIED_;
-        env->memory[n].u.lis = memoryindex;
+    if (vec_at(orig_memory, n).op != COPIED_) {
+        vec_at(env->memory, memoryindex) = vec_at(orig_memory, n);
+        vec_at(orig_memory, n).op = COPIED_;
+        vec_at(orig_memory, n).u.lis = memoryindex;
 #ifdef ENABLE_TRACEGC
         nodescopied++;
         if (env->tracegc > 3) {
@@ -90,9 +111,9 @@ PRIVATE Index copyone(pEnv env, Index n)
             printnode(env, memoryindex);
         }
 #endif
-        memoryindex += direction;
+        memoryindex++;
     }
-    return env->memory[n].u.lis;
+    return vec_at(orig_memory, n).u.lis;
 }
 
 /*
@@ -102,11 +123,24 @@ PRIVATE void copyall(pEnv env)
 {
     Index scan;
 
-    scan = direction == 1 ? mem_low : mem_high;
-    for (; scan != memoryindex; scan += direction) {
-        if (env->memory[scan].op == LIST_)
-            env->memory[scan].u.lis = copyone(env, env->memory[scan].u.lis);
-        env->memory[scan].next = copyone(env, env->memory[scan].next);
+    for (scan = mem_low; scan < memoryindex; scan++) {
+        if (vec_at(env->memory, scan).op == LIST_)
+            vec_at(env->memory, scan).u.lis =
+                   copyone(env, vec_at(env->memory, scan).u.lis);
+        vec_at(env->memory, scan).next =
+               copyone(env, vec_at(env->memory, scan).next);
+    }
+    orig_memory = 0;
+    vec_setsize(env->memory, memoryindex);
+    if (memorymax > 2.5 * memoryindex) {
+        memorymax /= 2;
+        if (memorymax < LOWER_LIMIT)
+            memorymax = LOWER_LIMIT;
+    }
+    if (memorymax < 1.43 * memoryindex) {
+        memorymax *= 2;
+        if (memorymax > UPPER_LIMIT)
+            memorymax = UPPER_LIMIT;
     }
 }
 
@@ -132,8 +166,9 @@ PUBLIC void gc1(pEnv env)
 #endif
 {
     start_gc_clock = clock();
-    direction = -direction;
-    memoryindex = direction == 1 ? mem_low : mem_high;
+    vec_copy(orig_memory, env->memory);
+    memoryindex = mem_low;
+
 #ifdef STATS
     count_collect();
 #endif
@@ -141,34 +176,19 @@ PUBLIC void gc1(pEnv env)
     if (env->tracegc > 1)
         printf("begin %s garbage collection\n", mess);
     nodesinspected = nodescopied = 0;
-#define COP(X, NAME)                                                           \
-    do                                                                         \
-        if (X) {                                                               \
-            if (env->tracegc > 2) {                                            \
-                printf("old %s = ", NAME);                                     \
-                writeterm(env, X, stdout);                                     \
-                printf("\n");                                                  \
-            }                                                                  \
-            X = copyone(env, X);                                               \
-            if (env->tracegc > 2) {                                            \
-                printf("new %s = ", NAME);                                     \
-                writeterm(env, X, stdout);                                     \
-                printf("\n");                                                  \
-            }                                                                  \
-        }                                                                      \
-    while (0)
-#else
-#define COP(X, NAME) X = copyone(env, X)
 #endif
-    COP(env->stck, "stck");
-    COP(env->prog, "prog");
-    COP(env->conts, "conts");
-    COP(env->dump, "dump");
-    COP(env->dump1, "dump1");
-    COP(env->dump2, "dump2");
-    COP(env->dump3, "dump3");
-    COP(env->dump4, "dump4");
-    COP(env->dump5, "dump5");
+
+#define COP(X) X = copyone(env, X)
+
+    COP(env->stck);
+    COP(env->prog);
+    COP(env->conts);
+    COP(env->dump);
+    COP(env->dump1);
+    COP(env->dump2);
+    COP(env->dump3);
+    COP(env->dump4);
+    COP(env->dump5);
 }
 
 #ifdef ENABLE_TRACEGC
@@ -182,6 +202,7 @@ PUBLIC void gc2(pEnv env)
     copyall(env);
     this_gc_clock = clock() - start_gc_clock;
     env->gc_clock += this_gc_clock;
+
 #ifdef ENABLE_TRACEGC
     if (env->tracegc > 0)
         printf("gc - %d nodes inspected, %d nodes copied, clock: %d\n",
@@ -223,8 +244,9 @@ static void count_nodes(void)
 PUBLIC Index newnode(pEnv env, Operator o, Types u, Index r)
 {
     Index p;
+    Node node;
 
-    if (memoryindex == mem_mid) {
+    if (vec_size(env->memory) == memorymax) {
 #ifdef ENABLE_TRACEGC
         gc1(env, "automatic");
 #else
@@ -238,15 +260,15 @@ PUBLIC Index newnode(pEnv env, Operator o, Types u, Index r)
 #else
         gc2(env);
 #endif
-        if ((direction == 1 && memoryindex >= mem_mid)
-            || (direction == -1 && memoryindex <= mem_mid))
+        if (vec_size(env->memory) == UPPER_LIMIT)
             execerror("memory", "copying");
     }
-    p = memoryindex;
-    memoryindex += direction;
-    env->memory[p].op = o;
-    env->memory[p].u = u;
-    env->memory[p].next = r;
+    memset(&node, 0, sizeof(Node));
+    node.u = u;
+    node.op = o;
+    node.next = r;
+    p = vec_size(env->memory);
+    vec_push(env->memory, node);
 #ifdef STATS
     count_nodes();
 #endif
@@ -255,12 +277,12 @@ PUBLIC Index newnode(pEnv env, Operator o, Types u, Index r)
 
 PUBLIC void my_memoryindex(pEnv env)
 {
-    env->bucket.num = memoryindex;
+    env->bucket.num = vec_size(env->memory);
     env->stck = newnode(env, INTEGER_, env->bucket, env->stck);
 }
 
 PUBLIC void my_memorymax(pEnv env)
 {
-    env->bucket.num = mem_high - mem_low;
+    env->bucket.num = vec_max(env->memory) - mem_low;
     env->stck = newnode(env, INTEGER_, env->bucket, env->stck);
 }

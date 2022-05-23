@@ -1,7 +1,7 @@
 /*
     module  : split.c
-    version : 1.2
-    date    : 05/02/22
+    version : 1.3
+    date    : 05/17/22
 */
 #ifndef SPLIT_C
 #define SPLIT_C
@@ -18,16 +18,16 @@ PRIVATE void split_(pEnv env)
     switch (nodetype(SAVED2)) {
     case SET_: {
         int j;
-        long_t yes_set = 0, no_set = 0;
+        long yes_set = 0, no_set = 0;
         for (j = 0; j < SETSIZE; j++) {
-            if (nodevalue(SAVED2).set & ((long_t)1 << j)) {
+            if (nodevalue(SAVED2).set & ((long)1 << j)) {
                 env->stck = INTEGER_NEWNODE(j, SAVED3);
                 exeterm(env, nodevalue(SAVED1).lis);
                 CHECKSTACK("split");
                 if (nodevalue(env->stck).num)
-                    yes_set |= ((long_t)1 << j);
+                    yes_set |= ((long)1 << j);
                 else
-                    no_set |= ((long_t)1 << j);
+                    no_set |= ((long)1 << j);
             }
         }
         env->stck = SET_NEWNODE(yes_set, SAVED3);
@@ -40,7 +40,7 @@ PRIVATE void split_(pEnv env)
         yesstring = (char *)GC_malloc_atomic(strlen(nodevalue(SAVED2).str) + 1);
         nostring = (char *)GC_malloc_atomic(strlen(nodevalue(SAVED2).str) + 1);
         for (s = nodevalue(SAVED2).str; *s != '\0'; s++) {
-            env->stck = CHAR_NEWNODE((long_t)*s, SAVED3);
+            env->stck = CHAR_NEWNODE((long)*s, SAVED3);
             exeterm(env, nodevalue(SAVED1).lis);
             CHECKSTACK("split");
             if (nodevalue(env->stck).num)
@@ -61,32 +61,28 @@ PRIVATE void split_(pEnv env)
         env->dump3 = LIST_NEWNODE(0L, env->dump3); /* last true */
         env->dump4 = LIST_NEWNODE(0L, env->dump4); /* head false */
         env->dump5 = LIST_NEWNODE(0L, env->dump5); /* last false */
-        while (DMP1 != NULL) {
+        while (DMP1) {
             env->stck = newnode(env, nodetype(DMP1), nodevalue(DMP1), SAVED3);
             exeterm(env, nodevalue(SAVED1).lis);
             CHECKSTACK("split");
             if (nodevalue(env->stck).num) /* pass */
-                if (DMP2 == NULL) /* first */
-                {
-                    DMP2 = NEWNODE(nodetype(DMP1), nodevalue(DMP1), NULL);
+                if (!DMP2) { /* first */
+                    DMP2 = NEWNODE(nodetype(DMP1), nodevalue(DMP1), 0);
                     DMP3 = DMP2;
-                } else /* further */
-                {
+                } else { /* further */
                     nextnode1(DMP3)
-                        = NEWNODE(nodetype(DMP1), nodevalue(DMP1), NULL);
+                        = NEWNODE(nodetype(DMP1), nodevalue(DMP1), 0);
                     DMP3 = nextnode1(DMP3);
                 }
             else /* fail */
-                if (DMP4 == NULL) /* first */
-            {
-                DMP4 = NEWNODE(nodetype(DMP1), nodevalue(DMP1), NULL);
-                DMP5 = DMP4;
-            } else /* further */
-            {
-                nextnode1(DMP5)
-                    = NEWNODE(nodetype(DMP1), nodevalue(DMP1), NULL);
-                DMP5 = nextnode1(DMP5);
-            }
+                if (!DMP4) { /* first */
+                    DMP4 = NEWNODE(nodetype(DMP1), nodevalue(DMP1), 0);
+                    DMP5 = DMP4;
+                } else { /* further */
+                    nextnode1(DMP5)
+                        = NEWNODE(nodetype(DMP1), nodevalue(DMP1), 0);
+                    DMP5 = nextnode1(DMP5);
+                }
             DMP1 = nextnode1(DMP1);
         }
         env->stck = LIST_NEWNODE(DMP2, SAVED3);

@@ -19,18 +19,19 @@ DEFINE old_in == in;
 # 1 GENERATING strings defined by REs and grammars
 # 2 PARSING given strings in accordance with REs or grammars
 
-(* - - - - -              G E N E R A T I N G                 - - - - - *)
+(* - - - - -              G E N E R A T I N G               - - - - - *)
 
-(*   The binary operators:						*)
-(*   underscore _ is concatenation,   vertical-bar | is alternation	*)
+(*   The binary operators:					      *)
+(*   underscore _ is concatenation,   vertical-bar | is alternation   *)
 
 # Note that the numeric parameter (8 in the first example) serves
 # to limit the length of strings to be generated
 
-8 ["The" _ ["cat" | "dog"]  _ "sat" _ "on" _ "the" _ ["mat" | "lawn"]] gen-put.
+8 ["The" _ ["cat" | "dog"]  _ "sat" _ "on" _ "the" _ ["mat" | "lawn"]]
+  gen-put.
 
 (*   The unary operators:
-(*   question-mark is 0 or 1, star is 0 or more, plus is 1 or more	*)
+(*   question-mark is 0 or 1, star is 0 or more, plus is 1 or more    *)
 
 7 [ "The" _ ?[ ? "very" _ "big" ] _ "tree" ]   gen-put.
 
@@ -38,7 +39,7 @@ DEFINE old_in == in;
 
 7 [ "The" _ +["very" _ "big"] _ "tree" ]   gen-putchars-sp-step.
 
-(*  Using literals other than strings:					*)
+(*  Using literals other than strings:				      *)
 
 8  [ Smith _ Peter _ "(Pete)" _ CS _ QUOTE [20 22 18 16] _ 76 _ 'B
    | Jones _ Robert _ "(BOB)" _ LG _ QUOTE [12 19 13 14] _ 58 _ 'D ]
@@ -46,13 +47,13 @@ DEFINE old_in == in;
 
 5 [ [0 | 1] _ [0 | 1] _ [0 | 1] ]  gen-put-step.
 
-(* another unary operator, dollar $ to call a defined non-terminal:	*)
-(* a small recursive context free grammar for a fragment of arithmetic	*)
-(* the grammar has only one production					*)
+(* another unary operator, dollar $ to call a defined non-terminal: a *)
+(* small recursive context free grammar for a fragment of arithmetic  *)
+(* the grammar has only one production				      *)
 
 DEFINE arith == [ "x"  |  "(" _ $ arith _ "+" _ $ arith _ ")" ].
 
-13 [ $ arith ]   gen-putchars-step.	# using no spaces between outputs
+13 [ $ arith ]   gen-putchars-step.    # using no spaces between outputs
 
 # A grammar for arithmetic with precedences, using three productions:
 
@@ -60,13 +61,14 @@ DEFINE expression ==  [ $ term  _  * ["+" _ $ term] ];
        term       ==  [ $ factor  _  * ["*" _ $ factor] ];
        factor     ==  [ "x"  |  "(" _ $ expression _ ")" ].
 
-7 [ $ expression ]  gen-putchars-sp-step.    # using spaces between outputs
+7 [ $ expression ]  gen-putchars-sp-step. # using spaces between outputs
 
-(* Do not show, but collect into a list (of lists of tokens)		*)
+(* Do not show, but collect into a list (of lists of tokens)	      *)
 
-8 ["The" _ ["cat" | "dog"]  _ "sat" _ "on" _ "the" _ ["mat" | "lawn"]] gen-accumulate.
+8 ["The" _ ["cat" | "dog"]  _ "sat" _ "on" _ "the" _ ["mat" | "lawn"]]
+  gen-accumulate.
 
-# just counting the number of expressions, terms, factors of max length 7
+# just counting the number of expressions, terms, factors of mx length 7
 
 7 [ $ expression ]  gen-accumulate size.
 
@@ -78,7 +80,7 @@ DEFINE expression ==  [ $ term  _  * ["+" _ $ term] ];
 
 7 [ $ factor ] gen-putchars-sp-step.
 
-(* - - - - -                  P A R S I N G                  - - - - -	*)
+(* - - - - -                  P A R S I N G                 - - - - - *)
 
 DEFINE prs-trace == pop.
 
@@ -86,7 +88,8 @@ DEFINE prs-trace == pop.
 
 DEFINE
     tree == [ "big" _ "tree" ];
-    names == [ "peter" _ "smith" | "paul" _ "jones" | "mary" _ "robinson" ].
+    names == [ "peter" _ "smith" | "paul" _ "jones" | "mary" _
+               "robinson" ].
 
 [ "big" "tree" ]  tree prs-test.
 
@@ -137,7 +140,7 @@ DEFINE
 
 (* The following examples all use test strings of which some
    initial substrings are accepted by the grammar. Each parse
-   then leaves some unused part of the test string behind.		*)
+   then leaves some unused part of the test string behind. *)
 
 #  Using the reverse Polish notation for propositional logic:
 
@@ -148,7 +151,7 @@ DEFINE
 "pNNpNANNpC " string2charlist  Rev-Pol  prs-string-residues.
 "pNNpNABNpC " string2charlist  Rev-Pol  prs-string-residues.
 
-DEFINE 		# Four productions for a rudimentary fragment of English
+DEFINE 	# Four productions for a rudimentary fragment of English
 
 sentence  ==
   [ $ noun-phrase _ $ verb-phrase  _ * [["and" | "or"] _ $ sentence] ];

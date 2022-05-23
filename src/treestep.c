@@ -1,7 +1,7 @@
 /*
     module  : treestep.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 05/17/22
 */
 #ifndef TREESTEP_C
 #define TREESTEP_C
@@ -17,7 +17,7 @@ PRIVATE void treestepaux(pEnv env, Index item)
         exeterm(env, nodevalue(SAVED1).lis);
     } else {
         env->dump1 = newnode(env, LIST_, nodevalue(item), env->dump1);
-        while (DMP1 != NULL) {
+        while (DMP1) {
             treestepaux(env, DMP1);
             DMP1 = nextnode1(DMP1);
         }

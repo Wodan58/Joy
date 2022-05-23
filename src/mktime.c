@@ -1,7 +1,7 @@
 /*
     module  : mktime.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 05/17/22
 */
 #ifndef MKTIME_C
 #define MKTIME_C
@@ -20,6 +20,6 @@ PRIVATE void mktime_(pEnv env)
     ONEPARAM("mktime");
     LIST("mktime");
     decode_time(env, &t);
-    UNARY(INTEGER_NEWNODE, (long_t)mktime(&t));
+    UNARY(INTEGER_NEWNODE, (long)mktime(&t));
 }
 #endif

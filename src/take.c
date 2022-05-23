@@ -1,7 +1,7 @@
 /*
     module  : take.c
-    version : 1.2
-    date    : 05/02/22
+    version : 1.3
+    date    : 05/17/22
 */
 #ifndef TAKE_C
 #define TAKE_C
@@ -20,12 +20,12 @@ PRIVATE void take_(pEnv env)
     switch (nodetype(nextnode1(env->stck))) {
     case SET_: {
         int i;
-        long_t result = 0;
+        long result = 0;
         for (i = 0; i < SETSIZE; i++)
-            if (nodevalue(nextnode1(env->stck)).set & ((long_t)1 << i)) {
+            if (nodevalue(nextnode1(env->stck)).set & ((long)1 << i)) {
                 if (n > 0) {
                     --n;
-                    result |= ((long_t)1 << i);
+                    result |= ((long)1 << i);
                 } else
                     break;
             }
@@ -55,27 +55,25 @@ PRIVATE void take_(pEnv env)
     case LIST_: {
         int i = nodevalue(env->stck).num;
         if (i < 1) {
-            BINARY(LIST_NEWNODE, NULL);
+            BINARY(LIST_NEWNODE, 0);
             return;
         } /* null string */
         env->dump1 = newnode(
             env, LIST_, nodevalue(nextnode1(env->stck)), env->dump1); /* old  */
         env->dump2 = LIST_NEWNODE(0L, env->dump2); /* head */
         env->dump3 = LIST_NEWNODE(0L, env->dump3); /* last */
-        while (DMP1 != NULL && i-- > 0) {
-            if (DMP2 == NULL) /* first */
-            {
-                DMP2 = NEWNODE(nodetype(DMP1), nodevalue(DMP1), NULL);
+        while (DMP1 && i-- > 0) {
+            if (!DMP2) { /* first */
+                DMP2 = NEWNODE(nodetype(DMP1), nodevalue(DMP1), 0);
                 DMP3 = DMP2;
-            } else /* further */
-            {
+            } else { /* further */
                 nextnode1(DMP3)
-                    = NEWNODE(nodetype(DMP1), nodevalue(DMP1), NULL);
+                    = NEWNODE(nodetype(DMP1), nodevalue(DMP1), 0);
                 DMP3 = nextnode1(DMP3);
             }
             DMP1 = nextnode1(DMP1);
         }
-        nextnode1(DMP3) = NULL;
+        nextnode1(DMP3) = 0;
         BINARY(LIST_NEWNODE, DMP2);
         POP(env->dump1);
         POP(env->dump2);

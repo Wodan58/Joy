@@ -1,8 +1,8 @@
 /* FILE: interp.c */
 /*
  *  module  : interp.c
- *  version : 1.56
- *  date    : 05/04/22
+ *  version : 1.60
+ *  date    : 05/18/22
  */
 
 /*
@@ -81,23 +81,21 @@
 
 #ifndef NCHECK
 #define ONEPARAM(NAME)                                                         \
-    if (env->stck == NULL)                                                     \
+    if (!env->stck)                                                            \
     execerror("one parameter", NAME)
 #define TWOPARAMS(NAME)                                                        \
-    if (env->stck == NULL || nextnode1(env->stck) == NULL)                     \
+    if (!env->stck || !nextnode1(env->stck))                                   \
     execerror("two parameters", NAME)
 #define THREEPARAMS(NAME)                                                      \
-    if (env->stck == NULL || nextnode1(env->stck) == NULL                      \
-    || nextnode2(env->stck) == NULL)                                           \
+    if (!env->stck || !nextnode1(env->stck) || !nextnode2(env->stck))          \
     execerror("three parameters", NAME)
 #define FOURPARAMS(NAME)                                                       \
-    if (env->stck == NULL || nextnode1(env->stck) == NULL                      \
-    || nextnode2(env->stck) == NULL || nextnode3(env->stck) == NULL)           \
+    if (!env->stck || !nextnode1(env->stck)                                    \
+    || !nextnode2(env->stck) || !nextnode3(env->stck))                         \
     execerror("four parameters", NAME)
 #define FIVEPARAMS(NAME)                                                       \
-    if (env->stck == NULL || nextnode1(env->stck) == NULL                      \
-    || nextnode2(env->stck) == NULL || nextnode3(env->stck) == NULL            \
-    || nextnode4(env->stck) == NULL)                                           \
+    if (!env->stck || !nextnode1(env->stck) || !nextnode2(env->stck)           \
+    || !nextnode3(env->stck) || !nextnode4(env->stck))                         \
     execerror("five parameters", NAME)
 #define ONEQUOTE(NAME)                                                         \
     if (nodetype(env->stck) != LIST_)                                          \
@@ -156,7 +154,7 @@
     && nodetype(nextnode1(env->stck)) == INTEGER_)))                           \
     execerror("two floats or integers", NAME)
 #define FILE(NAME)                                                             \
-    if (nodetype(env->stck) != FILE_ || nodevalue(env->stck).fil == NULL)      \
+    if (nodetype(env->stck) != FILE_ || !nodevalue(env->stck).fil)             \
     execerror("file", NAME)
 #define CHECKZERO(NAME)                                                        \
     if (nodevalue(env->stck).num == 0)                                         \
@@ -191,13 +189,13 @@
     if (*STRING == '\0')                                                       \
     execerror("non-empty string", NAME)
 #define CHECKEMPTYLIST(LIST, NAME)                                             \
-    if (LIST == NULL)                                                          \
+    if (!LIST)                                                                 \
     execerror("non-empty list", NAME)
 #define CHECKSTACK(NAME)                                                       \
-    if (env->stck == NULL)                                                     \
+    if (!env->stck)                                                            \
     execerror("non-empty stack", NAME)
 #define CHECKVALUE(NAME)                                                       \
-    if (env->stck == NULL)                                                     \
+    if (!env->stck)                                                            \
     execerror("value to push", NAME)
 #define CHECKNAME(STRING, NAME)                                                \
     if (!STRING || *STRING)                                                    \
@@ -287,10 +285,6 @@
     env->stck = newnode(env, TYPE, (VALUE), nextnode2(env->stck))
 #define GTERNARY(TYPE, VALUE)                                                  \
     env->stck = newnode(env, TYPE, (VALUE), nextnode3(env->stck))
-
-#define GETSTRING(NODE)                                                        \
-    (nodetype(NODE) == STRING_ ? nodevalue(NODE).str                           \
-    : (nodetype(NODE) == USR_ ? nodevalue(NODE).ent->name : opername(NODE->op)))
 
 /* #define ARRAY_BOUND_CHECKING */
 
@@ -382,8 +376,15 @@ start:
         case USR_:
             index = nodevalue(stepper).ent;
             ent = vec_at(env->symtab, index);
-            if (!ent.u.body && env->undeferror)
-                execerror("definition", ent.name);
+            if (!ent.u.body) {
+                if (env->undeferror)
+                    execerror("definition", ent.name);
+#ifdef NOBDW
+                continue;
+#else
+                break;
+#endif
+            }
             if (!nextnode1(stepper)) {
 #ifdef NOBDW
                 POP(env->conts);

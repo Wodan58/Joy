@@ -1,7 +1,7 @@
 /*
     module  : time.c
-    version : 1.2
-    date    : 07/20/21
+    version : 1.3
+    date    : 05/17/22
 */
 #ifndef TIME_C
 #define TIME_C
@@ -10,7 +10,7 @@
 1140  time  :  ->  I
 Pushes the current time (in seconds since the Epoch).
 */
-PUSH(time_, INTEGER_NEWNODE, (long_t)time(NULL))
+PUSH(time_, INTEGER_NEWNODE, (long)time(0))
 
 
 

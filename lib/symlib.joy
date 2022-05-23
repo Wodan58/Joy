@@ -7,7 +7,7 @@ LIBRA
     _symlib == true;
 
 HIDE
-									(*
+								      (*
 21 translators, involving 6 notations (5 source, 5 target)
 All translators have time complexity linear in the lenth of input.
 
@@ -35,12 +35,12 @@ Grammars for the notations:
 			 M3 ::=  M4  |  M4  b3  M3
 			 M4 ::=   a  |  u M4  |  [M1]  |  QUOTE [..]
 
-Note that operator classes u b b1 b2 b3 need to be user defined as lists:
-	unops == [succ..]; binops == [cons..];
+Note that operator classes u b b1 b2 b3 need to be user defined as lists
+:	unops == [succ..]; binops == [cons..];
 	bin1ops == [>..]; bin2ops == [+..]; bin3ops == [*..]
-									*)
+								      *)
 
-						(* from Cambridge to ..	*)
+					      (* from Cambridge to .. *)
     C2T ==
 	[ list ]
 	[ unswons
@@ -89,7 +89,7 @@ Note that operator classes u b b1 b2 b3 need to be user defined as lists:
 	  cond ]
 	[ ]
 	ifte;
-						(* from Infix to ..	*)
+						  (* from Infix to .. *)
     I2C ==
 	unswons
 	[ [ [unops in]
@@ -112,7 +112,7 @@ Note that operator classes u b b1 b2 b3 need to be user defined as lists:
 	    I2T swons cons cons ]
 	  [ [] cons ] ]
 	cond;
-						(* from Polish to ..	*)
+						 (* from Polish to .. *)
     P2C ==
 	unswons
 	[ [ [unops in]
@@ -146,7 +146,7 @@ Note that operator classes u b b1 b2 b3 need to be user defined as lists:
 	    [QUOTE] swoncat ]
 	  [ [] cons ] ]
 	cond;
-						(* from Reverse to ..	*)
+						(* from Reverse to .. *)
     R2C ==
 	[ [ [ [unops in]
 	      [[] cons] dip swons ]
@@ -178,7 +178,7 @@ Note that operator classes u b b1 b2 b3 need to be user defined as lists:
 	  cond ]
 	step;
 
-    X2Y ==				(* used by Pol2Rev and Rev2Pol	*)
+    X2Y ==			       (* used by Pol2Rev and Rev2Pol *)
 	unswons
 	[ [ [unops in]
 	    [X2Y] dip swap ]
@@ -192,7 +192,8 @@ Note that operator classes u b b1 b2 b3 need to be user defined as lists:
 IN
 
 (* Ideally the following should be inside the HIDE. But since currently
-   HIDE definitions cannot be mutually recursive, they are placed here.	*)
+   HIDE definitions cannot be mutually recursive, they are placed here.
+*)
 
     M12T ==
 	M22T
@@ -256,33 +257,33 @@ IN
 	  [ ] ]
 	  cond;
 
-      (*  In following, the fast reverselist is counted as  0.5 pass	*)
+      (*  In following, the fast reverselist is counted as 0.5 pass   *)
 
-    Pol2Rev == [X2Y] new-infra rest reverselist;	(*  1.5 passes	*)
-    Pol2Cam == P2C popd;				(*  1   pass	*)
-    Pol2Inf == P2I popd;				(*  1   pass	*)
-    Pol2Tre == P2T popd;				(*  1   pass	*)
+    Pol2Rev == [X2Y] new-infra rest reverselist;        (* 1.5 passes *)
+    Pol2Cam == P2C popd;				(* 1   pass   *)
+    Pol2Inf == P2I popd;				(* 1   pass   *)
+    Pol2Tre == P2T popd;				(* 1   pass   *)
 
-    Rev2Pol == reverselist [X2Y] new-infra rest;	(*  1.5 passes	*)
-    Rev2Cam == R2C;					(*  1   pass	*)
-    Rev2Inf == R2I;					(*  1   pass	*)
-    Rev2Tre == R2T;					(*  1   pass	*)
+    Rev2Pol == reverselist [X2Y] new-infra rest;	(* 1.5 passes *)
+    Rev2Cam == R2C;					(* 1   pass   *)
+    Rev2Inf == R2I;					(* 1   pass   *)
+    Rev2Tre == R2T;					(* 1   pass   *)
 
-    Cam2Pol == [C2P] new-infra;				(*  1   pass	*)
-    Cam2Rev == [C2R] new-infra;				(*  1   pass	*)
-    Cam2Tre == C2T;					(*  1   pass	*)
-    Cam2Inf == C2I;					(*  1   pass	*)
+    Cam2Pol == [C2P] new-infra;				(* 1   pass   *)
+    Cam2Rev == [C2R] new-infra;				(* 1   pass   *)
+    Cam2Tre == C2T;					(* 1   pass   *)
+    Cam2Inf == C2I;					(* 1   pass   *)
 
-    Inf2Pol == Inf2Cam Cam2Pol;				(*  2   passes	*)
-    Inf2Rev == Inf2Cam Cam2Rev;				(*  2   passes	*)
-    Inf2Cam == I2C popd;				(*  1   pass	*)
-    Inf2Tre == I2T popd;				(*  1   pass	*)
+    Inf2Pol == Inf2Cam Cam2Pol;				(* 2   passes *)
+    Inf2Rev == Inf2Cam Cam2Rev;				(* 2   passes *)
+    Inf2Cam == I2C popd;				(* 1   pass   *)
+    Inf2Tre == I2T popd;				(* 1   pass   *)
 
-    Min2Pol == Min2Cam Cam2Pol;				(*  2   passes	*)
-    Min2Rev == Min2Cam Cam2Rev;				(*  2   passes	*)
-    Min2Cam == unswons M12C popd;			(*  1   pass	*)
-    Min2Tre == unswons M12T popd;			(*  1   pass	*)
-    Min2Inf == Min2Cam Cam2Inf				(*  2   passes	*)
+    Min2Pol == Min2Cam Cam2Pol;				(* 2   passes *)
+    Min2Rev == Min2Cam Cam2Rev;				(* 2   passes *)
+    Min2Cam == unswons M12C popd;			(* 1   pass   *)
+    Min2Tre == unswons M12T popd;			(* 1   pass   *)
+    Min2Inf == Min2Cam Cam2Inf				(* 2   passes *)
 
 END; (* HIDE, end of 21 translators *)
 
@@ -308,7 +309,7 @@ END; # Floy translators
 
     SYMLIB == "symlib.joy - symbolic manipulation library\n".
 
-							(*  end LIBRA	*)
+							(*  end LIBRA *)
 "symlib  is loaded\n" putchars.
 
 (* END   symlib.joy *)

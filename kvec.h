@@ -42,8 +42,8 @@ int main()
 
 /*
     module  : kvec.h
-    version : 1.5
-    date    : 04/09/22
+    version : 1.6
+    date    : 05/18/22
 
  1. Change type of n, m from size_t to unsigned. Reason: takes less memory.
  2. Remove (type*) casts. Reason: not needed for C.
@@ -76,12 +76,15 @@ int main()
 25. Add vec_end macro. Reason: can be used as stack pointer.
 26. Use GC_malloc and GC_realloc. Reason: simpler interface.
 27. Remove stk_ macros. Reason: Two different memory allocators is confusing.
+28. MAX_BLOCK added. Reason: 29 bits is the maximum size in gc.c
 
   2008-09-22 (0.1.0):
 	* The initial version.
 */
 #ifndef AC_KVEC_H
 #define AC_KVEC_H
+
+#define MAX_BLOCK		536870912
 
 #define vector(type)		struct { unsigned n, m; type *a; }
 #define vec_init(v)		do { (v) = GC_malloc(sizeof(*(v))); \
@@ -116,7 +119,9 @@ int main()
 	do {								\
 	    if (!(v)) vec_init(v);					\
 	    if ((v)->n == (v)->m) {					\
-		(v)->m = (v)->m ? (v)->m << 1 : 1;			\
+                if (!(v)->m) (v)->m = 1; else { if ((v)->m * 2 >	\
+                MAX_BLOCK / sizeof(*(v)->a)) (v)->m = MAX_BLOCK /       \
+                sizeof(*(v)->a); else (v)->m *= 2; }			\
 		(v)->a = GC_realloc((v)->a, sizeof(*(v)->a) * (v)->m);	\
 	    } (v)->a[(v)->n++] = (x);					\
 	} while (0)

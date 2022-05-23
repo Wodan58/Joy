@@ -1,7 +1,7 @@
 /*
     module  : filter.c
-    version : 1.2
-    date    : 05/02/22
+    version : 1.3
+    date    : 05/17/22
 */
 #ifndef FILTER_C
 #define FILTER_C
@@ -18,14 +18,14 @@ PRIVATE void filter_(pEnv env)
     switch (nodetype(SAVED2)) {
     case SET_: {
         int j;
-        long_t resultset = 0;
+        long resultset = 0;
         for (j = 0; j < SETSIZE; j++) {
-            if (nodevalue(SAVED2).set & ((long_t)1 << j)) {
+            if (nodevalue(SAVED2).set & ((long)1 << j)) {
                 env->stck = INTEGER_NEWNODE(j, SAVED3);
                 exeterm(env, nodevalue(SAVED1).lis);
                 CHECKSTACK("filter");
                 if (nodevalue(env->stck).num)
-                    resultset |= ((long_t)1 << j);
+                    resultset |= ((long)1 << j);
             }
         }
         env->stck = SET_NEWNODE(resultset, SAVED3);
@@ -37,7 +37,7 @@ PRIVATE void filter_(pEnv env)
         resultstring
             = (char *)GC_malloc_atomic(strlen(nodevalue(SAVED2).str) + 1);
         for (s = nodevalue(SAVED2).str; *s != '\0'; s++) {
-            env->stck = CHAR_NEWNODE((long_t)*s, SAVED3);
+            env->stck = CHAR_NEWNODE((long)*s, SAVED3);
             exeterm(env, nodevalue(SAVED1).lis);
             CHECKSTACK("filter");
             if (nodevalue(env->stck).num)
@@ -52,20 +52,17 @@ PRIVATE void filter_(pEnv env)
             = newnode(env, LIST_, nodevalue(SAVED2), env->dump1); /* step old */
         env->dump2 = LIST_NEWNODE(0L, env->dump2); /* head new */
         env->dump3 = LIST_NEWNODE(0L, env->dump3); /* last new */
-        while (DMP1 != NULL) {
+        while (DMP1) {
             env->stck = newnode(env, nodetype(DMP1), nodevalue(DMP1), SAVED3);
             exeterm(env, nodevalue(SAVED1).lis);
             CHECKSTACK("filter");
-            if (nodevalue(env->stck).num) /* test */
-            {
-                if (DMP2 == NULL) /* first */
-                {
-                    DMP2 = NEWNODE(nodetype(DMP1), nodevalue(DMP1), NULL);
+            if (nodevalue(env->stck).num) { /* test */
+                if (!DMP2) { /* first */
+                    DMP2 = NEWNODE(nodetype(DMP1), nodevalue(DMP1), 0);
                     DMP3 = DMP2;
-                } else /* further */
-                {
+                } else { /* further */
                     nextnode1(DMP3)
-                        = NEWNODE(nodetype(DMP1), nodevalue(DMP1), NULL);
+                        = NEWNODE(nodetype(DMP1), nodevalue(DMP1), 0);
                     DMP3 = nextnode1(DMP3);
                 }
             }

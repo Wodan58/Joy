@@ -3,7 +3,7 @@
 (* Lisp tests,
    to be used with the Lisp interpreter in the library lsplib.joy *)
 
-						(* DEFINITIONS		*)
+						(* DEFINITIONS	      *)
 	[ DEF  NIL  [QUOTE []] ]
 	NIL
 	[ ATOM NIL ]
@@ -29,7 +29,7 @@
 	[ PRIME 13 ]
 	[ PRIME 14 ]
 
-						(* LIBRARY COMBINATORS	*)
+					       (* LIBRARY COMBINATORS *)
 (*
 	FOLDR
 	FOLDL
@@ -39,7 +39,7 @@
 	[ FOLDL [QUOTE [a b c]] [QUOTE [d e]]
 		[LAMBDA [x y] CONS x y] ]
 
-						(* DEFS USING FOLDR	*)
+						  (* DEFS USING FOLDR *)
 	[ DEFUN   CONCAT  [lis1 lis2]
 	    FOLDR lis1 lis2 [LAMBDA [l r] CONS l r] ]
 	[ CONCAT  [QUOTE [1 2]]  [QUOTE [3 4 5]] ]
@@ -64,7 +64,8 @@
 	[ DEFUN   MAP  [lis fun]
 	    FOLDR lis NIL [LAMBDA [l r] CONS [fun l] r] ]
 	[ MAP  [QUOTE [1 2 3 4]]  [LAMBDA [n] * n n] ]
-	[ MAP  [QUOTE [[John Smith] [Mary Robinson]]]  [LAMBDA [l] CAR l] ]
+	[ MAP  [QUOTE [[John Smith] [Mary Robinson]]]
+               [LAMBDA [l] CAR l] ]
 	[ MAP  [QUOTE [10 11 12 13 14 15 16]]  PRIME ]
 
 	[ DEFUN   FILTER  [lis pred]
@@ -74,7 +75,7 @@
 	[ FILTER  [QUOTE [1 [2 3] 4 [] [5] 6]] [LAMBDA [x] ATOM x] ]
 	[ FILTER  [QUOTE [10 11 12 13 14 15 16]]  PRIME ]
 
-						(* DEFS USING FOLDL	*)
+						 (* DEFS USING FOLDL *)
 	[ DEFUN   SHUNT  [l1 l2]
 	    FOLDL l1 l2 [LAMBDA [l r] CONS l r] ]
 	[ SHUNT  [QUOTE [1 2 3]]  [QUOTE [4 5 6 7]] ]
@@ -86,7 +87,7 @@
 	    FOLDL lis 0 [LAMBDA [x y] + x [* 10 y]] ]
 	[ LIST-TO-INT [QUOTE [3 1 4 1 5]] ]
 
-						(* DEFS USING FOLDR2	*)
+						(* DEFS USING FOLDR2 *)
 	[ DEFUN  ZIP  [l1 l2]
 	    FOLDR2 l1 l2 NIL [LAMBDA [x y z] CONS [PAIR x y] z] ]
 	[ ZIP  NAMELIST  [QUOTE [Smith Jones Robinson]] ]
@@ -104,7 +105,7 @@
 	[ MAP2 [QUOTE [1 2 3]] [QUOTE [1 10 100]]
 	       [LAMBDA [x y] * x y] ]
 
-						(* DEFS USING RECFOLDR	*)
+					       (* DEFS USING RECFOLDR *)
 	[ DEFUN  RECFLATTEN [lis]
 	    RECFOLDR lis NIL [LAMBDA [x l] CONS x l] ]
 	[ RECFLATTEN [QUOTE [1  []  [[2 3] [] 4 [5]]  [[[[6]]]] ]] ]
@@ -113,7 +114,7 @@
 	    RECFOLDR lis 0 [LAMBDA [x y] + x y] ]
 	[ RECSUM [QUOTE [1  []  [[2 3] [] 4 [5]]  [[[[6]]]] ]] ]
 
-			(* simulating recursion by Self-Application	*)
+			  (* simulating recursion by Self-Application *)
 
 	[ DEFUN   FACT0  [f n]
 	    IF [NULL n] 1 [* n [f f [pred n]]] ]

@@ -1,7 +1,7 @@
 /*
     module  : trunc.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 05/17/22
 */
 #ifndef TRUNC_C
 #define TRUNC_C
@@ -14,6 +14,6 @@ PRIVATE void trunc_(pEnv env)
 {
     ONEPARAM("trunc");
     FLOAT("trunc");
-    UNARY(INTEGER_NEWNODE, (long_t)FLOATVAL);
+    UNARY(INTEGER_NEWNODE, (long)FLOATVAL);
 }
 #endif

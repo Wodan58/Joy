@@ -1,8 +1,8 @@
 /* FILE: scan.c */
 /*
  *  module  : scan.c
- *  version : 1.34
- *  date    : 05/02/22
+ *  version : 1.35
+ *  date    : 05/17/22
  */
 #include "globals.h"
 
@@ -143,7 +143,8 @@ PUBLIC void error(pEnv env, char *message)
 {
     int i;
 
-    putline(env);
+    if (!env->echoflag)
+        putline(env);
     if (env->echoflag > 1)
         putchar('\t');
     for (i = 0; i < currentcolumn - 2; i++)
@@ -152,6 +153,7 @@ PUBLIC void error(pEnv env, char *message)
         else
             putchar(' ');
     printf("^\n\t%s\n", message);
+    env->stck = 0;
 #if 0
     errorcount++;
 #endif
@@ -405,7 +407,7 @@ start:
                 return;
             }
 done:
-            env->yylval.num = strtol(&linbuf[begin], 0, 0); /* BIT_32 */
+            env->yylval.num = strtol(&linbuf[begin], 0, 0);
             env->symb = INTEGER_;
             return;
         }

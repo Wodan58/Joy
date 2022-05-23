@@ -1,7 +1,7 @@
 /*
     module  : opcase.c
-    version : 1.3
-    date    : 05/02/22
+    version : 1.4
+    date    : 05/17/22
 */
 #ifndef OPCASE_C
 #define OPCASE_C
@@ -18,11 +18,11 @@ PRIVATE void opcase_(pEnv env)
     LIST("opcase");
     n = nodevalue(env->stck).lis;
     CHECKEMPTYLIST(n, "opcase");
-    while (nextnode1(n) != NULL && nodetype(n) == LIST_
+    while (nextnode1(n) && nodetype(n) == LIST_
         && nodetype(nodevalue(n).lis) != nodetype(nextnode1(env->stck)))
         n = nextnode1(n);
     CHECKLIST(nodetype(n), "opcase");
     UNARY(LIST_NEWNODE,
-        nextnode1(n) != NULL ? nextnode1(nodevalue(n).lis) : nodevalue(n).lis);
+        nextnode1(n) ? nextnode1(nodevalue(n).lis) : nodevalue(n).lis);
 }
 #endif

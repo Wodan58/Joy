@@ -1,7 +1,7 @@
 /*
     module  : genrec.c
-    version : 1.2
-    date    : 05/02/22
+    version : 1.3
+    date    : 05/17/22
 */
 #ifndef GENREC_C
 #define GENREC_C
@@ -27,7 +27,7 @@ PRIVATE void genrecaux(pEnv env)
         exeterm(env,
             nodevalue(nextnode2(nodevalue(SAVED1).lis)).lis); /*        [R1] */
         NULLARY(LIST_NEWNODE, nodevalue(SAVED1).lis);
-        NULLARY(LIST_NEWNODE, ANON_FUNCT_NEWNODE(genrecaux, NULL));
+        NULLARY(LIST_NEWNODE, ANON_FUNCT_NEWNODE(genrecaux, 0));
         cons_(env);
         exeterm(env, nextnode3(nodevalue(SAVED1).lis));
     } /*   [R2]        */

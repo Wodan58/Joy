@@ -13,13 +13,13 @@ LIBRA
     bin3ops == [ and & K ];
 
 
-(* - - - - -         S E M A N T I C   T A B L E A U X        - - - - - *)
+(* - - - - -        S E M A N T I C   T A B L E A U X       - - - - - *)
 
-(*	 	also known as truth trees or Wang's algorithm		*)
+(*	 	also known as truth trees or Wang's algorithm	      *)
 
 HIDE
 
-(* the various initial continuations:					*)
+(* the various initial continuations:				      *)
 
 (*
     show-old ==
@@ -116,7 +116,7 @@ IN
 	"fal-old E" t-trace;
 *)
 
-    ver-all ==					(* t f c F		*)
+    ver-all ==					(* t f c F	      *)
 	"ver-all B" t-trace
 	unswons
 	[ [ [[or v A] in]
@@ -163,7 +163,7 @@ IN
 	cond
 	"ver-all E" t-trace;
 
-    fal-all ==					(* t f c F		*)
+    fal-all ==					(* t f c F	      *)
 	"fal-all B" t-trace
 	unswons
 	[ [ [[and & K] in]
@@ -204,7 +204,7 @@ IN
 	cond
 	"fal-all E" t-trace;
 
-    ver-first ==				(* t f c F		*)
+    ver-first ==				(* t f c F	      *)
       [ pop pop pop pop null ]
       [
 	"ver-first B" t-trace
@@ -256,7 +256,7 @@ IN
       [ pop pop pop pop ]
       ifte;
 
-    fal-first ==				(* t f c F		*)
+    fal-first ==				(* t f c F	      *)
       [ pop pop pop pop null ]
       [
 	"fal-first B" t-trace
@@ -344,7 +344,7 @@ END; (* HIDE, end of SEMANTIC TABLEAUX *)
 
     PLGLIB == "plglib.joy - propositional logic library\n".
 
-							(*  end LIBRA	*)
+							 (* end LIBRA *)
 "plglib  is loaded\n" putchars.
 
 (* END  plglib.joy *)

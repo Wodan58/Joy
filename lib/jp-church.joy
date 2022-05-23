@@ -54,7 +54,8 @@ Peano [[[[[C3] Csucc] [C2] Cadd] [C3] Cmul] Csucc] [C2] Cadd .
 Peano [[[[[C3] Csucc] [C2] Cadd] [C3] Cmul] Csucc] [C2] Cadd
             3   succ    2   +      3   *     succ    2   +      = .
 
-Peano [[[[C2] [C3] Cmul] [C2] Cpow] [[C2] [[C1] Csucc] Cmul] Cadd] [C2] Cadd.
+Peano [[[[C2] [C3] Cmul] [C2] Cpow] [[C2] [[C1] Csucc] Cmul] Cadd] [C2]
+      Cadd.
 
 DEFINE
     Q0  ==  [pop];
@@ -155,10 +156,14 @@ Peano  [[C1] Ceq0]  [C2]  [C3]  Cifte.
 Peano  [[[C0] Ceq0] Cnot]  [C2]  [C3]  Cifte.
 Peano  [[[C1] Ceq0] Cnot]  [C2]  [C3]  Cifte.
 
-	Peano [Ctrue ] [[Ctrue ] [C0] [C1] Cifte] [[Ctrue ] [C2] [C3] Cifte] Cifte.
-Peano [Ctrue ] [[Cfalse] [C0] [C1] Cifte] [[Cfalse] [C2] [C3] Cifte] Cifte.
-Peano [Cfalse] [[Ctrue ] [C0] [C1] Cifte] [[Ctrue ] [C2] [C3] Cifte] Cifte.
-Peano [Cfalse] [[Cfalse] [C0] [C1] Cifte] [[Cfalse] [C2] [C3] Cifte] Cifte.
+Peano [Ctrue ] [[Ctrue ] [C0] [C1] Cifte] [[Ctrue ] [C2] [C3] Cifte]
+      Cifte.
+Peano [Ctrue ] [[Cfalse] [C0] [C1] Cifte] [[Cfalse] [C2] [C3] Cifte]
+      Cifte.
+Peano [Cfalse] [[Ctrue ] [C0] [C1] Cifte] [[Ctrue ] [C2] [C3] Cifte]
+      Cifte.
+Peano [Cfalse] [[Cfalse] [C0] [C1] Cifte] [[Cfalse] [C2] [C3] Cifte]
+      Cifte.
 
 DEFINE
     Ccons  ==  [i];
