@@ -1,7 +1,7 @@
 /*
     module  : cons_swons.h
-    version : 1.3
-    date    : 05/17/22
+    version : 1.6
+    date    : 06/29/22
 */
 #ifndef CONS_SWONS_H
 #define CONS_SWONS_H
@@ -9,11 +9,13 @@
 #define CONS_SWONS(PROCEDURE, NAME, AGGR, ELEM)                                \
     PRIVATE void PROCEDURE(pEnv env)                                           \
     {                                                                          \
+        Index temp;                                                            \
         TWOPARAMS(NAME);                                                       \
         switch (nodetype(AGGR)) {                                              \
         case LIST_:                                                            \
-            BINARY(LIST_NEWNODE, newnode(env, nodetype(ELEM), nodevalue(ELEM), \
-                                     nodevalue(AGGR).lis));                    \
+            temp = newnode(env, nodetype(ELEM), nodevalue(ELEM),               \
+                                nodevalue(AGGR).lis);                          \
+            BINARY(LIST_NEWNODE, temp);                                        \
             break;                                                             \
         case SET_:                                                             \
             CHECKSETMEMBER(ELEM, NAME);                                        \

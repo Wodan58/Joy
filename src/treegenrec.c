@@ -1,7 +1,7 @@
 /*
     module  : treegenrec.c
-    version : 1.2
-    date    : 05/17/22
+    version : 1.4
+    date    : 06/29/22
 */
 #ifndef TREEGENREC_C
 #define TREEGENREC_C
@@ -13,6 +13,7 @@ Else executes O2 and then [[[O1] [O2] C] treegenrec] C.
 */
 PRIVATE void treegenrecaux(pEnv env)
 {
+    Index temp;
     if (nodetype(nextnode1(env->stck)) == LIST_) {
         SAVESTACK; /* begin DIP        */
         POP(env->stck);
@@ -20,7 +21,8 @@ PRIVATE void treegenrecaux(pEnv env)
             nodevalue(nextnode1(nodevalue(SAVED1).lis)).lis); /*        [O2] */
         GNULLARY(nodetype(SAVED1), nodevalue(SAVED1));
         POP(env->dump); /*   end DIP        */
-        NULLARY(LIST_NEWNODE, ANON_FUNCT_NEWNODE(treegenrecaux, 0));
+        temp = ANON_FUNCT_NEWNODE(treegenrecaux, 0);
+        NULLARY(LIST_NEWNODE, temp);
         cons_(env);
         exeterm(env, nextnode2(nodevalue(nodevalue(env->stck).lis).lis));
     } /*        [C]        */

@@ -1,8 +1,8 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.50
- *  date    : 05/18/22
+ *  version : 1.51
+ *  date    : 06/20/22
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -359,7 +359,7 @@ PUBLIC int opertype(int o);
 /* main.c */
 PUBLIC void lookup(pEnv env);
 PUBLIC void abortexecution_(void);
-PUBLIC void execerror(char *message, char *op);
+PUBLIC void execerror(pEnv env, char *message, char *op);
 /* scan.c */
 PUBLIC void my_atexit(void (*proc)(pEnv));
 PUBLIC void inilinebuffer(pEnv env, char *filnam);

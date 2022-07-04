@@ -1,7 +1,7 @@
 /*
     module  : equal.c
-    version : 1.4
-    date    : 05/17/22
+    version : 1.5
+    date    : 06/21/22
 */
 #ifndef EQUAL_C
 #define EQUAL_C
@@ -24,12 +24,6 @@ PRIVATE int equal_list_aux(pEnv env, Index n1, Index n2)
 
 PRIVATE int equal_aux(pEnv env, Index n1, Index n2)
 {
-#if 0
-    if (n1 == NULL && n2 == NULL)
-        return 1;
-    if (n1 == NULL || n2 == NULL)
-        return 0;
-#endif
     if (nodetype(n1) == LIST_ && nodetype(n2) == LIST_)
         return equal_list_aux(env, nodevalue(n1).lis, nodevalue(n2).lis);
     return !Compare(env, n1, n2);

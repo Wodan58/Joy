@@ -1,9 +1,0 @@
-(*
-    module  : treegenrec2.joy
-    version : 1.1
-    date    : 04/11/22
-*)
-DEFINE 	treemap == [] [map] treegenrec;
-	treesample == [[1 2 [3 4] 5 [[[6]]] 7] 8].
-
-treesample argv 1 at 10 strtol [] cons cons [[dup] dip -] treemap.

@@ -1,8 +1,8 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.48
- *  date    : 05/22/22
+ *  version : 1.49
+ *  date    : 06/20/22
  */
 
 /*
@@ -287,11 +287,11 @@ PRIVATE void read_priv_ahead(pEnv env, int priv)
 
     if (!priv && !isatty(fileno(env->srcfile))) {
         if ((offset = ftell(env->srcfile)) < 0)
-            execerror("ftell", "HIDE");
+            execerror(env, "ftell", "HIDE");
         linenum = getlinenum();
         compound_def(env, READ_PRIV_AHEAD);
         if (fseek(env->srcfile, offset, SEEK_SET))
-            execerror("fseek", "HIDE");
+            execerror(env, "fseek", "HIDE");
         resetlinebuffer(linenum);
     }
 }
@@ -361,7 +361,8 @@ PUBLIC void abortexecution_(void)
 #ifndef GC_BDW
 PRIVATE void fatal(void)
 {
-    fprintf(stderr, "fatal error: stack overflow\n");
+    fflush(stdout);
+    fprintf(stderr, "fatal error: memory overflow\n");
     exit(EXIT_FAILURE);
 }
 #endif
@@ -369,8 +370,9 @@ PRIVATE void fatal(void)
 /*
     print a runtime error to stderr and abort the execution of current program.
 */
-PUBLIC void execerror(char *message, char *op)
+PUBLIC void execerror(pEnv env, char *message, char *op)
 {
+    fflush(stdout);
     fprintf(stderr, "run time error: %s needed for %s\n", message, op);
     abortexecution_();
 }

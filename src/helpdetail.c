@@ -1,7 +1,7 @@
 /*
     module  : helpdetail.c
-    version : 1.4
-    date    : 05/17/22
+    version : 1.6
+    date    : 06/20/22
 */
 #ifndef HELPDETAIL_C
 #define HELPDETAIL_C
@@ -12,6 +12,7 @@ Gives brief help on each symbol S in the list.
 */
 PRIVATE void helpdetail_(pEnv env)
 {
+    int op;
     Index n;
     Entry ent;
 
@@ -24,18 +25,17 @@ PRIVATE void helpdetail_(pEnv env)
             ent = vec_at(env->symtab, nodevalue(n).ent);
             printf("%s  ==\n    ", ent.name);
             writeterm(env, ent.u.body);
-            printf("\n");
-            break;
+	    printf("\n\n");
         } else {
-            Operator op;
             if ((op = nodetype(n)) == BOOLEAN_)
                 op = nodevalue(n).num ? TRUE_ : FALSE_;
             if (op == INTEGER_ && nodevalue(n).num == MAXINT)
                 op = MAXINT_;
-            printf("%s	:   %s.\n%s\n", optable[(int)op].name,
-                optable[(int)op].messg1, optable[(int)op].messg2);
+            printf("%s\t:  %s.\n%s\n", optable[op].name,
+                optable[op].messg1, optable[op].messg2);
+	    if (op < FALSE_)
+		printf("\n");
         }
-        printf("\n");
         n = nextnode1(n);
     }
     POP(env->stck);

@@ -9,12 +9,24 @@ This is the NOBDW version of [Joy1](https://github.com/Wodan58/joy1).
 The two versions are drifting apart.
 [Joy](http://www.complang.tuwien.ac.at/anton/euroforth/ef01/thun01.pdf) is a
 decent language and needs a ditto
-[presentation](http://www.complang.tuwien.ac.at/anton/euroforth/ef01/thomas01a.pdf). The original version can be seen [here](https://github.com/alekar/joy).
+[presentation](http://www.complang.tuwien.ac.at/anton/euroforth/ef01/thomas01a.pdf). The original version can be seen [here](https://github.com/Wodan58/joy0).
+
+Build instructions
+------------------
+
+    mkdir build
+    cd build
+    CC=../gcc.sh cmake ..
+    cmake --build .
+
+or:
+
+    make -f make.nogc
 
 Changes
 -------
 
-Some changes were done that make ~the build environment~ me happy. The only new
+Some changes were done that make ~the build environment~ me happy. One new
 thing is a portable makefile, following this [advice](http://nullprogram.com/blog/2017/08/20).
 There is something different in these sources compared to the ones that can be
 downloaded from the original [site](http://www.latrobe.edu.au/humanities/research/research-projects/past-projects/joy-programming-language) and that is the
@@ -26,18 +38,6 @@ As for the comments in interp.c, I added them because I like some version
 history. It proves that the language and the implementation was not done over
 night.
 In fact, according to this [interview](http://archive.vector.org.uk/art10000350) the implementation in C was started in 1995.
-
-Installation
-------------
-
-    mkdir build
-    cd build
-    CC=../gcc.sh cmake ..
-    cmake --build .
-
-or:
-
-    make -f make.nogc
 
 Binaries
 --------

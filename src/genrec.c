@@ -1,7 +1,7 @@
 /*
     module  : genrec.c
-    version : 1.3
-    date    : 05/17/22
+    version : 1.5
+    date    : 06/29/22
 */
 #ifndef GENREC_C
 #define GENREC_C
@@ -13,6 +13,7 @@ Else executes R1 and then [[[B] [T] [R1] R2] genrec] R2.
 */
 PRIVATE void genrecaux(pEnv env)
 {
+    Index temp;
     int result;
     SAVESTACK;
     POP(env->stck);
@@ -27,7 +28,8 @@ PRIVATE void genrecaux(pEnv env)
         exeterm(env,
             nodevalue(nextnode2(nodevalue(SAVED1).lis)).lis); /*        [R1] */
         NULLARY(LIST_NEWNODE, nodevalue(SAVED1).lis);
-        NULLARY(LIST_NEWNODE, ANON_FUNCT_NEWNODE(genrecaux, 0));
+        temp = ANON_FUNCT_NEWNODE(genrecaux, 0);
+        NULLARY(LIST_NEWNODE, temp);
         cons_(env);
         exeterm(env, nextnode3(nodevalue(SAVED1).lis));
     } /*   [R2]        */

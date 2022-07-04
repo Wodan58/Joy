@@ -1,8 +1,8 @@
 /* FILE: interp.c */
 /*
  *  module  : interp.c
- *  version : 1.60
- *  date    : 05/18/22
+ *  version : 1.61
+ *  date    : 06/20/22
  */
 
 /*
@@ -82,136 +82,136 @@
 #ifndef NCHECK
 #define ONEPARAM(NAME)                                                         \
     if (!env->stck)                                                            \
-    execerror("one parameter", NAME)
+    execerror(env, "one parameter", NAME)
 #define TWOPARAMS(NAME)                                                        \
     if (!env->stck || !nextnode1(env->stck))                                   \
-    execerror("two parameters", NAME)
+    execerror(env, "two parameters", NAME)
 #define THREEPARAMS(NAME)                                                      \
     if (!env->stck || !nextnode1(env->stck) || !nextnode2(env->stck))          \
-    execerror("three parameters", NAME)
+    execerror(env, "three parameters", NAME)
 #define FOURPARAMS(NAME)                                                       \
     if (!env->stck || !nextnode1(env->stck)                                    \
     || !nextnode2(env->stck) || !nextnode3(env->stck))                         \
-    execerror("four parameters", NAME)
+    execerror(env, "four parameters", NAME)
 #define FIVEPARAMS(NAME)                                                       \
     if (!env->stck || !nextnode1(env->stck) || !nextnode2(env->stck)           \
     || !nextnode3(env->stck) || !nextnode4(env->stck))                         \
-    execerror("five parameters", NAME)
+    execerror(env, "five parameters", NAME)
 #define ONEQUOTE(NAME)                                                         \
     if (nodetype(env->stck) != LIST_)                                          \
-    execerror("quotation as top parameter", NAME)
+    execerror(env, "quotation as top parameter", NAME)
 #define TWOQUOTES(NAME)                                                        \
     ONEQUOTE(NAME);                                                            \
     if (nodetype(nextnode1(env->stck)) != LIST_)                               \
-    execerror("quotation as second parameter", NAME)
+    execerror(env, "quotation as second parameter", NAME)
 #define THREEQUOTES(NAME)                                                      \
     TWOQUOTES(NAME);                                                           \
     if (nodetype(nextnode2(env->stck)) != LIST_)                               \
-    execerror("quotation as third parameter", NAME)
+    execerror(env, "quotation as third parameter", NAME)
 #define FOURQUOTES(NAME)                                                       \
     THREEQUOTES(NAME);                                                         \
     if (nodetype(nextnode3(env->stck)) != LIST_)                               \
-    execerror("quotation as fourth parameter", NAME)
+    execerror(env, "quotation as fourth parameter", NAME)
 #define SAME2TYPES(NAME)                                                       \
     if (nodetype(env->stck) != nodetype(nextnode1(env->stck)))                 \
-    execerror("two parameters of the same type", NAME)
+    execerror(env, "two parameters of the same type", NAME)
 #define STRING(NAME)                                                           \
     if (nodetype(env->stck) != STRING_)                                        \
-    execerror("string", NAME)
+    execerror(env, "string", NAME)
 #define STRING2(NAME)                                                          \
     if (nodetype(nextnode1(env->stck)) != STRING_)                             \
-    execerror("string as second parameter", NAME)
+    execerror(env, "string as second parameter", NAME)
 #define INTEGER(NAME)                                                          \
     if (nodetype(env->stck) != INTEGER_)                                       \
-    execerror("integer", NAME)
+    execerror(env, "integer", NAME)
 #define INTEGER2(NAME)                                                         \
     if (nodetype(nextnode1(env->stck)) != INTEGER_)                            \
-    execerror("integer as second parameter", NAME)
+    execerror(env, "integer as second parameter", NAME)
 #define CHARACTER(NAME)                                                        \
     if (nodetype(env->stck) != CHAR_)                                          \
-    execerror("character", NAME)
+    execerror(env, "character", NAME)
 #define INTEGERS2(NAME)                                                        \
     if (nodetype(env->stck) != INTEGER_                                        \
     || nodetype(nextnode1(env->stck)) != INTEGER_)                             \
-    execerror("two integers", NAME)
+    execerror(env, "two integers", NAME)
 #define NUMERICTYPE(NAME)                                                      \
     if (nodetype(env->stck) != INTEGER_ && nodetype(env->stck) != CHAR_        \
     && nodetype(env->stck) != BOOLEAN_)                                        \
-    execerror("numeric", NAME)
+    execerror(env, "numeric", NAME)
 #define NUMERIC2(NAME)                                                         \
     if (nodetype(nextnode1(env->stck)) != INTEGER_                             \
     && nodetype(nextnode1(env->stck)) != CHAR_)                                \
-    execerror("numeric second parameter", NAME)
+    execerror(env, "numeric second parameter", NAME)
 #define CHECKNUMERIC(NODE, NAME)                                               \
     if (nodetype(NODE) != INTEGER_)                                            \
-    execerror("numeric list", NAME)
+    execerror(env, "numeric list", NAME)
 #define FLOAT(NAME)                                                            \
     if (!FLOATABLE)                                                            \
-    execerror("float or integer", NAME);
+    execerror(env, "float or integer", NAME);
 #define FLOAT2(NAME)                                                           \
     if (!(FLOATABLE2                                                           \
     || (nodetype(env->stck) == INTEGER_                                        \
     && nodetype(nextnode1(env->stck)) == INTEGER_)))                           \
-    execerror("two floats or integers", NAME)
+    execerror(env, "two floats or integers", NAME)
 #define FILE(NAME)                                                             \
     if (nodetype(env->stck) != FILE_ || !nodevalue(env->stck).fil)             \
-    execerror("file", NAME)
+    execerror(env, "file", NAME)
 #define CHECKZERO(NAME)                                                        \
     if (nodevalue(env->stck).num == 0)                                         \
-    execerror("non-zero operand", NAME)
+    execerror(env, "non-zero operand", NAME)
 #define CHECKDIVISOR(NAME)                                                     \
     if ((nodetype(env->stck) == FLOAT_ && nodevalue(env->stck).dbl == 0.0)     \
     || (nodetype(env->stck) == INTEGER_ && nodevalue(env->stck).num == 0))     \
-    execerror("non-zero divisor", "/");
+    execerror(env, "non-zero divisor", "/");
 #define LIST(NAME)                                                             \
     if (nodetype(env->stck) != LIST_)                                          \
-    execerror("list", NAME)
+    execerror(env, "list", NAME)
 #define LIST2(NAME)                                                            \
     if (nodetype(nextnode1(env->stck)) != LIST_)                               \
-    execerror("list as second parameter", NAME)
+    execerror(env, "list as second parameter", NAME)
 #define USERDEF(NAME)                                                          \
     if (nodetype(env->stck) != USR_)                                           \
-    execerror("user defined symbol", NAME)
+    execerror(env, "user defined symbol", NAME)
 #define CHECKLIST(OPR, NAME)                                                   \
     if (OPR != LIST_)                                                          \
-    execerror("internal list", NAME)
+    execerror(env, "internal list", NAME)
 #define CHECKSETMEMBER(NODE, NAME)                                             \
     if ((nodetype(NODE) != INTEGER_ && nodetype(NODE) != CHAR_)                \
     || nodevalue(NODE).num < 0 || nodevalue(NODE).num >= SETSIZE)              \
-    execerror("small numeric", NAME)
+    execerror(env, "small numeric", NAME)
 #define CHECKCHARACTER(NODE, NAME)                                             \
     if (nodetype(NODE) != CHAR_)                                               \
-    execerror("character", NAME)
+    execerror(env, "character", NAME)
 #define CHECKEMPTYSET(SET, NAME)                                               \
     if (SET == 0)                                                              \
-    execerror("non-empty set", NAME)
+    execerror(env, "non-empty set", NAME)
 #define CHECKEMPTYSTRING(STRING, NAME)                                         \
     if (*STRING == '\0')                                                       \
-    execerror("non-empty string", NAME)
+    execerror(env, "non-empty string", NAME)
 #define CHECKEMPTYLIST(LIST, NAME)                                             \
     if (!LIST)                                                                 \
-    execerror("non-empty list", NAME)
+    execerror(env, "non-empty list", NAME)
 #define CHECKSTACK(NAME)                                                       \
     if (!env->stck)                                                            \
-    execerror("non-empty stack", NAME)
+    execerror(env, "non-empty stack", NAME)
 #define CHECKVALUE(NAME)                                                       \
     if (!env->stck)                                                            \
-    execerror("value to push", NAME)
+    execerror(env, "value to push", NAME)
 #define CHECKNAME(STRING, NAME)                                                \
     if (!STRING || *STRING)                                                    \
-    execerror("valid name", NAME)
+    execerror(env, "valid name", NAME)
 #define CHECKFORMAT(SPEC, NAME)                                                \
     if (!strchr("dioxX", SPEC))                                                \
-    execerror("one of: d i o x X", NAME)
+    execerror(env, "one of: d i o x X", NAME)
 #define CHECKFORMATF(SPEC, NAME)                                               \
     if (!strchr("eEfgG", SPEC))                                                \
-    execerror("one of: e E f g G", NAME)
+    execerror(env, "one of: e E f g G", NAME)
 #define POSITIVEINDEX(INDEX, NAME)                                             \
     if (nodetype(INDEX) != INTEGER_ || nodevalue(INDEX).num < 0)               \
-    execerror("non-negative integer", NAME)
-#define INDEXTOOLARGE(NAME) execerror("smaller index", NAME)
-#define BADAGGREGATE(NAME) execerror("aggregate parameter", NAME)
-#define BADDATA(NAME) execerror("different type", NAME)
+    execerror(env, "non-negative integer", NAME)
+#define INDEXTOOLARGE(NAME) execerror(env, "smaller index", NAME)
+#define BADAGGREGATE(NAME) execerror(env, "aggregate parameter", NAME)
+#define BADDATA(NAME) execerror(env, "different type", NAME)
 #else
 #define ONEPARAM(NAME)
 #define TWOPARAMS(NAME)
@@ -378,7 +378,7 @@ start:
             ent = vec_at(env->symtab, index);
             if (!ent.u.body) {
                 if (env->undeferror)
-                    execerror("definition", ent.name);
+                    execerror(env, "definition", ent.name);
 #ifdef NOBDW
                 continue;
 #else

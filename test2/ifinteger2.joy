@@ -1,7 +1,0 @@
-(*
-    module  : ifinteger2.joy
-    version : 1.1
-    date    : 04/11/22
-*)
-argv 1 at strtod [[integer] first] [[nointeger] first] ifinteger.
-argv 1 at 10 strtol [[integer] first] [[nointeger] first] ifinteger.

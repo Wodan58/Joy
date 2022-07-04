@@ -27,7 +27,7 @@ Comparison
 
 Comparing this implementation with joy1, it seems that only the choice of
 garbage collector is different. The builtins in the src-directory require more
-work than in de BDW version, because each allocation must be attached to one of
+work than in the BDW version, because each allocation must be attached to one of
 the roots for garbage collection before another allocation might occur. This
 makes the BDW version easier to extend with new builtins. Performance between
 the BDW version and the NOBDW version is similar. Only the MINBDW version that
@@ -67,9 +67,27 @@ to the following testfile:
     { true }.
     [ ( ].
     [ } ].
-    123 .
 
-The 123 at the end is present to see whether the entire file is processed.
+The response from joy0, with commandline `./joy <test17.joy`:
+
+    JOY  -  compiled at 11:02:05 on Jun 13 2022 
+    "\07".
+        ^
+	    digit expected
+    { true }.
+         ^
+	    numeric expected in set
+    {}
+    [ ( ].
+      ^
+	    a factor cannot begin with this symbol
+    [[]]
+    [ } ].
+      ^
+	    ']' expected
+    []
+    time:  54 CPU,  0 gc (= 0%)
+
 Here is the response from the original Joy:
 
     "\07".
@@ -77,7 +95,7 @@ Here is the response from the original Joy:
 	    digit expected
     { true }.
          ^
-	    small numeric expected in set
+	    numeric expected in set
     {}
     [ ( ].
       ^
@@ -92,7 +110,6 @@ Here is the response from the original Joy:
     [ } ].
         ^    END or period '.' expected
     [[]]
-    123
 
 The error detection from the original Joy is excellent. The new versions, joy1
 and Joy implement the same language and the output is now also the same:
@@ -112,20 +129,31 @@ and Joy implement the same language and the output is now also the same:
     [ } ].
       ^
 	    ']' expected
-    123
 
 In case of an error the stack is cleared. Handling of memory is different in
 joy1 compared to Joy and also exeterm is a bit different: joy1 does not use
 conts. It is good to know that these versions agree about the result.
 
-Moy and Coy implement a language that is a little different and they do so with
-a different code base, so some differences are expected. Here is the output
-from Moy:
+It is still possible to distinguish between Joy and joy1 with the help of the
+following program:
 
-    syntax error in file ./17.joy line 2 : { true }.
-    syntax error in file ./17.joy line 3 : [ ( ].
-    syntax error in file ./17.joy line 4 : [ } ].
-    123 
+    [1 2 3] -1 drop..
+
+In case of a runtime error, Joy clears the stack and joy1 doesn't. So, the
+output of joy1 will be:
+
+    run time error: non-negative integer needed for drop
+    -1
+
+whereas Joy will only print the runtime error and not the -1.
+
+Moy and Coy implement the same language with a different code base, so some
+differences can be expected. Here is the output from Moy:
+
+    syntax error: "\07".
+    syntax error: { true }.
+    syntax error: [ ( ].
+    syntax error: [ } ].
 
 Errors are sent to stderr, by the way. The text "syntax error" comes from yacc.
 And here is the output from Coy:
@@ -133,7 +161,7 @@ And here is the output from Coy:
     "\07".
        ^
 	    digit expected
-    ""
+    "\007"
     { true }.
          ^
 	    syntax error
@@ -152,7 +180,6 @@ And here is the output from Coy:
     [ } ].
        ^
 	    syntax error
-    123
 
 Coy has a handwritten lexical analyzer, making the first error possible. These
 messages may change in the future, allowing for more compatibility with Joy and

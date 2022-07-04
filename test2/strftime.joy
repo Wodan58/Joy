@@ -1,6 +1,6 @@
 (*
     module  : strftime.joy
-    version : 1.1
-    date    : 04/11/22
+    version : 1.2
+    date    : 06/23/22
 *)
-time localtime "%c" strftime.
+time localtime "%c\n" strftime putchars.

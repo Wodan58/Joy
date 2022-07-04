@@ -1,7 +1,7 @@
 /*
  *  module  : utils.c
- *  version : 1.9
- *  date    : 05/16/22
+ *  version : 1.10
+ *  date    : 06/20/22
  */
 #include "globals.h"
 
@@ -261,7 +261,7 @@ PUBLIC Index newnode(pEnv env, Operator o, Types u, Index r)
         gc2(env);
 #endif
         if (vec_size(env->memory) == UPPER_LIMIT)
-            execerror("memory", "copying");
+            execerror(env, "memory", "copying");
     }
     memset(&node, 0, sizeof(Node));
     node.u = u;

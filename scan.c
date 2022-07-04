@@ -1,8 +1,8 @@
 /* FILE: scan.c */
 /*
  *  module  : scan.c
- *  version : 1.35
- *  date    : 05/17/22
+ *  version : 1.36
+ *  date    : 06/20/22
  */
 #include "globals.h"
 
@@ -166,7 +166,7 @@ PRIVATE void my_include(pEnv env, char *filnam, FILE *fp)
     strncpy(infile[ilevel].name, filnam, ALEN);
     infile[ilevel].name[ALEN - 1] = 0;
 #endif
-    infile[ilevel].linenum = 0;
+    infile[ilevel].linenum = linenumber = 0;
 }
 
 /*
@@ -187,10 +187,9 @@ PUBLIC void doinclude(pEnv env, char *filnam, int error)
 #endif
 
     if (ilevel + 1 == INPSTACKMAX)
-        execerror("fewer include files", "include");
+        execerror(env, "fewer include files", "include");
     infile[ilevel].fp = env->srcfile;
     infile[ilevel].linenum = linenumber;
-    linenumber = 0;
     if ((fp = fopen(filnam, "r")) != 0) {
         my_include(env, filnam, fp);
         return;
@@ -207,7 +206,7 @@ PUBLIC void doinclude(pEnv env, char *filnam, int error)
     }
 #endif
     if (error)
-        execerror("valid file name", "include");
+        execerror(env, "valid file name", "include");
 }
 
 /*

@@ -42,8 +42,8 @@ int main()
 
 /*
     module  : kvec.h
-    version : 1.6
-    date    : 05/18/22
+    version : 1.6.1.1
+    date    : 06/22/22
 
  1. Change type of n, m from size_t to unsigned. Reason: takes less memory.
  2. Remove (type*) casts. Reason: not needed for C.
@@ -84,7 +84,9 @@ int main()
 #ifndef AC_KVEC_H
 #define AC_KVEC_H
 
-#define MAX_BLOCK		536870912
+#ifndef MAX_BLOCK
+#define MAX_BLOCK	200000000
+#endif
 
 #define vector(type)		struct { unsigned n, m; type *a; }
 #define vec_init(v)		do { (v) = GC_malloc(sizeof(*(v))); \

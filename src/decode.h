@@ -1,7 +1,7 @@
 /*
     module  : decode.h
-    version : 1.2
-    date    : 07/20/21
+    version : 1.3
+    date    : 06/20/22
 */
 #ifndef DECODE_H
 #define DECODE_H
@@ -46,7 +46,7 @@ PRIVATE void decode_time(pEnv env, struct tm *t)
         POP(p);
     }
     if (p && nodetype(p) == INTEGER_) {
-        t->tm_wday = nodevalue(p).num;
+        t->tm_wday = nodevalue(p).num % 7;
         POP(p);
     }
 }

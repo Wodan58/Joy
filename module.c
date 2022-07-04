@@ -1,7 +1,7 @@
 /*
     module  : module.c
-    version : 1.3
-    date    : 05/02/22
+    version : 1.4
+    date    : 06/20/22
 */
 #include "globals.h"
 
@@ -26,7 +26,7 @@ void initmod(pEnv env, char *name)
 {
     if (++module_index >= DISPLAYMAX) {
         module_index = DISPLAYMAX - 1;
-        execerror("index", "display");
+        execerror(env, "index", "display");
     }
     env->module_stack[module_index].name = GC_strdup(name);
     env->module_stack[module_index].hide = hide_index;
@@ -48,7 +48,7 @@ void initpriv(pEnv env, int priv)
 
     if (++hide_index >= DISPLAYMAX) {
         hide_index = DISPLAYMAX - 1;
-        execerror("index", "display");
+        execerror(env, "index", "display");
     }
     if (priv) {
         sprintf(str, "%d", ++hide_count);

@@ -1,7 +1,7 @@
 /*
     module  : gc.c
-    version : 1.26
-    date    : 05/18/22
+    version : 1.30
+    date    : 06/23/22
 */
 #ifndef COSMO
 #include <stdio.h>
@@ -35,14 +35,22 @@
 
 #define GC_COLL          0
 #define GC_LEAF          1
-#define GC_SAVE          2
-#define GC_MARK          4
+#define GC_MARK          2
+#ifdef USE_GC_MALLOC_UNCOLLECTABLE
+#define GC_SAVE          4
+#endif
 
 #define BSS_ALIGN        4
 #define MIN_ITEMS        4
 #define MAX_ITEMS        2
 #define FULL_MASK        (uint64_t)0x0000fffffffffffe
+#ifndef MAX_BLOCK
+#ifdef USE_GC_MALLOC_UNCOLLECTABLE
 #define MAX_BLOCK        536870912
+#else
+#define MAX_BLOCK	1073741824
+#endif
+#endif
 
 /*
     When pointers are 16 bit aligned, the lower 4 bits are always zero.
@@ -50,8 +58,13 @@
 #define HASH_FUNCTION(key)        (khint_t)((key) >> 4)
 
 typedef struct mem_info {
+#ifdef USE_GC_MALLOC_UNCOLLECTABLE
     unsigned flags: 3;
     unsigned size: 29;
+#else
+    unsigned flags: 2;
+    unsigned size: 30;
+#endif
 } mem_info;
 
 /*
@@ -77,11 +90,12 @@ static uint64_t start_of_text,
 #endif
 
 /*
-    mem_fatal - Report a fatal error and abort execution.
+    mem_fatal - Report a fatal error and end the program. The message is taken
+                from yacc.
 */
 static void mem_fatal(void)
 {
-    fprintf(stderr, "Out Of Memory\n");
+    fprintf(stderr, "memory exhausted\n");
     exit(0);
 }
 
@@ -125,8 +139,8 @@ int sigaltstack(const struct sigaltstack *neu, struct sigaltstack *old);
 /*
     setupsignal - setup signal handler, protecting against call stack overflow;
                   also setup an alternative stack, to be used during signal
-                  handling. It is not possible to recover from a stack
-                  overflow but at least a friendly message can be given.
+                  handling. It is not possible to recover from a stack overflow
+                  but at least a friendly message can be given.
 */
 static void setupsignal(void (*proc)())
 {
@@ -251,7 +265,11 @@ static void scan(void)
         if (kh_exist(MEM, key)) {
             if (kh_value(MEM, key).flags & GC_MARK)
                 kh_value(MEM, key).flags &= ~GC_MARK;
+#ifdef USE_GC_MALLOC_UNCOLLECTABLE
             else if ((kh_value(MEM, key).flags & GC_SAVE) == 0) {
+#else
+            else {
+#endif
                 free((void *)kh_key(MEM, key));
                 kh_del(Backup, MEM, key);
             }
@@ -298,9 +316,9 @@ static void remind(char *ptr, size_t size, int flags)
     key = kh_put(Backup, MEM, value, &rv);
     kh_value(MEM, key).flags = flags;
     kh_value(MEM, key).size = size;
-    if (max_items < kh_n_buckets(MEM)) {
+    if (max_items < kh_size(MEM)) {
         GC_gcollect();
-        max_items = kh_n_buckets(MEM) * MAX_ITEMS;
+        max_items = kh_size(MEM) * MAX_ITEMS;
     }
 }
 
@@ -404,7 +422,7 @@ char *GC_strdup(const char *str)
 
 /*
     Return the size of allocated memory in bytes. That is memory_use;
-    heap_size returns the number of buckets. The unit is not bytes.
+    heap_size returns the number of memory blocks.
 */
 #ifdef USE_GC_GET_HEAP_SIZE
 size_t GC_get_heap_size(void)
@@ -426,17 +444,5 @@ size_t GC_get_memory_use(void)
 void *GC_malloc_uncollectable(size_t size)
 {
     return mem_block(size, GC_SAVE);
-}
-#endif
-
-/*
-    Allocate a memory block and set it to uncollectable. This is necessary
-    for khash.h, that starts allocating with realloc instead of malloc and
-    the hash tables should exist until the end of the program.
-*/
-#ifdef USE_GC_MALLOC_UNCOLLECTABLE
-void *GC_realloc_uncollectable(void *old, size_t size)
-{
-    return old ? GC_realloc(old, size) : GC_malloc_uncollectable(size);
 }
 #endif

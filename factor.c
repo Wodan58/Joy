@@ -1,8 +1,8 @@
 /* FILE: factor.c */
 /*
  *  module  : factor.c
- *  version : 1.11
- *  date    : 05/17/22
+ *  version : 1.13
+ *  date    : 06/20/22
  */
 #include "globals.h"
 
@@ -145,7 +145,7 @@ PUBLIC void writefactor(pEnv env, Index n)
 */
 #if 0
     if (!n)
-        execerror("non-empty stack", "print");
+        execerror(env, "non-empty stack", "print");
 #endif
     switch (opertype(nodetype(n))) {
     case USR_:
@@ -155,7 +155,10 @@ PUBLIC void writefactor(pEnv env, Index n)
         printf("%s", nodevalue(n).num ? "true" : "false");
         return;
     case CHAR_:
-        printf("'%c", (char)nodevalue(n).num);
+	if (nodevalue(n).num == '\n')
+	    printf("'\\n");
+	else
+            printf("'%c", (char)nodevalue(n).num);
         return;
     case INTEGER_:
         printf("%ld", (long)nodevalue(n).num);
@@ -226,6 +229,7 @@ PUBLIC void writeterm(pEnv env, Index n)
                 thereby limiting the write to 10 factors. It is possible that
                 the dump contains circular references.
 */
+#ifdef NOBDW
 PUBLIC void writedump(pEnv env, Index n)
 {
     int i = 0;
@@ -236,3 +240,4 @@ PUBLIC void writedump(pEnv env, Index n)
             putchar(' ');
     }
 }
+#endif
