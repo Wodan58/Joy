@@ -1,7 +1,7 @@
 /*
     module  : gc.c
-    version : 1.30
-    date    : 06/23/22
+    version : 1.32
+    date    : 07/25/22
 */
 #ifndef COSMO
 #include <stdio.h>
@@ -45,11 +45,7 @@
 #define MAX_ITEMS        2
 #define FULL_MASK        (uint64_t)0x0000fffffffffffe
 #ifndef MAX_BLOCK
-#ifdef USE_GC_MALLOC_UNCOLLECTABLE
-#define MAX_BLOCK        536870912
-#else
-#define MAX_BLOCK	1073741824
-#endif
+#define MAX_BLOCK        100000000
 #endif
 
 /*
@@ -106,8 +102,18 @@ static void mem_fatal(void)
 static void init_heap(void)
 {
     extern int main(int argc, char **argv);
-
+#ifdef _MSC_VER
+    int *ptr;
+#endif
     start_of_text = (uint64_t)main;
+#ifdef __CYGWIN__
+    extern char __data_start__, __data_end__, __bss_start__, __bss_end__,
+		__end__;
+
+    start_of_data = (uint64_t)&__data_start__;
+    start_of_bss  = (uint64_t)&__bss_start__;
+    start_of_heap = (uint64_t)&__bss_end__;
+#endif
 #ifdef __linux__
     extern char etext, edata, end;
 
@@ -247,9 +253,8 @@ static void mark_bss(void)
 {
     uint64_t ptr;
 
-    for (ptr = start_of_bss; ptr < start_of_heap; ptr += BSS_ALIGN) {
+    for (ptr = start_of_bss; ptr < start_of_heap; ptr += BSS_ALIGN)
         mark_ptr(*(char **)ptr);
-}
 }
 #endif
 
@@ -392,6 +397,8 @@ void *GC_realloc(void *old, size_t size)
 {
     void *ptr;
 
+    if (!old)
+	return GC_malloc(size);
     if (size > MAX_BLOCK)
         mem_fatal();
     if ((ptr = realloc(old, size)) == 0)

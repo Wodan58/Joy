@@ -1,7 +1,7 @@
 /*
     module  : module.c
-    version : 1.4
-    date    : 06/20/22
+    version : 1.5
+    date    : 07/25/22
 */
 #include "globals.h"
 
@@ -10,7 +10,7 @@
  * string presentation instead of the number itself.
  */
 static int hide_index = -1;
-static unsigned char inside_hide;
+static unsigned char inside_hide, been_inside;
 
 /*
  * stack of module names. Only one module needs to be considered active for the
@@ -63,6 +63,7 @@ void initpriv(pEnv env, int priv)
  */
 void stoppriv(void)
 {
+    been_inside = 1;
     inside_hide = 0;
 }
 
@@ -71,6 +72,9 @@ void stoppriv(void)
  */
 void exitpriv(void)
 {
+    if (!been_inside)
+	return;
+    been_inside = 0;
     if (hide_index >= 0)
         hide_index--;
 }
@@ -80,6 +84,7 @@ void exitpriv(void)
  */
 void exitmod(void)
 {
+    exitpriv();
     if (module_index >= 0)
         module_index--;
 }

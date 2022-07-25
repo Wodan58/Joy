@@ -1,12 +1,12 @@
 (*
     module  : test29.joy
-    version : 1.2
-    date    : 05/18/22
+    version : 1.3
+    date    : 07/25/22
 *)
 DEFINE
   swoncat == swap concat;
   from-to == [] cons [pop pop] swoncat [>] swap [[dup succ] dip] [cons] linrec;
   from-to-list == [] from-to.
 
-1 3000000 from-to-list.
+1 30000 from-to-list.
 "Back from list\n" putchars.

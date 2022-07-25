@@ -1,8 +1,8 @@
 /* FILE: factor.c */
 /*
  *  module  : factor.c
- *  version : 1.13
- *  date    : 06/20/22
+ *  version : 1.14
+ *  date    : 07/25/22
  */
 #include "globals.h"
 
@@ -24,7 +24,10 @@ PUBLIC void readfactor(pEnv env, int priv) /* read a JOY factor */
                 return;
             }
             ent = vec_at(env->symtab, env->location);
-            if (!ent.is_user) {
+            /* execute immediate functions at compile time */
+            if (env->location >= FALSE_ && env->location <= MAXINT_)
+                (*ent.u.proc)(env);
+            else if (!ent.is_user) {
                 env->yylval.proc = ent.u.proc;
                 env->stck = newnode(env, env->location, env->yylval, env->stck);
             } else {
@@ -88,8 +91,7 @@ PUBLIC void readterm(pEnv env, int priv)
             nextnode1(nodevalue(env->stck).lis) = 0;
             env->dump = newnode(env, LIST_, nodevalue(env->stck), env->dump);
         }
-        getsym(env);
-        while (env->symb <= ATOM) {
+        while (getsym(env), env->symb <= ATOM) {
             readfactor(env, priv);
             if (!priv && env->stck) {
                 nextnode1(nodevalue(env->dump).lis) = env->stck;
@@ -97,7 +99,6 @@ PUBLIC void readterm(pEnv env, int priv)
                 nextnode2(nodevalue(env->dump).lis) = 0;
                 nodevalue(env->dump).lis = nextnode1(nodevalue(env->dump).lis);
             }
-            getsym(env);
         }
         if (!priv)
             env->dump = nextnode1(env->dump);

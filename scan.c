@@ -1,8 +1,8 @@
 /* FILE: scan.c */
 /*
  *  module  : scan.c
- *  version : 1.36
- *  date    : 06/20/22
+ *  version : 1.37
+ *  date    : 07/25/22
  */
 #include "globals.h"
 
@@ -26,6 +26,22 @@ static int ch = ' ';
 #ifdef READ_PRIVATE_AHEAD
 static Symbol unget_symb;
 #endif
+
+static struct keys {
+    char *name;
+    Symbol symb;
+} keywords[] = {
+    { "LIBRA",   LIBRA    },
+    { "DEFINE",  LIBRA    },
+    { "HIDE",    HIDE     },
+    { "IN",      IN       },
+    { "END",     END      },
+    { "MODULE",  MODULE   },
+    { "PRIVATE", JPRIVATE },
+    { "PUBLIC",  JPUBLIC  },
+    /* possibly other uppers here */
+    { "==",      EQDEF    }
+};
 
 /*
     inilinebuffer - initialise the stack of input files. The filename parameter
@@ -430,56 +446,12 @@ not_unary_minus:
             }
         }
         env->ident[i] = 0;
-        if (isupper((int)env->ident[1])) {
-            if (!strcmp(env->ident, "LIBRA") || !strcmp(env->ident, "DEFINE")) {
-                env->symb = LIBRA;
-                return;
-            }
-            if (!strcmp(env->ident, "HIDE")) {
-                env->symb = HIDE;
-                return;
-            }
-            if (!strcmp(env->ident, "IN")) {
-                env->symb = IN;
-                return;
-            }
-            if (!strcmp(env->ident, "END")) {
-                env->symb = END;
-                return;
-            }
-            if (!strcmp(env->ident, "MODULE")) {
-                env->symb = MODULE;
-                return;
-            }
-            if (!strcmp(env->ident, "PRIVATE")) {
-                env->symb = JPRIVATE;
-                return;
-            }
-            if (!strcmp(env->ident, "PUBLIC")) {
-                env->symb = JPUBLIC;
-                return;
-            }
-            /* possibly other uppers here */
-        }
-        if (!strcmp(env->ident, "==")) {
-            env->symb = EQDEF;
-            return;
-        }
-        if (!strcmp(env->ident, "true")) {
-            env->symb = BOOLEAN_;
-            env->yylval.num = 1;
-            return;
-        }
-        if (!strcmp(env->ident, "false")) {
-            env->symb = BOOLEAN_;
-            env->yylval.num = 0;
-            return;
-        }
-        if (!strcmp(env->ident, "maxint")) {
-            env->symb = INTEGER_;
-            env->yylval.num = MAXINT;
-            return;
-        }
+        if (isupper((int)env->ident[1]) || env->ident[0] == '=')
+            for (i = 0; i < sizeof(keywords) / sizeof(keywords[0]); i++)
+                if (!strcmp(env->ident, keywords[i].name)) {
+                    env->symb = keywords[i].symb;
+                    return;
+                }
         env->symb = ATOM;
         return;
     }
