@@ -1,7 +1,7 @@
 /*
     module  : app11.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 07/25/22
 */
 #ifndef APP11_C
 #define APP11_C
@@ -15,6 +15,7 @@ PRIVATE void app11_(pEnv env)
     THREEPARAMS("app11");
     ONEQUOTE("app11");
     app1_(env);
-    nextnode1(env->stck) = nextnode2(env->stck);
+    if (nextnode1(env->stck))
+	nextnode1(env->stck) = nextnode2(env->stck);
 }
 #endif

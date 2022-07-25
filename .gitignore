@@ -1,9 +1,12 @@
 cosmo*
 *.o
 *.lds
-*.jar
+joy.exe
 joy.com.dbg
 build
 builtin.c
 builtin.h
 table.c
+vergelijk.sh
+files
+t
