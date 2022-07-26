@@ -15,8 +15,8 @@ Both the memory area and the symbol table can grow when needed.
 Comparison
 ==========
 
-Comparing the different versions of joy is the task of
-[joyid.joy](https://github.com/Wodan58/Joy/doc/joyid.joy).
+Comparing the different versions of joy is now the task of
+[joyid.joy](https://github.com/Wodan58/Joy/blob/master/doc/joyid.joy).
 
 Summary
 =======
