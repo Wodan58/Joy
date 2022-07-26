@@ -1,7 +1,6 @@
 cosmo*
 *.o
 *.lds
-joy.exe
 joy.com.dbg
 build
 builtin.c
