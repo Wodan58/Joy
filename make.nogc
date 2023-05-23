@@ -1,29 +1,27 @@
 .POSIX:
 .SUFFIXES:
 
-UNZIP = gunzip
+UNZIP = unzip
 OBJCOPY = objcopy
 CC = gcc
+
 CFLAGS = -g -Os -static -nostdlib -nostdinc -fno-pie -no-pie -mno-red-zone \
-         -fno-omit-frame-pointer -include cosmopolitan.h -I. \
-         -Wall -Wextra -Wno-unused-parameter -Wno-error=attributes \
-         -Wno-attributes -Werror -DNOBDW -DJVERSION="\"cosmo\"" -DTRACING \
-         -DCOSMO
+         -fno-omit-frame-pointer -pg -mnop-mcount -mno-tls-direct-seg-refs \
+         -gdwarf-4 -include cosmopolitan.h -I. -Wall -Wextra \
+         -Wno-unused-parameter -Wno-error=attributes -Wno-attributes \
+         -DNOBDW -DJVERSION="\"cosmo\"" -DTRACING -DCOSMO
 LD = $(CC)
-LDLIBS = -fuse-ld=bfd -Wl,--gc-sections -Wl,-T,ape.lds \
-	 crt.o ape.o cosmopolitan.a
+LDLIBS = -fuse-ld=bfd -Wl,-T,ape.lds -Wl,--gc-sections \
+         crt.o ape-no-modify-self.o cosmopolitan.a
 OBJECTS = interp.o scan.o utils.o main.o factor.o module.o gc.o
 
-joy.com: dummy $(OBJECTS)
+joy.com: cosmo prep $(OBJECTS)
 	$(LD) -o$@.dbg $(CFLAGS) $(OBJECTS) $(LDLIBS)
 	$(OBJCOPY) -S -O binary $@.dbg $@
 
-dummy:	cosmo prep
-
 cosmo:
-	wget https://justine.lol/cosmopolitan/cosmopolitan-amalgamation-1.0.zip
-	$(UNZIP) cosmopolitan-amalgamation-1.0.zip
-	rm cosmopolitan-amalgamation-1.0.zip*
+	wget https://justine.lol/cosmopolitan/cosmopolitan-amalgamation-2.2.zip
+	$(UNZIP) cosmopolitan-amalgamation-2.2.zip
 	>cosmo
 
 prep:
