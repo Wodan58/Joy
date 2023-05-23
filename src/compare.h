@@ -1,7 +1,7 @@
 /*
     module  : compare.h
-    version : 1.8
-    date    : 05/04/22
+    version : 1.9
+    date    : 05/23/23
 */
 #ifndef COMPARE_H
 #define COMPARE_H
@@ -46,6 +46,7 @@ PUBLIC int Compare(pEnv env, Index first, Index second)
         case BOOLEAN_:
         case CHAR_:
         case INTEGER_:
+	case SET_:
             num2 = nodevalue(second).num;
             goto cmpnum;
         case FLOAT_:
@@ -62,6 +63,7 @@ PUBLIC int Compare(pEnv env, Index first, Index second)
         case BOOLEAN_:
         case CHAR_:
         case INTEGER_:
+	case SET_:
             num2 = nodevalue(second).num;
             goto cmpnum;
         case FLOAT_:
@@ -78,6 +80,7 @@ PUBLIC int Compare(pEnv env, Index first, Index second)
         case BOOLEAN_:
         case CHAR_:
         case INTEGER_:
+	case SET_:
             num2 = nodevalue(second).num;
             goto cmpnum;
         case FLOAT_:
@@ -91,6 +94,9 @@ PUBLIC int Compare(pEnv env, Index first, Index second)
     case SET_:
         num1 = nodevalue(first).num;
         switch (type2) {
+	case BOOLEAN_:
+	case CHAR_:
+	case INTEGER_:
         case SET_:
             num2 = nodevalue(second).set;
             goto cmpnum;

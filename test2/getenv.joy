@@ -1,7 +1,7 @@
 (*
     module  : getenv.joy
-    version : 1.1
-    date    : 04/11/22
+    version : 1.2
+    date    : 08/20/22
 *)
-"PATH" getenv.
-"PAT" getenv.
+"PATH" getenv 14 take "/usr/local/bin" =.
+"PAT" getenv "" =.

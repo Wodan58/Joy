@@ -1,31 +1,37 @@
 (*
     module  : compare.joy
-    version : 1.2
-    date    : 06/21/22
+    version : 1.4
+    date    : 05/23/23
 *)
 DEFINE 	sum == 0.0 [+] fold;
 	average == [sum] [size] cleave /.
 
-[1 2 3] [1 2 3] compare.
-[1 2 3] [1 2 3 4] compare.
-[1 2 3] [4 5 6] compare.
-"test" "test" compare.
-"test" "test1" compare.
-"test" "uftu" compare.
-{1 2 3} {1 2 3} compare.
-{1 2 3} {1 2 3 4} compare.
-{1 2 3} {4 5 6} compare.
-[pop] first [pop] first compare.
-[pop] first [dup] first compare.
-[sum] first [sum] first compare.
-[sum] first [average] first compare.
-true true compare.
-true false compare.
-'A 'A compare.
-'A 'B compare.
-10 10 compare.
-10 11 compare.
--0.0 0.0 compare.
-1.0 1.1 compare.
-stdin stdin compare.
-stdin stdout compare.
+[1 2 3] [1 2 3] compare 1 =.	(* 1 means unequal in case of lists *)
+[1 2 3] [1 2 3 4] compare 1 =.
+[1 2 3] [4 5 6] compare 1 =.
+"test" "test" compare 0 =.
+"test" "test1" compare -1 =.
+"test" "uftu" compare -1 =.
+{1 2 3} {1 2 3} compare 0 =.
+{1 2 3} {1 2 3 4} compare -1 =.
+{1 2 3} {4 5 6} compare -1 =.
+[pop] first [pop] first compare 0 =.
+[pop] first [dup] first compare 1 =.
+[sum] first [sum] first compare 0 =.
+[sum] first [average] first compare 1 =.
+true true compare 0 =.
+false true compare -1 =.
+'A 'A compare 0 =.
+'A 'B compare -1 =.
+10 10 compare 0 =.
+10.0 10 compare 0 =.
+10 10.0 compare 0 =.
+10 11 compare -1 =.
+10 11.0 compare -1 =.
+10.0 11.0 compare -1 =.
+10.0 11 compare -1 =.
+-0.0 0.0 compare 0 =.
+1.0 1.1 compare -1 =.
+1.1 1.0 compare 1 =.
+stdin stdin compare 0 =.
+stdin stdout compare -1 =.

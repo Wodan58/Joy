@@ -1,7 +1,7 @@
 (*
     module  : fremove.joy
-    version : 1.2
-    date    : 06/23/22
+    version : 1.3
+    date    : 08/20/22
 *)
 "test" "w" fopen fclose.
 "test" fremove.

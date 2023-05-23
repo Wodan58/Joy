@@ -1,17 +1,13 @@
 /*
     module  : gc.h
-    version : 1.15
-    date    : 07/25/22
+    version : 1.16
+    date    : 05/23/23
 */
 #ifndef GC_H
 #define GC_H
 
-#define MAX_BLOCK	100000000
-
-#define USE_GC_GET_HEAP_SIZE
-#if defined(__linux__) || defined(__CYGWIN__)
-#define SIGNAL_HANDLING
-#endif
+/* #define USE_GC_GET_HEAP_SIZE */
+/* #define SIGNAL_HANDLING */
 /* #define FREE_ON_EXIT */
 /* #define SCAN_BSS_MEMORY */
 /* #define STACK_GROWS_UPWARD */

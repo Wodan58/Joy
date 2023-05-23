@@ -1,11 +1,11 @@
 (*
     module  : strtol.joy
-    version : 1.1
-    date    : 04/11/22
+    version : 1.2
+    date    : 08/20/22
 *)
-"10" 0 strtol.
-"010" 0 strtol.
-"0x10" 0 strtol.
-"377" 8 strtol.
-"ff" 16 strtol.
-"255" 10 strtol.
+"10" 0 strtol 10 =.
+"010" 0 strtol 8 =.
+"0x10" 0 strtol 16 =.
+"377" 8 strtol 255 =.
+"ff" 16 strtol 255 =.
+"255" 10 strtol 255 =.

@@ -1,11 +1,11 @@
 (*
     module  : size.joy
-    version : 1.1
-    date    : 04/11/22
+    version : 1.2
+    date    : 08/20/22
 *)
-[1 2 3] size.
-"test" size.
-{1 2 3} size.
-[] size.
-"" size.
-{} size.
+[1 2 3] size 3 =.
+"test" size 4 =.
+{1 2 3} size 3 =.
+[] size null.
+"" size null.
+{} size null.

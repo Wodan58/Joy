@@ -1,7 +1,7 @@
 (*
     module  : pred.joy
-    version : 1.1
-    date    : 04/11/22
+    version : 1.2
+    date    : 08/20/22
 *)
-'A pred.
-1 pred.
+'A pred '@ =.
+1 pred 0 =.

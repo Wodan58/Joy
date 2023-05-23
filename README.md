@@ -23,6 +23,8 @@ or:
 
     make -f make.nogc
 
+The second build produces joy.com
+
 Changes
 -------
 
@@ -42,8 +44,23 @@ In fact, according to this [interview](http://archive.vector.org.uk/art10000350)
 Binaries
 --------
 
-The binary `joy.exe` is a 32-bit Windows executable; it was compiled by me in
-2005 and should still work under Windows; it uses the BDW garbage collector.
 The binary `joy.com` is a 64-bit executable that should work on most x86_64
 systems. The [support vector](http://github.com/jart/cosmopolitan)
 at the end of the README.md tells what systems exactly.
+
+Testing
+-------
+
+    cd test2
+    for i in *.joy
+    do
+      ../joy.com $i >$i.out
+    done
+    grep -l false *.out
+
+There are some false positives.
+
+Bugs
+----
+
+Yes, and they are copyright (c) Wodan58.

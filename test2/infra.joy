@@ -1,8 +1,12 @@
 (*
     module  : infra.joy
-    version : 1.1
-    date    : 04/11/22
+    version : 1.3
+    date    : 05/23/23
 *)
 DEFINE	test == [] [2 3 + 4 5 *] infra.
 
-1 2 3 4 5 test......
+1 2 3 4 5 test stack [[20 5] 5 4 3 2 1] equal.
+
+DEFINE	test1 == [6 7 8 9 10] [] infra.
+
+test1 stack [[6 7 8 9 10]] equal.

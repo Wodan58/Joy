@@ -1,14 +1,17 @@
 (*
     module  : take.joy
-    version : 1.2
-    date    : 05/17/22
+    version : 1.5
+    date    : 05/23/23
 *)
-[1 2 3] 2 take.
-[1 2 3] -1 take.
-[1 2 3] 5 take.
-"test" 2 take.
-"test" -1 take.
-"test" 5 take.
-{1 2 3} -1 take.
-{1 2 3} 2 take.
-{1 2 3} 5 take.
+[1 2 3] 2 take [1 2] equal.
+# [1 2 3] -1 take [1 2 3] equal.
+[1 2 3] 5 take [1 2 3] equal.
+"test" 2 take "te" =.
+# "test" -1 take "test" =.
+"test" 5 take "test" =.
+# {1 2 3} -1 take {1 2 3} =.
+{1 2 3} 2 take {1 2} =.
+{1 2 3} 5 take {1 2 3} =.
+
+[] 10 take [] equal.
+{1 2 3} 70 take {1 2 3} equal.

@@ -1,9 +1,9 @@
 (*
     module  : helpdetail.joy
-    version : 1.1
-    date    : 04/11/22
+    version : 1.2
+    date    : 08/20/22
 *)
 DEFINE	last == dup rest null [first] [rest last] branch.
 
 "test" "w" fopen
-[3.14 "" [] {} 'A 10 maxint true helpdetail last dummy] cons helpdetail.
+[3.14 [] "" {} 10 'A true maxint helpdetail last dummy] cons helpdetail.

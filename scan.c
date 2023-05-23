@@ -1,8 +1,8 @@
 /* FILE: scan.c */
 /*
  *  module  : scan.c
- *  version : 1.37
- *  date    : 07/25/22
+ *  version : 1.38
+ *  date    : 05/23/23
  */
 #include "globals.h"
 
@@ -60,34 +60,6 @@ PUBLIC void inilinebuffer(pEnv env, char *str)
 #endif
 }
 
-#ifdef READ_PRIVATE_AHEAD
-/*
-    getlinenum - return the linenumber before reading a section the first time.
-                 echoing the lines read is suppressed, because they will be
-                 read again, in the normal case.
-*/
-PUBLIC int getlinenum(void)
-{
-    int linenum;
-
-    linenum = linenumber;
-    linenumber = -1;
-    return linenum;
-}
-
-/*
-    resetlinebuffer - revert to an earlier line, when rereading the source file.
-*/
-PUBLIC void resetlinebuffer(int linenum)
-{
-    linenumber = linenum;
-    linbuf[0] = 0;
-    linelength = 0;
-    currentcolumn = 0;
-    ch = ' ';
-}
-#endif
-
 /*
     putline - echo an input line.
 */
@@ -95,8 +67,6 @@ PRIVATE void putline(pEnv env)
 {
     int i;
 
-    if (linenumber <= 0)
-        return;
     if (env->echoflag > 2)
         printf("%4d", linenumber);
     if (env->echoflag > 1)
@@ -188,17 +158,14 @@ PRIVATE void my_include(pEnv env, char *filnam, FILE *fp)
 /*
     doinclude - insert the contents of a file in the input.
                 Files are read in the current directory or if that fails
-                from the same directory as argv[0]. This argv[0] contains
-                a filename parameter, or the JOY executable. If that path
-                also fails an error is generated unless error is set to 0.
-                Reading the directory from argv[0] was added in order to
-                supports tests during out-of-source builds.
+                from the same directory as where the executable is stored.
+                If that path also fails an error is generated unless error
+                is set to 0.
 */
 PUBLIC void doinclude(pEnv env, char *filnam, int error)
 {
     FILE *fp;
-#ifdef SEARCH_ARGV0_DIRECTORY
-    int leng;
+#ifdef SEARCH_EXEC_DIRECTORY
     char *path, *str;
 #endif
 
@@ -210,15 +177,13 @@ PUBLIC void doinclude(pEnv env, char *filnam, int error)
         my_include(env, filnam, fp);
         return;
     }
-#ifdef SEARCH_ARGV0_DIRECTORY
-    if ((path = strrchr(env->g_argv[0], '/')) != 0) {
-        leng = path - env->g_argv[0];
-        str = GC_malloc_atomic(leng + strlen(filnam) + 2);
-        sprintf(str, "%.*s/%s", leng, env->g_argv[0], filnam);
-        if ((fp = fopen(str, "r")) != 0) {
-            my_include(env, filnam, fp);
-            return;
-        }
+#ifdef SEARCH_EXEC_DIRECTORY
+    path = env->pathname;
+    str = GC_malloc_atomic(strlen(path) + strlen(filnam) + 2);
+    sprintf(str, "%s/%s", path, filnam);
+    if ((fp = fopen(str, "r")) != 0) {
+        my_include(env, filnam, fp);
+        return;
     }
 #endif
     if (error)
@@ -277,33 +242,14 @@ PRIVATE int peek(void)
 }
 
 /*
-    ungetsym - insert a symbol in the input stream. The symbol has already been
-               read, but needs to be read again, because another symbol must be
-               processed first.
-*/
-#ifdef READ_PRIVATE_AHEAD
-PUBLIC void ungetsym(Symbol symb)
-{
-    unget_symb = symb;
-}
-#endif
-
-/*
     getsym - lexical analyzer, filling env->yylval and returning the token type
              in env->symb.
 */
-PUBLIC void getsym(pEnv env)
+PRIVATE void my_getsym(pEnv env)
 {
     int i = 0, begin, next;
-    char string[INPLINEMAX + 1];
+    char ident[ALEN], string[INPLINEMAX + 1];
 
-#ifdef READ_PRIVATE_AHEAD
-    if (unget_symb) {
-        env->symb = unget_symb;
-        unget_symb = 0;
-        return;
-    }
-#endif
 start:
     while (ch <= ' ')
         getch(env);
@@ -432,7 +378,7 @@ not_unary_minus:
     default:
         do {
             if (i < ALEN - 1)
-                env->ident[i++] = ch;
+                ident[i++] = ch;
             getch(env);
         } while (isalnum(ch) || strchr("-=_", ch));
         if (ch == '.') {
@@ -440,19 +386,127 @@ not_unary_minus:
             if (isalnum(next) || strchr("-=_", next)) {
                 do {
                     if (i < ALEN - 1)
-                        env->ident[i++] = ch;
+                        ident[i++] = ch;
                     getch(env);
                 } while (isalnum(ch) || strchr("-=_", ch));
             }
         }
-        env->ident[i] = 0;
-        if (isupper((int)env->ident[1]) || env->ident[0] == '=')
+        ident[i] = 0;
+        if (isupper((int)ident[1]) || ident[0] == '=')
             for (i = 0; i < sizeof(keywords) / sizeof(keywords[0]); i++)
-                if (!strcmp(env->ident, keywords[i].name)) {
+                if (!strcmp(ident, keywords[i].name)) {
                     env->symb = keywords[i].symb;
                     return;
                 }
+	env->yylval.str = GC_strdup(ident);
         env->symb = ATOM;
         return;
+    }
+}
+
+#ifdef DUMP_TOKENS
+PUBLIC void dumptok(Token tok, int num)
+{
+    fprintf(stdout, "%d) ", num);
+    switch (tok.symb) {
+    case CHAR_    : fprintf(stdout, "%ld", tok.yylval.num);
+                    break;
+    case STRING_  : fprintf(stdout, "\"%s\"", tok.yylval.str);
+                    break;
+    case FLOAT_   : fprintf(stdout, "%g", tok.yylval.dbl);
+                    break;
+    case INTEGER_ : fprintf(stdout, "%ld", tok.yylval.num);
+                    break;
+    case ATOM     : fprintf(stdout, "%s", tok.yylval.str);
+                    break;
+    case LBRACK   : fprintf(stdout, "LBRACK");
+                    break;
+    case LBRACE   : fprintf(stdout, "LBRACE");
+                    break;
+    case LPAREN   : fprintf(stdout, "LPAREN");
+                    break;
+    case RBRACK   : fprintf(stdout, "RBRACK");
+                    break;
+    case RPAREN   : fprintf(stdout, "RPAREN");
+                    break;
+    case RBRACE   : fprintf(stdout, "RBRACE");
+                    break;
+    case PERIOD   : fprintf(stdout, "PERIOD");
+                    break;
+    case SEMICOL  : fprintf(stdout, "SEMICOL");
+                    break;
+    case LIBRA    : fprintf(stdout, "LIBRA");
+                    break;
+    case EQDEF    : fprintf(stdout, "EQDEF");
+                    break;
+    case HIDE     : fprintf(stdout, "HIDE");
+                    break;
+    case IN       : fprintf(stdout, "IN");
+                    break;
+    case END      : fprintf(stdout, "END");
+                    break;
+    case MODULE   : fprintf(stdout, "MODULE");
+                    break;
+    case JPRIVATE : fprintf(stdout, "PRIVATE");
+                    break;
+    case JPUBLIC  : fprintf(stdout, "PUBLIC");
+                    break;
+    }
+    fprintf(stdout, "\n");
+}
+#endif
+
+/*
+    ungetsym - insert a symbol in the input stream. The symbol has already been
+               read, but needs to be read again, because another symbol must be
+               processed first.
+*/
+#ifdef READ_PRIVATE_AHEAD
+PUBLIC void ungetsym(Symbol symb)
+{
+    unget_symb = symb;
+}
+#endif
+
+/*
+    getsym - wrapper around my_getsym, storing tokens read, reading from the
+             store or just calling my_getsym itself.
+*/
+PUBLIC void getsym(pEnv env)
+{
+    Token tok;
+
+#ifdef READ_PRIVATE_AHEAD
+    if (unget_symb) {
+        env->symb = unget_symb;
+        unget_symb = 0;
+        return;
+    }
+#endif
+    if (env->token_list) {
+        my_getsym(env);
+        tok.yylval = env->yylval;
+        tok.symb = env->symb;
+#ifdef DEBUG_TOKENS
+        dumptok(tok, 1);
+#endif
+        vec_push(env->tokens, tok);
+    } else if (env->token_index < vec_size(env->tokens)) {
+        tok = vec_at(env->tokens, env->token_index);
+        env->yylval = tok.yylval;
+        env->symb = tok.symb;
+#ifdef DEBUG_TOKENS
+        dumptok(tok, 2);
+#endif
+        env->token_index++;
+    } else {
+        env->tokens = 0; /* reset token vector and index */
+        env->token_index = 0;
+        my_getsym(env);
+#ifdef DEBUG_TOKENS
+        tok.yylval = env->yylval;
+        tok.symb = env->symb;
+        dumptok(tok, 3);
+#endif
     }
 }

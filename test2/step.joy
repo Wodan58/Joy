@@ -1,8 +1,16 @@
 (*
     module  : step.joy
-    version : 1.2
-    date    : 05/02/22
+    version : 1.4
+    date    : 05/23/23
 *)
-0 [1 2 3] [+] step.
-0 "test" [swap + ord] step.
-0 {1 2 3} [+] step.
+0 [1 2 3] [+] step 6 =.
+0 "test" [swap + ord] step 448 =.
+0 {1 2 3} [+] step 6 =.
+
+1 [] [+] step 1 =.
+2 "" [swap + ord] step 2 =.
+3 {} [+] step 3 =.
+
+0 [1 2 3] [] step 3 =.
+0 "test" [] step 't =.
+0 {1 2 3} [] step 3 =.

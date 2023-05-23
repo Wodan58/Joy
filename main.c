@@ -1,8 +1,8 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.49
- *  date    : 06/20/22
+ *  version : 1.50
+ *  date    : 05/23/23
  */
 
 /*
@@ -114,7 +114,6 @@ some of the code.
 
 Manfred von Thun, 2006
 */
-#define ALLOC
 #include "globals.h"
 
 #define ERROR_ON_USRLIB 0
@@ -180,34 +179,32 @@ PUBLIC void lookup(pEnv env)
      * entered as classified symbol in the symbol table. Global symbols are not
      * added during the first time read of private sections.
      */
-    if ((env->location = qualify(env, env->ident)) == 0)
+    if ((env->location = qualify(env, env->yylval.str)) == 0)
         /* not found, enter in global, unless it is a module-member  */
-        if (strchr(env->ident, '.') == 0)
-            enterglobal(env, GC_strdup(env->ident));
+        if (strchr(env->yylval.str, '.') == 0)
+            enterglobal(env, env->yylval.str);
 }
 
 /*
  *   Enteratom enters a symbol in the symbol table, maybe a local symbol. This
  *   local symbol is also added to the hash table, but in its classified form.
  */
-PRIVATE void enteratom(pEnv env, int priv)
+PUBLIC void enteratom(pEnv env, int priv)
 {
     /*
      *   Local symbols are only added during the first read of private sections
      *   and public sections of a module.
      *   They should be found during the second read.
      */
-    if (!priv)
-        lookup(env);
-    else if ((env->location = qualify(env, env->ident)) == 0)
-        enterglobal(env, classify(env, env->ident));
+    if ((env->location = qualify(env, env->yylval.str)) == 0)
+        enterglobal(env, classify(env, env->yylval.str));
 }
 
 /*
  *   The rest of these procedures is not affected by the change of the symbol
  *   table implementation.
  */
-PRIVATE void defsequence(pEnv env, int priv); /* forward */
+PRIVATE void defsequence(pEnv env, int priv);  /* forward */
 PRIVATE void compound_def(pEnv env, int priv); /* forward */
 
 /*
@@ -242,15 +239,17 @@ PRIVATE void definition(pEnv env, int priv)
         ent = vec_at(env->symtab, env->location);
         if (!ent.is_user) {
             fprintf(stderr, "warning: overwriting inbuilt '%s'\n", ent.name);
-            enterglobal(env, classify(env, env->ident));
+            enterglobal(env, classify(env, env->yylval.str));
         }
         here = env->location;
     }
     getsym(env);
     if (env->symb == EQDEF)
         getsym(env);
+#if 0
     else
         error(env, " == expected in definition");
+#endif
     readterm(env, priv);
     if (!priv && here && env->stck && nodetype(env->stck) == LIST_) {
         vec_at(env->symtab, here).u.body = nodevalue(env->stck).lis;
@@ -278,22 +277,19 @@ PRIVATE void defsequence(pEnv env, int priv)
 
 /*
     In case of a HIDE section or a MODULE, some read ahead is necessary.
+    Tokens are collected in a list. During second reading tokens are returned
+    from the list instead of from stdin.
 */
 #ifdef READ_PRIVATE_AHEAD
-PRIVATE void read_priv_ahead(pEnv env, int priv)
+PRIVATE void read_priv_ahead(pEnv env)
 {
-    int linenum;
-    long offset;
+    int token_index;
 
-    if (!priv && !isatty(fileno(env->srcfile))) {
-        if ((offset = ftell(env->srcfile)) < 0)
-            execerror(env, "ftell", "HIDE");
-        linenum = getlinenum();
-        compound_def(env, READ_PRIV_AHEAD);
-        if (fseek(env->srcfile, offset, SEEK_SET))
-            execerror(env, "fseek", "HIDE");
-        resetlinebuffer(linenum);
-    }
+    env->token_list = 1; /* start collecting tokens */
+    token_index = env->token_index;
+    compound_def(env, READ_PRIV_AHEAD);
+    env->token_index = token_index;
+    env->token_list = 0; /* stop collecting tokens */
 }
 #endif
 
@@ -309,7 +305,7 @@ PRIVATE void compound_def(pEnv env, int priv)
             error(env, "atom expected as name of module");
             abortexecution_();
         }
-        initmod(env, env->ident); /* initmod adds ident to the module stack */
+        initmod(env, env->yylval.str); /* initmod adds ident to the module */
         getsym(env);
 #ifdef READ_PRIVATE_AHEAD
         if (env->symb == JPUBLIC) { /* MODULE with only a public section */
@@ -323,7 +319,8 @@ PRIVATE void compound_def(pEnv env, int priv)
     case JPRIVATE:
     case HIDE:
 #ifdef READ_PRIVATE_AHEAD
-        read_priv_ahead(env, priv);
+        if (!priv)
+            read_priv_ahead(env);
 #endif
         getsym(env);
         initpriv(env, priv); /* initpriv increases the hide number */
@@ -339,7 +336,9 @@ PRIVATE void compound_def(pEnv env, int priv)
         defsequence(env, priv);
         break;
     default:
-        fprintf(stderr, "warning: empty compound definition\n");
+#if 0
+        fprintf(stdout, "warning: empty compound definition\n");
+#endif
         break;
     }
 }
@@ -413,7 +412,7 @@ PRIVATE void report_clock(pEnv env)
 #endif
 
 /*
- *   copyright - Print all copyright notices, even the historical ones.
+ *   copyright - Print all copyright notices, even historical ones.
  *
  *   The version must be set on the commandline when compiling:
  *   -DJVERSION="\"alpha\"" or whatever.
@@ -486,7 +485,7 @@ int start_main(int argc, char **argv)
 {
     static unsigned char mustinclude = 1;
     int i, j;
-    char *filename = 0;
+    char *filename = 0, *ptr;
     unsigned char verbose = 1, symdump = 0, helping = 0;
 #ifdef __linux__
     struct rlimit l;
@@ -516,10 +515,12 @@ int start_main(int argc, char **argv)
      *    Initialize srcfile and other environmental parameters.
      */
     env.srcfile = stdin;
+    if ((ptr = strrchr(env.pathname = argv[0], '/')) != 0)
+        *ptr = 0;
     /*
      *    First look for options. They start with -.
      */
-    for (i = 0; i < argc; i++)
+    for (i = 1; i < argc; i++)
         if (argv[i][0] == '-') {
             for (j = 1; argv[i][j]; j++)
                 switch (argv[i][j]) {
@@ -547,9 +548,14 @@ int start_main(int argc, char **argv)
             }
             /*
              *   Overwrite argv[0] with the filename and shift subsequent
-             *   parameters.
+             *   parameters. Also change directory to that filename.
              */
-            argv[0] = filename;
+            if ((ptr = strrchr(argv[0] = filename, '/')) != 0) {
+                *ptr++ = 0;
+                if (strcmp(filename, "."))
+                    chdir(filename);
+                argv[0] = filename = ptr;
+            }
             for (--argc; i < argc; i++)
                 argv[i] = argv[i + 1];
             break;

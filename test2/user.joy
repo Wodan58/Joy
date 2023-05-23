@@ -1,9 +1,9 @@
 (*
     module  : user.joy
-    version : 1.1
-    date    : 04/11/22
+    version : 1.2
+    date    : 08/20/22
 *)
 DEFINE	last == dup rest null [first] [rest last] branch.
 
 [last] first user.
-[pop] first user.
+[pop] first user false =.

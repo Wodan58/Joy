@@ -1,9 +1,7 @@
 (*
     module  : ifte.joy
-    version : 1.2
-    date    : 06/21/22
+    version : 1.3
+    date    : 08/20/22
 *)
 [0 not] [true] [false] ifte.
-[1 not] [true] [false] ifte.
-
-(* the condition need not be boolean *)
+[1 not] [true] [false] ifte false =.

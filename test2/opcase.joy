@@ -1,8 +1,22 @@
 (*
     module  : opcase.joy
-    version : 1.1
-    date    : 04/11/22
+    version : 1.3
+    date    : 05/23/23
 *)
-'A [['A [char] first] [10 [integer] first] [[other] first]] opcase i.
-10 [['A [char] first] [10 [integer] first] [[other] first]] opcase i.
-1.1 [['A [char] first] [10 [integer] first] [[other] first]] opcase i.
+DEFINE	test == [['A "ischar"]
+		 [pop "ispop"]
+		 [10 "isinteger"]
+		 ["isother"]] opcase i.
+
+'A test "ischar" =.
+10 test "isinteger" =.
+1.1 test "isother" =.
+[test] first test "isother" =.
+[pop] first test "ispop" =.
+
+DEFINE	test == [['A "ischar" "ischar"]
+		 [pop "ispop" "ispop"]
+		 [10 "isinteger" "isinteger"]
+		 ["isother" "isother"]] opcase i.
+
+10 test "isinteger" =.

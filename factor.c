@@ -1,8 +1,8 @@
 /* FILE: factor.c */
 /*
  *  module  : factor.c
- *  version : 1.14
- *  date    : 07/25/22
+ *  version : 1.15
+ *  date    : 05/23/23
  */
 #include "globals.h"
 
@@ -19,7 +19,7 @@ PUBLIC void readfactor(pEnv env, int priv) /* read a JOY factor */
     case ATOM:
         if (!priv) {
             lookup(env);
-            if (!env->location && strchr(env->ident, '.')) {
+            if (!env->location && strchr(env->yylval.str, '.')) {
                 error(env, "no such field in module");
                 return;
             }
@@ -156,9 +156,9 @@ PUBLIC void writefactor(pEnv env, Index n)
         printf("%s", nodevalue(n).num ? "true" : "false");
         return;
     case CHAR_:
-	if (nodevalue(n).num == '\n')
-	    printf("'\\n");
-	else
+        if (nodevalue(n).num == '\n')
+            printf("'\\n");
+        else
             printf("'%c", (char)nodevalue(n).num);
         return;
     case INTEGER_:

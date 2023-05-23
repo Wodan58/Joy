@@ -1,6 +1,6 @@
 (*
     module  : asin.joy
-    version : 1.1
-    date    : 04/11/22
+    version : 1.2
+    date    : 08/20/22
 *)
-0.1 asin.
+0.1 asin 'g 0 6 formatf strtod 0.100167 =.

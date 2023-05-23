@@ -42,8 +42,8 @@ int main()
 
 /*
     module  : kvec.h
-    version : 1.6.1.1
-    date    : 06/22/22
+    version : 1.6.2.1
+    date    : 05/23/23
 
  1. Change type of n, m from size_t to unsigned. Reason: takes less memory.
  2. Remove (type*) casts. Reason: not needed for C.
@@ -84,15 +84,12 @@ int main()
 #ifndef AC_KVEC_H
 #define AC_KVEC_H
 
-#ifndef MAX_BLOCK
-#define MAX_BLOCK	200000000
-#endif
-
 #define vector(type)		struct { unsigned n, m; type *a; }
 #define vec_init(v)		do { (v) = GC_malloc(sizeof(*(v))); \
 				(v)->n = (v)->m = 0; (v)->a = 0; } while (0)
 #define vec_destroy(v)		do { free((v)->a); free(v); } while (0)
 #define vec_at(v, i)		((v)->a[i])
+#define vec_adr(v, p)		((p) - (v)->a)
 #define vec_pop(v)		((v)->a[--(v)->n])
 #define vec_back(v)		((v)->a[(v)->n - 1])
 #define vec_end(v)		((v)->a + (v)->n)
@@ -120,10 +117,7 @@ int main()
 #define vec_push(v, x) 							\
 	do {								\
 	    if (!(v)) vec_init(v);					\
-	    if ((v)->n == (v)->m) {					\
-                if (!(v)->m) (v)->m = 1; else { if ((v)->m * 2 >	\
-                MAX_BLOCK / sizeof(*(v)->a)) (v)->m = MAX_BLOCK /       \
-                sizeof(*(v)->a); else (v)->m *= 2; }			\
+	    if ((v)->n == (v)->m) { (v)->m = (v)->m ? (v)->m * 2 : 1;   \
 		(v)->a = GC_realloc((v)->a, sizeof(*(v)->a) * (v)->m);	\
 	    } (v)->a[(v)->n++] = (x);					\
 	} while (0)

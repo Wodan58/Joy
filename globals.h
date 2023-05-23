@@ -1,8 +1,8 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.51
- *  date    : 06/20/22
+ *  version : 1.52
+ *  date    : 05/23/23
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -141,6 +141,7 @@ GETCH_AS_BUILTIN
 SAMETYPE_BUILTIN
 CORRECT_SETMEMBER
 CLEAR_STACK_ON_ERROR
+SYMMETRIC_PLUS_MINUS
 */
 
 /*
@@ -156,6 +157,7 @@ NOT_ALSO_FOR_FLOAT
 NOT_ALSO_FOR_FILE
 TRACK_USED_SYMBOLS
 DEBUG
+NDEBUG
 */
 
 /*
@@ -164,8 +166,11 @@ DEBUG
 
 ENABLE_TRACEGC
 TRACING
-NDEBUG
+NCHECK
 STATS
+GC_BDW, NOBDW
+ARRAY_BOUND_CHECKING
+DEBUG_TOKENS
 */
 #ifndef NOBDW
 #ifdef ENABLE_TRACEGC
@@ -179,7 +184,7 @@ STATS
 */
 #define CORRECT_INTERN_LOOKUP
 #define READ_PRIVATE_AHEAD
-#define SEARCH_ARGV0_DIRECTORY
+#define SEARCH_EXEC_DIRECTORY
 
 /*
     The following #defines are present in the source code.
@@ -299,6 +304,11 @@ typedef struct Entry {
     } u;
 } Entry;
 
+typedef struct Token {
+    Types yylval;
+    Symbol symb;
+} Token;
+
 #include <gc.h>
 #include "kvec.h"
 #include "khash.h"
@@ -306,33 +316,36 @@ typedef struct Entry {
 KHASH_MAP_INIT_STR(Symtab, pEntry)
 
 typedef struct Env {
+    vector(Token) *tokens; /* read ahead table */
     vector(Entry) *symtab; /* symbol table */
     khash_t(Symtab) *hash;
-    clock_t startclock; /* main */
+    clock_t startclock;    /* main */
 #ifdef NOBDW
     clock_t gc_clock;
-    vector(Node) *memory; /* dynamic memory */
+    vector(Node) *memory;  /* dynamic memory */
     Index prog, stck, conts, dump, dump1, dump2, dump3, dump4, dump5;
 #else
     Node *prog, *stck;
 #endif
-    Types yylval, bucket; /* used by NEWNODE defines */
+    Types yylval, bucket;  /* used by NEWNODE defines */
     char *hide_stack[DISPLAYMAX];
     struct module {
         char *name;
         int hide;
     } module_stack[DISPLAYMAX];
-    FILE *srcfile; /* main */
+    FILE *srcfile;         /* main */
+    char *pathname;
     char **g_argv;
     int g_argc;
-    pEntry location; /* getsym */
-    Symbol symb; /* scanner */
-    char ident[ALEN];
-    unsigned char autoput;
+    int token_index;
+    pEntry location;       /* getsym */
+    Symbol symb;           /* scanner */
+    unsigned char autoput; /* options */
     unsigned char echoflag;
     unsigned char undeferror;
     unsigned char tracegc;
-    unsigned char debugging; /* options */
+    unsigned char debugging;
+    unsigned char token_list;
 } Env;
 
 /* GOOD REFS:
@@ -363,8 +376,6 @@ PUBLIC void execerror(pEnv env, char *message, char *op);
 /* scan.c */
 PUBLIC void my_atexit(void (*proc)(pEnv));
 PUBLIC void inilinebuffer(pEnv env, char *filnam);
-PUBLIC int getlinenum(void);
-PUBLIC void resetlinebuffer(int linenum);
 PUBLIC void error(pEnv env, char *message);
 PUBLIC void doinclude(pEnv env, char *filnam, int error);
 PUBLIC void ungetsym(Symbol symb);

@@ -1,11 +1,15 @@
 (*
     module  : nullary.joy
-    version : 1.2
-    date    : 06/23/22
+    version : 1.4
+    date    : 05/23/23
 *)
-DEFINE	prime == 2 [[dup * >] nullary [rem 0 >] dip and]
-		 [succ] while dup * <;
-	tab == '\t putch;
-	nl == '\n putch.
+"../lib/inilib.joy" include.
+"../lib/numlib.joy" include.
+"../lib/agglib.joy" include.
 
-2 20 [dup put tab dup prime put nl succ] times pop.
+2 20 from-to-list dup [prime] map zip [second] filter [first] map
+[2 3 5 7 11 13 17 19] equal.
+
+[] unstack.
+
+2 20 [] nullary stack [20 20 2] equal.

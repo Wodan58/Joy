@@ -1,8 +1,8 @@
 (*
     module  : ifstring.joy
-    version : 1.1
-    date    : 04/11/22
+    version : 1.2
+    date    : 08/20/22
 *)
-"test" [[string] first] [[nostring] first] ifstring.
-[test] first [[string] first] [[nostring] first] ifstring.
-10 [[string] first] [[nostring] first] ifstring.
+"test" ["isstring"] ["nostring"] ifstring "isstring" =.
+[test] first ["isstring"] ["nostring"] ifstring "nostring" =.
+10 ["isstring"] ["nostring"] ifstring "nostring" =.

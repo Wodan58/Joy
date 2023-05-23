@@ -1,7 +1,7 @@
 /*
     module  : take.c
-    version : 1.3
-    date    : 05/17/22
+    version : 1.4
+    date    : 05/23/23
 */
 #ifndef TAKE_C
 #define TAKE_C
@@ -54,10 +54,12 @@ PRIVATE void take_(pEnv env)
     }
     case LIST_: {
         int i = nodevalue(env->stck).num;
+#if 0
         if (i < 1) {
             BINARY(LIST_NEWNODE, 0);
             return;
         } /* null string */
+#endif
         env->dump1 = newnode(
             env, LIST_, nodevalue(nextnode1(env->stck)), env->dump1); /* old  */
         env->dump2 = LIST_NEWNODE(0L, env->dump2); /* head */

@@ -1,6 +1,9 @@
 (*
     module  : ftell.joy
-    version : 1.1
-    date    : 04/11/22
+    version : 1.2
+    date    : 08/20/22
 *)
-"ftell.joy" "r" fopen 0 2 fseek pop ftell.
+$ ls -l ftell.joy | awk '{ print $5 }' >test
+"test" include.
+"ftell.joy" "r" fopen 0 2 fseek pop ftell [fclose] dip =.
+$ rm test

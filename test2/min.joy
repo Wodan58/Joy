@@ -1,11 +1,15 @@
 (*
     module  : min.joy
-    version : 1.2
-    date    : 06/23/22
+    version : 1.4
+    date    : 05/23/23
 *)
-'A 'B min.
-'B 'A min.
-1 2 min.
-2 1 min.
-1.5 2.5 min.
-2.5 1.5 min.
+'A 'B min 'A =.
+'B 'A min 'A =.
+1 2 min 1 =.
+2 1 min 1 =.
+1.5 2.5 min 1.5 =.
+2.5 1.5 min 1.5 =.
+1 2.5 min 1 =.
+2 1.5 min 1.5 =.
+1.5 2 min 1.5 =.
+2.5 1 min 1 =.

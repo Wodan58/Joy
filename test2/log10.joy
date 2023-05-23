@@ -1,6 +1,6 @@
 (*
     module  : log10.joy
-    version : 1.1
-    date    : 04/11/22
+    version : 1.2
+    date    : 08/20/22
 *)
-1.5 log10.
+1.5 log10 'g 0 6 formatf strtod 0.176091 =.

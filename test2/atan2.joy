@@ -1,6 +1,6 @@
 (*
     module  : atan2.joy
-    version : 1.1
-    date    : 04/11/22
+    version : 1.2
+    date    : 08/20/22
 *)
-0.9 0.1 atan2.
+0.9 0.1 atan2 'g 0 6 formatf strtod 1.46014 =.

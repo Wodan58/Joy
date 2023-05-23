@@ -1,7 +1,7 @@
 /*
     module  : module.c
-    version : 1.5
-    date    : 07/25/22
+    version : 1.6
+    date    : 05/23/23
 */
 #include "globals.h"
 
@@ -28,7 +28,7 @@ void initmod(pEnv env, char *name)
         module_index = DISPLAYMAX - 1;
         execerror(env, "index", "display");
     }
-    env->module_stack[module_index].name = GC_strdup(name);
+    env->module_stack[module_index].name = name;
     env->module_stack[module_index].hide = hide_index;
 }
 
@@ -73,7 +73,7 @@ void stoppriv(void)
 void exitpriv(void)
 {
     if (!been_inside)
-	return;
+        return;
     been_inside = 0;
     if (hide_index >= 0)
         hide_index--;
@@ -127,7 +127,7 @@ char *classify(pEnv env, char *name)
         str = GC_malloc_atomic(leng);
         sprintf(str, "%s.%s", buf, name);
     } else
-        str = GC_strdup(name);
+        str = name;
     /*
      * str will contain either the unadorned name, or a classified name.
      */

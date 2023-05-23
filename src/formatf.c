@@ -1,7 +1,7 @@
 /*
     module  : formatf.c
-    version : 1.2
-    date    : 05/02/22
+    version : 1.3
+    date    : 05/23/23
 */
 #ifndef FORMATF_C
 #define FORMATF_C
@@ -16,7 +16,7 @@ with maximum width I and precision J.
 PRIVATE void formatf_(pEnv env)
 {
     int width, prec;
-    char spec, format[7], *result;
+    char spec, format[6], *result;
 #ifdef USE_SNPRINTF
     int leng;
 #endif
@@ -30,8 +30,8 @@ PRIVATE void formatf_(pEnv env)
     spec = (char)nodevalue(env->stck).num;
     POP(env->stck);
     CHECKFORMATF(spec, "formatf");
-    strcpy(format, "%*.*lg");
-    format[5] = spec;
+    strcpy(format, "%*.*g");
+    format[4] = spec;
     FLOAT("formatf");
 #ifdef USE_SNPRINTF
     leng = snprintf(0, 0, format, width, prec, nodevalue(env->stck).num) + 1;

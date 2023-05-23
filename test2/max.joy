@@ -1,11 +1,15 @@
 (*
     module  : max.joy
-    version : 1.2
-    date    : 06/23/22
+    version : 1.4
+    date    : 05/23/23
 *)
-'A 'B max.
-'B 'A max.
-1 2 max.
-2 1 max.
-1.5 2.5 max.
-2.5 1.5 max.
+'A 'B max 'B =.
+'B 'A max 'B =.
+1 2 max 2 =.
+2 1 max 2 =.
+1.5 2.5 max 2.5 =.
+2.5 1.5 max 2.5 =.
+1 2.5 max 2.5 =.
+2 1.5 max 2 =.
+2.5 1 max 2.5 =.
+1.5 2 max 2 =.

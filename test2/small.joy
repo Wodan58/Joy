@@ -1,17 +1,17 @@
 (*
     module  : small.joy
-    version : 1.1
-    date    : 04/11/22
+    version : 1.2
+    date    : 08/20/22
 *)
 [] small.
 [1] small.
-[1 2] small.
+[1 2] small false =.
 "" small.
 "t" small.
-"test" small.
+"test" small false =.
 {} small.
 {1} small.
-{1 2} small.
+{1 2} small false =.
 0 small.
 1 small.
-2 small.
+2 small false =.

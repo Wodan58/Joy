@@ -1,7 +1,7 @@
 /*
     module  : gc.c
-    version : 1.32
-    date    : 07/25/22
+    version : 1.34
+    date    : 05/23/23
 */
 #ifndef COSMO
 #include <stdio.h>
@@ -44,9 +44,6 @@
 #define MIN_ITEMS        4
 #define MAX_ITEMS        2
 #define FULL_MASK        (uint64_t)0x0000fffffffffffe
-#ifndef MAX_BLOCK
-#define MAX_BLOCK        100000000
-#endif
 
 /*
     When pointers are 16 bit aligned, the lower 4 bits are always zero.
@@ -107,9 +104,10 @@ static void init_heap(void)
 #endif
     start_of_text = (uint64_t)main;
 #ifdef __CYGWIN__
-    extern char __data_start__, __data_end__, __bss_start__, __bss_end__,
-		__end__;
-
+    extern char __data_start__, __bss_start__, __bss_end__;
+#if 0
+    extern char __data_end__, __end__;
+#endif
     start_of_data = (uint64_t)&__data_start__;
     start_of_bss  = (uint64_t)&__bss_start__;
     start_of_heap = (uint64_t)&__bss_end__;
@@ -193,7 +191,8 @@ void GC_init(void *ptr, void (*proc)(void))
     init_heap();
 #endif
 #ifdef SIGNAL_HANDLING
-    setupsignal(proc);
+    if (proc)
+        setupsignal(proc);
 #endif
 #ifdef FREE_ON_EXIT
     atexit(mem_exit);
@@ -214,7 +213,7 @@ static void mark_ptr(char *ptr)
 
     value = (uint64_t)ptr;
     value &= FULL_MASK;
-    if (value < lower || value > upper)
+    if (value < lower || value >= upper)
         return;
     if ((key = kh_get(Backup, MEM, value)) != kh_end(MEM)) {
         if (kh_value(MEM, key).flags & GC_MARK)
@@ -251,9 +250,10 @@ static void mark_stk(void)
 #ifdef SCAN_BSS_MEMORY
 static void mark_bss(void)
 {
-    uint64_t ptr;
+    uint64_t ptr, end_of_bss;
 
-    for (ptr = start_of_bss; ptr < start_of_heap; ptr += BSS_ALIGN)
+    end_of_bss = start_of_heap - sizeof(void *);
+    for (ptr = start_of_bss; ptr <= end_of_bss; ptr += BSS_ALIGN)
         mark_ptr(*(char **)ptr);
 }
 #endif
@@ -334,8 +334,6 @@ static void *mem_block(size_t size, int f)
 {
     void *ptr;
 
-    if (size > MAX_BLOCK)
-        mem_fatal();
     if ((ptr = malloc(size)) == 0)
         mem_fatal();
     memset(ptr, 0, size);
@@ -398,9 +396,7 @@ void *GC_realloc(void *old, size_t size)
     void *ptr;
 
     if (!old)
-	return GC_malloc(size);
-    if (size > MAX_BLOCK)
-        mem_fatal();
+        return GC_malloc(size);
     if ((ptr = realloc(old, size)) == 0)
         mem_fatal();
     if (ptr == old)
