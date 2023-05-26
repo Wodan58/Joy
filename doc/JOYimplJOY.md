@@ -12,6 +12,13 @@ Recent changes
 
 Both the memory area and the symbol table can grow when needed.
 
+This repository is referred to from the wikipedia page about Joy. That page
+contains this text: "Its library routines mirror those of ISO C, though the
+current implementation is not easily extensible with functions written in C".
+This implementation makes adding a function easier. All it takes is to write
+the function and relocate the source code in the src-directory. The build
+system takes it from there. Not a general FFI, but probably good enough.
+
 Comparison
 ==========
 
