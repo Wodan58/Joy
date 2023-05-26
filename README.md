@@ -1,9 +1,9 @@
 Joy
 ---
 
-Build|Linux|Windows|Coverity|Coverage|Codecov|Quality|Alerts
----|---|---|---|---|---|---|---
-status|[![Travis CI build status](https://app.travis-ci.com/Wodan58/Joy.svg?branch=master)](https://app.travis-ci.com/Wodan58/Joy)|[![AppVeyor CI build status](https://ci.appveyor.com/api/projects/status/github/Wodan58/Joy?branch=master&svg=true)](https://ci.appveyor.com/project/Wodan58/Joy)|[![Coverity Scan Build Status](https://img.shields.io/coverity/scan/14641.svg)](https://scan.coverity.com/projects/wodan58-joy)|[![Coverage Status](https://coveralls.io/repos/github/Wodan58/Joy/badge.svg?branch=master)](https://coveralls.io/github/Wodan58/Joy?branch=master)|[![Codecov](https://codecov.io/gh/Wodan58/Joy/branch/master/graph/badge.svg)](https://codecov.io/gh/Wodan58/Joy)|[![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/Wodan58/Joy.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Wodan58/Joy/context:cpp)|[![Alerts](https://img.shields.io/lgtm/alerts/g/Wodan58/Joy.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Wodan58/Joy/alerts)
+Build|Linux|Windows|Coverity
+---|---|---|---
+status|[![GitHub CI build status](https://github.com/Wodan58/Joy/actions/workflows/cmake.yml/badge.svg)](https://github.com/Wodan58/Joy/actions/workflows/cmake.yml)|[![AppVeyor CI build status](https://ci.appveyor.com/api/projects/status/github/Wodan58/Joy?branch=master&svg=true)](https://ci.appveyor.com/project/Wodan58/Joy)|[![Coverity Scan Build Status](https://img.shields.io/coverity/scan/14641.svg)](https://scan.coverity.com/projects/wodan58-joy)
 
 This is the NOBDW version of [Joy1](https://github.com/Wodan58/joy1).
 The two versions are drifting apart.
