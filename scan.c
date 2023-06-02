@@ -1,8 +1,8 @@
 /* FILE: scan.c */
 /*
  *  module  : scan.c
- *  version : 1.38
- *  date    : 05/23/23
+ *  version : 1.39
+ *  date    : 06/02/23
  */
 #include "globals.h"
 
@@ -11,7 +11,7 @@ PUBLIC void quit_(pEnv env);
 static struct {
     FILE *fp;
 #if 0
-    char name[ALEN];
+    char *name;
 #endif
     int linenum;
 } infile[INPSTACKMAX];
@@ -45,18 +45,13 @@ static struct keys {
 
 /*
     inilinebuffer - initialise the stack of input files. The filename parameter
-                    is currently not used. It could be used in error messages.
+                    could be used in error messages.
 */
 PUBLIC void inilinebuffer(pEnv env, char *str)
 {
     infile[0].fp = env->srcfile;
 #if 0
-    if (!str)
-        strcpy(infile[0].name, "stdin");
-    else {
-        strncpy(infile[0].name, str, ALEN);
-        infile[0].name[ALEN - 1] = 0;
-    }
+    infile[0].name = str ? str : "stdin";
 #endif
 }
 
@@ -149,8 +144,7 @@ PRIVATE void my_include(pEnv env, char *filnam, FILE *fp)
 {
     infile[++ilevel].fp = env->srcfile = fp;
 #if 0
-    strncpy(infile[ilevel].name, filnam, ALEN);
-    infile[ilevel].name[ALEN - 1] = 0;
+    infile[ilevel].name = filnam;
 #endif
     infile[ilevel].linenum = linenumber = 0;
 }
@@ -165,25 +159,33 @@ PRIVATE void my_include(pEnv env, char *filnam, FILE *fp)
 PUBLIC void doinclude(pEnv env, char *filnam, int error)
 {
     FILE *fp;
-#ifdef SEARCH_EXEC_DIRECTORY
-    char *path, *str;
-#endif
+    char *ptr, *str;
 
     if (ilevel + 1 == INPSTACKMAX)
         execerror(env, "fewer include files", "include");
     infile[ilevel].fp = env->srcfile;
     infile[ilevel].linenum = linenumber;
-    if ((fp = fopen(filnam, "r")) != 0) {
-        my_include(env, filnam, fp);
+    if ((ptr = strrchr(str = filnam, '/')) != 0) {
+	str = GC_strdup(filnam);
+        env->pathname = filnam; /* switch to new pathname */
+        *ptr = 0;
+    }
+    if ((fp = fopen(str, "r")) != 0) {
+        my_include(env, str, fp);
         return;
     }
+/*
+    Search the new include file in the same directory where the previous
+    include file is located.
+*/
 #ifdef SEARCH_EXEC_DIRECTORY
-    path = env->pathname;
-    str = GC_malloc_atomic(strlen(path) + strlen(filnam) + 2);
-    sprintf(str, "%s/%s", path, filnam);
-    if ((fp = fopen(str, "r")) != 0) {
-        my_include(env, filnam, fp);
-        return;
+    if (strcmp(env->pathname, ".")) {
+        str = GC_malloc_atomic(strlen(env->pathname) + strlen(filnam) + 2);
+        sprintf(str, "%s/%s", env->pathname, filnam);
+        if ((fp = fopen(str, "r")) != 0) {
+            my_include(env, str, fp);
+            return;
+        }
     }
 #endif
     if (error)

@@ -1,8 +1,8 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.50
- *  date    : 05/23/23
+ *  version : 1.51
+ *  date    : 06/02/23
  */
 
 /*
@@ -517,6 +517,8 @@ int start_main(int argc, char **argv)
     env.srcfile = stdin;
     if ((ptr = strrchr(env.pathname = argv[0], '/')) != 0)
         *ptr = 0;
+    else
+        env.pathname = ".";
     /*
      *    First look for options. They start with -.
      */
