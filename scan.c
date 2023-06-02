@@ -1,7 +1,7 @@
 /* FILE: scan.c */
 /*
  *  module  : scan.c
- *  version : 1.39
+ *  version : 1.40
  *  date    : 06/02/23
  */
 #include "globals.h"
@@ -161,28 +161,39 @@ PUBLIC void doinclude(pEnv env, char *filnam, int error)
     FILE *fp;
     char *ptr, *str;
 
+/*
+    First try to open filnam in the current working directory.
+*/
     if (ilevel + 1 == INPSTACKMAX)
         execerror(env, "fewer include files", "include");
     infile[ilevel].fp = env->srcfile;
     infile[ilevel].linenum = linenumber;
-    if ((ptr = strrchr(str = filnam, '/')) != 0) {
-	str = GC_strdup(filnam);
-        env->pathname = filnam; /* switch to new pathname */
-        *ptr = 0;
-    }
-    if ((fp = fopen(str, "r")) != 0) {
-        my_include(env, str, fp);
+    if ((fp = fopen(filnam, "r")) != 0) {
+/*
+    Replace the pathname of argv[0] with the pathname of filnam.
+*/
+        if (!strcmp(env->pathname, ".") && strchr(filnam, '/')) {
+            env->pathname = GC_strdup(filnam);
+            ptr = strrchr(env->pathname, '/');
+            *ptr = 0;
+        }
+        my_include(env, filnam, fp);
         return;
     }
-/*
-    Search the new include file in the same directory where the previous
-    include file is located.
-*/
 #ifdef SEARCH_EXEC_DIRECTORY
+/*
+    Prepend pathname to the filename and try again.
+*/
     if (strcmp(env->pathname, ".")) {
         str = GC_malloc_atomic(strlen(env->pathname) + strlen(filnam) + 2);
         sprintf(str, "%s/%s", env->pathname, filnam);
         if ((fp = fopen(str, "r")) != 0) {
+/*
+    If this succeeds, establish a new pathname.
+*/
+            env->pathname = GC_strdup(str);
+            ptr = strrchr(env->pathname, '/');
+            *ptr = 0;
             my_include(env, str, fp);
             return;
         }
@@ -400,7 +411,7 @@ not_unary_minus:
                     env->symb = keywords[i].symb;
                     return;
                 }
-	env->yylval.str = GC_strdup(ident);
+        env->yylval.str = GC_strdup(ident);
         env->symb = ATOM;
         return;
     }
@@ -409,52 +420,52 @@ not_unary_minus:
 #ifdef DUMP_TOKENS
 PUBLIC void dumptok(Token tok, int num)
 {
-    fprintf(stdout, "%d) ", num);
+    printf("%d) ", num);
     switch (tok.symb) {
-    case CHAR_    : fprintf(stdout, "%ld", tok.yylval.num);
+    case CHAR_    : printf("%ld", tok.yylval.num);
                     break;
-    case STRING_  : fprintf(stdout, "\"%s\"", tok.yylval.str);
+    case STRING_  : printf("\"%s\"", tok.yylval.str);
                     break;
-    case FLOAT_   : fprintf(stdout, "%g", tok.yylval.dbl);
+    case FLOAT_   : printf("%g", tok.yylval.dbl);
                     break;
-    case INTEGER_ : fprintf(stdout, "%ld", tok.yylval.num);
+    case INTEGER_ : printf("%ld", tok.yylval.num);
                     break;
-    case ATOM     : fprintf(stdout, "%s", tok.yylval.str);
+    case ATOM     : printf("%s", tok.yylval.str);
                     break;
-    case LBRACK   : fprintf(stdout, "LBRACK");
+    case LBRACK   : printf("LBRACK");
                     break;
-    case LBRACE   : fprintf(stdout, "LBRACE");
+    case LBRACE   : printf("LBRACE");
                     break;
-    case LPAREN   : fprintf(stdout, "LPAREN");
+    case LPAREN   : printf("LPAREN");
                     break;
-    case RBRACK   : fprintf(stdout, "RBRACK");
+    case RBRACK   : printf("RBRACK");
                     break;
-    case RPAREN   : fprintf(stdout, "RPAREN");
+    case RPAREN   : printf("RPAREN");
                     break;
-    case RBRACE   : fprintf(stdout, "RBRACE");
+    case RBRACE   : printf("RBRACE");
                     break;
-    case PERIOD   : fprintf(stdout, "PERIOD");
+    case PERIOD   : printf("PERIOD");
                     break;
-    case SEMICOL  : fprintf(stdout, "SEMICOL");
+    case SEMICOL  : printf("SEMICOL");
                     break;
-    case LIBRA    : fprintf(stdout, "LIBRA");
+    case LIBRA    : printf("LIBRA");
                     break;
-    case EQDEF    : fprintf(stdout, "EQDEF");
+    case EQDEF    : printf("EQDEF");
                     break;
-    case HIDE     : fprintf(stdout, "HIDE");
+    case HIDE     : printf("HIDE");
                     break;
-    case IN       : fprintf(stdout, "IN");
+    case IN       : printf("IN");
                     break;
-    case END      : fprintf(stdout, "END");
+    case END      : printf("END");
                     break;
-    case MODULE   : fprintf(stdout, "MODULE");
+    case MODULE   : printf("MODULE");
                     break;
-    case JPRIVATE : fprintf(stdout, "PRIVATE");
+    case JPRIVATE : printf("PRIVATE");
                     break;
-    case JPUBLIC  : fprintf(stdout, "PUBLIC");
+    case JPUBLIC  : printf("PUBLIC");
                     break;
     }
-    fprintf(stdout, "\n");
+    printf("\n");
 }
 #endif
 
