@@ -1,7 +1,7 @@
 /*
     module  : fseek.c
-    version : 1.2
-    date    : 05/02/22
+    version : 1.3
+    date    : 07/19/23
 */
 #ifndef FSEEK_C
 #define FSEEK_C

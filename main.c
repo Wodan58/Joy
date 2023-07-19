@@ -1,8 +1,8 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.51
- *  date    : 06/02/23
+ *  version : 1.55
+ *  date    : 07/19/23
  */
 
 /*
@@ -357,7 +357,7 @@ PUBLIC void abortexecution_(void)
     heap corruption that makes it impossible to continue. And exit instead of
     _exit may fail too.
 */
-#ifndef GC_BDW
+#ifndef BDW
 PRIVATE void fatal(void)
 {
     fflush(stdout);
@@ -369,7 +369,7 @@ PRIVATE void fatal(void)
 /*
     print a runtime error to stderr and abort the execution of current program.
 */
-PUBLIC void execerror(pEnv env, char *message, char *op)
+PUBLIC void execerror(char *message, char *op)
 {
     fflush(stdout);
     fprintf(stderr, "run time error: %s needed for %s\n", message, op);
@@ -420,7 +420,7 @@ PRIVATE void report_clock(pEnv env)
 PRIVATE void copyright(char *file)
 {
     int i, j = 0;
-    char str[INPLINEMAX], *ptr;
+    char str[BUFFERMAX], *ptr;
 
     static struct {
         char *file;
@@ -463,6 +463,27 @@ PRIVATE void copyright(char *file)
 }
 
 /*
+    dump the symbol table - accessed from quit_, because env is needed;
+    do this only for user defined symbols.
+*/
+PRIVATE void dump_table(pEnv env)
+{
+    int i;
+    Entry ent;
+
+    for (i = vec_size(env->symtab) - 1; i >= 0; i--) {
+        ent = vec_at(env->symtab, i);
+        if (!ent.is_user)
+            printf("(%d) %s\n", i, ent.name);
+        else {
+            printf("(%d) %s == ", i, ent.name);
+            writeterm(env, ent.u.body);
+            putchar('\n');
+        }
+    }
+}
+
+/*
     options - print help on startup options and exit: options are those that
               cannot be set from within the language itself.
 */
@@ -475,9 +496,15 @@ PRIVATE void options(void)
     printf("the filename parameter cannot start with '-' or a digit\n");
     printf("Options:\n");
     printf("  -h : print this help text and exit\n");
+#ifdef TRACING
     printf("  -d : print a trace of program execution\n");
+#endif
+#ifdef SYMBOLS
     printf("  -s : dump user-defined functions after execution\n");
+#endif
+#ifdef COPYRIGHT
     printf("  -v : do not print a copyright notice\n");
+#endif
     exit(0);
 }
 
@@ -486,22 +513,16 @@ int start_main(int argc, char **argv)
     static unsigned char mustinclude = 1;
     int i, j;
     char *filename = 0, *ptr;
-    unsigned char verbose = 1, symdump = 0, helping = 0;
-#ifdef __linux__
-    struct rlimit l;
+    unsigned char helping = 0;
+#ifdef COPYRIGHT
+    unsigned char verbose = 1;
+#endif
+#ifdef SYMBOLS
+    unsigned char symdump = 0;
 #endif
 
     Env env; /* memory, symbol table, stack, and buckets */
     memset(&env, 0, sizeof(env));
-#ifdef __linux__
-    getrlimit(RLIMIT_STACK, &l);
-    l.rlim_cur = l.rlim_max;
-    setrlimit(RLIMIT_STACK, &l);
-
-    getrlimit(RLIMIT_AS, &l);
-    l.rlim_cur = MEMORYMAX;
-    setrlimit(RLIMIT_AS, &l);
-#endif
 
     /*
      *    Start the clock. my_atexit is called from quit_ that is called in
@@ -526,10 +547,16 @@ int start_main(int argc, char **argv)
         if (argv[i][0] == '-') {
             for (j = 1; argv[i][j]; j++)
                 switch (argv[i][j]) {
-                case 'd' : env.debugging = 1; break;
                 case 'h' : helping = 1; break;
+#ifdef TRACING
+                case 'd' : env.debugging = 1; break;
+#endif
+#ifdef SYMBOLS
                 case 's' : symdump = 1; break;
+#endif
+#ifdef COPYRIGHT
                 case 'v' : verbose = 0; break;
+#endif
                 }
             /*
                 Overwrite the options with subsequent parameters.
@@ -564,10 +591,14 @@ int start_main(int argc, char **argv)
         }
     env.g_argc = argc;
     env.g_argv = argv;
+#ifdef COPYRIGHT
     if (verbose)
         copyright(filename);
+#endif
+#ifdef SYMBOLS
     if (symdump)
         my_atexit(dump_table);
+#endif
     if (helping)
         options();
     env.echoflag = INIECHOFLAG;
@@ -592,6 +623,7 @@ int start_main(int argc, char **argv)
         if (env.symb == LIBRA || env.symb == HIDE || env.symb == MODULE) {
 #ifdef NOBDW
             inimem1(&env);
+            env.stck = 0;
 #endif
             compound_def(&env, DONT_READ_AHEAD);
 #ifdef NOBDW
@@ -645,7 +677,7 @@ int main(int argc, char **argv)
 {
     int (*volatile m)(int, char **) = start_main;
 
-#ifdef GC_BDW
+#ifdef BDW
     GC_INIT();
 #else
     GC_init(&argc, fatal);
@@ -653,21 +685,3 @@ int main(int argc, char **argv)
     return (*m)(argc, argv);
 }
 
-/*
-    dump the symbol table - accessed from quit_, because env is needed;
-    do this only for user defined symbols.
-*/
-PRIVATE void dump_table(pEnv env)
-{
-    int i;
-    Entry ent;
-
-    for (i = vec_size(env->symtab) - 1; i >= 0; i--) {
-        ent = vec_at(env->symtab, i);
-        if (!ent.is_user)
-            break;
-        printf("%s == ", ent.name);
-        writeterm(env, ent.u.body);
-        putchar('\n');
-    }
-}

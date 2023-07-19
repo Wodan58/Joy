@@ -1,19 +1,13 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.52
- *  date    : 05/23/23
+ *  version : 1.56
+ *  date    : 07/19/23
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
-/* #define BIT_32 */
-
-#ifdef COSMO
-#ifdef BIT_32
-#undef BIT_32
-#endif
-#else
+#ifndef COSMO
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -24,15 +18,13 @@
 #include <assert.h>
 #include <math.h>
 #include <time.h>
+#include <inttypes.h>
 
 #ifdef _MSC_VER
 #include <io.h>
 #pragma warning(disable : 4267)
 #else
 #include <unistd.h>
-#endif
-#ifdef __linux__
-#include <sys/resource.h>
 #endif
 #endif
 
@@ -168,7 +160,7 @@ ENABLE_TRACEGC
 TRACING
 NCHECK
 STATS
-GC_BDW, NOBDW
+BDW, NOBDW
 ARRAY_BOUND_CHECKING
 DEBUG_TOKENS
 */
@@ -195,23 +187,18 @@ DEBUG_TOKENS
 /* configure                     */
 #define SHELLESCAPE '$'
 #define INPSTACKMAX 10
-#define INPLINEMAX 255
+#define INPLINEMAX 2000
+#define BUFFERMAX 80
 #define ALEN 45 /* module + member */
 #define DISPLAYMAX 10 /* nesting in HIDE & MODULE */
-#define MEMORYMAX (unsigned long)3000000000
 #define INIECHOFLAG 0
 #define INIAUTOPUT 1
 #define INITRACEGC 1
 #define INIUNDEFERROR 0
 
 /* installation dependent        */
-#ifdef BIT_32
-#define SETSIZE 32
-#define MAXINT (long)2147483647
-#else
 #define SETSIZE 64
-#define MAXINT (long)9223372036854775807
-#endif
+#define MAXINT 9223372036854775807LL
 
 /* symbols from getsym           */
 #define ILLEGAL_ 0
@@ -252,19 +239,10 @@ DEBUG_TOKENS
 
 /* types                         */
 typedef int Symbol;
-
-#ifdef BIT_32
-typedef short Operator;
-#else
 typedef int Operator;
-#endif
 
 #ifdef NOBDW
-#ifdef BIT_32
-typedef unsigned short Index;
-#else
 typedef unsigned Index;
-#endif
 #else
 typedef struct Node *Index;
 #endif
@@ -279,8 +257,8 @@ typedef struct Env *pEnv;
 
 /* clang-format off */
 typedef union {
-    long num;           /* USR, BOOLEAN, CHAR, INTEGER */
-    long set;           /* SET */
+    int64_t num;        /* USR, BOOLEAN, CHAR, INTEGER */
+    uint64_t set;       /* SET */
     char *str;          /* STRING */
     double dbl;         /* FLOAT */
     FILE *fil;          /* FILE */
@@ -372,7 +350,7 @@ PUBLIC int opertype(int o);
 /* main.c */
 PUBLIC void lookup(pEnv env);
 PUBLIC void abortexecution_(void);
-PUBLIC void execerror(pEnv env, char *message, char *op);
+PUBLIC void execerror(char *message, char *op);
 /* scan.c */
 PUBLIC void my_atexit(void (*proc)(pEnv));
 PUBLIC void inilinebuffer(pEnv env, char *filnam);

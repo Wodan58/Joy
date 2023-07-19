@@ -1,7 +1,7 @@
 /*
     module  : size.c
-    version : 1.3
-    date    : 05/17/22
+    version : 1.4
+    date    : 07/19/23
 */
 #ifndef SIZE_C
 #define SIZE_C
@@ -12,13 +12,13 @@ Integer I is the number of elements of aggregate A.
 */
 PRIVATE void size_(pEnv env)
 {
-    long siz = 0;
+    int64_t siz = 0;
     ONEPARAM("size");
     switch (nodetype(env->stck)) {
     case SET_: {
         int i;
         for (i = 0; i < SETSIZE; i++)
-            if (nodevalue(env->stck).set & ((long)1 << i))
+            if (nodevalue(env->stck).set & ((int64_t)1 << i))
                 siz++;
         break;
     }

@@ -1,8 +1,8 @@
 /* FILE: factor.c */
 /*
  *  module  : factor.c
- *  version : 1.15
- *  date    : 05/23/23
+ *  version : 1.17
+ *  date    : 07/19/23
  */
 #include "globals.h"
 
@@ -13,7 +13,7 @@
 PUBLIC void readfactor(pEnv env, int priv) /* read a JOY factor */
 {
     Entry ent;
-    long set = 0;
+    uint64_t set = 0;
 
     switch (env->symb) {
     case ATOM:
@@ -50,7 +50,7 @@ PUBLIC void readfactor(pEnv env, int priv) /* read a JOY factor */
                 || env->yylval.num < 0 || env->yylval.num >= SETSIZE)
                 error(env, "small numeric expected in set");
             else
-                set |= ((long)1 << env->yylval.num);
+                set |= ((int64_t)1 << env->yylval.num);
         if (!priv) {
             env->bucket.set = set;
             env->stck = newnode(env, SET_, env->bucket, env->stck);
@@ -137,7 +137,7 @@ PUBLIC void writefactor(pEnv env, Index n)
 {
     int i;
     char *p;
-    long set;
+    uint64_t set;
 
 /*
     This cannot happen. Factor has a small number of customers: writeterm,
@@ -146,7 +146,7 @@ PUBLIC void writefactor(pEnv env, Index n)
 */
 #if 0
     if (!n)
-        execerror(env, "non-empty stack", "print");
+        execerror("non-empty stack", "print");
 #endif
     switch (opertype(nodetype(n))) {
     case USR_:
@@ -156,20 +156,20 @@ PUBLIC void writefactor(pEnv env, Index n)
         printf("%s", nodevalue(n).num ? "true" : "false");
         return;
     case CHAR_:
-        if (nodevalue(n).num == '\n')
-            printf("'\\n");
+        if (nodevalue(n).num >= 8 && nodevalue(n).num <= 13)
+            printf("'\\%c", "btnvfr"[nodevalue(n).num - 8]);
         else
-            printf("'%c", (char)nodevalue(n).num);
+            printf("'%c", (int)nodevalue(n).num);
         return;
     case INTEGER_:
-        printf("%ld", (long)nodevalue(n).num);
+        printf("%" PRId64, nodevalue(n).num);
         return;
     case SET_:
         putchar('{');
         for (i = 0, set = nodevalue(n).set; i < SETSIZE; i++)
-            if (set & ((long)1 << i)) {
+            if (set & ((int64_t)1 << i)) {
                 printf("%d", i);
-                set &= ~((long)1 << i);
+                set &= ~((int64_t)1 << i);
                 if (set)
                     putchar(' ');
             }
@@ -177,14 +177,11 @@ PUBLIC void writefactor(pEnv env, Index n)
         return;
     case STRING_:
         putchar('"');
-        for (p = nodevalue(n).str; *p; p++) {
-            if (*p == '"' || *p == '\\' || *p == '\n')
-                putchar('\\');
-            if (*p == '\n')
-                putchar('n');
+        for (p = nodevalue(n).str; *p; p++)
+            if (*p >= 8 && *p <= 13)
+                printf("\\%c", "btnvfr"[*p - 8]);
             else
                 putchar(*p);
-        }
         putchar('"');
         return;
     case LIST_:

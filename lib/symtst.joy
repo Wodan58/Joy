@@ -1,6 +1,6 @@
 (* FILE:  symtst.joy *)
 
-"\Testing the 12 translators in the library  symlib.joy\n" putchars.
+"\nTesting the 12 translators in the library  symlib.joy\n" putchars.
 
 "symlib" libload.
 0 __settracegc.

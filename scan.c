@@ -1,8 +1,8 @@
 /* FILE: scan.c */
 /*
  *  module  : scan.c
- *  version : 1.40
- *  date    : 06/02/23
+ *  version : 1.42
+ *  date    : 07/18/23
  */
 #include "globals.h"
 
@@ -165,7 +165,7 @@ PUBLIC void doinclude(pEnv env, char *filnam, int error)
     First try to open filnam in the current working directory.
 */
     if (ilevel + 1 == INPSTACKMAX)
-        execerror(env, "fewer include files", "include");
+        execerror("fewer include files", "include");
     infile[ilevel].fp = env->srcfile;
     infile[ilevel].linenum = linenumber;
     if ((fp = fopen(filnam, "r")) != 0) {
@@ -200,7 +200,7 @@ PUBLIC void doinclude(pEnv env, char *filnam, int error)
     }
 #endif
     if (error)
-        execerror(env, "valid file name", "include");
+        execerror("valid file name", "include");
 }
 
 /*
@@ -385,8 +385,8 @@ done:
             env->symb = INTEGER_;
             return;
         }
-        goto not_unary_minus;
-not_unary_minus:
+        goto next;
+next:
     /* ELSE '-' is not unary minus, fall through */
     default:
         do {
@@ -500,7 +500,7 @@ PUBLIC void getsym(pEnv env)
         my_getsym(env);
         tok.yylval = env->yylval;
         tok.symb = env->symb;
-#ifdef DEBUG_TOKENS
+#ifdef DUMP_TOKENS
         dumptok(tok, 1);
 #endif
         vec_push(env->tokens, tok);
@@ -508,7 +508,7 @@ PUBLIC void getsym(pEnv env)
         tok = vec_at(env->tokens, env->token_index);
         env->yylval = tok.yylval;
         env->symb = tok.symb;
-#ifdef DEBUG_TOKENS
+#ifdef DUMP_TOKENS
         dumptok(tok, 2);
 #endif
         env->token_index++;
@@ -516,7 +516,7 @@ PUBLIC void getsym(pEnv env)
         env->tokens = 0; /* reset token vector and index */
         env->token_index = 0;
         my_getsym(env);
-#ifdef DEBUG_TOKENS
+#ifdef DUMP_TOKENS
         tok.yylval = env->yylval;
         tok.symb = env->symb;
         dumptok(tok, 3);

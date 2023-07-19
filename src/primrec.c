@@ -1,7 +1,7 @@
 /*
     module  : primrec.c
-    version : 1.2
-    date    : 05/17/22
+    version : 1.3
+    date    : 07/19/23
 */
 #ifndef PRIMREC_C
 #define PRIMREC_C
@@ -35,23 +35,23 @@ PRIVATE void primrec_(pEnv env)
     case STRING_: {
         char *s;
         for (s = nodevalue(SAVED3).str; *s != '\0'; s++) {
-            env->stck = CHAR_NEWNODE((long)*s, env->stck);
+            env->stck = CHAR_NEWNODE((int64_t)*s, env->stck);
             n++;
         }
         break;
     }
     case SET_: {
         int j;
-        long set = nodevalue(SAVED3).set;
+        uint64_t set = nodevalue(SAVED3).set;
         for (j = 0; j < SETSIZE; j++)
-            if (set & ((long)1 << j)) {
+            if (set & ((int64_t)1 << j)) {
                 env->stck = INTEGER_NEWNODE(j, env->stck);
                 n++;
             }
         break;
     }
     case INTEGER_: {
-        long j;
+        int64_t j;
         for (j = nodevalue(SAVED3).num; j > 0; j--) {
             env->stck = INTEGER_NEWNODE(j, env->stck);
             n++;

@@ -1,7 +1,7 @@
 /*
     module  : fread.c
-    version : 1.2
-    date    : 05/17/22
+    version : 1.3
+    date    : 07/19/23
 */
 #ifndef FREAD_C
 #define FREAD_C
@@ -14,7 +14,7 @@ and returned as a list of I integers.
 PRIVATE void fread_(pEnv env)
 {
     unsigned char *buf;
-    long count;
+    int64_t count;
 
     TWOPARAMS("fread");
     INTEGER("fread");
@@ -23,10 +23,9 @@ PRIVATE void fread_(pEnv env)
     FILE("fread");
     buf = GC_malloc_atomic(count);
     env->dump1 = LIST_NEWNODE(0, env->dump1);
-    for (count
-         = fread(buf, (size_t)1, (size_t)count, nodevalue(env->stck).fil) - 1;
+    for (count = fread(buf, 1, count, nodevalue(env->stck).fil) - 1;
          count >= 0; count--)
-        DMP1 = INTEGER_NEWNODE((long)buf[count], DMP1);
+        DMP1 = INTEGER_NEWNODE((int64_t)buf[count], DMP1);
     NULLARY(LIST_NEWNODE, DMP1);
     POP(env->dump1);
 }

@@ -1,7 +1,7 @@
 /*
     module  : rest.c
-    version : 1.2
-    date    : 05/17/22
+    version : 1.3
+    date    : 07/19/23
 */
 #ifndef REST_C
 #define REST_C
@@ -17,9 +17,9 @@ PRIVATE void rest_(pEnv env)
     case SET_: {
         int i = 0;
         CHECKEMPTYSET(nodevalue(env->stck).set, "rest");
-        while (!(nodevalue(env->stck).set & ((long)1 << i)))
+        while (!(nodevalue(env->stck).set & ((int64_t)1 << i)))
             i++;
-        UNARY(SET_NEWNODE, nodevalue(env->stck).set & ~((long)1 << i));
+        UNARY(SET_NEWNODE, nodevalue(env->stck).set & ~((int64_t)1 << i));
         break;
     }
     case STRING_: {

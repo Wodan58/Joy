@@ -1,7 +1,7 @@
 /*
     module  : step.c
-    version : 1.2
-    date    : 05/17/22
+    version : 1.3
+    date    : 07/19/23
 */
 #ifndef STEP_C
 #define STEP_C
@@ -31,7 +31,7 @@ PRIVATE void step_(pEnv env)
     case STRING_: {
         char *s;
         for (s = nodevalue(SAVED2).str; *s != '\0'; s++) {
-            env->stck = CHAR_NEWNODE((long)*s, env->stck);
+            env->stck = CHAR_NEWNODE((int64_t)*s, env->stck);
             exeterm(env, nodevalue(SAVED1).lis);
         }
         break;
@@ -39,7 +39,7 @@ PRIVATE void step_(pEnv env)
     case SET_: {
         int i;
         for (i = 0; i < SETSIZE; i++)
-            if (nodevalue(SAVED2).set & ((long)1 << i)) {
+            if (nodevalue(SAVED2).set & ((int64_t)1 << i)) {
                 env->stck = INTEGER_NEWNODE(i, env->stck);
                 exeterm(env, nodevalue(SAVED1).lis);
             }

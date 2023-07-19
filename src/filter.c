@@ -1,7 +1,7 @@
 /*
     module  : filter.c
-    version : 1.3
-    date    : 05/17/22
+    version : 1.4
+    date    : 07/19/23
 */
 #ifndef FILTER_C
 #define FILTER_C
@@ -18,14 +18,14 @@ PRIVATE void filter_(pEnv env)
     switch (nodetype(SAVED2)) {
     case SET_: {
         int j;
-        long resultset = 0;
+        uint64_t resultset = 0;
         for (j = 0; j < SETSIZE; j++) {
-            if (nodevalue(SAVED2).set & ((long)1 << j)) {
+            if (nodevalue(SAVED2).set & ((int64_t)1 << j)) {
                 env->stck = INTEGER_NEWNODE(j, SAVED3);
                 exeterm(env, nodevalue(SAVED1).lis);
                 CHECKSTACK("filter");
                 if (nodevalue(env->stck).num)
-                    resultset |= ((long)1 << j);
+                    resultset |= ((int64_t)1 << j);
             }
         }
         env->stck = SET_NEWNODE(resultset, SAVED3);
@@ -37,7 +37,7 @@ PRIVATE void filter_(pEnv env)
         resultstring
             = (char *)GC_malloc_atomic(strlen(nodevalue(SAVED2).str) + 1);
         for (s = nodevalue(SAVED2).str; *s != '\0'; s++) {
-            env->stck = CHAR_NEWNODE((long)*s, SAVED3);
+            env->stck = CHAR_NEWNODE((int64_t)*s, SAVED3);
             exeterm(env, nodevalue(SAVED1).lis);
             CHECKSTACK("filter");
             if (nodevalue(env->stck).num)

@@ -1,7 +1,7 @@
 /*
     module  : small.c
-    version : 1.2
-    date    : 05/17/22
+    version : 1.3
+    date    : 07/19/23
 */
 #ifndef SMALL_C
 #define SMALL_C
@@ -24,9 +24,9 @@ PRIVATE void small_(pEnv env)
             sml = 1;
         else {
             int i = 0;
-            while (!(nodevalue(env->stck).set & ((long)1 << i)))
+            while (!(nodevalue(env->stck).set & ((int64_t)1 << i)))
                 i++;
-            sml = (nodevalue(env->stck).set & ~((long)1 << i)) == 0;
+            sml = (nodevalue(env->stck).set & ~((int64_t)1 << i)) == 0;
         }
         break;
     case STRING_:

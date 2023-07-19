@@ -1,7 +1,7 @@
 /*
     module  : map.c
-    version : 1.3
-    date    : 05/17/22
+    version : 1.4
+    date    : 07/19/23
 */
 #ifndef MAP_C
 #define MAP_C
@@ -48,7 +48,7 @@ PRIVATE void map_(pEnv env)
         resultstring
             = (char *)GC_malloc_atomic(strlen(nodevalue(SAVED2).str) + 1);
         for (s = nodevalue(SAVED2).str; *s != '\0'; s++) {
-            env->stck = CHAR_NEWNODE((long)*s, SAVED3);
+            env->stck = CHAR_NEWNODE((int64_t)*s, SAVED3);
             exeterm(env, nodevalue(SAVED1).lis);
             CHECKSTACK("map");
             resultstring[j++] = (char)nodevalue(env->stck).num;
@@ -59,13 +59,13 @@ PRIVATE void map_(pEnv env)
     }
     case SET_: {
         int i;
-        long resultset = 0;
+        uint64_t resultset = 0;
         for (i = 0; i < SETSIZE; i++)
-            if (nodevalue(SAVED2).set & ((long)1 << i)) {
+            if (nodevalue(SAVED2).set & ((int64_t)1 << i)) {
                 env->stck = INTEGER_NEWNODE(i, SAVED3);
                 exeterm(env, nodevalue(SAVED1).lis);
                 CHECKSTACK("map");
-                resultset |= ((long)1 << nodevalue(env->stck).num);
+                resultset |= ((int64_t)1 << nodevalue(env->stck).num);
             }
         env->stck = SET_NEWNODE(resultset, SAVED3);
         break;

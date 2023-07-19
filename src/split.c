@@ -1,7 +1,7 @@
 /*
     module  : split.c
-    version : 1.3
-    date    : 05/17/22
+    version : 1.4
+    date    : 07/19/23
 */
 #ifndef SPLIT_C
 #define SPLIT_C
@@ -18,16 +18,16 @@ PRIVATE void split_(pEnv env)
     switch (nodetype(SAVED2)) {
     case SET_: {
         int j;
-        long yes_set = 0, no_set = 0;
+        uint64_t yes_set = 0, no_set = 0;
         for (j = 0; j < SETSIZE; j++) {
-            if (nodevalue(SAVED2).set & ((long)1 << j)) {
+            if (nodevalue(SAVED2).set & ((int64_t)1 << j)) {
                 env->stck = INTEGER_NEWNODE(j, SAVED3);
                 exeterm(env, nodevalue(SAVED1).lis);
                 CHECKSTACK("split");
                 if (nodevalue(env->stck).num)
-                    yes_set |= ((long)1 << j);
+                    yes_set |= ((int64_t)1 << j);
                 else
-                    no_set |= ((long)1 << j);
+                    no_set |= ((int64_t)1 << j);
             }
         }
         env->stck = SET_NEWNODE(yes_set, SAVED3);
@@ -40,7 +40,7 @@ PRIVATE void split_(pEnv env)
         yesstring = (char *)GC_malloc_atomic(strlen(nodevalue(SAVED2).str) + 1);
         nostring = (char *)GC_malloc_atomic(strlen(nodevalue(SAVED2).str) + 1);
         for (s = nodevalue(SAVED2).str; *s != '\0'; s++) {
-            env->stck = CHAR_NEWNODE((long)*s, SAVED3);
+            env->stck = CHAR_NEWNODE((int64_t)*s, SAVED3);
             exeterm(env, nodevalue(SAVED1).lis);
             CHECKSTACK("split");
             if (nodevalue(env->stck).num)

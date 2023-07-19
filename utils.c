@@ -1,7 +1,7 @@
 /*
  *  module  : utils.c
- *  version : 1.10
- *  date    : 06/20/22
+ *  version : 1.13
+ *  date    : 07/19/23
  */
 #include "globals.h"
 
@@ -10,8 +10,8 @@
 
 static clock_t start_gc_clock;
 static vector(Node) *orig_memory;
-static long memorymax = LOWER_LIMIT;
 static Index memoryindex, mem_low = 1;
+static int64_t memorymax = LOWER_LIMIT;
 
 #ifdef ENABLE_TRACEGC
 static int nodesinspected, nodescopied;
@@ -32,8 +32,8 @@ PUBLIC void inimem1(pEnv env)
         memset(&node, 0, sizeof(Node));
         vec_push(env->memory, node);
     }
-    env->stck = env->conts = env->dump = 0;
-    env->dump1 = env->dump2 = env->dump3 = env->dump4 = env->dump5 = 0;
+    env->conts = env->dump = env->dump1 = env->dump2 =
+    env->dump3 = env->dump4 = env->dump5 = 0;
     vec_setsize(env->memory, mem_low);
 }
 
@@ -261,7 +261,7 @@ PUBLIC Index newnode(pEnv env, Operator o, Types u, Index r)
         gc2(env);
 #endif
         if (vec_size(env->memory) == UPPER_LIMIT)
-            execerror(env, "memory", "copying");
+            execerror("memory", "copying");
     }
     memset(&node, 0, sizeof(Node));
     node.u = u;

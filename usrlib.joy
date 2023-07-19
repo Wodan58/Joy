@@ -1,0 +1,74 @@
+(* FILE:  usrlib.joy  -  if it exists, then it is loaded by default *)
+
+LIBRA
+
+    RAWJOY1 == "the primitives of the Joy1 system\n";
+    _usrlib == true;
+
+						(* personalise:
+    myname == "Abigail Aardvark";
+    myphone == 12345678;
+						etc *)
+
+HIDE
+    returned == "\007\nReturned to Joy\n" putchars
+IN
+						(* unix: *)
+    unix == true;
+    control-eof == 'D;
+    terminal == "/dev/tty";
+    ls == "ls -la" system;
+    editor == "vi ";
+    escape ==
+	"\nTo return to Joy, type:   exit\n" putchars
+	"csh" system
+	returned;
+    						(* etc *)
+
+						(* vms:
+    vms == true;
+    control-eof == 'Z;
+    terminal == "tt:";
+    dir == "DIR/DATE" system returned;
+    editor == "TECO ";
+    escape ==
+	"\nTo return to Joy, hit  Control-" putchars
+	control-eof putch  '\n putch
+	"@tt:" system
+	returned;
+						etc *)
+
+    edit ==
+	dup editor swap concat system
+	dup "Including  " putchars putchars '\n putch
+	include
+	returned;
+
+    find-in ==
+	[ [ [ [unix] first body null not ]
+	    " " swap concat concat "grep " swap concat system ]
+	  [ [ [vms] first body null not ]
+	    swap " " swap concat concat "SEARCH " swap concat system ]
+	  [ "unknown operating system for  find-in\n" putchars ] ]
+ 	cond
+	returned;
+    standard-setting == 1 setautoput 1 setundeferror;
+    USRLIB == "usrlib.joy - (personal) user library\n"
+
+END.						(* end HIDE and LIBRA *)
+
+						(* demo:
+"library"   "*.joy"  find-in.
+						etc *)
+
+"usrlib  is loaded\n"  putchars.
+
+standard-setting.
+
+"lib/inilib.joy" include.
+				(* assuming inilib.joy was included:  *)
+"agglib" libload.
+
+DEFINE verbose == true. (* Example of over-riding  inilib.joy *)
+
+(* END  usrlib.joy *)

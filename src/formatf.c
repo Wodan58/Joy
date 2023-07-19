@@ -1,7 +1,7 @@
 /*
     module  : formatf.c
-    version : 1.3
-    date    : 05/23/23
+    version : 1.4
+    date    : 06/16/23
 */
 #ifndef FORMATF_C
 #define FORMATF_C
@@ -34,7 +34,7 @@ PRIVATE void formatf_(pEnv env)
     format[4] = spec;
     FLOAT("formatf");
 #ifdef USE_SNPRINTF
-    leng = snprintf(0, 0, format, width, prec, nodevalue(env->stck).num) + 1;
+    leng = snprintf(0, 0, format, width, prec, nodevalue(env->stck).dbl) + 1;
     result = GC_malloc_atomic(leng + 1);
     snprintf(result, leng, format, width, prec, nodevalue(env->stck).dbl);
 #else

@@ -1,7 +1,7 @@
 /*
     module  : strftime.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 07/19/23
 */
 #ifndef STRFTIME_C
 #define STRFTIME_C
@@ -25,7 +25,7 @@ PRIVATE void strftime_(pEnv env)
     POP(env->stck);
     LIST("strftime");
     decode_time(env, &t);
-    length = INPLINEMAX;
+    length = BUFFERMAX;
     result = GC_malloc_atomic(length);
     strftime(result, length, fmt, &t);
     UNARY(STRING_NEWNODE, result);
