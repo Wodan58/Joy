@@ -65,7 +65,7 @@ END.						(* end HIDE and LIBRA *)
 
 standard-setting.
 
-"inilib.joy" include.
+"../lib/inilib.joy" include.
 				(* assuming inilib.joy was included:  *)
 "agglib" libload.
 

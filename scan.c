@@ -1,7 +1,7 @@
 /* FILE: scan.c */
 /*
  *  module  : scan.c
- *  version : 1.43
+ *  version : 1.44
  *  date    : 07/19/23
  */
 #include "globals.h"
@@ -142,6 +142,12 @@ PUBLIC void error(pEnv env, char *message)
 
 PRIVATE void redirect(pEnv env, char *filnam, FILE *fp)
 {
+    infile[ilevel].linenum = linenumber;
+#if 0
+    infile[ilevel].fp = env->srcfile;
+#endif
+    if (ilevel + 1 == INPSTACKMAX)
+        execerror("fewer include files", "include");
     infile[++ilevel].fp = env->srcfile = fp;
 #if 0
     infile[ilevel].name = filnam;
@@ -165,15 +171,11 @@ PUBLIC int include(pEnv env, char *filnam, int error)
 /*
     First try to open filnam in the current working directory.
 */
-    if (ilevel + 1 == INPSTACKMAX)
-        execerror("fewer include files", "include");
-    infile[ilevel].fp = env->srcfile;
-    infile[ilevel].linenum = linenumber;
     if ((fp = fopen(filnam, "r")) != 0) {
 /*
     Replace the pathname of argv[0] with the pathname of filnam.
 */
-        if (!strcmp(env->pathname, ".") && strchr(filnam, '/')) {
+        if (strchr(filnam, '/')) {
             env->pathname = GC_strdup(filnam);
             ptr = strrchr(env->pathname, '/');
             *ptr = 0;

@@ -47,7 +47,7 @@ Testing
     cd test2
     for i in *.joy
     do
-      ../joy.com $i >$i.out
+      ../build/joy $i >$i.out
     done
     grep -l false *.out
 
