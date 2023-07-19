@@ -16,7 +16,7 @@ Build instructions
 
     mkdir build
     cd build
-    CC=../gcc.sh cmake ..
+    cmake ..
     cmake --build .
 
 or:

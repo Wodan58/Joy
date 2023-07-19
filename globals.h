@@ -1,7 +1,7 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.56
+ *  version : 1.57
  *  date    : 07/19/23
  */
 #ifndef GLOBALS_H
@@ -355,7 +355,7 @@ PUBLIC void execerror(char *message, char *op);
 PUBLIC void my_atexit(void (*proc)(pEnv));
 PUBLIC void inilinebuffer(pEnv env, char *filnam);
 PUBLIC void error(pEnv env, char *message);
-PUBLIC void doinclude(pEnv env, char *filnam, int error);
+PUBLIC int include(pEnv env, char *filnam, int error);
 PUBLIC void ungetsym(Symbol symb);
 PUBLIC void getsym(pEnv env);
 /* factor.c */

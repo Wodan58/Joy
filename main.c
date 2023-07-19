@@ -1,7 +1,7 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.55
+ *  version : 1.56
  *  date    : 07/19/23
  */
 
@@ -538,6 +538,8 @@ int start_main(int argc, char **argv)
     env.srcfile = stdin;
     if ((ptr = strrchr(env.pathname = argv[0], '/')) != 0)
         *ptr = 0;
+    else if ((ptr = strrchr(env.pathname, '\\')) != 0)
+        *ptr = 0;
     else
         env.pathname = ".";
     /*
@@ -581,8 +583,6 @@ int start_main(int argc, char **argv)
              */
             if ((ptr = strrchr(argv[0] = filename, '/')) != 0) {
                 *ptr++ = 0;
-                if (strcmp(filename, "."))
-                    chdir(filename);
                 argv[0] = filename = ptr;
             }
             for (--argc; i < argc; i++)
@@ -615,8 +615,8 @@ int start_main(int argc, char **argv)
     inimem2(&env);
 #endif
     if (mustinclude) {
-        mustinclude = 0;
-        doinclude(&env, "usrlib.joy", ERROR_ON_USRLIB);
+        mustinclude = include(&env, "usrlib.joy", ERROR_ON_USRLIB);
+        fflush(stdout);
     }
     while (1) {
         getsym(&env);
@@ -684,4 +684,3 @@ int main(int argc, char **argv)
 #endif
     return (*m)(argc, argv);
 }
-

@@ -1,8 +1,8 @@
 /* FILE: scan.c */
 /*
  *  module  : scan.c
- *  version : 1.42
- *  date    : 07/18/23
+ *  version : 1.43
+ *  date    : 07/19/23
  */
 #include "globals.h"
 
@@ -140,7 +140,7 @@ PUBLIC void error(pEnv env, char *message)
 #endif
 }
 
-PRIVATE void my_include(pEnv env, char *filnam, FILE *fp)
+PRIVATE void redirect(pEnv env, char *filnam, FILE *fp)
 {
     infile[++ilevel].fp = env->srcfile = fp;
 #if 0
@@ -150,13 +150,14 @@ PRIVATE void my_include(pEnv env, char *filnam, FILE *fp)
 }
 
 /*
-    doinclude - insert the contents of a file in the input.
-                Files are read in the current directory or if that fails
-                from the same directory as where the executable is stored.
-                If that path also fails an error is generated unless error
-                is set to 0.
+    include - insert the contents of a file in the input.
+
+              Files are read in the current directory or if that fails
+              from the same directory as where the executable is stored.
+              If that path also fails an error is generated unless error
+              is set to 0.
 */
-PUBLIC void doinclude(pEnv env, char *filnam, int error)
+PUBLIC int include(pEnv env, char *filnam, int error)
 {
     FILE *fp;
     char *ptr, *str;
@@ -177,14 +178,12 @@ PUBLIC void doinclude(pEnv env, char *filnam, int error)
             ptr = strrchr(env->pathname, '/');
             *ptr = 0;
         }
-        my_include(env, filnam, fp);
-        return;
     }
 #ifdef SEARCH_EXEC_DIRECTORY
 /*
     Prepend pathname to the filename and try again.
 */
-    if (strcmp(env->pathname, ".")) {
+    else if (strcmp(env->pathname, ".")) {
         str = GC_malloc_atomic(strlen(env->pathname) + strlen(filnam) + 2);
         sprintf(str, "%s/%s", env->pathname, filnam);
         if ((fp = fopen(str, "r")) != 0) {
@@ -194,13 +193,16 @@ PUBLIC void doinclude(pEnv env, char *filnam, int error)
             env->pathname = GC_strdup(str);
             ptr = strrchr(env->pathname, '/');
             *ptr = 0;
-            my_include(env, str, fp);
-            return;
         }
     }
 #endif
+    if (fp) {
+        redirect(env, filnam, fp);
+        return 0; /* ok */
+    }
     if (error)
         execerror("valid file name", "include");
+    return 1; /* nok */
 }
 
 /*
