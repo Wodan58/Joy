@@ -14,16 +14,9 @@ decent language and needs a ditto
 Build instructions
 ------------------
 
-    mkdir build
     cd build
     cmake ..
     cmake --build .
-
-or:
-
-    make -f make.nogc
-
-The second build produces joy.com
 
 Changes
 -------
