@@ -1,8 +1,8 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.56
- *  date    : 07/19/23
+ *  version : 1.57
+ *  date    : 07/21/23
  */
 
 /*
@@ -344,15 +344,6 @@ PRIVATE void compound_def(pEnv env, int priv)
 }
 
 /*
-    abort execution and restart reading from srcfile. In the NOBDW version the
-    stack is cleared as well.
-*/
-PUBLIC void abortexecution_(void)
-{
-    longjmp(begin, 1);
-}
-
-/*
     fatal terminates the program after a stack overflow, likely to result in
     heap corruption that makes it impossible to continue. And exit instead of
     _exit may fail too.
@@ -365,6 +356,15 @@ PRIVATE void fatal(void)
     exit(EXIT_FAILURE);
 }
 #endif
+
+/*
+    abort execution and restart reading from srcfile. In the NOBDW version the
+    stack is cleared as well.
+*/
+PUBLIC void abortexecution_(void)
+{
+    longjmp(begin, 1);
+}
 
 /*
     print a runtime error to stderr and abort the execution of current program.
@@ -417,6 +417,7 @@ PRIVATE void report_clock(pEnv env)
  *   The version must be set on the commandline when compiling:
  *   -DJVERSION="\"alpha\"" or whatever.
  */
+#ifdef COPYRIGHT
 PRIVATE void copyright(char *file)
 {
     int i, j = 0;
@@ -455,17 +456,22 @@ PRIVATE void copyright(char *file)
         }
     } else {
         printf("JOY  -  compiled at %s on %s", __TIME__, __DATE__);
-        printf(JVERSION ? " (%s)\n" : "\n", JVERSION);
+#ifdef JVERSION
+        printf(" (%s)", JVERSION);
+#endif
+        putchar('\n');
         j = 1;
     }
     if (j)
         printf("Copyright 2001 by Manfred von Thun\n");
 }
+#endif
 
 /*
     dump the symbol table - accessed from quit_, because env is needed;
     do this only for user defined symbols.
 */
+#ifdef SYMBOLS
 PRIVATE void dump_table(pEnv env)
 {
     int i;
@@ -482,6 +488,7 @@ PRIVATE void dump_table(pEnv env)
         }
     }
 }
+#endif
 
 /*
     options - print help on startup options and exit: options are those that
@@ -523,7 +530,6 @@ int start_main(int argc, char **argv)
 
     Env env; /* memory, symbol table, stack, and buckets */
     memset(&env, 0, sizeof(env));
-
     /*
      *    Start the clock. my_atexit is called from quit_ that is called in
      *    scan.c after reading EOF on the first input file.
@@ -536,7 +542,8 @@ int start_main(int argc, char **argv)
      *    Initialize srcfile and other environmental parameters.
      */
     env.srcfile = stdin;
-    if ((ptr = strrchr(env.pathname = argv[0], '/')) != 0)
+    env.pathname = argv[0];
+    if ((ptr = strrchr(env.pathname, '/')) != 0)
         *ptr = 0;
     else if ((ptr = strrchr(env.pathname, '\\')) != 0)
         *ptr = 0;
@@ -614,9 +621,10 @@ int start_main(int argc, char **argv)
     inimem1(&env);
     inimem2(&env);
 #endif
+    env.prog = 0;
     if (mustinclude) {
         mustinclude = include(&env, "usrlib.joy", ERROR_ON_USRLIB);
-        fflush(stdout);
+        fflush(stdout); /* flush include messages */
     }
     while (1) {
         getsym(&env);

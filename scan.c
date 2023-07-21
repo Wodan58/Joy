@@ -1,8 +1,8 @@
 /* FILE: scan.c */
 /*
  *  module  : scan.c
- *  version : 1.44
- *  date    : 07/19/23
+ *  version : 1.45
+ *  date    : 07/21/23
  */
 #include "globals.h"
 
@@ -10,14 +10,14 @@ PUBLIC void quit_(pEnv env);
 
 static struct {
     FILE *fp;
-#if 0
+#ifdef REMEMBER_FILENAME
     char *name;
 #endif
     int linenum;
 } infile[INPSTACKMAX];
 static int ilevel;
 static int linenumber;
-static char linbuf[INPLINEMAX + 1];
+static char linbuf[INPLINEMAX + 2];
 static int linelength, currentcolumn;
 #if 0
 static int errorcount;
@@ -50,7 +50,7 @@ static struct keys {
 PUBLIC void inilinebuffer(pEnv env, char *str)
 {
     infile[0].fp = env->srcfile;
-#if 0
+#ifdef REMEMBER_FILENAME
     infile[0].name = str ? str : "stdin";
 #endif
 }
@@ -90,8 +90,8 @@ again:
                 ;
             linelength = i;
         } else if (ilevel > 0) {
-            fclose(infile[ilevel--].fp);
-            env->srcfile = infile[ilevel].fp;
+            fclose(infile[ilevel].fp);
+            env->srcfile = infile[--ilevel].fp;
             linenumber = infile[ilevel].linenum;
         } else
             quit_(env);
@@ -149,7 +149,7 @@ PRIVATE void redirect(pEnv env, char *filnam, FILE *fp)
     if (ilevel + 1 == INPSTACKMAX)
         execerror("fewer include files", "include");
     infile[++ilevel].fp = env->srcfile = fp;
-#if 0
+#ifdef REMEMBER_FILENAME
     infile[ilevel].name = filnam;
 #endif
     infile[ilevel].linenum = linenumber = 0;
@@ -166,7 +166,10 @@ PRIVATE void redirect(pEnv env, char *filnam, FILE *fp)
 PUBLIC int include(pEnv env, char *filnam, int error)
 {
     FILE *fp;
-    char *ptr, *str;
+    char *ptr;
+#ifdef SEARCH_EXEC_DIRECTORY
+    char *str;
+#endif
 
 /*
     First try to open filnam in the current working directory.
@@ -265,7 +268,7 @@ PRIVATE int peek(void)
 PRIVATE void my_getsym(pEnv env)
 {
     int i = 0, begin, next;
-    char ident[ALEN], string[INPLINEMAX + 1];
+    char ident[ALEN], string[INPLINEMAX + 2];
 
 start:
     while (ch <= ' ')

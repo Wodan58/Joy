@@ -1,8 +1,0 @@
-extraction:
-  cpp:
-    configure:
-      command:
-        - cmake .
-    index:
-      build_command:
-        - cmake --build .

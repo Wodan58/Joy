@@ -32,14 +32,8 @@ never published.
 As for the comments in interp.c, I added them because I like some version
 history. It proves that the language and the implementation was not done over
 night.
-In fact, according to this [interview](http://archive.vector.org.uk/art10000350) the implementation in C was started in 1995.
-
-Binaries
---------
-
-The binary `joy.com` is a 64-bit executable that should work on most x86_64
-systems. The [support vector](http://github.com/jart/cosmopolitan)
-at the end of the README.md tells what systems exactly.
+In fact, according to this [interview](http://archive.vector.org.uk/art10000350)
+the implementation in C was started in 1995.
 
 Testing
 -------
