@@ -1,7 +1,7 @@
 /*
  *  module  : utils.c
- *  version : 1.13
- *  date    : 07/19/23
+ *  version : 1.14
+ *  date    : 08/06/23
  */
 #include "globals.h"
 
@@ -30,6 +30,7 @@ PUBLIC void inimem1(pEnv env)
     if (!init) {
         init = 1;
         memset(&node, 0, sizeof(Node));
+        vec_init(env->memory);
         vec_push(env->memory, node);
     }
     env->conts = env->dump = env->dump1 = env->dump2 =
@@ -130,7 +131,7 @@ PRIVATE void copyall(pEnv env)
         vec_at(env->memory, scan).next =
                copyone(env, vec_at(env->memory, scan).next);
     }
-    orig_memory = 0;
+    vec_setsize(orig_memory, 0);
     vec_setsize(env->memory, memoryindex);
     if (memorymax > 2.5 * memoryindex) {
         memorymax /= 2;

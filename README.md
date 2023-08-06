@@ -23,7 +23,7 @@ Changes
 
 Some changes were done that make ~the build environment~ me happy. One new
 thing is a portable makefile, following this [advice](http://nullprogram.com/blog/2017/08/20).
-There is something different in these sources compared to the ones that can be
+There is something different in these sources compared to the ones that could be
 downloaded from the original [site](http://www.latrobe.edu.au/humanities/research/research-projects/past-projects/joy-programming-language) and that is the
 comments at the start of main.c and of interp.c.
 [Manfred von Thun](http://fogus.me/important/von-thun/) really wanted those

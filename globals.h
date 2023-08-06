@@ -1,13 +1,12 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.57
- *  date    : 07/19/23
+ *  version : 1.58
+ *  date    : 08/06/23
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
-#ifndef COSMO
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -25,7 +24,6 @@
 #pragma warning(disable : 4267)
 #else
 #include <unistd.h>
-#endif
 #endif
 
 #ifdef NOBDW

@@ -1,8 +1,8 @@
 /* FILE: scan.c */
 /*
  *  module  : scan.c
- *  version : 1.45
- *  date    : 07/21/23
+ *  version : 1.46
+ *  date    : 08/06/23
  */
 #include "globals.h"
 
@@ -520,7 +520,7 @@ PUBLIC void getsym(pEnv env)
 #endif
         env->token_index++;
     } else {
-        env->tokens = 0; /* reset token vector and index */
+        vec_setsize(env->tokens, 0); /* reset token vector and index */
         env->token_index = 0;
         my_getsym(env);
 #ifdef DUMP_TOKENS

@@ -1,9 +1,8 @@
 /*
     module  : gc.c
-    version : 1.34
-    date    : 05/23/23
+    version : 1.35
+    date    : 08/06/23
 */
-#ifndef COSMO
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -11,13 +10,13 @@
 #include <stdint.h>
 #include <setjmp.h>
 #include <signal.h>
+
 #ifdef __linux__
 #include <unistd.h>
 #endif
 
 #ifdef __APPLE__
 #include <mach-o/getsect.h>
-#endif
 #endif
 
 #include "khash.h"
@@ -36,9 +35,6 @@
 #define GC_COLL          0
 #define GC_LEAF          1
 #define GC_MARK          2
-#ifdef USE_GC_MALLOC_UNCOLLECTABLE
-#define GC_SAVE          4
-#endif
 
 #define BSS_ALIGN        4
 #define MIN_ITEMS        4
@@ -51,13 +47,8 @@
 #define HASH_FUNCTION(key)        (khint_t)((key) >> 4)
 
 typedef struct mem_info {
-#ifdef USE_GC_MALLOC_UNCOLLECTABLE
-    unsigned flags: 3;
-    unsigned size: 29;
-#else
     unsigned flags: 2;
     unsigned size: 30;
-#endif
 } mem_info;
 
 /*
@@ -68,9 +59,6 @@ KHASH_INIT(Backup, uint64_t, mem_info, 1, HASH_FUNCTION, kh_int64_hash_equal)
 static khint_t max_items;                /* max. items before gc      */
 static khash_t(Backup) *MEM;             /* backup of pointers        */
 static uint64_t bottom, lower, upper;    /* stack bottom, heap bounds */
-#ifdef SIGNAL_HANDLING
-static void *alt_stack;
-#endif
 
 /*
     Pointers to memory segments.
@@ -136,33 +124,6 @@ static void init_heap(void)
 }
 #endif
 
-#ifdef SIGNAL_HANDLING
-#ifdef COSMO
-int sigaltstack(const struct sigaltstack *neu, struct sigaltstack *old);
-#endif
-/*
-    setupsignal - setup signal handler, protecting against call stack overflow;
-                  also setup an alternative stack, to be used during signal
-                  handling. It is not possible to recover from a stack overflow
-                  but at least a friendly message can be given.
-*/
-static void setupsignal(void (*proc)())
-{
-    struct sigaction sa;
-    struct sigaltstack ss;
-
-    memset(&ss, 0, sizeof(ss));
-    ss.ss_sp = alt_stack = malloc(SIGSTKSZ);
-    ss.ss_size = SIGSTKSZ;
-    sigaltstack(&ss, 0);
-
-    memset(&sa, 0, sizeof(sa));
-    sa.sa_sigaction = proc;
-    sa.sa_flags = SA_NODEFER | SA_ONSTACK;
-    sigaction(SIGSEGV, &sa, 0);
-}
-#endif
-
 /*
     Report of the amount of memory allocated is delegated to valgrind.
 */
@@ -175,24 +136,16 @@ static void mem_exit(void)
         if (kh_exist(MEM, key))
             free((void *)kh_key(MEM, key));
     kh_destroy(Backup, MEM);
-#ifdef SIGNAL_HANDLING
-    if (alt_stack)
-        free(alt_stack);
-#endif
 }
 #endif
 
 /*
     Initialise gc memory.
 */
-void GC_init(void *ptr, void (*proc)(void))
+void GC_init(void *ptr)
 {
 #ifdef SCAN_BSS_MEMORY
     init_heap();
-#endif
-#ifdef SIGNAL_HANDLING
-    if (proc)
-        setupsignal(proc);
 #endif
 #ifdef FREE_ON_EXIT
     atexit(mem_exit);
@@ -270,11 +223,7 @@ static void scan(void)
         if (kh_exist(MEM, key)) {
             if (kh_value(MEM, key).flags & GC_MARK)
                 kh_value(MEM, key).flags &= ~GC_MARK;
-#ifdef USE_GC_MALLOC_UNCOLLECTABLE
-            else if ((kh_value(MEM, key).flags & GC_SAVE) == 0) {
-#else
             else {
-#endif
                 free((void *)kh_key(MEM, key));
                 kh_del(Backup, MEM, key);
             }
@@ -423,29 +372,20 @@ char *GC_strdup(const char *str)
 }
 #endif
 
-/*
-    Return the size of allocated memory in bytes. That is memory_use;
-    heap_size returns the number of memory blocks.
-*/
 #ifdef USE_GC_GET_HEAP_SIZE
+/*
+    Return the number of memory blocks.
+*/
 size_t GC_get_heap_size(void)
 {
     return max_items;
 }
 
+/*
+    Return the number of bytes allocated.
+*/
 size_t GC_get_memory_use(void)
 {
     return upper - lower;
-}
-#endif
-
-/*
-    Register a memory block that may contain other blocks but that is not
-    itself collectable.
-*/
-#ifdef USE_GC_MALLOC_UNCOLLECTABLE
-void *GC_malloc_uncollectable(size_t size)
-{
-    return mem_block(size, GC_SAVE);
 }
 #endif

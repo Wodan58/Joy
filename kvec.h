@@ -25,25 +25,29 @@
 #include <stdlib.h>
 #define GC_malloc	malloc
 #define GC_realloc	realloc
+#define GC_free		free
 #include "kvec.h"
 
 int main()
 {
     int i, j;
-    vector(int) *array = 0; // initialization
+    vector(int) *array;      // declaration
 
-    vec_push(array, 10); // append
+    vec_init(array);         // initialization
+    vec_push(array, 10);     // append
+    vec_add(array, 20) = 5;  // dynamic
+    vec_at(array, 15) = 4;   // static
     for (i = 0, j = vec_size(array); i < j; i++) // size
 	printf("array[%d] = %d\n", i, vec_at(array, i)); // access
-    vec_destroy(array); // destructor
+    vec_destroy(array);      // destructor
     return 0;
 }
 */
 
 /*
     module  : kvec.h
-    version : 1.6.2.1
-    date    : 05/23/23
+    version : 1.10
+    date    : 07/21/23
 
  1. Change type of n, m from size_t to unsigned. Reason: takes less memory.
  2. Remove (type*) casts. Reason: not needed for C.
@@ -76,7 +80,8 @@ int main()
 25. Add vec_end macro. Reason: can be used as stack pointer.
 26. Use GC_malloc and GC_realloc. Reason: simpler interface.
 27. Remove stk_ macros. Reason: Two different memory allocators is confusing.
-28. MAX_BLOCK added. Reason: 29 bits is the maximum size in gc.c
+28. MAX_BLOCK added. Reason: 29 bits is the maximum size in gc.c. Removed.
+29. vec_push requires vec_init; vec_add added. Reason: a little bit faster.
 
   2008-09-22 (0.1.0):
 	* The initial version.
@@ -87,9 +92,8 @@ int main()
 #define vector(type)		struct { unsigned n, m; type *a; }
 #define vec_init(v)		do { (v) = GC_malloc(sizeof(*(v))); \
 				(v)->n = (v)->m = 0; (v)->a = 0; } while (0)
-#define vec_destroy(v)		do { free((v)->a); free(v); } while (0)
+#define vec_destroy(v)		do { GC_free((v)->a); GC_free(v); } while (0)
 #define vec_at(v, i)		((v)->a[i])
-#define vec_adr(v, p)		((p) - (v)->a)
 #define vec_pop(v)		((v)->a[--(v)->n])
 #define vec_back(v)		((v)->a[(v)->n - 1])
 #define vec_end(v)		((v)->a + (v)->n)
@@ -107,19 +111,26 @@ int main()
 /* vec_copy assumes that v1 does not exist yet and needs to be created */
 #define vec_copy(v1, v0) 						\
 	do {								\
-	    vec_init(v1);						\
-	    (v1)->n = (v1)->m = (v0)->n;				\
+	    vec_init(v1); (v1)->n = (v1)->m = (v0)->n;			\
 	    (v1)->a = GC_malloc(sizeof(*(v1)->a) * (v1)->m);		\
 	    memcpy((v1)->a, (v0)->a, sizeof(*(v1)->a) * (v1)->m);	\
 	} while (0)
 
-/* vec_push assumes that v has been initialized to 0 before its called */
+/* vec_push assumes that v has been initialized before it being called */
 #define vec_push(v, x) 							\
 	do {								\
-	    if (!(v)) vec_init(v);					\
-	    if ((v)->n == (v)->m) { (v)->m = (v)->m ? (v)->m * 2 : 1;   \
+	    if ((v)->n == (v)->m) { (v)->m = (v)->m ? (v)->m << 1 : 2;  \
 		(v)->a = GC_realloc((v)->a, sizeof(*(v)->a) * (v)->m);	\
 	    } (v)->a[(v)->n++] = (x);					\
+	} while (0)
+
+/* vec_add adds an element at index, even when the index did not exist */
+#define vec_add(v, x, i) 						\
+	do {								\
+	    if ((v)->m <= (unsigned)(i)) { (v)->m = (v)->n = (i) + 1;	\
+	        (v)->a = GC_realloc((v)->a, sizeof(*(v)->a) * (v)->m);	\
+	    } else if ((v)->n <= (unsigned)(i)) (v)->n = (i) + 1;	\
+	    (v)->a[(i)] = (x);						\
 	} while (0)
 
 /* vec_reverse assumes that an extra element has been added as scratch */

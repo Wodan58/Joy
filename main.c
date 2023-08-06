@@ -1,8 +1,8 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.57
- *  date    : 07/21/23
+ *  version : 1.59
+ *  date    : 08/06/23
  */
 
 /*
@@ -134,6 +134,8 @@ PRIVATE void inisymboltable(pEnv env) /* initialise */
     Entry ent;
     khiter_t key;
 
+    vec_init(env->tokens);
+    vec_init(env->symtab);
     env->hash = kh_init(Symtab);
     for (i = 0; (ent.name = opername(i)) != 0; i++) {
         ent.is_user = 0;
@@ -342,20 +344,6 @@ PRIVATE void compound_def(pEnv env, int priv)
         break;
     }
 }
-
-/*
-    fatal terminates the program after a stack overflow, likely to result in
-    heap corruption that makes it impossible to continue. And exit instead of
-    _exit may fail too.
-*/
-#ifndef BDW
-PRIVATE void fatal(void)
-{
-    fflush(stdout);
-    fprintf(stderr, "fatal error: memory overflow\n");
-    exit(EXIT_FAILURE);
-}
-#endif
 
 /*
     abort execution and restart reading from srcfile. In the NOBDW version the
@@ -688,7 +676,7 @@ int main(int argc, char **argv)
 #ifdef BDW
     GC_INIT();
 #else
-    GC_init(&argc, fatal);
+    GC_init(&argc);
 #endif
     return (*m)(argc, argv);
 }
