@@ -1,8 +1,8 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.59
- *  date    : 08/06/23
+ *  version : 1.60
+ *  date    : 08/08/23
  */
 
 /*
@@ -567,7 +567,7 @@ int start_main(int argc, char **argv)
      *    and cannot start with a digit, unless preceded by a path: e.g. './'.
      */
     for (i = 1; i < argc; i++)
-        if (!isdigit(argv[i][0])) {
+        if (!isdigit((int)argv[i][0])) {
             if ((env.srcfile = freopen(filename = argv[i], "r", stdin)) == 0) {
                 fprintf(stderr, "failed to open the file '%s'.\n", filename);
                 return 0;

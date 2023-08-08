@@ -1,8 +1,8 @@
 /* FILE: scan.c */
 /*
  *  module  : scan.c
- *  version : 1.46
- *  date    : 08/06/23
+ *  version : 1.47
+ *  date    : 08/08/23
  */
 #include "globals.h"
 
@@ -413,7 +413,7 @@ next:
         }
         ident[i] = 0;
         if (isupper((int)ident[1]) || ident[0] == '=')
-            for (i = 0; i < sizeof(keywords) / sizeof(keywords[0]); i++)
+            for (i = 0; i < (int)(sizeof(keywords) / sizeof(keywords[0])); i++)
                 if (!strcmp(ident, keywords[i].name)) {
                     env->symb = keywords[i].symb;
                     return;
@@ -511,7 +511,7 @@ PUBLIC void getsym(pEnv env)
         dumptok(tok, 1);
 #endif
         vec_push(env->tokens, tok);
-    } else if (env->token_index < vec_size(env->tokens)) {
+    } else if (env->token_index < (int)vec_size(env->tokens)) {
         tok = vec_at(env->tokens, env->token_index);
         env->yylval = tok.yylval;
         env->symb = tok.symb;

@@ -1,7 +1,7 @@
 /*
  *  module  : utils.c
- *  version : 1.14
- *  date    : 08/06/23
+ *  version : 1.15
+ *  date    : 08/08/23
  */
 #include "globals.h"
 
@@ -11,7 +11,7 @@
 static clock_t start_gc_clock;
 static vector(Node) *orig_memory;
 static Index memoryindex, mem_low = 1;
-static int64_t memorymax = LOWER_LIMIT;
+static uint64_t memorymax = LOWER_LIMIT;
 
 #ifdef ENABLE_TRACEGC
 static int nodesinspected, nodescopied;
@@ -72,7 +72,7 @@ PUBLIC void inimem2(pEnv env)
     if (env->tracegc > 1) {
         printf("mem_low = %d\n", mem_low);
         printf("memoryindex = %d\n", memoryindex);
-        printf("top of mem = %d\n", memorymax);
+        printf("top of mem = %u\n", memorymax);
     }
 #endif
 }

@@ -40,11 +40,12 @@ DEFINE a == 456.
     Moy uses a flex scanner that is rather picky about strings, accepting only
     those escapes that have been defined in the language. Other implementations
     may be more permissive in this, but it is a feature of Moy that it uses
-    flex and flex requires precise definitions.
+    flex and flex requires precise definitions. Moy also uses yacc and that
+    makes another test possible. This is also true in Coy, right?
 *)
-"\a" "\a".
-[stack size null] ["The Moy with flex analyzer executing.\n" putchars quit] []
-ifte.
+DEFINE in == in.
+[in] first body first [user] [] ["The Moy with yacc parser executing.\n"
+putchars quit] ifte.
 
 (*
     Coy is able to read keywords with get. This feature becomes necessary if
