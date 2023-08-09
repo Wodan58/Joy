@@ -1,8 +1,8 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.58
- *  date    : 08/06/23
+ *  version : 1.59
+ *  date    : 08/09/23
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -245,15 +245,10 @@ typedef unsigned Index;
 typedef struct Node *Index;
 #endif
 
-#ifdef NOBDW
-typedef Index pEntry;
-#else
 typedef unsigned pEntry;
-#endif
 
 typedef struct Env *pEnv;
 
-/* clang-format off */
 typedef union {
     int64_t num;        /* USR, BOOLEAN, CHAR, INTEGER */
     uint64_t set;       /* SET */
@@ -264,7 +259,6 @@ typedef union {
     pEntry ent;         /* SYMBOL */
     void (*proc)(pEnv); /* ANON_FUNCT */
 } Types;
-/* clang-format on */
 
 typedef struct Node {
     Types u;
@@ -295,7 +289,6 @@ typedef struct Env {
     vector(Token) *tokens; /* read ahead table */
     vector(Entry) *symtab; /* symbol table */
     khash_t(Symtab) *hash;
-    clock_t startclock;    /* main */
 #ifdef NOBDW
     clock_t gc_clock;
     vector(Node) *memory;  /* dynamic memory */
@@ -304,18 +297,19 @@ typedef struct Env {
     Node *prog, *stck;
 #endif
     Types yylval, bucket;  /* used by NEWNODE defines */
-    char *hide_stack[DISPLAYMAX];
-    struct module {
-        char *name;
-        int hide;
-    } module_stack[DISPLAYMAX];
-    FILE *srcfile;         /* main */
+    clock_t startclock;    /* main */
+    FILE *srcfile;
     char *pathname;
     char **g_argv;
     int g_argc;
     int token_index;
     pEntry location;       /* getsym */
     Symbol symb;           /* scanner */
+    char *hide_stack[DISPLAYMAX];
+    struct module {
+        char *name;
+        int hide;
+    } module_stack[DISPLAYMAX];
     unsigned char autoput; /* options */
     unsigned char echoflag;
     unsigned char undeferror;
