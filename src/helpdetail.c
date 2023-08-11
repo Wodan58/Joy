@@ -1,6 +1,6 @@
 /*
     module  : helpdetail.c
-    version : 1.6
+    version : 1.5
     date    : 06/20/22
 */
 #ifndef HELPDETAIL_C

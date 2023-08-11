@@ -1,7 +1,7 @@
 /*
     module  : __memorymax.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 05/03/22
 */
 #ifndef __MEMORYMAX_C
 #define __MEMORYMAX_C

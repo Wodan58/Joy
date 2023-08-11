@@ -25,13 +25,13 @@ PRIVATE void sign_(pEnv env)
     }
     /* end new */
     if (FLOATABLE) {
-        dbl = FLOATVAL;
-        if (dbl > 0.0)
-            dbl = 1.0;
-        else if (dbl < 0.0)
-            dbl = -1.0;
-        else
-            dbl = 0.0;
+	dbl = FLOATVAL;
+	if (dbl > 0.0)
+	    dbl = 1.0;
+	else if (dbl < 0.0)
+	    dbl = -1.0;
+	else
+	    dbl = 0.0;
         UNARY(FLOAT_NEWNODE, dbl);
     }
 }

@@ -11,7 +11,8 @@
 Sets value of echo flag for listing.
 I = 0: no echo, 1: echo, 2: with tab, 3: and linenumber.
 */
-USETOP(
-    setecho_, "setecho", NUMERICTYPE, env->echoflag = nodevalue(env->stck).num)
+USETOP(setecho_, "setecho", NUMERICTYPE, env->echoflag = nodevalue(env->stck).num)
+
+
 
 #endif

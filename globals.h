@@ -1,8 +1,8 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.59
- *  date    : 08/09/23
+ *  version : 1.60
+ *  date    : 08/11/23
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -132,6 +132,7 @@ SAMETYPE_BUILTIN
 CORRECT_SETMEMBER
 CLEAR_STACK_ON_ERROR
 SYMMETRIC_PLUS_MINUS
+AUTOMATIC_NUM_TO_DBL
 */
 
 /*
@@ -152,13 +153,14 @@ NDEBUG
 
 /*
     The following #defines are present in the source code.
-    They have NOT been accepted. They can be enabled when compiling.
+    They have NOT been accepted. They can be enabled from the command line
+    when compiling.
 
 ENABLE_TRACEGC
 TRACING
 NCHECK
 STATS
-BDW, NOBDW
+NOBDW
 ARRAY_BOUND_CHECKING
 DEBUG_TOKENS
 */
@@ -182,7 +184,7 @@ DEBUG_TOKENS
 */
 #define USE_SHELL_ESCAPE
 
-/* configure                     */
+/* configure			*/
 #define SHELLESCAPE '$'
 #define INPSTACKMAX 10
 #define INPLINEMAX 2000
@@ -194,11 +196,11 @@ DEBUG_TOKENS
 #define INITRACEGC 1
 #define INIUNDEFERROR 0
 
-/* installation dependent        */
+/* installation dependent	*/
 #define SETSIZE 64
 #define MAXINT 9223372036854775807LL
 
-/* symbols from getsym           */
+/* symbols from getsym		*/
 #define ILLEGAL_ 0
 #define COPIED_ 1
 #define USR_ 2
@@ -235,7 +237,7 @@ DEBUG_TOKENS
 #define PRIVATE
 #define PUBLIC
 
-/* types                         */
+/* types			*/
 typedef int Symbol;
 typedef int Operator;
 
@@ -250,14 +252,14 @@ typedef unsigned pEntry;
 typedef struct Env *pEnv;
 
 typedef union {
-    int64_t num;        /* USR, BOOLEAN, CHAR, INTEGER */
-    uint64_t set;       /* SET */
-    char *str;          /* STRING */
-    double dbl;         /* FLOAT */
-    FILE *fil;          /* FILE */
-    Index lis;          /* LIST */
-    pEntry ent;         /* SYMBOL */
-    void (*proc)(pEnv); /* ANON_FUNCT */
+    int64_t num;	/* USR, BOOLEAN, CHAR, INTEGER */
+    uint64_t set;	/* SET */
+    char *str;		/* STRING */
+    double dbl;		/* FLOAT */
+    FILE *fil;		/* FILE */
+    Index lis;		/* LIST */
+    pEntry ent;		/* SYMBOL */
+    void (*proc)(pEnv);	/* ANON_FUNCT */
 } Types;
 
 typedef struct Node {
@@ -269,8 +271,8 @@ typedef struct Node {
 typedef struct Entry {
     char *name, is_user;
     union {
-        Index body;
-        void (*proc)(pEnv);
+	Index body;
+	void (*proc)(pEnv);
     } u;
 } Entry;
 
@@ -304,11 +306,11 @@ typedef struct Env {
     int g_argc;
     int token_index;
     pEntry location;       /* getsym */
-    Symbol symb;           /* scanner */
+    Symbol symb;	   /* scanner */
     char *hide_stack[DISPLAYMAX];
     struct module {
-        char *name;
-        int hide;
+	char *name;
+	int hide;
     } module_stack[DISPLAYMAX];
     unsigned char autoput; /* options */
     unsigned char echoflag;
@@ -319,17 +321,17 @@ typedef struct Env {
 } Env;
 
 /* GOOD REFS:
-        005.133l H4732                A LISP interpreter in C
-        Manna p139  recursive Ackermann SCHEMA
+	005.133l H4732		A LISP interpreter in C
+	Manna p139  recursive Ackermann SCHEMA
 
    OTHER DATA TYPES
-        WORD = "ABCD" - up to four chars
-        LIST of SETs of char [S0 S1 S2 S3]
-                LISTS - binary tree [left right]
-                        " with info [info left right]
-        STRING of 32 chars = 32 * 8 bits = 256 bits = bigset
-        CHAR = 2 HEX
-        32 SET = 2 * 16SET
+	WORD = "ABCD" - up to four chars
+	LIST of SETs of char [S0 S1 S2 S3]
+		LISTS - binary tree [left right]
+			" with info [info left right]
+	STRING of 32 chars = 32 * 8 bits = 256 bits = bigset
+	CHAR = 2 HEX
+	32 SET = 2 * 16SET
 */
 
 /* Public procedures: */

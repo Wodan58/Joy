@@ -1,7 +1,7 @@
 /*
     module  : divide.c
-    version : 1.4
-    date    : 06/22/22
+    version : 1.3
+    date    : 05/04/22
 */
 #ifndef DIVIDE_C
 #define DIVIDE_C

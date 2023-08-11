@@ -1,7 +1,7 @@
 /*
     module  : module.c
-    version : 1.8
-    date    : 07/18/23
+    version : 1.9
+    date    : 08/11/23
 */
 #include "globals.h"
 
@@ -25,8 +25,8 @@ static int module_index = -1;
 void initmod(pEnv env, char *name)
 {
     if (++module_index >= DISPLAYMAX) {
-        module_index = DISPLAYMAX - 1;
-        execerror("index", "display");
+	module_index = DISPLAYMAX - 1;
+	execerror("index", "display");
     }
     env->module_stack[module_index].name = name;
     env->module_stack[module_index].hide = hide_index;
@@ -47,12 +47,12 @@ void initpriv(pEnv env, int priv)
     char str[BUFFERMAX];
 
     if (++hide_index >= DISPLAYMAX) {
-        hide_index = DISPLAYMAX - 1;
-        execerror("index", "display");
+	hide_index = DISPLAYMAX - 1;
+	execerror("index", "display");
     }
     if (priv) {
-        sprintf(str, "%d", ++hide_count);
-        env->hide_stack[hide_index] = GC_strdup(str);
+	sprintf(str, "%d", ++hide_count);
+	env->hide_stack[hide_index] = GC_strdup(str);
     }
     inside_hide = 1;
 }
@@ -73,10 +73,10 @@ void stoppriv(void)
 void exitpriv(void)
 {
     if (!been_inside)
-        return;
+	return;
     been_inside = 0;
     if (hide_index >= 0)
-        hide_index--;
+	hide_index--;
 }
 
 /*
@@ -86,7 +86,7 @@ void exitmod(void)
 {
     exitpriv();
     if (module_index >= 0)
-        module_index--;
+	module_index--;
 }
 
 /*
@@ -110,24 +110,24 @@ char *classify(pEnv env, char *name)
      * table should get the hide number as a prefix.
      */
     if (inside_hide)
-        buf = env->hide_stack[hide_index];
+	buf = env->hide_stack[hide_index];
     /*
      * inside a module, public names that are to be entered in the symbol table
      * should get the module name as a prefix. That is also the name used when
      * accessing the symbol.
      */
     else if (module_index >= 0)
-        buf = env->module_stack[module_index].name;
+	buf = env->module_stack[module_index].name;
     /*
      * buf, when filled, contains either a module identifier, or a number
      * string.
      */
     if (buf) {
-        leng = strlen(buf) + strlen(name) + 2;
-        str = GC_malloc_atomic(leng);
-        sprintf(str, "%s.%s", buf, name);
+	leng = strlen(buf) + strlen(name) + 2;
+	str = GC_malloc_atomic(leng);
+	sprintf(str, "%s.%s", buf, name);
     } else
-        str = name;
+	str = name;
     /*
      * str will contain either the unadorned name, or a classified name.
      */
@@ -158,10 +158,10 @@ pEntry qualify(pEnv env, char *name)
      * name. If the name is not found, there is an error and a 0 is returned.
      */
     if (strchr(name, '.')) {
-        if ((key = kh_get(Symtab, env->hash, name)) != kh_end(env->hash))
-            return kh_value(env->hash, key);
-        else
-            return 0;
+	if ((key = kh_get(Symtab, env->hash, name)) != kh_end(env->hash))
+	    return kh_value(env->hash, key);
+	else
+	    return 0;
     }
     /*
      * the hide stack is searched, trying each of the hidden sections. The
@@ -170,30 +170,30 @@ pEntry qualify(pEnv env, char *name)
      * the search through the hide stack of enclosing modules.
      */
     if (hide_index >= 0) {
-        if (module_index >= 0)
-            limit = env->module_stack[module_index].hide;
-        else
-            limit = -1;
-        for (index = hide_index; index > limit; index--) {
-            buf = env->hide_stack[index];
-            leng = strlen(buf) + strlen(name) + 2;
-            str = GC_malloc_atomic(leng);
-            sprintf(str, "%s.%s", buf, name);
-            if ((key = kh_get(Symtab, env->hash, str)) != kh_end(env->hash))
-                return kh_value(env->hash, key);
-        }
+	if (module_index >= 0)
+	    limit = env->module_stack[module_index].hide;
+	else
+	    limit = -1;
+	for (index = hide_index; index > limit; index--) {
+	    buf = env->hide_stack[index];
+	    leng = strlen(buf) + strlen(name) + 2;
+	    str = GC_malloc_atomic(leng);
+	    sprintf(str, "%s.%s", buf, name);
+	    if ((key = kh_get(Symtab, env->hash, str)) != kh_end(env->hash))
+		return kh_value(env->hash, key);
+	}
     }
     /*
      * if the name can not be found in the local tables, it should be searched
      * in the currently active module, if there is one.
      */
     if (module_index >= 0) {
-        buf = env->module_stack[module_index].name;
-        leng = strlen(buf) + strlen(name) + 2;
-        str = GC_malloc_atomic(leng);
-        sprintf(str, "%s.%s", buf, name);
-        if ((key = kh_get(Symtab, env->hash, str)) != kh_end(env->hash))
-            return kh_value(env->hash, key);
+	buf = env->module_stack[module_index].name;
+	leng = strlen(buf) + strlen(name) + 2;
+	str = GC_malloc_atomic(leng);
+	sprintf(str, "%s.%s", buf, name);
+	if ((key = kh_get(Symtab, env->hash, str)) != kh_end(env->hash))
+	    return kh_value(env->hash, key);
     }
     /*
      * if the name is not fully classified, cannot be found in the local tables
@@ -201,6 +201,6 @@ pEntry qualify(pEnv env, char *name)
      * it is not an error, but simply an undefined name.
      */
     if ((key = kh_get(Symtab, env->hash, name)) != kh_end(env->hash))
-        return kh_value(env->hash, key);
+	return kh_value(env->hash, key);
     return 0;
 }
