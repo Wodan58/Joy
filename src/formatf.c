@@ -1,13 +1,13 @@
 /*
     module  : formatf.c
-    version : 1.4
-    date    : 06/16/23
+    version : 1.5
+    date    : 08/13/23
 */
 #ifndef FORMATF_C
 #define FORMATF_C
 
 /**
-1770  formatf  :  F C I J  ->  S
+OK 1770  formatf  :  F C I J  ->  S
 S is the formatted version of F in mode C
 ('e or 'E = exponential, 'f = fractional,
 'g or G = general with lower or upper case letters)

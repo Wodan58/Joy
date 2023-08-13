@@ -1,13 +1,13 @@
 /*
     module  : frexp.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 08/13/23
 */
 #ifndef FREXP_C
 #define FREXP_C
 
 /**
-1580  frexp  :  F  ->  G I
+OK 1580  frexp  :  F  ->  G I
 G is the mantissa and I is the exponent of F.
 Unless F = 0, 0.5 <= abs(G) < 1.0.
 */

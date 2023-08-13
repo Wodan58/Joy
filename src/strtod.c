@@ -1,13 +1,13 @@
 /*
     module  : strtod.c
-    version : 1.2
-    date    : 05/17/22
+    version : 1.3
+    date    : 08/13/23
 */
 #ifndef STRTOD_C
 #define STRTOD_C
 
 /**
-1750  strtod  :  S  ->  R
+OK 1750  strtod  :  S  ->  R
 String S is converted to the float R.
 */
 PRIVATE void strtod_(pEnv env)

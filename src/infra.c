@@ -1,13 +1,13 @@
 /*
     module  : infra.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 08/13/23
 */
 #ifndef INFRA_C
 #define INFRA_C
 
 /**
-2830  infra  :  L1 [P]  ->  L2
+OK 2830  infra  :  L1 [P]  ->  L2
 Using list L1 as stack, executes P and returns a new list L2.
 The first element of L1 is used as the top of stack,
 and after execution of P the top of stack becomes the first element of L2.

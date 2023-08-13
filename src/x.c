@@ -1,13 +1,13 @@
 /*
     module  : x.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 08/13/23
 */
 #ifndef X_C
 #define X_C
 
 /**
-2440  x  :  [P] x  ->  ...
+OK 2440  x  :  [P] x  ->  ...
 Executes P without popping [P]. So, [P] x  ==  [P] P.
 */
 PRIVATE void x_(pEnv env)

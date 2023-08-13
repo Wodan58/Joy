@@ -1,13 +1,13 @@
 /*
     module  : fputchars.c
-    version : 1.2
-    date    : 05/02/22
+    version : 1.3
+    date    : 08/13/23
 */
 #ifndef FPUTCHARS_C
 #define FPUTCHARS_C
 
 /**
-1970  fputchars  :  S "abc.."  ->  S
+OK 1970  fputchars  :  S "abc.."  ->  S
 The string abc.. (no quotes) is written to the current position of stream S.
 */
 PRIVATE void fputchars_(

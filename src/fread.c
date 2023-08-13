@@ -1,13 +1,13 @@
 /*
     module  : fread.c
-    version : 1.3
-    date    : 07/19/23
+    version : 1.4
+    date    : 08/13/23
 */
 #ifndef FREAD_C
 #define FREAD_C
 
 /**
-1910  fread  :  S I  ->  S L
+OK 1910  fread  :  S I  ->  S L
 I bytes are read from the current position of stream S
 and returned as a list of I integers.
 */

@@ -1,8 +1,8 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.61
- *  date    : 08/11/23
+ *  version : 1.65
+ *  date    : 08/13/23
  */
 
 /*
@@ -138,6 +138,7 @@ PRIVATE void inisymboltable(pEnv env) /* initialise */
     vec_init(env->symtab);
     env->hash = kh_init(Symtab);
     for (i = 0; (ent.name = opername(i)) != 0; i++) {
+	ent.flags = operflags(i);
 	ent.is_user = 0;
 	ent.u.proc = operproc(i);
 	key = kh_put(Symtab, env->hash, ent.name, &rv);
@@ -157,6 +158,7 @@ PRIVATE void enterglobal(pEnv env, char *name)
     khiter_t key;
 
     env->location = vec_size(env->symtab);
+    ent.flags = 0;
     ent.name = name;
     ent.is_user = 1;
     ent.u.body = 0; /* may be assigned in definition */
@@ -346,8 +348,7 @@ PRIVATE void compound_def(pEnv env, int priv)
 }
 
 /*
-    abort execution and restart reading from srcfile. In the NOBDW version the
-    stack is cleared as well.
+    abort execution and restart reading from srcfile; the stack is not cleared.
 */
 PUBLIC void abortexecution_(void)
 {
@@ -573,7 +574,7 @@ int start_main(int argc, char **argv)
 	    }
 	    /*
 	     *   Overwrite argv[0] with the filename and shift subsequent
-	     *   parameters. Also change directory to that filename.
+	     *   parameters.
 	     */
 	    if ((ptr = strrchr(argv[0] = filename, '/')) != 0) {
 		*ptr++ = 0;
@@ -603,12 +604,12 @@ int start_main(int argc, char **argv)
     env.undeferror = INIUNDEFERROR;
     inilinebuffer(&env, filename);
     inisymboltable(&env);
-    setjmp(begin);
+    setjmp(begin); /* return here after error or abort */
 #ifdef NOBDW
-    inimem1(&env);
+    inimem1(&env, 0); /* does not clear the stack */
     inimem2(&env);
 #endif
-    env.prog = 0;
+    env.prog = 0; /* clear program, just to be sure */
     if (mustinclude) {
 	mustinclude = include(&env, "usrlib.joy", ERROR_ON_USRLIB);
 	fflush(stdout); /* flush include messages */
@@ -617,12 +618,11 @@ int start_main(int argc, char **argv)
 	getsym(&env);
 	if (env.symb == LIBRA || env.symb == HIDE || env.symb == MODULE) {
 #ifdef NOBDW
-	    inimem1(&env);
-	    env.stck = 0;
+	    inimem1(&env, 1); /* also clears the stack */
 #endif
 	    compound_def(&env, DONT_READ_AHEAD);
 #ifdef NOBDW
-	    inimem2(&env);
+	    inimem2(&env); /* enlarge definition space */
 #endif
 	} else {
 	    readterm(&env, DONT_READ_AHEAD);

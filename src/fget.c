@@ -1,13 +1,13 @@
 /*
     module  : fget.c
-    version : 1.3
-    date    : 05/02/22
+    version : 1.4
+    date    : 08/13/23
 */
 #ifndef FGET_C
 #define FGET_C
 
 /**
-1870  fget  :  S  ->  S F
+OK 1870  fget  :  S  ->  S F
 Reads a factor from stream S and pushes it onto stack.
 */
 PRIVATE void fget_(pEnv env)

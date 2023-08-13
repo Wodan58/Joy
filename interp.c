@@ -1,8 +1,8 @@
 /* FILE: interp.c */
 /*
  *  module  : interp.c
- *  version : 1.63
- *  date    : 08/11/23
+ *  version : 1.67
+ *  date    : 08/13/23
  */
 
 /*
@@ -451,52 +451,51 @@ start:
 #include "builtin.h"
 
 static struct {
+    char flags;
     char *name;
     void (*proc)(pEnv env);
     char *messg1, *messg2;
 } optable[] = {
     /* THESE MUST BE DEFINED IN THE ORDER OF THEIR VALUES */
-{"__ILLEGAL",		id_,	    "->",
+{OK,	"__ILLEGAL",		id_,	    "->",
 "internal error, cannot happen - supposedly."},
 
-{"__COPIED",		id_,	    "->",
+{OK,	"__COPIED",		id_,	    "->",
 "no message ever, used for gc."},
 
-{"__USR",		id_,	    "->",
+{OK,	"__USR",		id_,	    "->",
 "user node."},
 
-{"__ANON_FUNCT",	id_,	    "->",
+{OK,	"__ANON_FUNCT",		id_,	    "->",
 "op for anonymous function call."},
 
 /* LITERALS */
 
-{" truth value type",   id_,	    "->  B",
+{OK,	" truth value type",   id_,	    "->  B",
 "The logical type, or the type of truth values.\nIt has just two literals: true and false."},
 
-{" character type",     id_,	    "->  C",
+{OK,	" character type",     id_,	    "->  C",
 "The type of characters. Literals are written with a single quote.\nExamples:  'A  '7  ';  and so on. Unix style escapes are allowed."},
 
-{" integer type",       id_,	    "->  I",
+{OK,	" integer type",       id_,	    "->  I",
 "The type of negative, zero or positive integers.\nLiterals are written in decimal notation. Examples:  -123   0   42."},
 
-{" set type",		id_,	    "->  {...}",
+{OK,	" set type",		id_,	    "->  {...}",
 "The type of sets of small non-negative integers.\nThe maximum is platform dependent, typically the range is 0..31.\nLiterals are written inside curly braces.\nExamples:  {}  {0}  {1 3 5}  {19 18 17}."},
 
-{" string type",	id_,	    "->  \"...\" ",
+{OK,	" string type",		id_,	    "->  \"...\" ",
 "The type of strings of characters. Literals are written inside double quotes.\nExamples: \"\"  \"A\"  \"hello world\" \"123\".\nUnix style escapes are accepted."},
 
-{" list type",		id_,	    "->  [...]",
+{OK,	" list type",		id_,	    "->  [...]",
 "The type of lists of values of any type (including lists),\nor the type of quoted programs which may contain operators or combinators.\nLiterals of this type are written inside square brackets.\nExamples: []  [3 512 -7]  [john mary]  ['A 'C ['B]]  [dup *]."},
 
-{" float type",		id_,	    "->  F",
+{OK,	" float type",		id_,	    "->  F",
 "The type of floating-point numbers.\nLiterals of this type are written with embedded decimal points (like 1.2)\nand optional exponent specifiers (like 1.5E2)."},
 
-{" file type",		id_,	    "->  FILE:",
+{OK,	" file type",		id_,	    "->  FILE:",
 "The type of references to open I/O streams,\ntypically but not necessarily files.\nThe only literals of this type are stdin, stdout, and stderr."},
 
 #include "table.c"
-
-{0, id_, "->", "->"}
 };
 
 #include "builtin.c"
@@ -511,7 +510,7 @@ PUBLIC char *nickname(int o)
     int size;
     char *str;
 
-    size = sizeof(optable) / sizeof(optable[0]) - 1;
+    size = sizeof(optable) / sizeof(optable[0]);
     if (o >= 0 && o < size) {
 	str = optable[o].name;
 	if (isalnum((int)*str) || strchr(" -=_", *str))
@@ -524,16 +523,14 @@ PUBLIC char *nickname(int o)
 }
 
 /*
-    opername - return the name of an operator.
+    opername - return the name of an operator, or 0 at end of optable.
 */
 PUBLIC char *opername(int o)
 {
     int size;
 
-    size = sizeof(optable) / sizeof(optable[0]) - 1;
-    if (o >= 0 && o < size)
-	return optable[o].name;
-    return 0;
+    size = sizeof(optable) / sizeof(optable[0]);
+    return o >= 0 && o < size ? optable[o].name : 0;
 }
 
 /*
@@ -543,10 +540,19 @@ PUBLIC void (*operproc(int o))(pEnv)
 {
     int size;
 
-    size = sizeof(optable) / sizeof(optable[0]) - 1;
-    if (o >= 0 && o < size)
-	return optable[o].proc;
-    return 0;
+    size = sizeof(optable) / sizeof(optable[0]);
+    return o >= 0 && o < size ? optable[o].proc : 0;
+}
+
+/*
+    operflags - return the flags of an operator.
+*/
+PUBLIC int operflags(int o)
+{
+    int size;
+
+    size = sizeof(optable) / sizeof(optable[0]);
+    return o >= 0 && o < size ? optable[o].flags : 0;
 }
 
 /*
@@ -556,9 +562,7 @@ PUBLIC int opertype(int o)
 {
     int size;
 
-    size = sizeof(optable) / sizeof(optable[0]) - 1;
-    if (o >= 0 && o < size)
-	return o;
-    return 0;
+    size = sizeof(optable) / sizeof(optable[0]);
+    return o >= 0 && o < size ? o : 0;
 }
 /* END of INTERP.C */

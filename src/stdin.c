@@ -1,13 +1,13 @@
 /*
     module  : stdin.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 08/13/23
 */
 #ifndef STDIN_C
 #define STDIN_C
 
 /**
-1170  stdin  :  ->  S
+OK 1170  stdin  :  ->  S
 Pushes the standard input stream.
 */
 PUSH(stdin_, FILE_NEWNODE, stdin)

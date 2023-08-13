@@ -1,13 +1,13 @@
 /*
     module  : leaf.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 08/13/23
 */
 #ifndef LEAF_C
 #define LEAF_C
 
 /**
-2390  leaf  :  X  ->  B
+OK 2390  leaf  :  X  ->  B
 Tests whether X is not a list.
 */
 TYPE(leaf_, "leaf", !=, LIST_)

@@ -1,13 +1,13 @@
 /*
     module  : treestep.c
-    version : 1.2
-    date    : 05/17/22
+    version : 1.3
+    date    : 08/13/23
 */
 #ifndef TREESTEP_C
 #define TREESTEP_C
 
 /**
-2890  treestep  :  T [P]  ->  ...
+OK 2890  treestep  :  T [P]  ->  ...
 Recursively traverses leaves of tree T, executes P for each leaf.
 */
 PRIVATE void treestepaux(pEnv env, Index item)

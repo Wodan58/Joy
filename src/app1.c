@@ -1,13 +1,13 @@
 /*
     module  : app1.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 08/13/23
 */
 #ifndef APP1_C
 #define APP1_C
 
 /**
-2460  app1  :  X [P]  ->  R
+OK 2460  app1  :  X [P]  ->  R
 Executes P, pushes result R on stack.
 */
 PRIVATE void app1_(pEnv env)

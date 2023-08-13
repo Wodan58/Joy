@@ -1,13 +1,13 @@
 /*
     module  : ifset.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 08/13/23
 */
 #ifndef IFSET_C
 #define IFSET_C
 
 /**
-2660  ifset  :  X [T] [E]  ->  ...
+OK 2660  ifset  :  X [T] [E]  ->  ...
 If X is a set, executes T else executes E.
 */
 IF_TYPE(ifset_, "ifset", SET_)

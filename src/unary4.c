@@ -1,13 +1,13 @@
 /*
     module  : unary4.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 08/13/23
 */
 #ifndef UNARY4_C
 #define UNARY4_C
 
 /**
-2540  unary4  :  X1 X2 X3 X4 [P]  ->  R1 R2 R3 R4
+OK 2540  unary4  :  X1 X2 X3 X4 [P]  ->  R1 R2 R3 R4
 Executes P four times, with Xi, returns Ri (i = 1..4).
 */
 PRIVATE void unary4_(pEnv env)

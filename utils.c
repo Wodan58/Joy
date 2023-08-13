@@ -1,7 +1,7 @@
 /*
  *  module  : utils.c
- *  version : 1.16
- *  date    : 08/11/23
+ *  version : 1.17
+ *  date    : 08/13/23
  */
 #include "globals.h"
 
@@ -21,21 +21,24 @@ static int nodesinspected, nodescopied;
     Initialize memory at the start and before reading a definition.
     Definitions clear all other memory; they are themselves permanent.
     Memory is initialized with 1 node, acting as a null pointer.
+    The flag status tells whether a definition is about to be processed.
 */
-PUBLIC void inimem1(pEnv env)
+PUBLIC void inimem1(pEnv env, int status)
 {
-    static int init;
+    static unsigned char init;
     Node node;
 
     if (!init) {
 	init = 1;
 	memset(&node, 0, sizeof(Node));
 	vec_init(env->memory);
-	vec_push(env->memory, node);
+	vec_push(env->memory, node); /* null pointer */
+    } else if (status) {
+	vec_setsize(env->memory, mem_low); /* retain only definitions */
+	env->stck = 0; /* also clear the stack */
     }
     env->conts = env->dump = env->dump1 = env->dump2 =
     env->dump3 = env->dump4 = env->dump5 = 0;
-    vec_setsize(env->memory, mem_low);
 }
 
 #ifdef STATS
@@ -59,11 +62,12 @@ static void count_avail(void)
 #endif
 
 /*
-    Reset mem_low after reading a definition.
+    Reset mem_low after reading a definition. This invalidates all allocations
+    higher than mem_low: program, stack, dumps.
 */
 PUBLIC void inimem2(pEnv env)
 {
-    mem_low = vec_size(env->memory);
+    mem_low = vec_size(env->memory); /* enlarge definition space */
 
 #ifdef STATS
     count_avail();

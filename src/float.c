@@ -1,13 +1,13 @@
 /*
     module  : float.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 08/13/23
 */
 #ifndef FLOAT_C
 #define FLOAT_C
 
 /**
-2410  float  :  R  ->  B
+OK 2410  float  :  R  ->  B
 Tests whether R is a float.
 */
 TYPE(float_, "float", ==, FLOAT_)

@@ -1,13 +1,13 @@
 /*
     module  : treerec.c
-    version : 1.4
-    date    : 06/29/22
+    version : 1.5
+    date    : 08/13/23
 */
 #ifndef TREEREC_C
 #define TREEREC_C
 
 /**
-2900  treerec  :  T [O] [C]  ->  ...
+OK 2900  treerec  :  T [O] [C]  ->  ...
 T is a tree. If T is a leaf, executes O. Else executes [[[O] C] treerec] C.
 */
 PRIVATE void treerecaux(pEnv env)

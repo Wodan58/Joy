@@ -1,13 +1,13 @@
 /*
     module  : linrec.c
-    version : 1.2
-    date    : 05/02/22
+    version : 1.3
+    date    : 08/13/23
 */
 #ifndef LINREC_C
 #define LINREC_C
 
 /**
-2730  linrec  :  [P] [T] [R1] [R2]  ->  ...
+OK 2730  linrec  :  [P] [T] [R1] [R2]  ->  ...
 Executes P. If that yields true, executes T.
 Else executes R1, recurses, executes R2.
 */

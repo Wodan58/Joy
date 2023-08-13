@@ -1,13 +1,13 @@
 /*
     module  : cond.c
-    version : 1.2
-    date    : 05/17/22
+    version : 1.3
+    date    : 08/13/23
 */
 #ifndef COND_C
 #define COND_C
 
 /**
-2710  cond  :  [..[[Bi] Ti]..[D]]  ->  ...
+OK 2710  cond  :  [..[[Bi] Ti]..[D]]  ->  ...
 Tries each Bi. If that yields true, then executes Ti and exits.
 If no Bi yields true, executes default D.
 */

@@ -1,13 +1,13 @@
 /*
     module  : ceil.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 08/13/23
 */
 #ifndef CEIL_C
 #define CEIL_C
 
 /**
-1530  ceil  :  F  ->  G
+OK 1530  ceil  :  F  ->  G
 G is the float ceiling of F.
 */
 UFLOAT(ceil_, "ceil", ceil)

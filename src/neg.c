@@ -1,13 +1,13 @@
 /*
     module  : neg.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 08/13/23
 */
 #ifndef NEG_C
 #define NEG_C
 
 /**
-1450  neg  :  I  ->  J
+OK 1450  neg  :  I  ->  J
 Integer J is the negative of integer I.  Also supports float.
 */
 PRIVATE void neg_(pEnv env)

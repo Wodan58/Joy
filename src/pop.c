@@ -1,13 +1,13 @@
 /*
     module  : pop.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 08/13/23
 */
 #ifndef POP_C
 #define POP_C
 
 /**
-1320  pop  :  X  ->
+OK 1320  pop  :  X  ->
 Removes X from top of the stack.
 */
 PRIVATE void pop_(pEnv env)

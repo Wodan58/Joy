@@ -1,13 +1,13 @@
 /*
     module  : fremove.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 08/13/23
 */
 #ifndef FREMOVE_C
 #define FREMOVE_C
 
 /**
-1930  fremove  :  P  ->  B
+OK 1930  fremove  :  P  ->  B
 The file system object with pathname P is removed from the file system.
 B is a boolean indicating success or failure.
 */

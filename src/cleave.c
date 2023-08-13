@@ -1,13 +1,13 @@
 /*
     module  : cleave.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 08/13/23
 */
 #ifndef CLEAVE_C
 #define CLEAVE_C
 
 /**
-2600  cleave  :  X [P1] [P2]  ->  R1 R2
+OK 2600  cleave  :  X [P1] [P2]  ->  R1 R2
 Executes P1 and P2, each with X on top, producing two results.
 */
 PRIVATE void cleave_(pEnv env)

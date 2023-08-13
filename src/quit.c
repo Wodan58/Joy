@@ -1,7 +1,7 @@
 /*
     module  : quit.c
-    version : 1.3
-    date    : 08/11/23
+    version : 1.4
+    date    : 08/13/23
 */
 #ifndef QUIT_C
 #define QUIT_C
@@ -25,7 +25,7 @@ PRIVATE void my_exit(pEnv env)
 }
 
 /**
-3160  quit  :  ->
+OK 3160  quit  :  ->
 Exit from Joy.
 */
 PRIVATE void quit_(pEnv env)

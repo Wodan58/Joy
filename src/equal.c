@@ -1,7 +1,7 @@
 /*
     module  : equal.c
-    version : 1.5
-    date    : 06/21/22
+    version : 1.6
+    date    : 08/13/23
 */
 #ifndef EQUAL_C
 #define EQUAL_C
@@ -30,7 +30,7 @@ PRIVATE int equal_aux(pEnv env, Index n1, Index n2)
 }
 
 /**
-2290  equal  :  T U  ->  B
+OK 2290  equal  :  T U  ->  B
 (Recursively) tests whether trees T and U are identical.
 */
 PRIVATE void equal_(pEnv env)

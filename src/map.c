@@ -1,13 +1,13 @@
 /*
     module  : map.c
-    version : 1.4
-    date    : 07/19/23
+    version : 1.5
+    date    : 08/13/23
 */
 #ifndef MAP_C
 #define MAP_C
 
 /**
-2810  map  :  A [P]  ->  B
+OK 2810  map  :  A [P]  ->  B
 Executes P on each member of aggregate A,
 collects results in sametype aggregate B.
 */

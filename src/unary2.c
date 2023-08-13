@@ -1,13 +1,13 @@
 /*
     module  : unary2.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 08/13/23
 */
 #ifndef UNARY2_C
 #define UNARY2_C
 
 /**
-2520  unary2  :  X1 X2 [P]  ->  R1 R2
+OK 2520  unary2  :  X1 X2 [P]  ->  R1 R2
 Executes P twice, with X1 and X2 on top of the stack.
 Returns the two values R1 and R2.
 */

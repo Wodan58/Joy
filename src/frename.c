@@ -1,13 +1,13 @@
 /*
     module  : frename.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 08/13/23
 */
 #ifndef FRENAME_C
 #define FRENAME_C
 
 /**
-1940  frename  :  P1 P2  ->  B
+OK 1940  frename  :  P1 P2  ->  B
 The file system object with pathname P1 is renamed to P2.
 B is a boolean indicating success or failure.
 */

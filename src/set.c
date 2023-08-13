@@ -1,13 +1,13 @@
 /*
     module  : set.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 08/13/23
 */
 #ifndef SET_C
 #define SET_C
 
 /**
-2360  set  :  X  ->  B
+OK 2360  set  :  X  ->  B
 Tests whether X is a set.
 */
 TYPE(set_, "set", ==, SET_)

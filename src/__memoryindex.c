@@ -1,13 +1,13 @@
 /*
     module  : __memoryindex.c
-    version : 1.2
-    date    : 05/03/22
+    version : 1.3
+    date    : 08/13/23
 */
 #ifndef __MEMORYINDEX_C
 #define __MEMORYINDEX_C
 
 /**
-3080  __memoryindex  :  ->  I
+OK 3080  __memoryindex  :  ->  I
 Pushes current value of memory.
 */
 PUBLIC void __memoryindex_(pEnv env)

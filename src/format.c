@@ -1,13 +1,13 @@
 /*
     module  : format.c
-    version : 1.2
-    date    : 05/02/22
+    version : 1.3
+    date    : 08/13/23
 */
 #ifndef FORMAT_C
 #define FORMAT_C
 
 /**
-1760  format  :  N C I J  ->  S
+OK 1760  format  :  N C I J  ->  S
 S is the formatted version of N in mode C
 ('d or 'i = decimal, 'o = octal, 'x or
 'X = hex with lower or upper case letters)

@@ -1,8 +1,8 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.60
- *  date    : 08/11/23
+ *  version : 1.64
+ *  date    : 08/13/23
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -130,8 +130,6 @@ FGET_FROM_FILE
 GETCH_AS_BUILTIN
 SAMETYPE_BUILTIN
 CORRECT_SETMEMBER
-CLEAR_STACK_ON_ERROR
-SYMMETRIC_PLUS_MINUS
 AUTOMATIC_NUM_TO_DBL
 */
 
@@ -139,6 +137,8 @@ AUTOMATIC_NUM_TO_DBL
     The following #defines are NOT present in the source code.
     They have NOT been accepted.
 
+CLEAR_STACK_ON_ERROR
+SYMMETRIC_PLUS_MINUS
 CORRECT_FLOAT_BUFFER
 GET_FROM_STDIN
 ORIGINAL_JOY
@@ -237,6 +237,11 @@ DEBUG_TOKENS
 #define PRIVATE
 #define PUBLIC
 
+typedef enum {
+    OK,
+    IMMEDIATE
+} Flags;
+
 /* types			*/
 typedef int Symbol;
 typedef int Operator;
@@ -269,7 +274,7 @@ typedef struct Node {
 } Node;
 
 typedef struct Entry {
-    char *name, is_user;
+    char *name, is_user, flags;
     union {
 	Index body;
 	void (*proc)(pEnv);
@@ -340,6 +345,7 @@ PUBLIC void exeterm(pEnv env, Index n);
 PUBLIC char *nickname(int o);
 PUBLIC char *opername(int o);
 PUBLIC void (*operproc(int o))(pEnv env);
+PUBLIC int operflags(int o);
 PUBLIC int opertype(int o);
 /* main.c */
 PUBLIC void lookup(pEnv env);
@@ -372,7 +378,7 @@ PUBLIC void my_memorymax(pEnv env);
 PUBLIC void my_memoryindex(pEnv env);
 #ifdef NOBDW
 PUBLIC void printnode(pEnv env, Index p);
-PUBLIC void inimem1(pEnv env);
+PUBLIC void inimem1(pEnv env, int status);
 PUBLIC void inimem2(pEnv env);
 PUBLIC void my_gc(pEnv env);
 #endif

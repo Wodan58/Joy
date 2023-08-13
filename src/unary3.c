@@ -1,13 +1,13 @@
 /*
     module  : unary3.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 08/13/23
 */
 #ifndef UNARY3_C
 #define UNARY3_C
 
 /**
-2530  unary3  :  X1 X2 X3 [P]  ->  R1 R2 R3
+OK 2530  unary3  :  X1 X2 X3 [P]  ->  R1 R2 R3
 Executes P three times, with Xi, returns Ri (i = 1..3).
 */
 PRIVATE void unary3_(pEnv env)

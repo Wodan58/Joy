@@ -1,8 +1,8 @@
 /* FILE: factor.c */
 /*
  *  module  : factor.c
- *  version : 1.18
- *  date    : 08/11/23
+ *  version : 1.19
+ *  date    : 08/13/23
  */
 #include "globals.h"
 
@@ -25,7 +25,7 @@ PUBLIC void readfactor(pEnv env, int priv) /* read a JOY factor */
 	    }
 	    ent = vec_at(env->symtab, env->location);
 	    /* execute immediate functions at compile time */
-	    if (env->location >= FALSE_ && env->location <= MAXINT_)
+	    if (ent.flags == IMMEDIATE)
 		(*ent.u.proc)(env);
 	    else if (!ent.is_user) {
 		env->yylval.proc = ent.u.proc;

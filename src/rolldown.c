@@ -1,13 +1,13 @@
 /*
     module  : rolldown.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 08/13/23
 */
 #ifndef ROLLDOWN_C
 #define ROLLDOWN_C
 
 /**
-1240  rolldown  :  X Y Z  ->  Y Z X
+OK 1240  rolldown  :  X Y Z  ->  Y Z X
 Moves Y and Z down, moves X up.
 */
 PRIVATE void rolldown_(pEnv env)

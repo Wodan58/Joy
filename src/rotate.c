@@ -1,13 +1,13 @@
 /*
     module  : rotate.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 08/13/23
 */
 #ifndef ROTATE_C
 #define ROTATE_C
 
 /**
-1250  rotate  :  X Y Z  ->  Z Y X
+OK 1250  rotate  :  X Y Z  ->  Z Y X
 Interchanges X and Z.
 */
 PRIVATE void rotate_(pEnv env)

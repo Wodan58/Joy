@@ -1,13 +1,13 @@
 /*
     module  : not.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 08/13/23
 */
 #ifndef NOT_C
 #define NOT_C
 
 /**
-1370  not  :  X  ->  Y
+OK 1370  not  :  X  ->  Y
 Y is the complement of set X, logical negation for truth values.
 */
 PRIVATE void not_(pEnv env)

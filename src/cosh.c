@@ -1,13 +1,13 @@
 /*
     module  : cosh.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 08/13/23
 */
 #ifndef COSH_C
 #define COSH_C
 
 /**
-1550  cosh  :  F  ->  G
+OK 1550  cosh  :  F  ->  G
 G is the hyperbolic cosine of F.
 */
 UFLOAT(cosh_, "cosh", cosh)

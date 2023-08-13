@@ -1,13 +1,13 @@
 /*
     module  : fflush.c
-    version : 1.1
-    date    : 05/21/21
+    version : 1.2
+    date    : 08/13/23
 */
 #ifndef FFLUSH_C
 #define FFLUSH_C
 
 /**
-1860  fflush  :  S  ->  S
+OK 1860  fflush  :  S  ->  S
 Flush stream S, forcing all buffered output to be written.
 */
 PRIVATE void fflush_(pEnv env)

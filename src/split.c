@@ -1,13 +1,13 @@
 /*
     module  : split.c
-    version : 1.4
-    date    : 07/19/23
+    version : 1.5
+    date    : 08/13/23
 */
 #ifndef SPLIT_C
 #define SPLIT_C
 
 /**
-2860  split  :  A [B]  ->  A1 A2
+OK 2860  split  :  A [B]  ->  A1 A2
 Uses test B to split aggregate A into sametype aggregates A1 and A2.
 */
 PRIVATE void split_(pEnv env)
