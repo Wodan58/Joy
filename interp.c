@@ -1,7 +1,7 @@
 /* FILE: interp.c */
 /*
  *  module  : interp.c
- *  version : 1.68
+ *  version : 1.69
  *  date    : 08/18/23
  */
 
@@ -323,6 +323,12 @@ PUBLIC void exeterm(pEnv env, Index n)
     int type, index;
     Index stepper, root = 0;
 
+/*
+    The computation is aborted when a stack overflow threatens: on Windows the
+    stack is 1 MiB; on Linux the stack is 2 MiB. MAXSTK can be set accordingly.
+*/
+    if (env->stacktop - (char *)&stepper > MAXSTK)
+	execerror("more stack", "exeterm");
 start:
 #ifdef STATS
     if (++calls == 1)

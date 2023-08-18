@@ -1,7 +1,7 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.65
+ *  version : 1.66
  *  date    : 08/18/23
  */
 #ifndef GLOBALS_H
@@ -75,6 +75,7 @@
 #define INIUNDEFERROR 0
 
 /* installation dependent	*/
+#define MAXSTK 1000000
 #define SETSIZE 64
 #define MAXINT 9223372036854775807LL
 
@@ -183,6 +184,7 @@ typedef struct Env {
 #endif
     Types yylval, bucket;  /* used by NEWNODE defines */
     clock_t startclock;    /* main */
+    char *stacktop;
     FILE *srcfile;
     char *pathname;
     char **g_argv;
@@ -230,7 +232,6 @@ PUBLIC void lookup(pEnv env);
 PUBLIC void abortexecution_(void);
 PUBLIC void execerror(char *message, char *op);
 /* scan.c */
-PUBLIC void my_atexit(void (*proc)(pEnv));
 PUBLIC void inilinebuffer(pEnv env, char *filnam);
 PUBLIC void error(pEnv env, char *message);
 PUBLIC int include(pEnv env, char *filnam, int error);
@@ -241,7 +242,9 @@ PUBLIC void readfactor(pEnv env, int priv); /* read a JOY factor */
 PUBLIC void readterm(pEnv env, int priv);
 PUBLIC void writefactor(pEnv env, Index n);
 PUBLIC void writeterm(pEnv env, Index n);
+#ifdef NOBDW
 PUBLIC void writedump(pEnv env, Index n);
+#endif
 /* module.c */
 PUBLIC void initmod(pEnv env, char *name);
 PUBLIC void initpriv(pEnv env, int priv);
@@ -251,13 +254,13 @@ PUBLIC void exitmod(void);
 PUBLIC char *classify(pEnv env, char *name);
 PUBLIC pEntry qualify(pEnv env, char *name);
 /* utils.c */
+#ifdef NOBDW
+PUBLIC void inimem1(pEnv env, int status);
+PUBLIC void inimem2(pEnv env);
+PUBLIC void printnode(pEnv env, Index p);
+PUBLIC void my_gc(pEnv env);
+#endif
 PUBLIC Index newnode(pEnv env, Operator o, Types u, Index r);
 PUBLIC void my_memorymax(pEnv env);
 PUBLIC void my_memoryindex(pEnv env);
-#ifdef NOBDW
-PUBLIC void printnode(pEnv env, Index p);
-PUBLIC void inimem1(pEnv env, int status);
-PUBLIC void inimem2(pEnv env);
-PUBLIC void my_gc(pEnv env);
-#endif
 #endif

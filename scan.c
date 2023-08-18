@@ -1,12 +1,12 @@
 /* FILE: scan.c */
 /*
  *  module  : scan.c
- *  version : 1.48
- *  date    : 08/11/23
+ *  version : 1.49
+ *  date    : 08/18/23
  */
 #include "globals.h"
 
-PUBLIC void quit_(pEnv env);
+void quit_(pEnv env);
 
 static struct {
     FILE *fp;
@@ -363,15 +363,18 @@ start:
 			getch(env);
 		    while (isxdigit(ch));
 		    goto done;
-		} else if (isdigit(next)) {
+		} else if (next >= '1' && next <= '7') {
 		    do
 			getch(env);
 		    while (ch >= '0' && ch <= '7');
 		    goto done;
 		}
+		getch(env);
+		goto first;
 	    }
 	    while (isdigit(ch))
 		getch(env);
+first:
 	    if (ch == '.' && isdigit(peek())) {
 		do
 		    getch(env);
@@ -433,7 +436,7 @@ next:
 }
 
 #ifdef DUMP_TOKENS
-PUBLIC void dumptok(Token tok, int num)
+PRIVATE void dumptok(Token tok, int num)
 {
     printf("%d) ", num);
     switch (tok.symb) {

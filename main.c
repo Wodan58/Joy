@@ -1,7 +1,7 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.66
+ *  version : 1.68
  *  date    : 08/18/23
  */
 
@@ -119,6 +119,10 @@ Manfred von Thun, 2006
 #define ERROR_ON_USRLIB 0
 #define DONT_READ_AHEAD 0
 #define READ_PRIV_AHEAD 1
+
+#if defined(STATS) || defined(SYMBOLS)
+void my_atexit(void (*proc)(pEnv));
+#endif
 
 static jmp_buf begin;
 
@@ -526,6 +530,7 @@ int start_main(int argc, char **argv)
 #ifdef STATS
     my_atexit(report_clock);
 #endif
+    env.stacktop = (char *)&argc;
     /*
      *    Initialize srcfile and other environmental parameters.
      */
