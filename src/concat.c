@@ -1,7 +1,7 @@
 /*
     module  : concat.c
-    version : 1.3
-    date    : 08/13/23
+    version : 1.4
+    date    : 08/18/23
 */
 #ifndef CONCAT_C
 #define CONCAT_C
@@ -12,6 +12,8 @@ Sequence U is the concatenation of sequences S and T.
 */
 PRIVATE void concat_(pEnv env)
 {
+    char *str;
+
     TWOPARAMS("concat");
     SAME2TYPES("concat");
     switch (nodetype(env->stck)) {
@@ -19,16 +21,13 @@ PRIVATE void concat_(pEnv env)
         BINARY(SET_NEWNODE,
             nodevalue(nextnode1(env->stck)).set | nodevalue(env->stck).set);
         return;
-    case STRING_: {
-        char *s, *p;
-        s = p = (char *)GC_malloc_atomic(
-            strlen(nodevalue(nextnode1(env->stck)).str)
-            + strlen(nodevalue(env->stck).str) + 1);
-        strcpy(s, nodevalue(nextnode1(env->stck)).str);
-        strcat(s, nodevalue(env->stck).str);
-        BINARY(STRING_NEWNODE, s);
+    case STRING_:
+        str = GC_malloc_atomic(strlen(nodevalue(nextnode1(env->stck)).str) +
+			       strlen(nodevalue(env->stck).str) + 1);
+        strcpy(str, nodevalue(nextnode1(env->stck)).str);
+        strcat(str, nodevalue(env->stck).str);
+        BINARY(STRING_NEWNODE, str);
         return;
-    }
     case LIST_:
         if (!nodevalue(nextnode1(env->stck)).lis) {
             BINARY(LIST_NEWNODE, nodevalue(env->stck).lis);
@@ -43,10 +42,9 @@ PRIVATE void concat_(pEnv env)
                 DMP2 = NEWNODE(nodetype(DMP1), nodevalue(DMP1), 0);
                 DMP3 = DMP2;
             } else { /* further */
-                nextnode1(DMP3)
-                    = NEWNODE(nodetype(DMP1), nodevalue(DMP1), 0);
+                nextnode1(DMP3) = NEWNODE(nodetype(DMP1), nodevalue(DMP1), 0);
                 DMP3 = nextnode1(DMP3);
-            };
+            }
             DMP1 = nextnode1(DMP1);
         }
         nextnode1(DMP3) = nodevalue(env->stck).lis;

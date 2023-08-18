@@ -1,8 +1,8 @@
 /* FILE: interp.c */
 /*
  *  module  : interp.c
- *  version : 1.67
- *  date    : 08/13/23
+ *  version : 1.68
+ *  date    : 08/18/23
  */
 
 /*
@@ -293,6 +293,7 @@ static double calls, opers;
 
 PRIVATE void report_stats(void)
 {
+    fflush(stdout);
     fprintf(stderr, "%.0f calls to joy interpreter\n", calls);
     fprintf(stderr, "%.0f operations executed\n", opers);
 }
@@ -368,6 +369,7 @@ start:
 	switch (type) {
 	case ILLEGAL_:
 	case COPIED_:
+	    fflush(stdout);
 	    fprintf(stderr, "exeterm: attempting to execute bad node\n");
 #ifdef ENABLE_TRACEGC
 	    printnode(env, stepper);
@@ -471,13 +473,13 @@ static struct {
 
 /* LITERALS */
 
-{OK,	" truth value type",   id_,	    "->  B",
+{OK,	" truth value type",	id_,	    "->  B",
 "The logical type, or the type of truth values.\nIt has just two literals: true and false."},
 
-{OK,	" character type",     id_,	    "->  C",
+{OK,	" character type",	id_,	    "->  C",
 "The type of characters. Literals are written with a single quote.\nExamples:  'A  '7  ';  and so on. Unix style escapes are allowed."},
 
-{OK,	" integer type",       id_,	    "->  I",
+{OK,	" integer type",	id_,	    "->  I",
 "The type of negative, zero or positive integers.\nLiterals are written in decimal notation. Examples:  -123   0   42."},
 
 {OK,	" set type",		id_,	    "->  {...}",

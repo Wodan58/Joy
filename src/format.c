@@ -1,7 +1,7 @@
 /*
     module  : format.c
-    version : 1.3
-    date    : 08/13/23
+    version : 1.4
+    date    : 08/18/23
 */
 #ifndef FORMAT_C
 #define FORMAT_C
@@ -15,11 +15,9 @@ with maximum width I and minimum width J.
 */
 PRIVATE void format_(pEnv env)
 {
-    int width, prec;
+    int width, prec, leng;
     char spec, format[7], *result;
-#ifdef USE_SNPRINTF
-    int leng;
-#endif
+
     FOURPARAMS("format");
     INTEGERS2("format");
     prec = nodevalue(env->stck).num;
@@ -33,14 +31,9 @@ PRIVATE void format_(pEnv env)
     strcpy(format, "%*.*ld");
     format[5] = spec;
     NUMERICTYPE("format");
-#ifdef USE_SNPRINTF
     leng = snprintf(0, 0, format, width, prec, nodevalue(env->stck).num) + 1;
     result = GC_malloc_atomic(leng + 1);
     snprintf(result, leng, format, width, prec, nodevalue(env->stck).num);
-#else
-    result = GC_malloc_atomic(INPLINEMAX); /* should be sufficient */
-    sprintf(result, format, width, prec, env->stck->u.num);
-#endif
     UNARY(STRING_NEWNODE, result);
 }
 #endif

@@ -1,8 +1,8 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.65
- *  date    : 08/13/23
+ *  version : 1.66
+ *  date    : 08/18/23
  */
 
 /*
@@ -119,8 +119,6 @@ Manfred von Thun, 2006
 #define ERROR_ON_USRLIB 0
 #define DONT_READ_AHEAD 0
 #define READ_PRIV_AHEAD 1
-
-PRIVATE void dump_table(pEnv env);
 
 static jmp_buf begin;
 
@@ -242,6 +240,7 @@ PRIVATE void definition(pEnv env, int priv)
 	enteratom(env);
 	ent = vec_at(env->symtab, env->location);
 	if (!ent.is_user) {
+	    fflush(stdout);
 	    fprintf(stderr, "warning: overwriting inbuilt '%s'\n", ent.name);
 	    enterglobal(env, classify(env, env->yylval.str));
 	}
@@ -392,6 +391,7 @@ PRIVATE void report_clock(pEnv env)
     gcdiff = (double)env->gc_clock * 100 / timediff;
 #endif
     timediff /= CLOCKS_PER_SEC;
+    fflush(stdout);
     fprintf(stderr, "%.2f seconds CPU to execute\n", timediff);
 #ifdef NOBDW
     gclock = (double)env->gc_clock / CLOCKS_PER_SEC;

@@ -1,7 +1,7 @@
 /*
  *  module  : utils.c
- *  version : 1.17
- *  date    : 08/13/23
+ *  version : 1.18
+ *  date    : 08/18/23
  */
 #include "globals.h"
 
@@ -46,6 +46,7 @@ static double avail;
 
 static void report_avail(void)
 {
+    fflush(stdout);
     fprintf(stderr, "%.0f user nodes available\n", avail);
 }
 
@@ -154,6 +155,7 @@ static double collect;
 
 static void report_collect(void)
 {
+    fflush(stdout);
     fprintf(stderr, "%.0f garbage collections\n", collect);
 }
 
@@ -233,6 +235,7 @@ static double nodes;
 
 static void report_nodes(void)
 {
+    fflush(stdout);
     fprintf(stderr, "%.0f nodes used\n", nodes);
 }
 
