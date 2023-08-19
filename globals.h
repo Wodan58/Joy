@@ -1,8 +1,8 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.66
- *  date    : 08/18/23
+ *  version : 1.67
+ *  date    : 08/19/23
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -75,7 +75,7 @@
 #define INIUNDEFERROR 0
 
 /* installation dependent	*/
-#define MAXSTK 1000000
+#define MAXSTK 2000000
 #define SETSIZE 64
 #define MAXINT 9223372036854775807LL
 
