@@ -1,12 +1,9 @@
 (*
     module  : test29.joy
-    version : 1.3
-    date    : 07/25/22
+    version : 1.4
+    date    : 08/12/23
 *)
-DEFINE
-  swoncat == swap concat;
-  from-to == [] cons [pop pop] swoncat [>] swap [[dup succ] dip] [cons] linrec;
-  from-to-list == [] from-to.
+"agglib" libload.
 
-1 30000 from-to-list.
+1 50000 from-to-list.	(* segfault *)
 "Back from list\n" putchars.

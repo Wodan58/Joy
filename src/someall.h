@@ -1,7 +1,7 @@
 /*
     module  : someall.h
-    version : 1.3
-    date    : 05/17/22
+    version : 1.4
+    date    : 07/19/23
 */
 #ifndef SOMEALL_H
 #define SOMEALL_H
@@ -17,7 +17,7 @@
         case SET_: {                                                           \
             int j;                                                             \
             for (j = 0; j < SETSIZE && result == INITIAL; j++) {               \
-                if (nodevalue(SAVED2).set & ((long)1 << j)) {                  \
+                if (nodevalue(SAVED2).set & ((int64_t)1 << j)) {               \
                     env->stck = INTEGER_NEWNODE(j, SAVED3);                    \
                     exeterm(env, nodevalue(SAVED1).lis);                       \
                     CHECKSTACK(NAME);                                          \

@@ -57,12 +57,13 @@ Comparison
 
 This implementation can be compared with other implementations.
 
-Speed
------
+Time
+----
 
 The question is how many fibs can be calculated with the slow recursive
 definition: `[small] [] [pred dup pred] [+] binrec.`. In the case of Moy
-the definition starts with: `[dup small]`. The time limit is 60 seconds.
+and Coy the definition starts with: `[dup small]`. The time limit is 60
+seconds.
 
 Implementation|Number of fibs
 --------------|--------------
@@ -70,9 +71,14 @@ Implementation|Number of fibs
 [Joy](https://github.com/Wodan58/Joy)|39
 [Moy](https://github.com/Wodan58/Moy)|38
 [joy1](https://github.com/Wodan58/joy1)|37
+[42minjoy](https://github.com/Wodan58/42minjoy)|37
+[Coy](https://github.com/Wodan58/Coy)|30
 
 The original version comes out as the winner. Moy has a particularly slow
-function calling mechanism and is surprisingly not the slowest.
+function calling mechanism and is surprisingly not the slowest. The version
+that is closest to the version that could be downloaded from the original
+website, `joy1`, is surprisingly at the same performance level as the antique
+`42minjoy`.
 
 Space
 -----
@@ -84,6 +90,7 @@ Implementation|Number of integers
 --------------|------------------
 [Moy](https://github.com/Wodan58/Moy)|100000
 [joy1](https://github.com/Wodan58/joy1)|71400
+[Coy](https://github.com/Wodan58/Coy)|43000
 [Joy](https://github.com/Wodan58/Joy)|41650
 [joy0](https://github.com/Wodan58/joy0)|32295
 

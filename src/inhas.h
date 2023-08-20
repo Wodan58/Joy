@@ -1,7 +1,7 @@
 /*
     module  : inhas.h
-    version : 1.4
-    date    : 05/17/22
+    version : 1.5
+    date    : 07/19/23
 */
 #ifndef INHAS_H
 #define INHAS_H
@@ -15,7 +15,7 @@
         case SET_:                                                             \
             CHECKSETMEMBER(ELEM, NAME);                                        \
             found                                                              \
-                = ((nodevalue(AGGR).set) & ((long)1 << nodevalue(ELEM).num))   \
+                = ((nodevalue(AGGR).set) & ((int64_t)1 << nodevalue(ELEM).num))\
                 > 0;                                                           \
             break;                                                             \
         case STRING_: {                                                        \

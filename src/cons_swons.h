@@ -1,7 +1,7 @@
 /*
     module  : cons_swons.h
     version : 1.6
-    date    : 06/29/22
+    date    : 07/19/23
 */
 #ifndef CONS_SWONS_H
 #define CONS_SWONS_H
@@ -20,7 +20,7 @@
         case SET_:                                                             \
             CHECKSETMEMBER(ELEM, NAME);                                        \
             BINARY(SET_NEWNODE,                                                \
-                nodevalue(AGGR).set | ((long)1 << nodevalue(ELEM).num));       \
+                nodevalue(AGGR).set | ((int64_t)1 << nodevalue(ELEM).num));    \
             break;                                                             \
         case STRING_: {                                                        \
             char *s;                                                           \

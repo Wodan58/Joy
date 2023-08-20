@@ -1,6 +1,6 @@
 /*
     module  : compare.h
-    version : 1.9
+    version : 1.10
     date    : 05/23/23
 */
 #ifndef COMPARE_H
