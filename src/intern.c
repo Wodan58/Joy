@@ -1,7 +1,7 @@
 /*
     module  : intern.c
-    version : 1.6
-    date    : 08/13/23
+    version : 1.7
+    date    : 08/21/23
 */
 #ifndef INTERN_C
 #define INTERN_C
@@ -13,17 +13,11 @@ Pushes the item whose name is "sym".
 PRIVATE void intern_(pEnv env)
 {
     Entry ent;
-    char ident[ALEN];
-#ifdef CORRECT_INTERN_LOOKUP
-    char *ptr;
-#endif
+    char *ptr, *str;
 
     ONEPARAM("intern");
     STRING("intern");
-    strncpy(ident, nodevalue(env->stck).str, ALEN);
-    ident[ALEN - 1] = 0;
-#ifdef CORRECT_INTERN_LOOKUP
-    ptr = ident;
+    ptr = str = nodevalue(env->stck).str;
     if (!strchr("\"#'().0123456789;[]{}", *ptr)) {
         if (*ptr == '-' && isdigit((int)ptr[1]))
             ;
@@ -33,8 +27,7 @@ PRIVATE void intern_(pEnv env)
                     break;
     }
     CHECKNAME(ptr, "intern");
-#endif
-    env->yylval.str = GC_strdup(ident);
+    env->yylval.str = str;
     lookup(env);
     ent = vec_at(env->symtab, env->location);
     if (!ent.is_user) {

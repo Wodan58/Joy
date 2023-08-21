@@ -1,8 +1,8 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.67
- *  date    : 08/19/23
+ *  version : 1.68
+ *  date    : 08/21/23
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -43,18 +43,6 @@
 #define nextnode4(p) (nextnode3(p))->next
 #define nextnode5(p) (nextnode4(p))->next
 #endif
-
-/*
-    Note: strdup, snprintf, localtime_r, gmtime_r are sometimes not available.
-*/
-
-/*
-    The following #defines are present in the source code.
-    They have been accepted as an addition to the original code.
-*/
-#define CORRECT_INTERN_LOOKUP
-#define READ_PRIVATE_AHEAD
-#define SEARCH_EXEC_DIRECTORY
 
 /*
     The following #defines are present in the source code.

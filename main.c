@@ -1,8 +1,8 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.68
- *  date    : 08/18/23
+ *  version : 1.69
+ *  date    : 08/21/23
  */
 
 /*
@@ -287,7 +287,6 @@ PRIVATE void defsequence(pEnv env, int priv)
     Tokens are collected in a list. During second reading tokens are returned
     from the list instead of from stdin.
 */
-#ifdef READ_PRIVATE_AHEAD
 PRIVATE void read_priv_ahead(pEnv env)
 {
     int token_index;
@@ -298,7 +297,6 @@ PRIVATE void read_priv_ahead(pEnv env)
     env->token_index = token_index;
     env->token_list = 0; /* stop collecting tokens */
 }
-#endif
 
 /*
     Handle a compound definition.
@@ -314,21 +312,17 @@ PRIVATE void compound_def(pEnv env, int priv)
 	}
 	initmod(env, env->yylval.str); /* initmod adds ident to the module */
 	getsym(env);
-#ifdef READ_PRIVATE_AHEAD
 	if (env->symb == JPUBLIC) { /* MODULE with only a public section */
 	    ungetsym(JPUBLIC);
 	    env->symb = JPRIVATE;
 	}
-#endif
 	compound_def(env, priv);
 	exitmod(); /* exitmod deregisters a module */
 	break;
     case JPRIVATE:
     case HIDE:
-#ifdef READ_PRIVATE_AHEAD
 	if (!priv)
 	    read_priv_ahead(env);
-#endif
 	getsym(env);
 	initpriv(env, priv); /* initpriv increases the hide number */
 	defsequence(env, priv);
@@ -385,21 +379,21 @@ PUBLIC void execerror(char *message, char *op)
 #ifdef STATS
 PRIVATE void report_clock(pEnv env)
 {
-    double timediff;
 #ifdef NOBDW
-    double gcdiff, gclock;
+    double perc;
 #endif
+    clock_t diff;
 
-    timediff = clock() - env->startclock;
+    diff = clock() - env->startclock;
 #ifdef NOBDW
-    gcdiff = (double)env->gc_clock * 100 / timediff;
+    perc = (double)env->gc_clock * 100 / diff;
 #endif
-    timediff /= CLOCKS_PER_SEC;
     fflush(stdout);
-    fprintf(stderr, "%.2f seconds CPU to execute\n", timediff);
+    fprintf(stderr, "%ld milliseconds CPU to execute\n",
+	    diff * 1000 / CLOCKS_PER_SEC);
 #ifdef NOBDW
-    gclock = (double)env->gc_clock / CLOCKS_PER_SEC;
-    fprintf(stderr, "%.2f seconds CPU for gc (=%.0f%%)\n", gclock, gcdiff);
+    fprintf(stderr, "%ld milliseconds CPU for gc (=%.0f%%)\n",
+	    env->gc_clock * 1000 / CLOCKS_PER_SEC, perc);
 #endif
 }
 #endif

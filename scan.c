@@ -1,8 +1,8 @@
 /* FILE: scan.c */
 /*
  *  module  : scan.c
- *  version : 1.49
- *  date    : 08/18/23
+ *  version : 1.50
+ *  date    : 08/21/23
  */
 #include "globals.h"
 
@@ -10,9 +10,7 @@ void quit_(pEnv env);
 
 static struct {
     FILE *fp;
-#ifdef REMEMBER_FILENAME
     char *name;
-#endif
     int linenum;
 } infile[INPSTACKMAX];
 static int ilevel;
@@ -23,9 +21,7 @@ static int linelength, currentcolumn;
 static int errorcount;
 #endif
 static int ch = ' ';
-#ifdef READ_PRIVATE_AHEAD
 static Symbol unget_symb;
-#endif
 
 static struct keys {
     char *name;
@@ -50,9 +46,7 @@ static struct keys {
 PUBLIC void inilinebuffer(pEnv env, char *str)
 {
     infile[0].fp = env->srcfile;
-#ifdef REMEMBER_FILENAME
     infile[0].name = str ? str : "stdin";
-#endif
 }
 
 /*
@@ -122,7 +116,7 @@ PRIVATE int endofbuffer(void)
 */
 PUBLIC void error(pEnv env, char *message)
 {
-    int i;
+    int i, leng;
 
     if (!env->echoflag)
 	putline(env);
@@ -143,15 +137,10 @@ PUBLIC void error(pEnv env, char *message)
 PRIVATE void redirect(pEnv env, char *filnam, FILE *fp)
 {
     infile[ilevel].linenum = linenumber;
-#if 0
-    infile[ilevel].fp = env->srcfile;
-#endif
     if (ilevel + 1 == INPSTACKMAX)
 	execerror("fewer include files", "include");
     infile[++ilevel].fp = env->srcfile = fp;
-#ifdef REMEMBER_FILENAME
     infile[ilevel].name = filnam;
-#endif
     infile[ilevel].linenum = linenumber = 0;
 }
 
@@ -166,10 +155,7 @@ PRIVATE void redirect(pEnv env, char *filnam, FILE *fp)
 PUBLIC int include(pEnv env, char *filnam, int error)
 {
     FILE *fp;
-    char *ptr;
-#ifdef SEARCH_EXEC_DIRECTORY
-    char *str;
-#endif
+    char *ptr, *str;
 
 /*
     First try to open filnam in the current working directory.
@@ -184,7 +170,6 @@ PUBLIC int include(pEnv env, char *filnam, int error)
 	    *ptr = 0;
 	}
     }
-#ifdef SEARCH_EXEC_DIRECTORY
 /*
     Prepend pathname to the filename and try again.
 */
@@ -200,7 +185,6 @@ PUBLIC int include(pEnv env, char *filnam, int error)
 	    *ptr = 0;
 	}
     }
-#endif
     if (fp) {
 	redirect(env, filnam, fp);
 	return 0; /* ok */
@@ -492,12 +476,10 @@ PRIVATE void dumptok(Token tok, int num)
 	       read, but needs to be read again, because another symbol must be
 	       processed first.
 */
-#ifdef READ_PRIVATE_AHEAD
 PUBLIC void ungetsym(Symbol symb)
 {
     unget_symb = symb;
 }
-#endif
 
 /*
     getsym - wrapper around my_getsym, storing tokens read, reading from the
@@ -507,13 +489,11 @@ PUBLIC void getsym(pEnv env)
 {
     Token tok;
 
-#ifdef READ_PRIVATE_AHEAD
     if (unget_symb) {
 	env->symb = unget_symb;
 	unget_symb = 0;
 	return;
     }
-#endif
     if (env->token_list) {
 	my_getsym(env);
 	tok.yylval = env->yylval;
