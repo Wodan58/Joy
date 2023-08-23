@@ -1,8 +1,8 @@
 /* FILE: scan.c */
 /*
  *  module  : scan.c
- *  version : 1.50
- *  date    : 08/21/23
+ *  version : 1.51
+ *  date    : 08/23/23
  */
 #include "globals.h"
 
@@ -21,7 +21,6 @@ static int linelength, currentcolumn;
 static int errorcount;
 #endif
 static int ch = ' ';
-static Symbol unget_symb;
 
 static struct keys {
     char *name;
@@ -118,17 +117,24 @@ PUBLIC void error(pEnv env, char *message)
 {
     int i, leng;
 
-    if (!env->echoflag)
-	putline(env);
-    if (env->echoflag > 1)
-	putchar('\t');
+    leng = printf("%s:%d:", infile[ilevel].name, linenumber);
+    i = env->echoflag;
+    env->echoflag = 0;
+    putline(env);
+    env->echoflag = i;
+    printf("%*s", leng, "");
     for (i = 0; i < currentcolumn - 2; i++)
 	if (linbuf[i] <= ' ')
 	    putchar(linbuf[i]);
 	else
 	    putchar(' ');
-    printf("^\n\t%s\n", message);
-    env->stck = 0;
+    printf("^\n%*s", leng, "");
+    for (i = 0; i < currentcolumn - 2; i++)
+	if (linbuf[i] <= ' ')
+	    putchar(linbuf[i]);
+	else
+	    putchar(' ');
+    printf("%s\n", message);
 #if 0
     errorcount++;
 #endif
@@ -424,13 +430,13 @@ PRIVATE void dumptok(Token tok, int num)
 {
     printf("%d) ", num);
     switch (tok.symb) {
-    case CHAR_    : printf("%ld", tok.yylval.num);
+    case CHAR_    : printf("%d", (int)tok.yylval.num);
 		    break;
     case STRING_  : printf("\"%s\"", tok.yylval.str);
 		    break;
     case FLOAT_   : printf("%g", tok.yylval.dbl);
 		    break;
-    case INTEGER_ : printf("%ld", tok.yylval.num);
+    case INTEGER_ : printf("%" PRId64, tok.yylval.num);
 		    break;
     case ATOM     : printf("%s", tok.yylval.str);
 		    break;
@@ -472,52 +478,115 @@ PRIVATE void dumptok(Token tok, int num)
 #endif
 
 /*
-    ungetsym - insert a symbol in the input stream. The symbol has already been
-	       read, but needs to be read again, because another symbol must be
-	       processed first.
+    Push a symbol into the tokenlist.
 */
-PUBLIC void ungetsym(Symbol symb)
+static void push_symb(pEnv env)
 {
-    unget_symb = symb;
+    Token tok;
+
+    tok.symb = env->symb;
+    tok.yylval = env->yylval;
+    vec_push(env->tokens, tok);
 }
 
 /*
     getsym - wrapper around my_getsym, storing tokens read, reading from the
-	     store or just calling my_getsym itself.
+	     store or just calling my_getsym itself. This allows tokens to be
+	     read twice.
+
+    After reading MODULE or JPRIVATE, read all tokens upto END, and include
+    them in the tokenlist. All symbols preceding "==" are declared.
 */
 PUBLIC void getsym(pEnv env)
 {
     Token tok;
+    int module = 0, private = 0, hide = 0, modl = 0, hcnt = 0;
 
-    if (unget_symb) {
-	env->symb = unget_symb;
-	unget_symb = 0;
+/*
+    If there is a tokenlist, extract tokens from there.
+*/
+    if (vec_size(env->tokens)) {
+	tok = vec_pop(env->tokens);
+#ifdef DUMP_TOKENS
+	dumptok(tok, 1); /* tokens from the first pop */
+#endif
+	env->symb = tok.symb;
+	env->yylval = tok.yylval;
 	return;
     }
-    if (env->token_list) {
-	my_getsym(env);
-	tok.yylval = env->yylval;
-	tok.symb = env->symb;
+/*
+    There is no tokenlist, use the normal procedure to get one.
+*/
+    my_getsym(env);
+/*
+    There is a token available, do some extra processing, in case the token is
+    MODULE or HIDE: MODULE .. END or HIDE .. END.
+*/
+    if (env->symb == MODULE || env->symb == HIDE) {
+/*
+    Copy the global variables of modl.c into local variables.
+*/
+	savemod(&hide, &modl, &hcnt);
+	do {
+	    switch (env->symb) {
+	    case MODULE	  : push_symb(env);
+			    my_getsym(env);
+			    if (env->symb == ATOM) {
+				initmod(env, env->yylval.str);
+				module++;
+			    } else
+				error(env, "atom expected as name of module");
+			    break;
+	    case HIDE	  :
+	    case JPRIVATE : initpriv(env);
+			    if (!module)
+				private++;
+			    break;
+	    case IN	  :
+	    case JPUBLIC  : stoppriv();
+			    break;
+	    case EQDEF	  : if (strchr(env->yylval.str, '.') == 0)
+				env->yylval.str = classify(env,env->yylval.str);
+			    enteratom(env);
+			    break;
+	    case PERIOD	  :
+	    case END	  : if (module) {
+				exitmod();
+				module--;
+			    } else if (private) {
+				exitpriv();
+				private--;
+			    }
+			    if (!module && !private)
+				goto done;
+			    break;
+	    }
+	    push_symb(env);
+	    my_getsym(env);
+	} while (1);
+/*
+    Restore the global variables in module.c from the local copies.
+*/
+done:	undomod(hide, modl, hcnt);
+	push_symb(env); /* store the last symbol that was read */
+	push_symb(env); /* extra sym for the benefit of reverse */
+	vec_reverse(env->tokens);
+    }
+/*
+    If there is a tokenlist, extract tokens from there.
+*/
+    if (vec_size(env->tokens)) {
+	tok = vec_pop(env->tokens);
 #ifdef DUMP_TOKENS
-	dumptok(tok, 1);
+	dumptok(tok, 2); /* tokens from the second pop */
 #endif
-	vec_push(env->tokens, tok);
-    } else if (env->token_index < (int)vec_size(env->tokens)) {
-	tok = vec_at(env->tokens, env->token_index);
-	env->yylval = tok.yylval;
 	env->symb = tok.symb;
-#ifdef DUMP_TOKENS
-	dumptok(tok, 2);
-#endif
-	env->token_index++;
+	env->yylval = tok.yylval;
     } else {
-	vec_setsize(env->tokens, 0); /* reset token vector and index */
-	env->token_index = 0;
-	my_getsym(env);
 #ifdef DUMP_TOKENS
-	tok.yylval = env->yylval;
 	tok.symb = env->symb;
-	dumptok(tok, 3);
+	tok.yylval = env->yylval;
+	dumptok(tok, 3); /* there was no value popped */
 #endif
     }
 }

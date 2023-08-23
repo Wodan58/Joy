@@ -1,15 +1,106 @@
 (*
-    module  : m20.joy
-    version : 1.1
-    date    : 05/16/22
+    Module with no sections at all. This has no effect. The module is not
+    stored in the symbol table: "warning: empty compound definition".
 *)
-1 setundeferror.
+MODULE m1.
 
+(*
+    Module with an empty PRIVATE section.
+*)
+MODULE m1
+  PRIVATE
+.
+
+(*
+    Module with empty PUBLIC section.
+    The legacy version does not report about an empty compound definition.
+*)
+MODULE m1
+  PUBLIC
+.
+
+(*
+    Module with both a PRIVATE and a PUBLIC section that are empty.
+*)
+MODULE m1
+  PRIVATE
+  PUBLIC
+.
+
+(*
+    Module with a definition in the PRIVATE section.
+*)
+MODULE m1
+  PRIVATE
+    a == "a"
+.
+
+(*
+    Module with a definition in the PRIVATE section and a PUBLIC section.
+*)
+MODULE m1
+  PRIVATE
+    a == "a"
+  PUBLIC
+.
+
+(*
+    Module with a PUBLIC section and forward calling.
+*)
+MODULE m1
+  PUBLIC
+    b == a "b" concat;
+    a == "a"
+.
+
+# should print "ab".
+m1.b.
+
+(*
+    Module with a PRIVATE section and forward calling.
+*)
+MODULE m1
+  PRIVATE
+    b == a "b" concat;
+    a == "a"
+  PUBLIC
+    test == b
+.
+
+# should print "ab".
+m1.test.
+
+(*
+    Module with PRIVATE and PUBLIC section, both with forward calling.
+*)
+MODULE m2
+  PRIVATE
+    b == a "b" concat;
+    a == "a"
+  PUBLIC
+    test == B b concat;
+    B == A "B" concat;
+    A == "A"
+.
+
+# should print "ABab"
+m2.test.
+
+(*
+    HIDE section with forward calling.
+*)
 HIDE
-    twenty == thirty 10 -;
-    thirty == 30;
+  b == a "b" concat;
+  a == "a"
 IN
-    fifty == twenty thirty +;
-END
+  test == b
+.
 
-fifty.
+# should print "ab"
+test.
+
+# should print an error
+m2.a.
+
+# should print an error
+a.

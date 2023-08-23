@@ -1,7 +1,7 @@
 /*
     module  : fget.c
-    version : 1.4
-    date    : 08/13/23
+    version : 1.5
+    date    : 08/23/23
 */
 #ifndef FGET_C
 #define FGET_C
@@ -21,7 +21,7 @@ PRIVATE void fget_(pEnv env)
     if ((stdin_dup = dup(0)) != -1)
         dup2(fileno(fp), 0);
     getsym(env);
-    readfactor(env, 0);
+    readfactor(env);
     if (stdin_dup != -1) {
         dup2(stdin_dup, 0);
         close(stdin_dup);

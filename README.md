@@ -50,7 +50,9 @@ There are some false positives.
 Bugs
 ----
 
-Yes, and they are copyright © Wodan58.
+Maybe. As this is a modified version of Joy there are some differences
+compared to the legacy version. Those differences and any remaining bugs
+are copyright © Wodan58.
 
 Comparison
 ==========
@@ -94,6 +96,6 @@ Implementation|Number of integers
 [Joy](https://github.com/Wodan58/Joy)|41650
 [joy0](https://github.com/Wodan58/joy0)|32295
 
-Moy comes out on top. The other versions fail because of stack overflow. In
-fact, because Moy does not use recursion, the size of the list is only limited
-by available memory.
+Moy comes out on top. The other versions fail because of stack overflow.
+In fact, because Moy does recursion in a stackless fashion, the size of the
+list is only limited by available memory.

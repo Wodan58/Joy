@@ -1,8 +1,8 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.69
- *  date    : 08/21/23
+ *  version : 1.70
+ *  date    : 08/23/23
  */
 
 /*
@@ -195,7 +195,7 @@ PUBLIC void lookup(pEnv env)
  *   Enteratom enters a symbol in the symbol table, maybe a local symbol. This
  *   local symbol is also added to the hash table, but in its classified form.
  */
-PRIVATE void enteratom(pEnv env)
+PUBLIC void enteratom(pEnv env)
 {
     /*
      *   Local symbols are only added during the first read of private sections
@@ -210,21 +210,21 @@ PRIVATE void enteratom(pEnv env)
  *   The rest of these procedures is not affected by the change of the symbol
  *   table implementation.
  */
-PRIVATE void defsequence(pEnv env, int priv);  /* forward */
-PRIVATE void compound_def(pEnv env, int priv); /* forward */
+PRIVATE void defsequence(pEnv env);  /* forward */
+PRIVATE void compound_def(pEnv env); /* forward */
 
 /*
- *   Read a definition. Instead of a definition, an embedded compound definition
- *   is also possible.
+ *   Read a definition. Instead of a definition, an embedded compound
+ *   definition is also possible.
  */
-PRIVATE void definition(pEnv env, int priv)
+PRIVATE void definition(pEnv env)
 {
     Entry ent;
     pEntry here = 0;
 
     if (env->symb == LIBRA || env->symb == JPRIVATE || env->symb == HIDE
 	|| env->symb == MODULE) {
-	compound_def(env, priv);
+	compound_def(env);
 	if (env->symb == END || env->symb == PERIOD)
 	    getsym(env);
 	else
@@ -240,25 +240,21 @@ PRIVATE void definition(pEnv env, int priv)
 	return;
 
     /* symb == ATOM : */
-    if (!priv) {
-	enteratom(env);
-	ent = vec_at(env->symtab, env->location);
-	if (!ent.is_user) {
-	    fflush(stdout);
-	    fprintf(stderr, "warning: overwriting inbuilt '%s'\n", ent.name);
-	    enterglobal(env, classify(env, env->yylval.str));
-	}
-	here = env->location;
+    enteratom(env);
+    ent = vec_at(env->symtab, env->location);
+    if (!ent.is_user) {
+	fflush(stdout);
+	fprintf(stderr, "warning: overwriting inbuilt '%s'\n", ent.name);
+	enterglobal(env, classify(env, env->yylval.str));
     }
+    here = env->location;
     getsym(env);
     if (env->symb == EQDEF)
 	getsym(env);
-#if 0
     else
 	error(env, " == expected in definition");
-#endif
-    readterm(env, priv);
-    if (!priv && here && env->stck && nodetype(env->stck) == LIST_) {
+    readterm(env);
+    if (here && env->stck && nodetype(env->stck) == LIST_) {
 	vec_at(env->symtab, here).u.body = nodevalue(env->stck).lis;
 	env->stck = nextnode1(env->stck);
     }
@@ -269,39 +265,23 @@ PRIVATE void definition(pEnv env, int priv)
  *		 in the symbol table, such that local symbols can call each
  *		 other.
  */
-PRIVATE void defsequence(pEnv env, int priv)
+PRIVATE void defsequence(pEnv env)
 {
-    if (priv && env->symb == ATOM)
+    if (env->symb == ATOM)
 	enteratom(env);
-    definition(env, priv);
+    definition(env);
     while (env->symb == SEMICOL) {
 	getsym(env);
-	if (priv && env->symb == ATOM)
+	if (env->symb == ATOM)
 	    enteratom(env);
-	definition(env, priv);
+	definition(env);
     }
-}
-
-/*
-    In case of a HIDE section or a MODULE, some read ahead is necessary.
-    Tokens are collected in a list. During second reading tokens are returned
-    from the list instead of from stdin.
-*/
-PRIVATE void read_priv_ahead(pEnv env)
-{
-    int token_index;
-
-    env->token_list = 1; /* start collecting tokens */
-    token_index = env->token_index;
-    compound_def(env, READ_PRIV_AHEAD);
-    env->token_index = token_index;
-    env->token_list = 0; /* stop collecting tokens */
 }
 
 /*
     Handle a compound definition.
 */
-PRIVATE void compound_def(pEnv env, int priv)
+PRIVATE void compound_def(pEnv env)
 {
     switch (env->symb) {
     case MODULE:
@@ -312,34 +292,27 @@ PRIVATE void compound_def(pEnv env, int priv)
 	}
 	initmod(env, env->yylval.str); /* initmod adds ident to the module */
 	getsym(env);
-	if (env->symb == JPUBLIC) { /* MODULE with only a public section */
-	    ungetsym(JPUBLIC);
-	    env->symb = JPRIVATE;
-	}
-	compound_def(env, priv);
+	compound_def(env);
 	exitmod(); /* exitmod deregisters a module */
 	break;
     case JPRIVATE:
     case HIDE:
-	if (!priv)
-	    read_priv_ahead(env);
 	getsym(env);
-	initpriv(env, priv); /* initpriv increases the hide number */
-	defsequence(env, priv);
+	initpriv(env); /* initpriv increases the hide number */
+	defsequence(env);
 	stoppriv(); /* stoppriv changes the section from private to public */
-	compound_def(env, priv);
+	compound_def(env);
 	exitpriv(); /* exitpriv lowers the hide stack */
 	break;
     case JPUBLIC:
     case LIBRA:
     case IN:
 	getsym(env);
-	defsequence(env, priv);
+	defsequence(env);
 	break;
     default:
-#if 0
-	fprintf(stdout, "warning: empty compound definition\n");
-#endif
+	fflush(stdout);
+	fprintf(stderr, "warning: empty compound definition\n");
 	break;
     }
 }
@@ -385,13 +358,11 @@ PRIVATE void report_clock(pEnv env)
     clock_t diff;
 
     diff = clock() - env->startclock;
-#ifdef NOBDW
-    perc = (double)env->gc_clock * 100 / diff;
-#endif
     fflush(stdout);
     fprintf(stderr, "%ld milliseconds CPU to execute\n",
 	    diff * 1000 / CLOCKS_PER_SEC);
 #ifdef NOBDW
+    perc = (double)env->gc_clock * 100 / diff;
     fprintf(stderr, "%ld milliseconds CPU for gc (=%.0f%%)\n",
 	    env->gc_clock * 1000 / CLOCKS_PER_SEC, perc);
 #endif
@@ -619,12 +590,12 @@ int start_main(int argc, char **argv)
 #ifdef NOBDW
 	    inimem1(&env, 1); /* also clears the stack */
 #endif
-	    compound_def(&env, DONT_READ_AHEAD);
+	    compound_def(&env);
 #ifdef NOBDW
 	    inimem2(&env); /* enlarge definition space */
 #endif
 	} else {
-	    readterm(&env, DONT_READ_AHEAD);
+	    readterm(&env);
 #ifdef NOBDW
 	    if (env.stck && vec_at(env.memory, env.stck).op == LIST_) {
 		env.prog = vec_at(env.memory, env.stck).u.lis;

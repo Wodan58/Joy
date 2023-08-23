@@ -1,8 +1,8 @@
 /* FILE: factor.c */
 /*
  *  module  : factor.c
- *  version : 1.19
- *  date    : 08/13/23
+ *  version : 1.20
+ *  date    : 08/23/23
  */
 #include "globals.h"
 
@@ -10,30 +10,28 @@
     readfactor - read a factor from srcfile and push it on the stack.
 		 In case of LPAREN nothing gets pushed.
 */
-PUBLIC void readfactor(pEnv env, int priv) /* read a JOY factor */
+PUBLIC void readfactor(pEnv env) /* read a JOY factor */
 {
     Entry ent;
     uint64_t set = 0;
 
     switch (env->symb) {
     case ATOM:
-	if (!priv) {
-	    lookup(env);
-	    if (!env->location && strchr(env->yylval.str, '.')) {
-		error(env, "no such field in module");
-		return;
-	    }
-	    ent = vec_at(env->symtab, env->location);
-	    /* execute immediate functions at compile time */
-	    if (ent.flags == IMMEDIATE)
-		(*ent.u.proc)(env);
-	    else if (!ent.is_user) {
-		env->yylval.proc = ent.u.proc;
-		env->stck = newnode(env, env->location, env->yylval, env->stck);
-	    } else {
-		env->bucket.ent = env->location;
-		env->stck = newnode(env, USR_, env->bucket, env->stck);
-	    }
+	lookup(env);
+	if (!env->location && strchr(env->yylval.str, '.')) {
+	    error(env, "no such field in module");
+	    return;
+	}
+	ent = vec_at(env->symtab, env->location);
+	/* execute immediate functions at compile time */
+	if (ent.flags == IMMEDIATE)
+	    (*ent.u.proc)(env);
+	else if (!ent.is_user) {
+	    env->yylval.proc = ent.u.proc;
+	    env->stck = newnode(env, env->location, env->yylval, env->stck);
+	} else {
+	    env->bucket.ent = env->location;
+	    env->stck = newnode(env, USR_, env->bucket, env->stck);
 	}
 	return;
     case BOOLEAN_:
@@ -41,8 +39,7 @@ PUBLIC void readfactor(pEnv env, int priv) /* read a JOY factor */
     case INTEGER_:
     case STRING_:
     case FLOAT_:
-	if (!priv)
-	    env->stck = newnode(env, env->symb, env->yylval, env->stck);
+	env->stck = newnode(env, env->symb, env->yylval, env->stck);
 	return;
     case LBRACE:
 	while (getsym(env), env->symb <= ATOM)
@@ -51,16 +48,14 @@ PUBLIC void readfactor(pEnv env, int priv) /* read a JOY factor */
 		error(env, "small numeric expected in set");
 	    else
 		set |= ((int64_t)1 << env->yylval.num);
-	if (!priv) {
-	    env->bucket.set = set;
-	    env->stck = newnode(env, SET_, env->bucket, env->stck);
-	}
+	env->bucket.set = set;
+	env->stck = newnode(env, SET_, env->bucket, env->stck);
 	if (env->symb != RBRACE)
 	    error(env, "'}' expected");
 	return;
     case LBRACK:
 	getsym(env);
-	readterm(env, priv);
+	readterm(env);
 	if (env->symb != RBRACK)
 	    error(env, "']' expected");
 	return;
@@ -77,49 +72,44 @@ PUBLIC void readfactor(pEnv env, int priv) /* read a JOY factor */
     readterm - read a term from srcfile and push this on the stack as a list.
 */
 #ifdef NOBDW
-PUBLIC void readterm(pEnv env, int priv)
+PUBLIC void readterm(pEnv env)
 {
-    if (!priv) {
-	env->bucket.lis = 0;
-	env->stck = newnode(env, LIST_, env->bucket, env->stck);
-    }
+    env->bucket.lis = 0;
+    env->stck = newnode(env, LIST_, env->bucket, env->stck);
     if (env->symb <= ATOM) {
-	readfactor(env, priv);
-	if (!priv && env->stck) {
+	readfactor(env);
+	if (env->stck) {
 	    nodevalue(nextnode1(env->stck)).lis = env->stck;
 	    env->stck = nextnode1(env->stck);
 	    nextnode1(nodevalue(env->stck).lis) = 0;
 	    env->dump = newnode(env, LIST_, nodevalue(env->stck), env->dump);
 	}
 	while (getsym(env), env->symb <= ATOM) {
-	    readfactor(env, priv);
-	    if (!priv && env->stck) {
+	    readfactor(env);
+	    if (env->stck) {
 		nextnode1(nodevalue(env->dump).lis) = env->stck;
 		env->stck = nextnode1(env->stck);
 		nextnode2(nodevalue(env->dump).lis) = 0;
 		nodevalue(env->dump).lis = nextnode1(nodevalue(env->dump).lis);
 	    }
 	}
-	if (!priv)
-	    env->dump = nextnode1(env->dump);
+	env->dump = nextnode1(env->dump);
     }
 }
 #else
 /*
     readterm - read a term from srcfile and push this on the stack as a list.
 */
-PUBLIC void readterm(pEnv env, int priv)
+PUBLIC void readterm(pEnv env)
 {
     Index *dump = 0;
 
-    if (!priv) {
-	env->bucket.lis = 0;
-	env->stck = newnode(env, LIST_, env->bucket, env->stck);
-	dump = &nodevalue(env->stck).lis;
-    }
+    env->bucket.lis = 0;
+    env->stck = newnode(env, LIST_, env->bucket, env->stck);
+    dump = &nodevalue(env->stck).lis;
     while (env->symb <= ATOM) {
-	readfactor(env, priv);
-	if (!priv && env->stck) {
+	readfactor(env);
+	if (env->stck) {
 	    *dump = env->stck;
 	    dump = &nextnode1(env->stck);
 	    env->stck = *dump;

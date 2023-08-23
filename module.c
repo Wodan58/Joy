@@ -1,7 +1,7 @@
 /*
     module  : module.c
-    version : 1.9
-    date    : 08/11/23
+    version : 1.10
+    date    : 08/23/23
 */
 #include "globals.h"
 
@@ -9,7 +9,7 @@
  * hide stack of private sections. The sections are numbered, while keeping the
  * string presentation instead of the number itself.
  */
-static int hide_index = -1;
+static int hide_index = -1, hide_count;
 static unsigned char inside_hide, been_inside;
 
 /*
@@ -19,13 +19,30 @@ static unsigned char inside_hide, been_inside;
 static int module_index = -1;
 
 /*
- * initmod registers ident as a module name. Modules within modules are
+ * savemod saves the global variables, to be restored later with undomod.
+*/
+void savemod(int *hide, int *modl, int *hcnt)
+{
+    *hide = hide_index;
+    *modl = module_index;
+    *hcnt = hide_count;
+}
+
+void undomod(int hide, int modl, int hcnt)
+{
+    hide_index = hide;
+    module_index = modl;
+    hide_count = hcnt;
+}
+
+/*
+ * initmod registers name as a module name. Modules within modules are
  * supported. Up to a certain extent, that is.
  */
 void initmod(pEnv env, char *name)
 {
     if (++module_index >= DISPLAYMAX) {
-	module_index = DISPLAYMAX - 1;
+	module_index = -1;
 	execerror("index", "display");
     }
     env->module_stack[module_index].name = name;
@@ -41,19 +58,13 @@ void initmod(pEnv env, char *name)
  * Only register a new private section during the first read. During the
  * second read, the number that was installed should be picked up again.
  */
-void initpriv(pEnv env, int priv)
+void initpriv(pEnv env)
 {
-    static int hide_count;
-    char str[BUFFERMAX];
-
     if (++hide_index >= DISPLAYMAX) {
-	hide_index = DISPLAYMAX - 1;
+	hide_index = -1;
 	execerror("index", "display");
     }
-    if (priv) {
-	sprintf(str, "%d", ++hide_count);
-	env->hide_stack[hide_index] = GC_strdup(str);
-    }
+    env->hide_stack[hide_index] = ++hide_count;
     inside_hide = 1;
 }
 
@@ -84,13 +95,14 @@ void exitpriv(void)
  */
 void exitmod(void)
 {
-    exitpriv();
     if (module_index >= 0)
 	module_index--;
+    if (module_index < 0)
+	exitpriv();
 }
 
 /*
- * classify prepends ident with private section or module name, whichever
+ * classify prepends name with private section or module name, whichever
  * comes first. Names are stored in the symbol table together with this prefix,
  * allowing the same names to be used in different private sections and modules.
  * The symbol table is flat, in the sense that it has no hierarchy. For that
@@ -103,14 +115,16 @@ void exitmod(void)
 char *classify(pEnv env, char *name)
 {
     size_t leng;
-    char *buf = 0, *str;
+    char temp[BUFFERMAX], *buf = 0, *str;
 
     /*
      * inside a private section, names that are to be entered in the symbol
      * table should get the hide number as a prefix.
      */
-    if (inside_hide)
-	buf = env->hide_stack[hide_index];
+    if (inside_hide) {
+	sprintf(temp, "%d", env->hide_stack[hide_index]);
+	buf = temp;
+    }
     /*
      * inside a module, public names that are to be entered in the symbol table
      * should get the module name as a prefix. That is also the name used when
@@ -149,11 +163,11 @@ pEntry qualify(pEnv env, char *name)
 {
     size_t leng;
     khiter_t key;
-    char *buf, *str;
     int index, limit;
+    char temp[BUFFERMAX], *buf, *str;
 
     /*
-     * if ident has a prefix, it is already a fully qualified name and can be
+     * if name has a prefix, it is already a fully qualified name and can be
      * searched in the symbol table right away. The prefix can only be a module
      * name. If the name is not found, there is an error and a 0 is returned.
      */
@@ -175,10 +189,10 @@ pEntry qualify(pEnv env, char *name)
 	else
 	    limit = -1;
 	for (index = hide_index; index > limit; index--) {
-	    buf = env->hide_stack[index];
-	    leng = strlen(buf) + strlen(name) + 2;
+	    sprintf(temp, "%d", env->hide_stack[index]);
+	    leng = strlen(temp) + strlen(name) + 2;
 	    str = GC_malloc_atomic(leng);
-	    sprintf(str, "%s.%s", buf, name);
+	    sprintf(str, "%s.%s", temp, name);
 	    if ((key = kh_get(Symtab, env->hash, str)) != kh_end(env->hash))
 		return kh_value(env->hash, key);
 	}

@@ -1,7 +1,0 @@
-(*
-    Module with only a private definition. Useless, but allowed.
-*)
-MODULE m13
-  PRIVATE
-    a == "a"
-END

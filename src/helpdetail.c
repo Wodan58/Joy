@@ -1,7 +1,7 @@
 /*
     module  : helpdetail.c
-    version : 1.6
-    date    : 08/13/23
+    version : 1.7
+    date    : 08/23/23
 */
 #ifndef HELPDETAIL_C
 #define HELPDETAIL_C
@@ -28,12 +28,12 @@ PRIVATE void helpdetail_(pEnv env)
 	    printf("\n\n");
         } else {
             if ((op = nodetype(n)) == BOOLEAN_)
-                op = nodevalue(n).num ? TRUE_ : FALSE_;
+                op = nodevalue(n).num ? operindex(true_) : operindex(false_);
             if (op == INTEGER_ && nodevalue(n).num == MAXINT)
-                op = MAXINT_;
+                op = operindex(maxint_);
             printf("%s\t:  %s.\n%s\n", optable[op].name,
                 optable[op].messg1, optable[op].messg2);
-	    if (op < FALSE_)
+	    if (op <= FILE_)
 		printf("\n");
         }
         n = nextnode1(n);

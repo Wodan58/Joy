@@ -1,8 +1,8 @@
 /* FILE: interp.c */
 /*
  *  module  : interp.c
- *  version : 1.69
- *  date    : 08/18/23
+ *  version : 1.70
+ *  date    : 08/23/23
  */
 
 /*
@@ -572,5 +572,19 @@ PUBLIC int opertype(int o)
 
     size = sizeof(optable) / sizeof(optable[0]);
     return o >= 0 && o < size ? o : 0;
+}
+
+/*
+    operindex - return the optable entry for an operator.
+*/
+PUBLIC int operindex(proc_t proc)
+{
+    int i, size;
+
+    size = sizeof(optable) / sizeof(optable[0]);
+    for (i = size - 1; i > FILE_; i--)
+	if (optable[i].proc == proc)
+	    return i;
+    return ANON_FUNCT_;
 }
 /* END of INTERP.C */

@@ -1,8 +1,8 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.68
- *  date    : 08/21/23
+ *  version : 1.69
+ *  date    : 08/23/23
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -80,9 +80,6 @@
 #define LIST_ 9
 #define FLOAT_ 10
 #define FILE_ 11
-#define FALSE_ 12
-#define TRUE_ 13
-#define MAXINT_ 14
 #define LBRACK 900
 #define LBRACE 901
 #define LPAREN 902
@@ -110,8 +107,8 @@ typedef enum {
 } Flags;
 
 /* types			*/
-typedef int Symbol;
-typedef int Operator;
+typedef int Symbol;		/* symbol created by scanner */
+typedef int Operator;		/* opcode / datatype */
 
 #ifdef NOBDW
 typedef unsigned Index;
@@ -119,9 +116,11 @@ typedef unsigned Index;
 typedef struct Node *Index;
 #endif
 
-typedef unsigned pEntry;
+typedef unsigned pEntry;	/* index in symbol table */
 
 typedef struct Env *pEnv;
+
+typedef void (*proc_t)(pEnv);	/* procedure */
 
 typedef union {
     int64_t num;	/* USR, BOOLEAN, CHAR, INTEGER */
@@ -131,7 +130,7 @@ typedef union {
     FILE *fil;		/* FILE */
     Index lis;		/* LIST */
     pEntry ent;		/* SYMBOL */
-    void (*proc)(pEnv);	/* ANON_FUNCT */
+    proc_t proc;	/* ANON_FUNCT */
 } Types;
 
 typedef struct Node {
@@ -144,7 +143,7 @@ typedef struct Entry {
     char *name, is_user, flags;
     union {
 	Index body;
-	void (*proc)(pEnv);
+	proc_t proc;
     } u;
 } Entry;
 
@@ -177,10 +176,9 @@ typedef struct Env {
     char *pathname;
     char **g_argv;
     int g_argc;
-    int token_index;
     pEntry location;       /* getsym */
     Symbol symb;	   /* scanner */
-    char *hide_stack[DISPLAYMAX];
+    int hide_stack[DISPLAYMAX];
     struct module {
 	char *name;
 	int hide;
@@ -190,7 +188,6 @@ typedef struct Env {
     unsigned char undeferror;
     unsigned char tracegc;
     unsigned char debugging;
-    unsigned char token_list;
 } Env;
 
 /* GOOD REFS:
@@ -212,11 +209,13 @@ typedef struct Env {
 PUBLIC void exeterm(pEnv env, Index n);
 PUBLIC char *nickname(int o);
 PUBLIC char *opername(int o);
-PUBLIC void (*operproc(int o))(pEnv env);
+PUBLIC proc_t operproc(int o);
 PUBLIC int operflags(int o);
 PUBLIC int opertype(int o);
+PUBLIC int operindex(proc_t proc);
 /* main.c */
 PUBLIC void lookup(pEnv env);
+PUBLIC void enteratom(pEnv env);
 PUBLIC void abortexecution_(void);
 PUBLIC void execerror(char *message, char *op);
 /* scan.c */
@@ -226,16 +225,18 @@ PUBLIC int include(pEnv env, char *filnam, int error);
 PUBLIC void ungetsym(Symbol symb);
 PUBLIC void getsym(pEnv env);
 /* factor.c */
-PUBLIC void readfactor(pEnv env, int priv); /* read a JOY factor */
-PUBLIC void readterm(pEnv env, int priv);
+PUBLIC void readfactor(pEnv env); /* read a JOY factor */
+PUBLIC void readterm(pEnv env);
 PUBLIC void writefactor(pEnv env, Index n);
 PUBLIC void writeterm(pEnv env, Index n);
 #ifdef NOBDW
 PUBLIC void writedump(pEnv env, Index n);
 #endif
 /* module.c */
+PUBLIC void savemod(int *hide, int *modl, int *hcnt);
+PUBLIC void undomod(int hide, int modl, int hcnt);
 PUBLIC void initmod(pEnv env, char *name);
-PUBLIC void initpriv(pEnv env, int priv);
+PUBLIC void initpriv(pEnv env);
 PUBLIC void stoppriv(void);
 PUBLIC void exitpriv(void);
 PUBLIC void exitmod(void);
