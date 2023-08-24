@@ -1,8 +1,8 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.69
- *  date    : 08/23/23
+ *  version : 1.71
+ *  date    : 08/24/23
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -26,6 +26,11 @@
 #include <unistd.h>
 #endif
 
+/*
+    The following #defines are present in the source code.
+*/
+#define BDW_GARBAGE_COLLECTOR	/* main.c */
+
 #ifdef NOBDW
 #define nodetype(n)  vec_at(env->memory, n).op
 #define nodevalue(n) vec_at(env->memory, n).u
@@ -44,12 +49,6 @@
 #define nextnode5(p) (nextnode4(p))->next
 #endif
 
-/*
-    The following #defines are present in the source code.
-    They have been accepted as original code.
-*/
-#define USE_SHELL_ESCAPE
-
 /* configure			*/
 #define SHELLESCAPE '$'
 #define INPSTACKMAX 10
@@ -63,7 +62,7 @@
 #define INIUNDEFERROR 0
 
 /* installation dependent	*/
-#define MAXSTK 2000000
+#define MINIMUM_STACK 40000
 #define SETSIZE 64
 #define MAXINT 9223372036854775807LL
 
@@ -171,7 +170,6 @@ typedef struct Env {
 #endif
     Types yylval, bucket;  /* used by NEWNODE defines */
     clock_t startclock;    /* main */
-    char *stacktop;
     FILE *srcfile;
     char *pathname;
     char **g_argv;
@@ -205,6 +203,8 @@ typedef struct Env {
 */
 
 /* Public procedures: */
+/* stackavail.c */
+size_t stackavail();
 /* interp.c */
 PUBLIC void exeterm(pEnv env, Index n);
 PUBLIC char *nickname(int o);
@@ -214,6 +214,7 @@ PUBLIC int operflags(int o);
 PUBLIC int opertype(int o);
 PUBLIC int operindex(proc_t proc);
 /* main.c */
+extern char *bottom_of_stack;
 PUBLIC void lookup(pEnv env);
 PUBLIC void enteratom(pEnv env);
 PUBLIC void abortexecution_(void);
@@ -222,7 +223,6 @@ PUBLIC void execerror(char *message, char *op);
 PUBLIC void inilinebuffer(pEnv env, char *filnam);
 PUBLIC void error(pEnv env, char *message);
 PUBLIC int include(pEnv env, char *filnam, int error);
-PUBLIC void ungetsym(Symbol symb);
 PUBLIC void getsym(pEnv env);
 /* factor.c */
 PUBLIC void readfactor(pEnv env); /* read a JOY factor */

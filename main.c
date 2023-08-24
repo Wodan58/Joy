@@ -1,8 +1,8 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.70
- *  date    : 08/23/23
+ *  version : 1.71
+ *  date    : 08/24/23
  */
 
 /*
@@ -125,6 +125,8 @@ void my_atexit(void (*proc)(pEnv));
 #endif
 
 static jmp_buf begin;
+
+char *bottom_of_stack; /* protect against stack overflow */
 
 /*
  *   Initialise the symbol table with builtins. There is no need to classify
@@ -495,7 +497,6 @@ int start_main(int argc, char **argv)
 #ifdef STATS
     my_atexit(report_clock);
 #endif
-    env.stacktop = (char *)&argc;
     /*
      *    Initialize srcfile and other environmental parameters.
      */
@@ -643,10 +644,11 @@ int main(int argc, char **argv)
 {
     int (*volatile m)(int, char **) = start_main;
 
-#ifdef NOBDW
-    GC_init(&argc);
-#else
+    bottom_of_stack = (char *)&argc;
+#ifdef BDW_GARBAGE_COLLECTOR
     GC_INIT();
+#else
+    GC_init(&argc);
 #endif
     return (*m)(argc, argv);
 }

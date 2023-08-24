@@ -79,8 +79,7 @@ Implementation|Number of fibs
 The original version comes out as the winner. Moy has a particularly slow
 function calling mechanism and is surprisingly not the slowest. The version
 that is closest to the version that could be downloaded from the original
-website, `joy1`, is surprisingly at the same performance level as the antique
-`42minjoy`.
+website, `joy1`, is at the same performance level as the antique `42minjoy`.
 
 Space
 -----
@@ -91,9 +90,9 @@ The question is how many integers can be collected in a list, using the
 Implementation|Number of integers
 --------------|------------------
 [Moy](https://github.com/Wodan58/Moy)|100000
-[joy1](https://github.com/Wodan58/joy1)|71400
+[joy1](https://github.com/Wodan58/joy1)|72000
 [Coy](https://github.com/Wodan58/Coy)|43000
-[Joy](https://github.com/Wodan58/Joy)|41650
+[Joy](https://github.com/Wodan58/Joy)|42000
 [joy0](https://github.com/Wodan58/joy0)|32295
 
 Moy comes out on top. The other versions fail because of stack overflow.

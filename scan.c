@@ -1,8 +1,8 @@
 /* FILE: scan.c */
 /*
  *  module  : scan.c
- *  version : 1.51
- *  date    : 08/23/23
+ *  version : 1.53
+ *  date    : 08/24/23
  */
 #include "globals.h"
 
@@ -51,17 +51,19 @@ PUBLIC void inilinebuffer(pEnv env, char *str)
 /*
     putline - echo an input line.
 */
-PRIVATE void putline(pEnv env)
+PRIVATE void putline(pEnv env, FILE *fp, int echo)
 {
     int i;
 
-    if (env->echoflag > 2)
-	printf("%4d", linenumber);
-    if (env->echoflag > 1)
-	putchar('\t');
+    if (echo) {
+	if (env->echoflag > 2)
+	    fprintf(fp, "%4d", linenumber);
+	if (env->echoflag > 1)
+	    fputc('\t', fp);
+    }
     for (i = 0; linbuf[i] && linbuf[i] != '\n'; i++)
-	putchar(linbuf[i]);
-    putchar('\n');
+	fputc(linbuf[i], fp);
+    fputc('\n', fp);
 }
 
 /*
@@ -72,9 +74,7 @@ PRIVATE void getch(pEnv env)
     int i;
 
     if (currentcolumn == linelength) {
-#ifdef USE_SHELL_ESCAPE
 again:
-#endif
 	currentcolumn = linelength = 0;
 	if (linenumber >= 0)
 	    linenumber++;
@@ -91,13 +91,11 @@ again:
 	linbuf[linelength++] = ' '; /* to help getsym for numbers */
 	linbuf[linelength++] = 0;
 	if (env->echoflag)
-	    putline(env);
-#ifdef USE_SHELL_ESCAPE
+	    putline(env, stdout, 1); /* echo line to stdout */
 	if (linbuf[0] == SHELLESCAPE) {
 	    system(&linbuf[1]);
 	    goto again;
 	}
-#endif
     }
     ch = linbuf[currentcolumn++];
 }
@@ -111,30 +109,17 @@ PRIVATE int endofbuffer(void)
 }
 
 /*
-    error - error processing during source file reads.
+    error - error processing during source file reads to stderr.
 */
 PUBLIC void error(pEnv env, char *message)
 {
-    int i, leng;
+    int leng;
 
-    leng = printf("%s:%d:", infile[ilevel].name, linenumber);
-    i = env->echoflag;
-    env->echoflag = 0;
-    putline(env);
-    env->echoflag = i;
-    printf("%*s", leng, "");
-    for (i = 0; i < currentcolumn - 2; i++)
-	if (linbuf[i] <= ' ')
-	    putchar(linbuf[i]);
-	else
-	    putchar(' ');
-    printf("^\n%*s", leng, "");
-    for (i = 0; i < currentcolumn - 2; i++)
-	if (linbuf[i] <= ' ')
-	    putchar(linbuf[i]);
-	else
-	    putchar(' ');
-    printf("%s\n", message);
+    fflush(stdout);
+    leng = fprintf(stderr, "%s:%d:", infile[ilevel].name, linenumber);
+    putline(env, stderr, 0); /* line w/o line number to stderr */
+    leng += currentcolumn - 2; /* no tab expansion */
+    fprintf(stderr, "%*s^\n%*s%s\n", leng, "", leng, "", message);
 #if 0
     errorcount++;
 #endif

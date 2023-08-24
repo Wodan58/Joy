@@ -1,12 +1,12 @@
 /*
  *  module  : utils.c
- *  version : 1.18
- *  date    : 08/18/23
+ *  version : 1.20
+ *  date    : 08/24/23
  */
 #include "globals.h"
 
-#define LOWER_LIMIT	(200000 / sizeof(Node))
-#define UPPER_LIMIT	(40000000 / sizeof(Node))
+#define LOWER_LIMIT	20000		/* minimum number of nodes */
+#define UPPER_LIMIT	3000000		/* maximum number of nodes */
 
 static clock_t start_gc_clock;
 static vector(Node) *orig_memory;
@@ -138,14 +138,20 @@ PRIVATE void copyall(pEnv env)
     }
     vec_setsize(orig_memory, 0);
     vec_setsize(env->memory, memoryindex);
-    if (memorymax > 2.5 * memoryindex) {
-	memorymax /= 2;
-	if (memorymax < LOWER_LIMIT)
+/*
+    Occupancy should be between 70% and 80%. If occupancy drops below 40%,
+    then the next maximum size can be set at 80% of what it was.
+    If occupancy is more than 80%, the next maximum is doubled, up to a limit.
+    If, after garbage collection, the number of live nodes exceeds UPPER_LIMIT,
+    an error is generated. This should prevent an ever increasing heap.
+*/
+    if (memoryindex * 100.0 / memorymax < 40) {		/* less than 40% */
+	memorymax *= 0.8;				/* decrease memory */
+	if (memorymax < LOWER_LIMIT)			/* up to a limit */
 	    memorymax = LOWER_LIMIT;
-    }
-    if (memorymax < 1.43 * memoryindex) {
-	memorymax *= 2;
-	if (memorymax > UPPER_LIMIT)
+    } else if (memoryindex * 100.0 / memorymax > 80) {	/* more than 80% */
+	memorymax *= 2;					/* increase memory */
+	if (memorymax > UPPER_LIMIT)			/* up to a limit */
 	    memorymax = UPPER_LIMIT;
     }
 }
@@ -293,10 +299,10 @@ PUBLIC void my_memoryindex(pEnv env)
 }
 
 /*
-    report the number of nodes available outside definitions.
+    report the number of nodes available.
 */
 PUBLIC void my_memorymax(pEnv env)
 {
-    env->bucket.num = vec_max(env->memory) - mem_low;
+    env->bucket.num = vec_max(env->memory);
     env->stck = newnode(env, INTEGER_, env->bucket, env->stck);
 }
