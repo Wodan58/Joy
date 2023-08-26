@@ -1,6 +1,6 @@
 (*
     module  : maxint.joy
-    version : 1.2
-    date    : 08/20/22
+    version : 1.3
+    date    : 08/26/23
 *)
-"maxint" intern [] cons i 9223372036854775807 =.
+"maxint" intern [] cons i pred 9223372036854775806 =.

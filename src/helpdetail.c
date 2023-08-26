@@ -1,7 +1,7 @@
 /*
     module  : helpdetail.c
-    version : 1.7
-    date    : 08/23/23
+    version : 1.8
+    date    : 08/26/23
 */
 #ifndef HELPDETAIL_C
 #define HELPDETAIL_C
@@ -21,22 +21,24 @@ PRIVATE void helpdetail_(pEnv env)
     printf("\n");
     n = nodevalue(env->stck).lis;
     while (n) {
-        if (nodetype(n) == USR_) {
-            ent = vec_at(env->symtab, nodevalue(n).ent);
-            printf("%s  ==\n    ", ent.name);
-            writeterm(env, ent.u.body);
+	if ((op = nodetype(n)) == USR_) {
+	    ent = vec_at(env->symtab, nodevalue(n).ent);
+	    printf("%s  ==\n    ", ent.name);
+	    writeterm(env, ent.u.body);
 	    printf("\n\n");
-        } else {
-            if ((op = nodetype(n)) == BOOLEAN_)
-                op = nodevalue(n).num ? operindex(true_) : operindex(false_);
-            if (op == INTEGER_ && nodevalue(n).num == MAXINT)
-                op = operindex(maxint_);
-            printf("%s\t:  %s.\n%s\n", optable[op].name,
-                optable[op].messg1, optable[op].messg2);
+	} else {
+	    if (op == ANON_FUNCT_)    
+		op = operindex(nodevalue(n).proc);
+	    else if (op == BOOLEAN_)
+		op = nodevalue(n).num ? operindex(true_) : operindex(false_);
+	    else if (op == INTEGER_ && nodevalue(n).num == MAXINT)
+		op = operindex(maxint_);
+	    printf("%s\t:  %s.\n%s\n", optable[op].name,
+		optable[op].messg1, optable[op].messg2);
 	    if (op <= FILE_)
 		printf("\n");
-        }
-        n = nextnode1(n);
+	}
+	n = nextnode1(n);
     }
     POP(env->stck);
 }

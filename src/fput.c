@@ -1,7 +1,7 @@
 /*
     module  : fput.c
-    version : 1.3
-    date    : 08/13/23
+    version : 1.4
+    date    : 08/26/23
 */
 #ifndef FPUT_C
 #define FPUT_C
@@ -21,6 +21,7 @@ PRIVATE void fput_(pEnv env)
     POP(env->stck);
     FILE("fput");
     fp = nodevalue(env->stck).fil;
+    fflush(stdout);
     if ((stdout_dup = dup(1)) != -1)
         dup2(fileno(fp), 1);
     writefactor(env, node);

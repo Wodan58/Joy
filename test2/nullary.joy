@@ -1,11 +1,9 @@
 (*
     module  : nullary.joy
-    version : 1.4
-    date    : 05/23/23
+    version : 1.5
+    date    : 08/26/23
 *)
-"../lib/inilib.joy" include.
-"../lib/numlib.joy" include.
-"../lib/agglib.joy" include.
+"numlib" libload.
 
 2 20 from-to-list dup [prime] map zip [second] filter [first] map
 [2 3 5 7 11 13 17 19] equal.

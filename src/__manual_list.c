@@ -1,7 +1,7 @@
 /*
     module  : __manual_list.c
-    version : 1.2
-    date    : 08/13/23
+    version : 1.3
+    date    : 08/26/23
 */
 #ifndef __MANUAL_LIST_C
 #define __MANUAL_LIST_C
@@ -12,8 +12,9 @@ Pushes a list L of lists (one per operator) of three documentation strings.
 */
 PRIVATE void __manual_list_(pEnv env)
 {
-    int i = -1;
-    while (optable[++i].name)
+    int i;
+
+    for (i = 0; opername(i); i++)
         ; /* find end */
     --i; /* overshot */
     env->dump1 = LIST_NEWNODE(0, env->dump1);

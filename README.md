@@ -50,51 +50,6 @@ There are some false positives.
 Bugs
 ----
 
-Maybe. As this is a modified version of Joy there are some differences
-compared to the legacy version. Those differences and any remaining bugs
-are copyright © Wodan58.
-
-Comparison
-==========
-
-This implementation can be compared with other implementations.
-
-Time
-----
-
-The question is how many fibs can be calculated with the slow recursive
-definition: `[small] [] [pred dup pred] [+] binrec.`. In the case of Moy
-and Coy the definition starts with: `[dup small]`. The time limit is 60
-seconds.
-
-Implementation|Number of fibs
---------------|--------------
-[joy0](https://github.com/Wodan58/joy0)|41
-[Joy](https://github.com/Wodan58/Joy)|39
-[Moy](https://github.com/Wodan58/Moy)|38
-[joy1](https://github.com/Wodan58/joy1)|37
-[42minjoy](https://github.com/Wodan58/42minjoy)|37
-[Coy](https://github.com/Wodan58/Coy)|30
-
-The original version comes out as the winner. Moy has a particularly slow
-function calling mechanism and is surprisingly not the slowest. The version
-that is closest to the version that could be downloaded from the original
-website, `joy1`, is at the same performance level as the antique `42minjoy`.
-
-Space
------
-
-The question is how many integers can be collected in a list, using the
-`from-to-list` from `agglib.joy`.
-
-Implementation|Number of integers
---------------|------------------
-[Moy](https://github.com/Wodan58/Moy)|100000
-[joy1](https://github.com/Wodan58/joy1)|72000
-[Coy](https://github.com/Wodan58/Coy)|43000
-[Joy](https://github.com/Wodan58/Joy)|42000
-[joy0](https://github.com/Wodan58/joy0)|32295
-
-Moy comes out on top. The other versions fail because of stack overflow.
-In fact, because Moy does recursion in a stackless fashion, the size of the
-list is only limited by available memory.
+This implementation of Joy has the intent to stay as close to the legacy
+version as possible. All unintended deviations and all remaining bugs are
+copyright © Wodan58.

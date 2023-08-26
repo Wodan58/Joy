@@ -1,8 +1,8 @@
 /* FILE: factor.c */
 /*
  *  module  : factor.c
- *  version : 1.20
- *  date    : 08/23/23
+ *  version : 1.21
+ *  date    : 08/26/23
  */
 #include "globals.h"
 
@@ -26,12 +26,12 @@ PUBLIC void readfactor(pEnv env) /* read a JOY factor */
 	/* execute immediate functions at compile time */
 	if (ent.flags == IMMEDIATE)
 	    (*ent.u.proc)(env);
-	else if (!ent.is_user) {
-	    env->yylval.proc = ent.u.proc;
-	    env->stck = newnode(env, env->location, env->yylval, env->stck);
-	} else {
+	else if (ent.is_user) {
 	    env->bucket.ent = env->location;
 	    env->stck = newnode(env, USR_, env->bucket, env->stck);
+	} else {
+	    env->yylval.proc = ent.u.proc;
+	    env->stck = newnode(env, ANON_FUNCT_, env->yylval, env->stck);
 	}
 	return;
     case BOOLEAN_:
@@ -138,9 +138,12 @@ PUBLIC void writefactor(pEnv env, Index n)
     if (!n)
 	execerror("non-empty stack", "print");
 #endif
-    switch (opertype(nodetype(n))) {
+    switch (nodetype(n)) {
     case USR_:
 	printf("%s", vec_at(env->symtab, nodevalue(n).ent).name);
+	return;
+    case ANON_FUNCT_:
+	printf("%s", opername(operindex(nodevalue(n).proc)));
 	return;
     case BOOLEAN_:
 	printf("%s", nodevalue(n).num ? "true" : "false");
@@ -195,8 +198,7 @@ PUBLIC void writefactor(pEnv env, Index n)
 	    printf("file:%p", nodevalue(n).fil);
 	return;
     default:
-	printf("%s", opername(nodetype(n)));
-	return;
+	error(env, "a factor cannot begin with this symbol");
     }
 }
 

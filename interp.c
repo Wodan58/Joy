@@ -1,8 +1,8 @@
 /* FILE: interp.c */
 /*
  *  module  : interp.c
- *  version : 1.71
- *  date    : 08/24/23
+ *  version : 1.72
+ *  date    : 08/26/23
  */
 
 /*
@@ -286,8 +286,6 @@
 #define GTERNARY(TYPE, VALUE)						\
     env->stck = newnode(env, TYPE, (VALUE), nextnode3(env->stck))
 
-/* #define ARRAY_BOUND_CHECKING */
-
 #ifdef STATS
 static double calls, opers;
 
@@ -314,8 +312,8 @@ PRIVATE void writestack(pEnv env, Index n)
 /*
     exeterm starts with n. If during execution n comes up again, the function
     is directly recursive. That is allowed, except when the very first factor
-    is also n. In that case there is recursion without an end condition. It is
-    possible to discover that specific case.
+    is n. In that case there is recursion without an end condition.
+    It is possible to discover that specific case.
 */
 PUBLIC void exeterm(pEnv env, Index n)
 {
@@ -358,11 +356,6 @@ start:
 #ifdef STATS
 	++opers;
 #endif
-#ifdef ARRAY_BOUND_CHECKING
-	type = opertype(nodetype(stepper));
-#else
-	type = nodetype(stepper);
-#endif
 #ifdef TRACING
 	if (env->debugging) {
 	    writestack(env, env->stck);
@@ -371,6 +364,7 @@ start:
 	    putchar('\n');
 	}
 #endif
+	type = nodetype(stepper);
 	switch (type) {
 	case ILLEGAL_:
 	case COPIED_:
@@ -402,6 +396,11 @@ start:
 	    if (ent.u.body != root)
 		exeterm(env, ent.u.body);
 	    break;
+
+	case ANON_FUNCT_:
+	    (*nodevalue(stepper).proc)(env);
+	    break;
+
 	case BOOLEAN_:
 	case CHAR_:
 	case INTEGER_:
@@ -412,11 +411,9 @@ start:
 	case FILE_:
 	    env->stck = newnode(env, type, nodevalue(stepper), env->stck);
 	    break;
-	    /*
-		Builtins have their own type.
-	    */
+
 	default:
-	    (*nodevalue(stepper).proc)(env);
+	    execerror("valid factor", "exeterm");
 	    break;
 	}
 #ifdef ENABLE_TRACEGC
@@ -543,7 +540,7 @@ PUBLIC char *opername(int o)
 /*
     operproc - return the procedure at index o.
 */
-PUBLIC void (*operproc(int o))(pEnv)
+PUBLIC proc_t operproc(int o)
 {
     int size;
 
@@ -560,17 +557,6 @@ PUBLIC int operflags(int o)
 
     size = sizeof(optable) / sizeof(optable[0]);
     return o >= 0 && o < size ? optable[o].flags : 0;
-}
-
-/*
-    opertype - return o, after doing array bounds checking.
-*/
-PUBLIC int opertype(int o)
-{
-    int size;
-
-    size = sizeof(optable) / sizeof(optable[0]);
-    return o >= 0 && o < size ? o : 0;
 }
 
 /*

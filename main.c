@@ -1,8 +1,8 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.71
- *  date    : 08/24/23
+ *  version : 1.72
+ *  date    : 08/26/23
  */
 
 /*
@@ -125,6 +125,7 @@ void my_atexit(void (*proc)(pEnv));
 #endif
 
 static jmp_buf begin;
+static char *filename;
 
 char *bottom_of_stack; /* protect against stack overflow */
 
@@ -142,8 +143,8 @@ PRIVATE void inisymboltable(pEnv env) /* initialise */
     vec_init(env->symtab);
     env->hash = kh_init(Symtab);
     for (i = 0; (ent.name = opername(i)) != 0; i++) {
-	ent.flags = operflags(i);
 	ent.is_user = 0;
+	ent.flags = operflags(i);
 	ent.u.proc = operproc(i);
 	key = kh_put(Symtab, env->hash, ent.name, &rv);
 	kh_value(env->hash, key) = i;
@@ -330,10 +331,10 @@ PUBLIC void abortexecution_(void)
 /*
     print a runtime error to stderr and abort execution of the current program.
 */
-PUBLIC void execerror(char *message, char *op)
+PUBLIC void execerror(char *str, char *op)
 {
     fflush(stdout);
-    fprintf(stderr, "run time error: %s needed for %s\n", message, op);
+    fprintf(stderr, "%s:run time error: %s needed for %s\n", filename, str, op);
     abortexecution_();
 }
 
@@ -478,7 +479,7 @@ int start_main(int argc, char **argv)
 {
     static unsigned char mustinclude = 1;
     int i, j;
-    char *filename = 0, *ptr;
+    char *ptr;
     unsigned char helping = 0;
 #ifdef COPYRIGHT
     unsigned char verbose = 1;
@@ -549,7 +550,7 @@ int start_main(int argc, char **argv)
 	     */
 	    if ((ptr = strrchr(argv[0] = filename, '/')) != 0) {
 		*ptr++ = 0;
-		argv[0] = filename = ptr;
+		argv[0] = filename = ptr; /* basename */
 	    }
 	    for (--argc; i < argc; i++)
 		argv[i] = argv[i + 1];
