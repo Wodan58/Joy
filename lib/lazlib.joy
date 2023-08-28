@@ -101,6 +101,6 @@ LIBRA
 
 						(* end LIBRA *)
 
-"lazlib  is loaded\n" putchars.
+"lazlib  is loaded\r\n" putchars.
 
 (* END   lazlib.joy *)

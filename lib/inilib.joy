@@ -7,7 +7,7 @@ LIBRA
 
 (* - - - - -  I N P U T   O U T P U T  - - - - *)
 
-    newline == '\n putch;
+    newline == '\r putch '\n putch;
     putln == put newline;
     space == '\032 putch;
     bell == '\007 putch;
@@ -97,7 +97,7 @@ LIBRA
 	[ '_ swons intern body null ]
 	[ ".joy" concat include ]
 	[ [ verbose ]
-	  [ putchars "  is already loaded\n" putchars ]
+	  [ putchars "  is already loaded\r\n" putchars ]
 	  [ pop ]
 	  ifte ]
 	ifte;
@@ -117,6 +117,6 @@ LIBRA
     INILIB == "inilib.joy - the initial library, assumed everywhere\n".
 							(* end LIBRA *)
 
-"inilib  is loaded\n" putchars.
+"inilib  is loaded\r\n" putchars.
 
 (* END   inilib.joy *)

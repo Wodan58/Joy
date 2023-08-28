@@ -1,7 +1,7 @@
 /*
  *  module  : utils.c
- *  version : 1.21
- *  date    : 08/26/23
+ *  version : 1.22
+ *  date    : 08/27/23
  */
 #include "globals.h"
 
@@ -77,7 +77,7 @@ PUBLIC void inimem2(pEnv env)
     if (env->tracegc > 1) {
 	printf("mem_low = %d\n", mem_low);
 	printf("memoryindex = %d\n", memoryindex);
-	printf("top of mem = %u\n", memorymax);
+	printf("top of mem = %" PRId64 "\n", memorymax);
     }
 #endif
 }
@@ -89,7 +89,7 @@ PUBLIC void printnode(pEnv env, Index p)
     if (nodetype(p) == USR_)
 	printf("%10s", vec_at(env->symtab, nodevalue(p).num).name);
     else
-	printf("%10d", nodevalue(p).num);
+	printf("%10" PRId64, nodevalue(p).num);
     printf(" %5d\n", nextnode1(p));
 }
 #endif
@@ -218,7 +218,7 @@ PUBLIC void gc2(pEnv env)
 
 #ifdef ENABLE_TRACEGC
     if (env->tracegc > 0)
-	printf("gc - %d nodes inspected, %d nodes copied, clock: %d\n",
+	printf("gc - %d nodes inspected, %d nodes copied, clock: %ld\n",
 	    nodesinspected, nodescopied, this_gc_clock);
     if (env->tracegc > 1)
 	printf("end %s garbage collection\n", mess);

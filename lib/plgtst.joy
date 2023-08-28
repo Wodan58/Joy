@@ -1,6 +1,6 @@
 (* FILE:   plgtst.joy *)
 
-"\ntesting the propositional logic library in file  plglib.joy\n\n"
+"\r\ntesting the propositional logic library in file  plglib.joy\r\n\n"
 putchars.
 
 0 __settracegc.

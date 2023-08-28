@@ -30,7 +30,7 @@ LIBRA
 	  [ dup [+ - * /] in ]
 	  [ [ [calc] map uncons first ] dip
 	    call ]
-	  [ "bad operator\n" put ]
+	  [ "bad operator\r\n" put ]
 	  ifte ]
 	ifte;
 
@@ -105,6 +105,6 @@ END;
 
 						(* end LIBRA *)
 
-"mthlib  is loaded\n" putchars.
+"mthlib  is loaded\r\n" putchars.
 
 (* END   mthlib.joy *)

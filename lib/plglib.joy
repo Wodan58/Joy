@@ -31,7 +31,7 @@ HIDE
     show-all ==
 	pop
 	[ [null]
-	  ["\tnot tautology, countermodel(s):\n" putchars]
+	  ["\tnot tautology, countermodel(s):\r\n" putchars]
 	  []
 	  ifte
 	  "  " putchars succ dup put ]
@@ -41,7 +41,7 @@ HIDE
 	"  F: " putchars putln;
     show-first ==
 	pop
-	"\tnot tautology, first countermodel:\n" putchars
+	"\tnot tautology, first countermodel:\r\n" putchars
 	swap '\t putch
 	"T: " putchars put
 	"  F: " putchars putln
@@ -318,12 +318,12 @@ IN
     taut-show-all ==
 	[ 0  [] [] [[show-all]] ] dip
 	fal-all
-	[null] ['\t putch "tautology\n" putchars] [] ifte
+	[null] ['\t putch "tautology\r\n" putchars] [] ifte
 	pop;
     taut-show-first ==
 	[ 0  [] [] [[show-first]] ] dip
 	fal-first
-	[null] ['\t putch "tautology\n" putchars] [] ifte
+	[null] ['\t putch "tautology\r\n" putchars] [] ifte
 	pop;
     taut-collect-all ==
 	[ [] [] [] [[collect]] ] dip
@@ -345,6 +345,6 @@ END; (* HIDE, end of SEMANTIC TABLEAUX *)
     PLGLIB == "plglib.joy - propositional logic library\n".
 
 							 (* end LIBRA *)
-"plglib  is loaded\n" putchars.
+"plglib  is loaded\r\n" putchars.
 
 (* END  plglib.joy *)

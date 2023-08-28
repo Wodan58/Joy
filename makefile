@@ -1,19 +1,19 @@
 #
 #   module  : makefile
-#   version : 1.4
-#   date    : 08/24/23
+#   version : 1.5
+#   date    : 08/28/23
 #
 .SUFFIXES:
 .SUFFIXES: .c .o
 
 CC     = gcc
-CFLAGS = -DCOPYRIGHT -DNOBDW -O3 -Wall -Wextra -Wno-unused-parameter \
+CFLAGS = -DCOPYRIGHT -DNOBDW -I. -O3 -Wall -Wextra -Wno-unused-parameter \
 	 -Werror -DJVERSION="\"NOBDW Release 1.0\""
 HDRS   = globals.h
-OBJS   = interp.o scan.o utils.o main.o factor.o module.o stackavail.o
+OBJS   = interp.o scan.o utils.o main.o factor.o module.o stackavail.o gc.o
 
 joy:	prep $(OBJS)
-	$(CC) -o$@ $(OBJS) -lm -lgc
+	$(CC) -o$@ $(OBJS) -lm
 
 $(OBJS): $(HDRS)
 

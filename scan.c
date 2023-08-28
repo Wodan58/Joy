@@ -1,12 +1,10 @@
 /* FILE: scan.c */
 /*
  *  module  : scan.c
- *  version : 1.53
- *  date    : 08/24/23
+ *  version : 1.55
+ *  date    : 08/28/23
  */
 #include "globals.h"
-
-void quit_(pEnv env);
 
 static struct {
     FILE *fp;
@@ -45,7 +43,7 @@ static struct keys {
 PUBLIC void inilinebuffer(pEnv env, char *str)
 {
     infile[0].fp = env->srcfile;
-    infile[0].name = str ? str : "stdin";
+    infile[0].name = str;
 }
 
 /*
@@ -245,6 +243,7 @@ PRIVATE void my_getsym(pEnv env)
     int i = 0, begin, next;
     char ident[ALEN], string[INPLINEMAX + 2];
 
+    ident[0] = 0;
 start:
     while (ch <= ' ')
 	getch(env);
@@ -262,7 +261,7 @@ start:
 	    goto start;
 	}
 	env->symb = LPAREN;
-	return;
+	goto einde;
     case '#':
 	currentcolumn = linelength;
 	getch(env);
@@ -270,31 +269,31 @@ start:
     case ')':
 	env->symb = RPAREN;
 	getch(env);
-	return;
+	goto einde;
     case '[':
 	env->symb = LBRACK;
 	getch(env);
-	return;
+	goto einde;
     case ']':
 	env->symb = RBRACK;
 	getch(env);
-	return;
+	goto einde;
     case '{':
 	env->symb = LBRACE;
 	getch(env);
-	return;
+	goto einde;
     case '}':
 	env->symb = RBRACE;
 	getch(env);
-	return;
+	goto einde;
     case '.':
 	env->symb = PERIOD;
 	getch(env);
-	return;
+	goto einde;
     case ';':
 	env->symb = SEMICOL;
 	getch(env);
-	return;
+	goto einde;
     case '\'':
 	getch(env);
 	if (ch == '\\')
@@ -302,7 +301,7 @@ start:
 	env->yylval.num = ch;
 	env->symb = CHAR_;
 	getch(env);
-	return;
+	goto einde;
     case '"':
 	getch(env);
 	while (ch != '"' && !endofbuffer()) {
@@ -315,7 +314,7 @@ start:
 	getch(env);
 	env->yylval.str = GC_strdup(string);
 	env->symb = STRING_;
-	return;
+	goto einde;
     case '-': /* PERHAPS unary minus */
     case '0':
     case '1':
@@ -363,7 +362,7 @@ first:
 		}
 		env->yylval.dbl = strtod(&linbuf[begin], 0);
 		env->symb = FLOAT_;
-		return;
+		goto einde;
 	    }
 done:
 	    env->yylval.num = strtoll(&linbuf[begin] +
@@ -376,7 +375,7 @@ done:
 		    env->yylval.num = -env->yylval.num;
 		env->symb = INTEGER_;
 	    }
-	    return;
+	    goto einde;
 	}
 	goto next;
 next:
@@ -402,12 +401,12 @@ next:
 	    for (i = 0; i < (int)(sizeof(keywords) / sizeof(keywords[0])); i++)
 		if (!strcmp(ident, keywords[i].name)) {
 		    env->symb = keywords[i].symb;
-		    return;
+		    goto einde;
 		}
 	env->yylval.str = GC_strdup(ident);
 	env->symb = ATOM;
-	return;
     }
+einde:
 }
 
 #ifdef DUMP_TOKENS
@@ -497,7 +496,7 @@ PUBLIC void getsym(pEnv env)
 #endif
 	env->symb = tok.symb;
 	env->yylval = tok.yylval;
-	return;
+	goto einde;
     }
 /*
     There is no tokenlist, use the normal procedure to get one.
@@ -511,6 +510,7 @@ PUBLIC void getsym(pEnv env)
 /*
     Copy the global variables of modl.c into local variables.
 */
+	tok.symb = env->symb;
 	savemod(&hide, &modl, &hcnt);
 	do {
 	    switch (env->symb) {
@@ -530,9 +530,12 @@ PUBLIC void getsym(pEnv env)
 	    case IN	  :
 	    case JPUBLIC  : stoppriv();
 			    break;
-	    case EQDEF	  : if (strchr(env->yylval.str, '.') == 0)
-				env->yylval.str = classify(env,env->yylval.str);
-			    enteratom(env);
+	    case EQDEF	  : if (tok.symb == ATOM) {
+				if (strchr(env->yylval.str, '.') == 0)
+				    env->yylval.str = classify(env,
+							       env->yylval.str);
+				enteratom(env);
+			    }
 			    break;
 	    case PERIOD	  :
 	    case END	  : if (module) {
@@ -546,6 +549,7 @@ PUBLIC void getsym(pEnv env)
 				goto done;
 			    break;
 	    }
+	    tok.symb = env->symb; /* previous symbol */
 	    push_symb(env);
 	    my_getsym(env);
 	} while (1);
@@ -574,4 +578,5 @@ done:	undomod(hide, modl, hcnt);
 	dumptok(tok, 3); /* there was no value popped */
 #endif
     }
+einde:
 }

@@ -1,8 +1,8 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.72
- *  date    : 08/26/23
+ *  version : 1.75
+ *  date    : 08/28/23
  */
 
 /*
@@ -120,12 +120,8 @@ Manfred von Thun, 2006
 #define DONT_READ_AHEAD 0
 #define READ_PRIV_AHEAD 1
 
-#if defined(STATS) || defined(SYMBOLS)
-void my_atexit(void (*proc)(pEnv));
-#endif
-
 static jmp_buf begin;
-static char *filename;
+static char *filename = "stdin";
 
 char *bottom_of_stack; /* protect against stack overflow */
 
@@ -238,7 +234,7 @@ PRIVATE void definition(pEnv env)
     if (env->symb != ATOM)
 	/*   NOW ALLOW EMPTY DEFINITION:
 	      { error(env, "atom expected at start of definition");
-		abortexecution_(); }
+		abortexecution_(MOD_NAME); }
 	*/
 	return;
 
@@ -265,8 +261,8 @@ PRIVATE void definition(pEnv env)
 
 /*
  *   defsequence - when reading the private section ahead, symbols are entered
- *		 in the symbol table, such that local symbols can call each
- *		 other.
+ *		   in the symbol table, such that local symbols can call each
+ *		   other.
  */
 PRIVATE void defsequence(pEnv env)
 {
@@ -291,7 +287,7 @@ PRIVATE void compound_def(pEnv env)
 	getsym(env);
 	if (env->symb != ATOM) {
 	    error(env, "atom expected as name of module");
-	    abortexecution_();
+	    abortexecution_(MOD_NAME);
 	}
 	initmod(env, env->yylval.str); /* initmod adds ident to the module */
 	getsym(env);
@@ -323,9 +319,9 @@ PRIVATE void compound_def(pEnv env)
 /*
     abort execution and restart reading from srcfile; the stack is not cleared.
 */
-PUBLIC void abortexecution_(void)
+PUBLIC void abortexecution_(int num)
 {
-    longjmp(begin, 1);
+    longjmp(begin, num);
 }
 
 /*
@@ -335,7 +331,7 @@ PUBLIC void execerror(char *str, char *op)
 {
     fflush(stdout);
     fprintf(stderr, "%s:run time error: %s needed for %s\n", filename, str, op);
-    abortexecution_();
+    abortexecution_(EXEC_ERR);
 }
 
 /*
@@ -403,7 +399,7 @@ PRIVATE void copyright(char *file)
 	{ "modtst.joy", 1047920271, "BDW" },
 	{ 0, 1056113062, "NOBDW" } };
 
-    if (file) {
+    if (strcmp(file, "stdin")) {
 	if ((ptr = strrchr(file, '/')) != 0)
 	    file = ptr + 1;
 	for (i = 0; table[i].file; i++) {
@@ -576,7 +572,8 @@ int start_main(int argc, char **argv)
     env.undeferror = INIUNDEFERROR;
     inilinebuffer(&env, filename);
     inisymboltable(&env);
-    setjmp(begin); /* return here after error or abort */
+    if (setjmp(begin) == SIGSEGV) /* return here after error or abort */
+	quit_(&env); /* do not continue after SIGSEGV */
 #ifdef NOBDW
     inimem1(&env, 0); /* does not clear the stack */
     inimem2(&env);
@@ -645,11 +642,8 @@ int main(int argc, char **argv)
 {
     int (*volatile m)(int, char **) = start_main;
 
+    signal(SIGSEGV, abortexecution_);
     bottom_of_stack = (char *)&argc;
-#ifdef BDW_GARBAGE_COLLECTOR
     GC_INIT();
-#else
-    GC_init(&argc);
-#endif
     return (*m)(argc, argv);
 }

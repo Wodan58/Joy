@@ -1,7 +1,7 @@
 #
 #   module  : CMakeLists.txt
-#   version : 1.15
-#   date    : 08/24/23
+#   version : 1.16
+#   date    : 08/28/23
 #
 cmake_minimum_required(VERSION 3.0)
 project(Joy VERSION 1.0)
@@ -11,7 +11,7 @@ endif()
 option(RUN_TESTS "Run standard tests" OFF)
 add_definitions(-DNOBDW -DCOPYRIGHT -DJVERSION="NOBDW ${CMAKE_BUILD_TYPE} ${CMAKE_PROJECT_VERSION}")
 include_directories(.)
-add_executable(joy interp.c scan.c utils.c main.c factor.c module.c stackavail.c)
+add_executable(joy interp.c scan.c utils.c main.c factor.c module.c stackavail.c gc.c)
 add_dependencies(joy always)
 add_custom_target(always
 		  COMMAND sh ${CMAKE_SOURCE_DIR}/table.sh ${CMAKE_SOURCE_DIR}
@@ -26,7 +26,7 @@ else()
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O0 --coverage -fprofile-arcs -ftest-coverage") # debug, no optimization
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage") # enabling coverage
   endif()
-  target_link_libraries(joy m gc)
+  target_link_libraries(joy m)
   if(RUN_TESTS)
     add_subdirectory(lib)
     add_subdirectory(test)

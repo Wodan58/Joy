@@ -1,7 +1,7 @@
 (* FILE:  laztst.joy *)
 "numlib" libload.					      (* R.W. *)
 
-"\nTesting lazy lists in the library lazlib.joy\n" putchars.
+"\r\nTesting lazy lists in the library lazlib.joy\r\n" putchars.
 
 0 __settracegc.
 "lazlib" libload.

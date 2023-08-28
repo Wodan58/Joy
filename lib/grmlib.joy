@@ -136,7 +136,7 @@ HIDE
     parse-test == pop pop true or;
     parse-count == # "count" put stack putln
 		 pop pop succ;
-    parse-tell == "accept\n" putchars pop pop succ
+    parse-tell == "accept\r\n" putchars pop pop succ
 
 IN
 
@@ -218,6 +218,6 @@ END; (* HIDE, parser *)
     GRMLIB == "grmlib.joy - grammar (generating/parsing) library\n".
 
 							 (* end LIBRA *)
-"grmlib  is loaded\n" putchars.
+"grmlib  is loaded\r\n" putchars.
 
 (* END  grmlib.joy *)

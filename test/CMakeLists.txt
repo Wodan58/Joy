@@ -1,17 +1,17 @@
 #
 #   module  : CMakeLists.txt
-#   version : 1.12
-#   date    : 08/23/23
+#   version : 1.14
+#   date    : 08/28/23
 #
 macro(exe9 src)
 add_custom_target(${src}.out ALL
+		  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/test
 		  DEPENDS joy ${CMAKE_SOURCE_DIR}/test/${src}.joy
 		  COMMAND joy ${CMAKE_SOURCE_DIR}/test/${src}.joy >${src}.out)
 endmacro(exe9)
 
 exe9(m20)
 exe9(m21)
-exe9(modtst)
 exe9(test01)
 exe9(test02)
 exe9(test03)

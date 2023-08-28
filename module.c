@@ -1,7 +1,7 @@
 /*
     module  : module.c
-    version : 1.10
-    date    : 08/23/23
+    version : 1.11
+    date    : 08/28/23
 */
 #include "globals.h"
 
@@ -117,6 +117,11 @@ char *classify(pEnv env, char *name)
     size_t leng;
     char temp[BUFFERMAX], *buf = 0, *str;
 
+    /*
+     * if name already has a prefix, there is no need to add another one.
+     */
+    if (strchr(name, '.'))
+	return name;
     /*
      * inside a private section, names that are to be entered in the symbol
      * table should get the hide number as a prefix.

@@ -1,8 +1,8 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.71
- *  date    : 08/24/23
+ *  version : 1.73
+ *  date    : 08/28/23
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -14,6 +14,7 @@
 #include <limits.h>
 #include <stdint.h>
 #include <setjmp.h>
+#include <signal.h>
 #include <assert.h>
 #include <math.h>
 #include <time.h>
@@ -25,11 +26,6 @@
 #else
 #include <unistd.h>
 #endif
-
-/*
-    The following #defines are present in the source code.
-*/
-#define BDW_GARBAGE_COLLECTOR	/* main.c */
 
 #ifdef NOBDW
 #define nodetype(n)  vec_at(env->memory, n).op
@@ -99,6 +95,13 @@
 
 #define PRIVATE
 #define PUBLIC
+
+typedef enum {
+    NOT_USED,
+    MY_ABORT,
+    MOD_NAME,
+    EXEC_ERR
+} Aborts;
 
 typedef enum {
     OK,
@@ -203,6 +206,9 @@ typedef struct Env {
 */
 
 /* Public procedures: */
+/* quit.c */
+void quit_(pEnv env);
+void my_atexit(void (*proc)(pEnv));
 /* stackavail.c */
 size_t stackavail();
 /* interp.c */
@@ -217,7 +223,7 @@ PUBLIC int operindex(proc_t proc);
 extern char *bottom_of_stack;
 PUBLIC void lookup(pEnv env);
 PUBLIC void enteratom(pEnv env);
-PUBLIC void abortexecution_(void);
+PUBLIC void abortexecution_(int num);
 PUBLIC void execerror(char *message, char *op);
 /* scan.c */
 PUBLIC void inilinebuffer(pEnv env, char *filnam);
