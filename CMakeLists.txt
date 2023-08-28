@@ -1,6 +1,6 @@
 #
 #   module  : CMakeLists.txt
-#   version : 1.16
+#   version : 1.17
 #   date    : 08/28/23
 #
 cmake_minimum_required(VERSION 3.0)
@@ -18,9 +18,9 @@ add_custom_target(always
 		  COMMAND sh ${CMAKE_SOURCE_DIR}/prims.sh ${CMAKE_SOURCE_DIR})
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
   add_definitions(-DGC_NOT_DLL -D_CRT_SECURE_NO_WARNINGS)
-  target_link_libraries(joy gc-lib)
-  include_directories(bdwgc/include)
-  add_subdirectory(bdwgc)
+# target_link_libraries(joy gc-lib)
+# include_directories(bdwgc/include)
+# add_subdirectory(bdwgc)
 else()
   if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O0 --coverage -fprofile-arcs -ftest-coverage") # debug, no optimization
