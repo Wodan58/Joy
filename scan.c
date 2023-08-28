@@ -1,7 +1,7 @@
 /* FILE: scan.c */
 /*
  *  module  : scan.c
- *  version : 1.55
+ *  version : 1.56
  *  date    : 08/28/23
  */
 #include "globals.h"
@@ -406,7 +406,7 @@ next:
 	env->yylval.str = GC_strdup(ident);
 	env->symb = ATOM;
     }
-einde:
+einde:;
 }
 
 #ifdef DUMP_TOKENS
@@ -578,5 +578,5 @@ done:	undomod(hide, modl, hcnt);
 	dumptok(tok, 3); /* there was no value popped */
 #endif
     }
-einde:
+einde:;
 }
