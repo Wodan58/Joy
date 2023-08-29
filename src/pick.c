@@ -1,7 +1,7 @@
 /*
     module  : pick.c
-    version : 1.1
-    date    : 08/26/23
+    version : 1.2
+    date    : 08/29/23
 */
 #ifndef PICK_C
 #define PICK_C
@@ -20,8 +20,8 @@ void pick_(pEnv env)
     size = nodevalue(env->stck).num; /* pick up the number */
     POP(env->stck); /* remove top of stack */
     item = env->stck; /* can become 0 if the stack is too small */
-    for (i = 0; i < size; i++) /* top of stack was not popped yet */
+    for (i = 0; i < size; i++) /* top of stack was popped */
 	item = nextnode1(item);
-    GUNARY(nodetype(item), nodevalue(item));
+    GNULLARY(nodetype(item), nodevalue(item));
 }
 #endif
