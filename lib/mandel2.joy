@@ -1,0 +1,34 @@
+"seqlib" libload.
+
+LIBRA
+
+mandel ==
+    0 30 from-to-list [-0.10 * 1.5 +] map
+    0 74 from-to-list [-0.04 * 1.0 +] map
+    cartproduct 31 slices
+    [[putpt] step newline] step;
+
+putpt == 
+    get_k 16 rem " .:,;!/>)|&IH%*#" of putch;
+
+inczs ==
+    [[* 2 *] nullary rollup [dup *] unary2
+    [+ 10 >] [pop2 pop] [- swap] ifte] infra;
+
+get_k ==
+    [-1 [0 0]] dip [[+] mapr2 inczs [succ] dip] cons
+    [null not swap 112 < and] repeat pop;
+
+slices ==
+    [reverse dup size [] rollup] dip /
+    [dup swapd [] rollup
+      [swapd [unswons] dipd consd swapd pred]
+      [0 >] repeat
+      pop [rollup consd] dip swap]
+    [pop null not] repeat
+    pop2;
+.
+
+0 __settracegc .
+
+mandel .
