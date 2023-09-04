@@ -1,13 +1,13 @@
 /*
     module  : app11.c
-    version : 1.4
-    date    : 08/13/23
+    version : 1.5
+    date    : 09/04/23
 */
 #ifndef APP11_C
 #define APP11_C
 
 /**
-OK 2470  app11  :  X Y [P]  ->  R
+OK 2440  app11  :  X Y [P]  ->  R
 Executes P, pushes result R on stack.
 */
 PRIVATE void app11_(pEnv env)

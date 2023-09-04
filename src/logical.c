@@ -1,13 +1,13 @@
 /*
     module  : logical.c
-    version : 1.2
-    date    : 08/13/23
+    version : 1.3
+    date    : 09/04/23
 */
 #ifndef LOGICAL_C
 #define LOGICAL_C
 
 /**
-OK 2350  logical  :  X  ->  B
+OK 2330  logical  :  X  ->  B
 Tests whether X is a logical.
 */
 TYPE(logical_, "logical", ==, BOOLEAN_)

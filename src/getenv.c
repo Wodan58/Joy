@@ -1,13 +1,13 @@
 /*
     module  : getenv.c
-    version : 1.2
-    date    : 08/13/23
+    version : 1.3
+    date    : 09/04/23
 */
 #ifndef GETENV_C
 #define GETENV_C
 
 /**
-OK 3050  getenv  :  "variable"  ->  "value"
+OK 3030  getenv  :  "variable"  ->  "value"
 Retrieves the value of the environment variable "variable".
 */
 PRIVATE void getenv_(pEnv env)

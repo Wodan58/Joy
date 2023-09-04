@@ -1,13 +1,13 @@
 /*
     module  : condlinrec.c
-    version : 1.3
-    date    : 08/13/23
+    version : 1.4
+    date    : 09/04/23
 */
 #ifndef CONDLINREC_C
 #define CONDLINREC_C
 
 /**
-OK 2780  condlinrec  :  [ [C1] [C2] .. [D] ]  ->  ...
+OK 2760  condlinrec  :  [ [C1] [C2] .. [D] ]  ->  ...
 Each [Ci] is of the form [[B] [T]] or [[B] [R1] [R2]].
 Tries each B. If that yields true and there is just a [T], executes T and exit.
 If there are [R1] and [R2], executes R1, recurses, executes R2.

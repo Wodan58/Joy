@@ -1,13 +1,13 @@
 /*
     module  : construct.c
-    version : 1.3
-    date    : 08/13/23
+    version : 1.4
+    date    : 09/04/23
 */
 #ifndef CONSTRUCT_C
 #define CONSTRUCT_C
 
 /**
-OK 2490  construct  :  [P] [[P1] [P2] ..]  ->  R1 R2 ..
+OK 2470  construct  :  [P] [[P1] [P2] ..]  ->  R1 R2 ..
 Saves state of stack and then executes [P].
 Then executes each [Pi] to give Ri pushed onto saved stack.
 */

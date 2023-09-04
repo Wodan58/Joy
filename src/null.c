@@ -1,13 +1,13 @@
 /*
     module  : null.c
-    version : 1.4
-    date    : 08/26/23
+    version : 1.5
+    date    : 09/04/23
 */
 #ifndef NULL_C
 #define NULL_C
 
 /**
-OK 2210  null  :  X  ->  B
+OK 2200  null  :  X  ->  B
 Tests for empty aggregate X or zero numeric.
 */
 PRIVATE void null_(pEnv env)

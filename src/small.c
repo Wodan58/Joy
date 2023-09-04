@@ -1,13 +1,13 @@
 /*
     module  : small.c
-    version : 1.4
-    date    : 08/13/23
+    version : 1.5
+    date    : 09/04/23
 */
 #ifndef SMALL_C
 #define SMALL_C
 
 /**
-OK 2220  small  :  X  ->  B
+OK 2210  small  :  X  ->  B
 Tests whether aggregate X has 0 or 1 members, or numeric 0 or 1.
 */
 PRIVATE void small_(pEnv env)

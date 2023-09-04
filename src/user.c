@@ -1,13 +1,13 @@
 /*
     module  : user.c
-    version : 1.2
-    date    : 08/13/23
+    version : 1.3
+    date    : 09/04/23
 */
 #ifndef USER_C
 #define USER_C
 
 /**
-OK 2400  user  :  X  ->  B
+OK 2380  user  :  X  ->  B
 Tests whether X is a user-defined symbol.
 */
 TYPE(user_, "user", ==, USR_)

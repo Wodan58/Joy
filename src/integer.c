@@ -1,13 +1,13 @@
 /*
     module  : integer.c
-    version : 1.2
-    date    : 08/13/23
+    version : 1.3
+    date    : 09/04/23
 */
 #ifndef INTEGER_C
 #define INTEGER_C
 
 /**
-OK 2330  integer  :  X  ->  B
+OK 2310  integer  :  X  ->  B
 Tests whether X is an integer.
 */
 TYPE(integer_, "integer", ==, INTEGER_)

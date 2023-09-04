@@ -1,13 +1,13 @@
 /*
     module  : gc.c
-    version : 1.2
-    date    : 08/13/23
+    version : 1.3
+    date    : 09/04/23
 */
 #ifndef GC_C
 #define GC_C
 
 /**
-OK 3030  gc  :  ->
+OK 3010  gc  :  ->
 Initiates garbage collection.
 */
 PUBLIC void gc_(pEnv env)

@@ -11,13 +11,6 @@ The two versions are drifting apart.
 decent language and needs a ditto
 [presentation](http://www.complang.tuwien.ac.at/anton/euroforth/ef01/thomas01a.pdf). The original version can be seen [here](https://github.com/Wodan58/joy0).
 
-Build instructions
-------------------
-
-    cd build
-    cmake ..
-    cmake --build .
-
 Changes
 -------
 
@@ -34,6 +27,13 @@ history. It proves that the language and the implementation was not done over
 night.
 In fact, according to this [interview](http://archive.vector.org.uk/art10000350)
 the implementation in C was started in 1995.
+
+Build instructions
+------------------
+
+    cd build
+    SOURCE_DATE_EPOCH=1047920271 cmake ..
+    cmake --build .
 
 Testing
 -------
@@ -53,3 +53,12 @@ Bugs
 This implementation of Joy has the intent to stay as close to the legacy
 version as possible. All unintended deviations and all remaining bugs are
 copyright © Wodan58.
+
+See also
+--------
+
+Implementation|Dependencies
+---|---
+[Joy - NOBDW](https://github.com/Wodan58/Joy)|
+[joy1 - BDW](https://github.com/Wodan58/joy1)|[BDW garbage collector](https://github.com/ivmai/bdwgc)
+[Moy](https://github.com/Wodan58/Moy)|[BDW garbage collector](https://github.com/ivmai/bdwgc) and [Lex & Yacc](https://sourceforge.net/projects/winflexbison/files/win_flex_bison-latest.zip)

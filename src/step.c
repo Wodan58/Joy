@@ -1,13 +1,13 @@
 /*
     module  : step.c
-    version : 1.4
-    date    : 08/13/23
+    version : 1.5
+    date    : 09/04/23
 */
 #ifndef STEP_C
 #define STEP_C
 
 /**
-OK 2790  step  :  A [P]  ->  ...
+OK 2770  step  :  A [P]  ->  ...
 Sequentially putting members of aggregate A onto stack,
 executes P for each member of A.
 */

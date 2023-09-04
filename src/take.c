@@ -1,13 +1,13 @@
 /*
     module  : take.c
-    version : 1.6
-    date    : 08/13/23
+    version : 1.7
+    date    : 09/04/23
 */
 #ifndef TAKE_C
 #define TAKE_C
 
 /**
-OK 2150  take  :  A N  ->  B
+OK 2140  take  :  A N  ->  B
 Aggregate B is the result of retaining just the first N elements of A.
 */
 PRIVATE void take_(pEnv env)

@@ -1,13 +1,13 @@
 /*
     module  : argv.c
-    version : 1.3
-    date    : 08/13/23
+    version : 1.4
+    date    : 09/04/23
 */
 #ifndef ARGV_C
 #define ARGV_C
 
 /**
-OK 3060  argv  :  ->  A
+OK 3040  argv  :  ->  A
 Creates an aggregate A containing the interpreter's command line arguments.
 */
 PRIVATE void argv_(pEnv env)

@@ -1,13 +1,13 @@
 /*
     module  : tailrec.c
-    version : 1.3
-    date    : 08/13/23
+    version : 1.4
+    date    : 09/04/23
 */
 #ifndef TAILREC_C
 #define TAILREC_C
 
 /**
-OK 2740  tailrec  :  [P] [T] [R1]  ->  ...
+OK 2720  tailrec  :  [P] [T] [R1]  ->  ...
 Executes P. If that yields true, executes T.
 Else executes R1, recurses.
 */

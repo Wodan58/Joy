@@ -1,7 +1,7 @@
 /*
     module  : quit.c
-    version : 1.4
-    date    : 08/13/23
+    version : 1.5
+    date    : 09/04/23
 */
 #ifndef QUIT_C
 #define QUIT_C
@@ -9,6 +9,10 @@
 static int exit_index;
 static void (*table[DISPLAYMAX])(pEnv);
 
+/**
+OK 3130  quit  :  ->
+Exit from Joy.
+*/
 PUBLIC void my_atexit(void (*proc)(pEnv))
 {
 #if 0
@@ -24,10 +28,6 @@ PRIVATE void my_exit(pEnv env)
 	(*table[exit_index])(env);
 }
 
-/**
-OK 3160  quit  :  ->
-Exit from Joy.
-*/
 PRIVATE void quit_(pEnv env)
 {
     my_exit(env);

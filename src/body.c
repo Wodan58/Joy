@@ -1,13 +1,13 @@
 /*
     module  : body.c
-    version : 1.2
-    date    : 08/13/23
+    version : 1.3
+    date    : 09/04/23
 */
 #ifndef BODY_C
 #define BODY_C
 
 /**
-OK 2200  body  :  U  ->  [P]
+OK 2190  body  :  U  ->  [P]
 Quotation [P] is the body of user-defined symbol U.
 */
 PRIVATE void body_(pEnv env)

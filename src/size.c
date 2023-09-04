@@ -1,13 +1,13 @@
 /*
     module  : size.c
-    version : 1.5
-    date    : 08/13/23
+    version : 1.6
+    date    : 09/04/23
 */
 #ifndef SIZE_C
 #define SIZE_C
 
 /**
-OK 2090  size  :  A  ->  I
+OK 2080  size  :  A  ->  I
 Integer I is the number of elements of aggregate A.
 */
 PRIVATE void size_(pEnv env)

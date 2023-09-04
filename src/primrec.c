@@ -1,13 +1,13 @@
 /*
     module  : primrec.c
-    version : 1.4
-    date    : 08/13/23
+    version : 1.5
+    date    : 09/04/23
 */
 #ifndef PRIMREC_C
 #define PRIMREC_C
 
 /**
-OK 2840  primrec  :  X [I] [C]  ->  R
+OK 2820  primrec  :  X [I] [C]  ->  R
 Executes I to obtain an initial value R0.
 For integer X uses increasing positive integers to X, combines by C for new R.
 For aggregate X uses successive members and combines by C for new R.

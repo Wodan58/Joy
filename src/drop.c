@@ -1,13 +1,13 @@
 /*
     module  : drop.c
-    version : 1.6
-    date    : 08/13/23
+    version : 1.7
+    date    : 09/04/23
 */
 #ifndef DROP_C
 #define DROP_C
 
 /**
-OK 2140  drop  :  A N  ->  B
+OK 2130  drop  :  A N  ->  B
 Aggregate B is the result of deleting the first N elements of A.
 */
 PRIVATE void drop_(pEnv env)

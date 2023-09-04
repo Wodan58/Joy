@@ -1,13 +1,17 @@
 /*
     module  : equal.c
-    version : 1.6
-    date    : 08/13/23
+    version : 1.7
+    date    : 09/04/23
 */
 #ifndef EQUAL_C
 #define EQUAL_C
 
 #include "compare.h"
 
+/**
+OK 2280  equal  :  T U  ->  B
+(Recursively) tests whether trees T and U are identical.
+*/
 PRIVATE int equal_aux(pEnv env, Index n1, Index n2); /* forward */
 
 PRIVATE int equal_list_aux(pEnv env, Index n1, Index n2)
@@ -29,10 +33,6 @@ PRIVATE int equal_aux(pEnv env, Index n1, Index n2)
     return !Compare(env, n1, n2);
 }
 
-/**
-OK 2290  equal  :  T U  ->  B
-(Recursively) tests whether trees T and U are identical.
-*/
 PRIVATE void equal_(pEnv env)
 {
     TWOPARAMS("equal");
