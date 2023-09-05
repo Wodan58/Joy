@@ -4,8 +4,8 @@
 Introduction
 ============
 
-This presents a note about the technicalities of this Joy implementation.
-Most of the remarks from joy1, the BDW version, also apply here.
+This presents a note about the technicalities of this Joy implementation. Most
+of the remarks from joy1, the BDW version, also apply here.
 
 Recent changes
 ==============
