@@ -1,8 +1,8 @@
 /* FILE: interp.c */
 /*
  *  module  : interp.c
- *  version : 1.72
- *  date    : 08/26/23
+ *  version : 1.73
+ *  date    : 09/07/23
  */
 
 /*
@@ -304,7 +304,7 @@ PRIVATE void writestack(pEnv env, Index n)
 	writestack(env, nextnode1(n));
 	if (nextnode1(n))
 	    putchar(' ');
-	writefactor(env, n);
+	writefactor(env, n, stdout);
     }
 }
 #endif
@@ -360,7 +360,7 @@ start:
 	if (env->debugging) {
 	    writestack(env, env->stck);
 	    printf(" : ");
-	    writeterm(env, stepper);
+	    writeterm(env, stepper, stdout);
 	    putchar('\n');
 	}
 #endif

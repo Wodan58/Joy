@@ -1,8 +1,8 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.73
- *  date    : 08/28/23
+ *  version : 1.74
+ *  date    : 09/07/23
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -64,6 +64,7 @@
 
 /* symbols from getsym		*/
 #define ILLEGAL_ 0
+#define UNKNOWN_ 1
 #define COPIED_ 1
 #define USR_ 2
 #define ANON_FUNCT_ 3
@@ -228,15 +229,16 @@ PUBLIC void execerror(char *message, char *op);
 /* scan.c */
 PUBLIC void inilinebuffer(pEnv env, char *filnam);
 PUBLIC void error(pEnv env, char *message);
+PUBLIC int redirect(pEnv env, char *filnam, FILE *fp);
 PUBLIC int include(pEnv env, char *filnam, int error);
 PUBLIC void getsym(pEnv env);
 /* factor.c */
 PUBLIC void readfactor(pEnv env); /* read a JOY factor */
 PUBLIC void readterm(pEnv env);
-PUBLIC void writefactor(pEnv env, Index n);
-PUBLIC void writeterm(pEnv env, Index n);
+PUBLIC void writefactor(pEnv env, Index n, FILE *fp);
+PUBLIC void writeterm(pEnv env, Index n, FILE *fp);
 #ifdef NOBDW
-PUBLIC void writedump(pEnv env, Index n);
+PUBLIC void writedump(pEnv env, Index n, FILE *fp);
 #endif
 /* module.c */
 PUBLIC void savemod(int *hide, int *modl, int *hcnt);

@@ -1,8 +1,8 @@
 /* FILE: factor.c */
 /*
  *  module  : factor.c
- *  version : 1.21
- *  date    : 08/26/23
+ *  version : 1.22
+ *  date    : 09/07/23
  */
 #include "globals.h"
 
@@ -123,7 +123,7 @@ PUBLIC void readterm(pEnv env)
 /*
     writefactor - print a factor in readable format to stdout.
 */
-PUBLIC void writefactor(pEnv env, Index n)
+PUBLIC void writefactor(pEnv env, Index n, FILE *fp)
 {
     int i;
     char *p;
@@ -140,62 +140,63 @@ PUBLIC void writefactor(pEnv env, Index n)
 #endif
     switch (nodetype(n)) {
     case USR_:
-	printf("%s", vec_at(env->symtab, nodevalue(n).ent).name);
+	fprintf(fp, "%s", vec_at(env->symtab, nodevalue(n).ent).name);
 	return;
     case ANON_FUNCT_:
-	printf("%s", opername(operindex(nodevalue(n).proc)));
+	fprintf(fp, "%s", opername(operindex(nodevalue(n).proc)));
 	return;
     case BOOLEAN_:
-	printf("%s", nodevalue(n).num ? "true" : "false");
+	fprintf(fp, "%s", nodevalue(n).num ? "true" : "false");
 	return;
     case CHAR_:
 	if (nodevalue(n).num >= 8 && nodevalue(n).num <= 13)
-	    printf("'\\%c", "btnvfr"[nodevalue(n).num - 8]);
+	    fprintf(fp, "'\\%c", "btnvfr"[nodevalue(n).num - 8]);
 	else
-	    printf("'%c", (int)nodevalue(n).num);
+	    fprintf(fp, "'%c", (int)nodevalue(n).num);
 	return;
+    case UNKNOWN_:
     case INTEGER_:
-	printf("%" PRId64, nodevalue(n).num);
+	fprintf(fp, "%" PRId64, nodevalue(n).num);
 	return;
     case SET_:
-	putchar('{');
+	putc('{', fp);
 	for (i = 0, set = nodevalue(n).set; i < SETSIZE; i++)
 	    if (set & ((int64_t)1 << i)) {
-		printf("%d", i);
+		fprintf(fp, "%d", i);
 		set &= ~((int64_t)1 << i);
 		if (set)
-		    putchar(' ');
+		    putc(' ', fp);
 	    }
-	putchar('}');
+	putc('}', fp);
 	return;
     case STRING_:
-	putchar('"');
+	putc('"', fp);
 	for (p = nodevalue(n).str; *p; p++)
 	    if (*p >= 8 && *p <= 13)
-		printf("\\%c", "btnvfr"[*p - 8]);
+		fprintf(fp, "\\%c", "btnvfr"[*p - 8]);
 	    else
-		putchar(*p);
-	putchar('"');
+		putc(*p, fp);
+	putc('"', fp);
 	return;
     case LIST_:
-	putchar('[');
-	writeterm(env, nodevalue(n).lis);
-	putchar(']');
+	putc('[', fp);
+	writeterm(env, nodevalue(n).lis, fp);
+	putc(']', fp);
 	return;
     case FLOAT_:
-	printf("%g", nodevalue(n).dbl);
+	fprintf(fp, "%g", nodevalue(n).dbl);
 	return;
     case FILE_:
 	if (!nodevalue(n).fil)
-	    printf("file:NULL");
+	    fprintf(fp, "file:NULL");
 	else if (nodevalue(n).fil == stdin)
-	    printf("file:stdin");
+	    fprintf(fp, "file:stdin");
 	else if (nodevalue(n).fil == stdout)
-	    printf("file:stdout");
+	    fprintf(fp, "file:stdout");
 	else if (nodevalue(n).fil == stderr)
-	    printf("file:stderr");
+	    fprintf(fp, "file:stderr");
 	else
-	    printf("file:%p", nodevalue(n).fil);
+	    fprintf(fp, "file:%p", nodevalue(n).fil);
 	return;
     default:
 	error(env, "a factor cannot begin with this symbol");
@@ -205,12 +206,12 @@ PUBLIC void writefactor(pEnv env, Index n)
 /*
     writeterm - print the contents of a list in readable format to stdout.
 */
-PUBLIC void writeterm(pEnv env, Index n)
+PUBLIC void writeterm(pEnv env, Index n, FILE *fp)
 {
     while (n) {
-	writefactor(env, n);
+	writefactor(env, n, fp);
 	if ((n = nextnode1(n)) != 0)
-	    putchar(' ');
+	    putc(' ', fp);
     }
 }
 
@@ -220,14 +221,14 @@ PUBLIC void writeterm(pEnv env, Index n)
 		the dump contains circular references.
 */
 #ifdef NOBDW
-PUBLIC void writedump(pEnv env, Index n)
+PUBLIC void writedump(pEnv env, Index n, FILE *fp)
 {
     int i = 0;
 
     for (i = 0; n && i < 10; i++) {
-	writefactor(env, n);
+	writefactor(env, n, fp);
 	if ((n = nextnode1(n)) != 0)
-	    putchar(' ');
+	    putc(' ', fp);
     }
 }
 #endif

@@ -1,11 +1,10 @@
 (*
     module  : fget.joy
-    version : 1.2
-    date    : 08/20/22
+    version : 1.3
+    date    : 09/07/23
 *)
-"fget.joy" "r" fopen fget.
-"factor from fget.joy"
-fget.
-"another factor from fget.joy"
-fget.
-"and yet another factor"
+0 setautoput.
+"fput.joy" "r" fopen
+[file] [fget swap] while.
+"end of fget\n" putchars pop.	# pop file pointer
+stack put.			# contents of fput.joy

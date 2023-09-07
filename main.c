@@ -1,8 +1,8 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.75
- *  date    : 08/28/23
+ *  version : 1.76
+ *  date    : 09/07/23
  */
 
 /*
@@ -340,7 +340,7 @@ PUBLIC void execerror(char *str, char *op)
 #define DUMP_CHECK(D, NAME)						\
     if (D) {								\
 	printf("->  %s is not empty:\n", NAME);				\
-	writedump(&env, D);						\
+	writedump(&env, D, stdout);					\
 	putchar('\n');							\
     }
 
@@ -439,7 +439,7 @@ PRIVATE void dump_table(pEnv env)
 	    printf("(%d) %s\n", i, ent.name);
 	else {
 	    printf("(%d) %s == ", i, ent.name);
-	    writeterm(env, ent.u.body);
+	    writeterm(env, ent.u.body, stdout);
 	    putchar('\n');
 	}
     }
@@ -622,9 +622,9 @@ int start_main(int argc, char **argv)
 #endif
 	    if (env.stck) {
 		if (env.autoput == 2)
-		    writeterm(&env, env.stck);
+		    writeterm(&env, env.stck, stdout);
 		else if (env.autoput == 1) {
-		    writefactor(&env, env.stck);
+		    writefactor(&env, env.stck, stdout);
 #ifdef NOBDW
 		    env.stck = vec_at(env.memory, env.stck).next;
 #else

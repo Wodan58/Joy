@@ -1,8 +1,8 @@
 (*
     module  : fput.joy
-    version : 1.4
-    date    : 07/10/23
+    version : 1.5
+    date    : 09/07/23
 *)
-"test" "w" fopen [1 2 3] fput '. ord fputch 10 fput fclose.
+"test" "w" fopen [1 2 3] fput 10 fput '. ord fputch fclose.
 "test" include.
 [1 2 3] equal.

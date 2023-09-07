@@ -1,15 +1,15 @@
 /* FILE: scan.c */
 /*
  *  module  : scan.c
- *  version : 1.56
- *  date    : 08/28/23
+ *  version : 1.57
+ *  date    : 09/07/23
  */
 #include "globals.h"
 
 static struct {
     FILE *fp;
+    int line;
     char *name;
-    int linenum;
 } infile[INPSTACKMAX];
 static int ilevel;
 static int linenumber;
@@ -19,6 +19,7 @@ static int linelength, currentcolumn;
 static int errorcount;
 #endif
 static int ch = ' ';
+static int fget_eof;
 
 static struct keys {
     char *name;
@@ -43,6 +44,7 @@ static struct keys {
 PUBLIC void inilinebuffer(pEnv env, char *str)
 {
     infile[0].fp = env->srcfile;
+    infile[0].line = 1;
     infile[0].name = str;
 }
 
@@ -81,15 +83,18 @@ again:
 		;
 	    linelength = i;
 	} else if (ilevel > 0) {
+	    if (!strcmp(infile[ilevel].name, "fget"))
+		fget_eof = 1;
 	    fclose(infile[ilevel].fp);
+	    infile[ilevel].fp = 0;	/* invalidate file pointer */
 	    env->srcfile = infile[--ilevel].fp;
-	    linenumber = infile[ilevel].linenum;
+	    linenumber = infile[ilevel].line;
 	} else
 	    quit_(env);
-	linbuf[linelength++] = ' '; /* to help getsym for numbers */
+	linbuf[linelength++] = ' ';	/* to help getsym for numbers */
 	linbuf[linelength++] = 0;
 	if (env->echoflag)
-	    putline(env, stdout, 1); /* echo line to stdout */
+	    putline(env, stdout, 1);	/* echo line to stdout */
 	if (linbuf[0] == SHELLESCAPE) {
 	    system(&linbuf[1]);
 	    goto again;
@@ -123,14 +128,25 @@ PUBLIC void error(pEnv env, char *message)
 #endif
 }
 
-PRIVATE void redirect(pEnv env, char *filnam, FILE *fp)
+/*
+    redirect - read from another file descriptor. Some special processing in
+	       case of reading with fget.
+*/
+PUBLIC int redirect(pEnv env, char *name, FILE *fp)
 {
-    infile[ilevel].linenum = linenumber;
-    if (ilevel + 1 == INPSTACKMAX)
+    if (fget_eof) {			/* stop reading from this file */
+	fget_eof = 0;
+	return 0;			/* abort fget functionality */
+    }
+    if (!strcmp(infile[ilevel].name, name))
+	return 1;			/* already reading from this file */
+    infile[ilevel].line = linenumber;	/* save last line number and line */
+    if (ilevel + 1 == INPSTACKMAX)	/* increase the include level */
 	execerror("fewer include files", "include");
     infile[++ilevel].fp = env->srcfile = fp;
-    infile[ilevel].name = filnam;
-    infile[ilevel].linenum = linenumber = 0;
+    infile[ilevel].line = 1;		/* start with line 1 */
+    infile[ilevel].name = name;
+    return 1;				/* ok, switched to new file, buffer */
 }
 
 /*
@@ -141,30 +157,29 @@ PRIVATE void redirect(pEnv env, char *filnam, FILE *fp)
 	      If that path also fails an error is generated unless error
 	      is set to 0.
 */
-PUBLIC int include(pEnv env, char *filnam, int error)
+PUBLIC int include(pEnv env, char *name, int error)
 {
     FILE *fp;
     char *ptr, *str;
 
 /*
-    First try to open filnam in the current working directory.
+    First try to open name in the current working directory.
 */
-    if ((fp = fopen(filnam, "r")) != 0) {
+    if ((fp = fopen(name, "r")) != 0) {
 /*
-    Replace the pathname of argv[0] with the pathname of filnam.
+    Replace the pathname of argv[0] with the pathname of name.
 */
-	if (strchr(filnam, '/')) {
-	    env->pathname = GC_strdup(filnam);
+	if (strchr(name, '/')) {
+	    env->pathname = GC_strdup(name);
 	    ptr = strrchr(env->pathname, '/');
 	    *ptr = 0;
 	}
-    }
 /*
     Prepend pathname to the filename and try again.
 */
-    else if (strcmp(env->pathname, ".")) {
-	str = GC_malloc_atomic(strlen(env->pathname) + strlen(filnam) + 2);
-	sprintf(str, "%s/%s", env->pathname, filnam);
+    } else if (strcmp(env->pathname, ".")) {
+	str = GC_malloc_atomic(strlen(env->pathname) + strlen(name) + 2);
+	sprintf(str, "%s/%s", env->pathname, name);
 	if ((fp = fopen(str, "r")) != 0) {
 /*
     If this succeeds, establish a new pathname.
@@ -174,10 +189,8 @@ PUBLIC int include(pEnv env, char *filnam, int error)
 	    *ptr = 0;
 	}
     }
-    if (fp) {
-	redirect(env, filnam, fp);
+    if (fp && redirect(env, name, fp))
 	return 0; /* ok */
-    }
     if (error)
 	execerror("valid file name", "include");
     return 1; /* nok */

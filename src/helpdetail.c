@@ -1,7 +1,7 @@
 /*
     module  : helpdetail.c
-    version : 1.9
-    date    : 09/04/23
+    version : 1.10
+    date    : 09/07/23
 */
 #ifndef HELPDETAIL_C
 #define HELPDETAIL_C
@@ -24,7 +24,7 @@ PRIVATE void helpdetail_(pEnv env)
 	if ((op = nodetype(n)) == USR_) {
 	    ent = vec_at(env->symtab, nodevalue(n).ent);
 	    printf("%s  ==\n    ", ent.name);
-	    writeterm(env, ent.u.body);
+	    writeterm(env, ent.u.body, stdout);
 	    printf("\n\n");
 	} else {
 	    if (op == ANON_FUNCT_)    
