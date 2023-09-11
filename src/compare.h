@@ -1,7 +1,7 @@
 /*
     module  : compare.h
-    version : 1.12
-    date    : 09/04/23
+    version : 1.13
+    date    : 09/11/23
 */
 #ifndef COMPARE_H
 #define COMPARE_H
@@ -11,8 +11,8 @@ PUBLIC int Compare(pEnv env, Index first, Index second)
     FILE *fp1, *fp2;
     int type1, type2;
     char *name1, *name2;
-    int64_t num, num1, num2;
-    double dbl, dbl1 = 0, dbl2 = 0;
+    double dbl1 = 0, dbl2 = 0;
+    int64_t num1 = 0, num2 = 0;
 
     type1 = nodetype(first);
     type2 = nodetype(second);
@@ -170,20 +170,18 @@ PUBLIC int Compare(pEnv env, Index first, Index second)
 	switch (type2) {
 	case FILE_:
 	    fp2 = nodevalue(second).fil;
-	    return fp1 - fp2 < 0 ? -1 : fp1 - fp2 > 0;
+	    return fp1 < fp2 ? -1 : fp1 > fp2;
 	default:
 	    return 1; /* unequal */
 	}
 	break;
     }
-cmpdbl:
-    dbl = dbl1 - dbl2;
-    return dbl < 0 ? -1 : dbl > 0;
-cmpstr:
-    num = strcmp(name1, name2);
-    return num < 0 ? -1 : num > 0;
 cmpnum:
-    num = num1 - num2;
-    return num < 0 ? -1 : num > 0;
+    return num1 < num2 ? -1 : num1 > num2;
+cmpdbl:
+    return dbl1 < dbl1 ? -1 : dbl1 > dbl2;
+cmpstr:
+    num1 = strcmp(name1, name2);
+    return num1 < 0 ? -1 : num1 > 0;
 }
 #endif
