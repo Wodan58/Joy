@@ -1,7 +1,7 @@
 /*
     module  : compare.h
-    version : 1.13
-    date    : 09/11/23
+    version : 1.14
+    date    : 09/12/23
 */
 #ifndef COMPARE_H
 #define COMPARE_H
@@ -179,7 +179,7 @@ PUBLIC int Compare(pEnv env, Index first, Index second)
 cmpnum:
     return num1 < num2 ? -1 : num1 > num2;
 cmpdbl:
-    return dbl1 < dbl1 ? -1 : dbl1 > dbl2;
+    return dbl1 < dbl2 ? -1 : dbl1 > dbl2;
 cmpstr:
     num1 = strcmp(name1, name2);
     return num1 < 0 ? -1 : num1 > 0;

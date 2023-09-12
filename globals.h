@@ -1,8 +1,8 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.74
- *  date    : 09/07/23
+ *  version : 1.75
+ *  date    : 09/12/23
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -58,7 +58,11 @@
 #define INIUNDEFERROR 0
 
 /* installation dependent	*/
-#define MINIMUM_STACK 40000
+#ifdef NOBDW
+#define MINIMUM_STACK 3300
+#else
+#define MINIMUM_STACK 39490
+#endif
 #define SETSIZE 64
 #define MAXINT 9223372036854775807LL
 
@@ -207,57 +211,57 @@ typedef struct Env {
 */
 
 /* Public procedures: */
-/* quit.c */
-void quit_(pEnv env);
-void my_atexit(void (*proc)(pEnv));
-/* stackavail.c */
-size_t stackavail();
 /* interp.c */
 PUBLIC void exeterm(pEnv env, Index n);
-PUBLIC char *nickname(int o);
+PUBLIC char *nickname(int ch);
 PUBLIC char *opername(int o);
 PUBLIC proc_t operproc(int o);
 PUBLIC int operflags(int o);
-PUBLIC int opertype(int o);
 PUBLIC int operindex(proc_t proc);
-/* main.c */
-extern char *bottom_of_stack;
-PUBLIC void lookup(pEnv env);
-PUBLIC void enteratom(pEnv env);
-PUBLIC void abortexecution_(int num);
-PUBLIC void execerror(char *message, char *op);
-/* scan.c */
-PUBLIC void inilinebuffer(pEnv env, char *filnam);
-PUBLIC void error(pEnv env, char *message);
-PUBLIC int redirect(pEnv env, char *filnam, FILE *fp);
-PUBLIC int include(pEnv env, char *filnam, int error);
-PUBLIC void getsym(pEnv env);
 /* factor.c */
-PUBLIC void readfactor(pEnv env); /* read a JOY factor */
+PUBLIC void readfactor(pEnv env) /* read a JOY factor */;
 PUBLIC void readterm(pEnv env);
 PUBLIC void writefactor(pEnv env, Index n, FILE *fp);
 PUBLIC void writeterm(pEnv env, Index n, FILE *fp);
 #ifdef NOBDW
 PUBLIC void writedump(pEnv env, Index n, FILE *fp);
 #endif
+/* main.c */
+PUBLIC void lookup(pEnv env);
+PUBLIC void enteratom(pEnv env);
+PUBLIC void abortexecution_(int num);
+PUBLIC void execerror(char *str, char *op);
 /* module.c */
-PUBLIC void savemod(int *hide, int *modl, int *hcnt);
-PUBLIC void undomod(int hide, int modl, int hcnt);
-PUBLIC void initmod(pEnv env, char *name);
-PUBLIC void initpriv(pEnv env);
-PUBLIC void stoppriv(void);
-PUBLIC void exitpriv(void);
-PUBLIC void exitmod(void);
-PUBLIC char *classify(pEnv env, char *name);
-PUBLIC pEntry qualify(pEnv env, char *name);
+void savemod(int *hide, int *modl, int *hcnt);
+void undomod(int hide, int modl, int hcnt);
+void initmod(pEnv env, char *name);
+void initpriv(pEnv env);
+void stoppriv(void);
+void exitpriv(void);
+void exitmod(void);
+char *classify(pEnv env, char *name);
+pEntry qualify(pEnv env, char *name);
+/* scan.c */
+PUBLIC void inilinebuffer(pEnv env, char *str);
+PUBLIC void error(pEnv env, char *message);
+PUBLIC int redirect(pEnv env, char *name, FILE *fp);
+PUBLIC int include(pEnv env, char *name, int error);
+PUBLIC void getsym(pEnv env);
+/* stackavail.c */
+size_t stackavail(void);
 /* utils.c */
 #ifdef NOBDW
 PUBLIC void inimem1(pEnv env, int status);
 PUBLIC void inimem2(pEnv env);
 PUBLIC void printnode(pEnv env, Index p);
 PUBLIC void my_gc(pEnv env);
-#endif
 PUBLIC Index newnode(pEnv env, Operator o, Types u, Index r);
-PUBLIC void my_memorymax(pEnv env);
+#else
+PUBLIC Node *newnode(pEnv env, Operator o, Types u, Node *r);
+#endif
 PUBLIC void my_memoryindex(pEnv env);
+PUBLIC void my_memorymax(pEnv env);
+/* quit.c */
+void quit_(pEnv env);
+void my_atexit(void (*proc)(pEnv));
 #endif

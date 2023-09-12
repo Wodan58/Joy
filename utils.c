@@ -1,12 +1,12 @@
 /*
  *  module  : utils.c
- *  version : 1.22
- *  date    : 08/27/23
+ *  version : 1.24
+ *  date    : 09/12/23
  */
 #include "globals.h"
 
-#define LOWER_LIMIT	20000		/* minimum number of nodes */
-#define UPPER_LIMIT	3000000		/* maximum number of nodes */
+#define LOWER_LIMIT	  10000		/* minimum number of nodes */
+#define UPPER_LIMIT	1000000		/* maximum number of nodes */
 
 static clock_t start_gc_clock;
 static vector(Node) *orig_memory;
@@ -31,7 +31,7 @@ PUBLIC void inimem1(pEnv env, int status)
     if (!init) {
 	init = 1;
 	memset(&node, 0, sizeof(Node));
-	vec_init(env->memory);
+	vec_init(env->memory); /* initialize memory */
 	vec_push(env->memory, node); /* null pointer */
     } else if (status) {
 	vec_setsize(env->memory, mem_low); /* retain only definitions */
@@ -136,8 +136,8 @@ PRIVATE void copyall(pEnv env)
 	vec_at(env->memory, scan).next =
 	       copyone(env, vec_at(env->memory, scan).next);
     }
-    vec_setsize(orig_memory, 0);
     vec_setsize(env->memory, memoryindex);
+    orig_memory = 0;
 /*
     Occupancy should be between 70% and 80%. If occupancy drops below 40%,
     then the next maximum size can be set at 80% of what it was.
@@ -173,14 +173,19 @@ static void count_collect(void)
 #endif
 
 #ifdef ENABLE_TRACEGC
-PUBLIC void gc1(pEnv env, char *mess)
+PRIVATE void gc1(pEnv env, char *mess)
 #else
-PUBLIC void gc1(pEnv env)
+PRIVATE void gc1(pEnv env)
 #endif
 {
     start_gc_clock = clock();
-    vec_copy(orig_memory, env->memory);
-    memoryindex = mem_low;
+/*
+    Copying the memory before garbage collecting seems a bit cautious. What
+    must be copied are the definitions at the start of the memory. The rest
+    could be added during garbage collection.
+*/
+    vec_copy(orig_memory, env->memory);		/* copy at least 0 .. mem_low */
+    memoryindex = mem_low;			/* start allocating from here */
 
 #ifdef STATS
     count_collect();
@@ -205,9 +210,9 @@ PUBLIC void gc1(pEnv env)
 }
 
 #ifdef ENABLE_TRACEGC
-PUBLIC void gc2(pEnv env, char *mess)
+PRIVATE void gc2(pEnv env, char *mess)
 #else
-PUBLIC void gc2(pEnv env)
+PRIVATE void gc2(pEnv env)
 #endif
 {
     clock_t this_gc_clock;

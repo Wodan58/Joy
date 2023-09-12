@@ -1,7 +1,7 @@
 /*
     module  : stackavail.c
-    version : 1.2
-    date    : 08/24/23
+    version : 1.3
+    date    : 09/12/23
 */
 #include <stddef.h>
 
@@ -14,7 +14,8 @@
 extern char *bottom_of_stack;	/* cold end of the stack, from main() */
 #endif
 
-size_t stackavail()
+/* protect against stack overflow */
+size_t stackavail(void)
 {
 #ifdef WIN32
     MEMORY_BASIC_INFORMATION mbi;

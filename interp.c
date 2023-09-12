@@ -1,8 +1,8 @@
 /* FILE: interp.c */
 /*
  *  module  : interp.c
- *  version : 1.73
- *  date    : 09/07/23
+ *  version : 1.74
+ *  date    : 09/12/23
  */
 
 /*
@@ -509,21 +509,16 @@ static struct {
 	       character that is not part of an identifier, then the nick name
 	       is the part of the string after the first \0.
 */
-PUBLIC char *nickname(int o)
+PUBLIC char *nickname(int ch)
 {
-    int size;
     char *str;
 
-    size = sizeof(optable) / sizeof(optable[0]);
-    if (o >= 0 && o < size) {
-	str = optable[o].name;
-	if (isalnum((int)*str) || strchr(" -=_", *str))
-	    return str;
-	while (*str)
-	    str++;
-	return str + 1;
-    }
-    return 0;
+    str = optable[ch].name;
+    if ((ch = *str) == '_' || isalpha(ch))
+	return str;
+    while (*str)
+	str++;
+    return str + 1;
 }
 
 /*
@@ -560,7 +555,7 @@ PUBLIC int operflags(int o)
 }
 
 /*
-    operindex - return the optable entry for an operator.
+    operindex - return the optable entry for an operator; requires search.
 */
 PUBLIC int operindex(proc_t proc)
 {
