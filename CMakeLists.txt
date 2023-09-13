@@ -1,7 +1,7 @@
 #
 #   module  : CMakeLists.txt
-#   version : 1.17
-#   date    : 08/28/23
+#   version : 1.18
+#   date    : 09/13/23
 #
 cmake_minimum_required(VERSION 3.0)
 project(Joy VERSION 1.0)
@@ -11,7 +11,7 @@ endif()
 option(RUN_TESTS "Run standard tests" OFF)
 add_definitions(-DNOBDW -DCOPYRIGHT -DJVERSION="NOBDW ${CMAKE_BUILD_TYPE} ${CMAKE_PROJECT_VERSION}")
 include_directories(.)
-add_executable(joy interp.c scan.c utils.c main.c factor.c module.c stackavail.c gc.c)
+add_executable(joy interp.c scan.c utils.c main.c factor.c module.c gc.c)
 add_dependencies(joy always)
 add_custom_target(always
 		  COMMAND sh ${CMAKE_SOURCE_DIR}/table.sh ${CMAKE_SOURCE_DIR}
