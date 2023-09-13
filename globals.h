@@ -1,8 +1,8 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.75
- *  date    : 09/12/23
+ *  version : 1.76
+ *  date    : 09/13/23
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -58,11 +58,6 @@
 #define INIUNDEFERROR 0
 
 /* installation dependent	*/
-#ifdef NOBDW
-#define MINIMUM_STACK 3300
-#else
-#define MINIMUM_STACK 39490
-#endif
 #define SETSIZE 64
 #define MAXINT 9223372036854775807LL
 

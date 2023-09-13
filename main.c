@@ -1,8 +1,8 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.76
- *  date    : 09/07/23
+ *  version : 1.77
+ *  date    : 09/13/23
  */
 
 /*
@@ -123,7 +123,9 @@ Manfred von Thun, 2006
 static jmp_buf begin;
 static char *filename = "stdin";
 
-char *bottom_of_stack; /* protect against stack overflow */
+#ifdef NOBDW
+char *bottom_of_stack; /* needed in gc.c */
+#endif
 
 /*
  *   Initialise the symbol table with builtins. There is no need to classify
@@ -572,8 +574,7 @@ int start_main(int argc, char **argv)
     env.undeferror = INIUNDEFERROR;
     inilinebuffer(&env, filename);
     inisymboltable(&env);
-    if (setjmp(begin) == SIGSEGV) /* return here after error or abort */
-	quit_(&env); /* do not continue after SIGSEGV */
+    setjmp(begin); /* return here after error or abort */
 #ifdef NOBDW
     inimem1(&env, 0); /* does not clear the stack */
     inimem2(&env);
@@ -642,8 +643,9 @@ int main(int argc, char **argv)
 {
     int (*volatile m)(int, char **) = start_main;
 
-    signal(SIGSEGV, abortexecution_);
+#ifdef NOBDW
     bottom_of_stack = (char *)&argc;
+#endif
     GC_INIT();
     return (*m)(argc, argv);
 }

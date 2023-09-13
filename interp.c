@@ -1,8 +1,8 @@
 /* FILE: interp.c */
 /*
  *  module  : interp.c
- *  version : 1.74
- *  date    : 09/12/23
+ *  version : 1.75
+ *  date    : 09/13/23
  */
 
 /*
@@ -321,11 +321,6 @@ PUBLIC void exeterm(pEnv env, Index n)
     int type, index;
     Index stepper, root = 0;
 
-/*
-    The computation is aborted when a stack overflow threatens.
-*/
-    if (stackavail() < MINIMUM_STACK)
-	execerror("more stack", "exeterm");
 start:
 #ifdef STATS
     if (++calls == 1)
