@@ -1,7 +1,7 @@
 (*
     module  : intern.joy
-    version : 1.3
-    date    : 08/20/22
+    version : 1.4
+    date    : 09/19/23
 *)
 1 "succ" intern [] cons i 2 =.
 # "1 2 3" intern [] cons i.

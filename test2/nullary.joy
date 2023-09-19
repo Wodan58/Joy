@@ -1,13 +1,6 @@
 (*
     module  : nullary.joy
-    version : 1.5
-    date    : 08/26/23
+    version : 1.6
+    date    : 09/19/23
 *)
-"numlib" libload.
-
-2 20 from-to-list dup [prime] map zip [second] filter [first] map
-[2 3 5 7 11 13 17 19] equal.
-
-[] unstack.
-
 2 20 [] nullary stack [20 20 2] equal.

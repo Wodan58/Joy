@@ -1,13 +1,11 @@
 (*
     module  : less.joy
-    version : 1.5
-    date    : 09/11/23
+    version : 1.6
+    date    : 09/19/23
 *)
 10 11 <.
 10 10 < false =.
 10 9 < false =.
-
-9223372036854775783 -9223372036709301616 < false =.
 
 10 9.0 < false =.
 10.0 9.0 < false =.

@@ -1,7 +1,6 @@
 (*
     module  : formatf.joy
-    version : 1.2
-    date    : 08/20/22
+    version : 1.3
+    date    : 09/19/23
 *)
-# 1.0 'd 10 10 formatf.
 1.0 'e 10 10 formatf "1.0000000000e+00" =.

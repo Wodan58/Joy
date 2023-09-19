@@ -1,7 +1,7 @@
 (*
     module  : step.joy
-    version : 1.4
-    date    : 05/23/23
+    version : 1.5
+    date    : 09/19/23
 *)
 0 [1 2 3] [+] step 6 =.
 0 "test" [swap + ord] step 448 =.

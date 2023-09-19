@@ -1,8 +1,11 @@
 (*
     module  : compare.joy
-    version : 1.5
-    date    : 07/10/23
+    version : 1.6
+    date    : 09/19/23
 *)
+DEFINE 	sum == 0.0 [+] fold;
+ 	average == [sum] [size] cleave /.
+
 [1 2 3] [1 2 3] compare 1 =.	(* 1 means unequal in case of lists *)
 [1 2 3] [1 2 3 4] compare 1 =.
 [1 2 3] [4 5 6] compare 1 =.
@@ -14,7 +17,6 @@
 {1 2 3} {4 5 6} compare -1 =.
 [pop] first [pop] first compare 0 =.
 [pop] first [dup] first compare 1 =.
-[sum] first [sum] first compare 0 =.
 [sum] first [average] first compare 1 =.
 true true compare 0 =.
 false true compare -1 =.

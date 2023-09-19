@@ -1,6 +1,6 @@
 (*
-    module  : linrec.joy
-    version : 1.8
+    module  : gc2.joy
+    version : 1.7
     date    : 09/19/23
 *)
 DEFINE
@@ -12,4 +12,6 @@ DEFINE
 	linrec;
     from-to-list == [] from-to.
 
-1 10 from-to-list [1 2 3 4 5 6 7 8 9 10] equal.
+__memorymax
+1 300 from-to-list pop gc
+__memorymax <.

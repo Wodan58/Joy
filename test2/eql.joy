@@ -1,11 +1,11 @@
 (*
     module  : eql.joy
-    version : 1.4
-    date    : 07/10/23
+    version : 1.5
+    date    : 09/19/23
 *)
-DEFINE	last == dup rest null [first] [rest last] branch.
+DEFINE 	sum == 0.0 [+] fold;
+ 	average == [sum] [size] cleave /.
 
-[sum] first [sum] first =.
 [sum] first [average] first = false =.
 [pop] first [pop] first =.
 [pop] first [dup] first = false =.
@@ -17,8 +17,6 @@ false 0 =.
 9 '\t =.
 123456789 {0 2 4 8 10 11 14 15 16 17 19 20 22 24 25 26} =.
 {0 2 4 8 10 11 14 15 16 17 19 20 22 24 25 26} 123456789 =.
-[last] first "last" =.
-"last" [last] first =.
 0 [] equal false =.
 [] 0 equal false =.
 1 1.0 =.

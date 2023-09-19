@@ -1,10 +1,9 @@
 (*
     module  : primrec.joy
-    version : 1.2
-    date    : 08/20/22
+    version : 1.3
+    date    : 09/19/23
 *)
 [1 2 3 4 5] [0] [+] primrec 15 =.
 5 [1] [*] primrec 120 =.
 "test" [""] [cons] primrec "test" =.
 {1 2 3} [{}] [cons] primrec {1 2 3} =.
-# 'A [] [] primrec.

@@ -1,7 +1,7 @@
 (*
-    module  : all.joy
-    version : 1.3
-    date    : 05/23/23
+    module  : all2.joy
+    version : 1.5
+    date    : 09/19/23
 *)
 [1 2 3] [2 <] all false =.
 [1 2 3] [4 <] all.
@@ -15,5 +15,5 @@
 {} [2 <] all.
 
 [1 2 3] [] all false =.
-"test" [] all false =.
+"test"  [] all false =.
 {1 2 3} [] all false =.

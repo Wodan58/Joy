@@ -1,7 +1,7 @@
 (*
     module  : unswons.joy
-    version : 1.3
-    date    : 05/23/23
+    version : 1.4
+    date    : 09/19/23
 *)
 [1 2 3] unswons
 1 =.
@@ -13,4 +13,4 @@
 1 =.
 {2 3} =.
 
-[1] unswons.
+[1] unswons 1 =.
