@@ -1,10 +1,10 @@
 (*
     module  : cleave.joy
-    version : 1.5
-    date    : 09/19/23
+    version : 1.6
+    date    : 09/20/23
 *)
 DEFINE 	sum == 0.0 [+] fold;
- 	average == [sum] [size] cleave /.
+ 	average == [dup sum] [size] cleave /.
 
 [1.0 2.0 3.0] average 2 =.
 [4.0 5.0 6.0] average 5 =.
