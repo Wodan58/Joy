@@ -1,7 +1,7 @@
 #
 #   module  : CMakeLists.txt
-#   version : 1.18
-#   date    : 09/13/23
+#   version : 1.19
+#   date    : 10/02/23
 #
 cmake_minimum_required(VERSION 3.0)
 project(Joy VERSION 1.0)
@@ -14,8 +14,9 @@ include_directories(.)
 add_executable(joy interp.c scan.c utils.c main.c factor.c module.c gc.c)
 add_dependencies(joy always)
 add_custom_target(always
-		  COMMAND sh ${CMAKE_SOURCE_DIR}/table.sh ${CMAKE_SOURCE_DIR}
-		  COMMAND sh ${CMAKE_SOURCE_DIR}/prims.sh ${CMAKE_SOURCE_DIR})
+		  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+		  COMMAND sh table.sh .
+		  COMMAND sh prims.sh .)
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
   add_definitions(-DGC_NOT_DLL -D_CRT_SECURE_NO_WARNINGS)
 # target_link_libraries(joy gc-lib)

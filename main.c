@@ -1,8 +1,8 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.77
- *  date    : 09/13/23
+ *  version : 1.78
+ *  date    : 10/01/23
  */
 
 /*
@@ -128,8 +128,8 @@ char *bottom_of_stack; /* needed in gc.c */
 #endif
 
 /*
- *   Initialise the symbol table with builtins. There is no need to classify
- *   builtins.
+ *  Initialise the symbol table with builtins. There is no need to classify
+ *  builtins. The hash table contains an index into the symbol table.
  */
 PRIVATE void inisymboltable(pEnv env) /* initialise */
 {
@@ -137,8 +137,6 @@ PRIVATE void inisymboltable(pEnv env) /* initialise */
     Entry ent;
     khiter_t key;
 
-    vec_init(env->tokens);
-    vec_init(env->symtab);
     env->hash = kh_init(Symtab);
     for (i = 0; (ent.name = opername(i)) != 0; i++) {
 	ent.is_user = 0;
@@ -151,8 +149,8 @@ PRIVATE void inisymboltable(pEnv env) /* initialise */
 }
 
 /*
- *   Global identifiers are stored at location. The hash table uses a classified
- *   name. The name parameter has already been allocated.
+ *  Global identifiers are stored at location. The hash table uses a classified
+ *  name. The name parameter has already been allocated.
  */
 PRIVATE void enterglobal(pEnv env, char *name)
 {
@@ -171,8 +169,8 @@ PRIVATE void enterglobal(pEnv env, char *name)
 }
 
 /*
- *   Lookup first searches ident in the local symbol tables, if not found in the
- *   global symbol table, if still not found enters ident in the global table.
+ *  Lookup first searches ident in the local symbol tables, if not found in the
+ *  global symbol table, if still not found enters ident in the global table.
  */
 PUBLIC void lookup(pEnv env)
 {
@@ -193,30 +191,30 @@ PUBLIC void lookup(pEnv env)
 }
 
 /*
- *   Enteratom enters a symbol in the symbol table, maybe a local symbol. This
- *   local symbol is also added to the hash table, but in its classified form.
+ *  Enteratom enters a symbol in the symbol table, maybe a local symbol. This
+ *  local symbol is also added to the hash table, but in its classified form.
  */
 PUBLIC void enteratom(pEnv env)
 {
     /*
-     *   Local symbols are only added during the first read of private sections
-     *   and public sections of a module.
-     *   They should be found during the second read.
+     *  Local symbols are only added during the first read of private sections
+     *  and public sections of a module.
+     *  They should be found during the second read.
      */
     if ((env->location = qualify(env, env->yylval.str)) == 0)
 	enterglobal(env, classify(env, env->yylval.str));
 }
 
 /*
- *   The rest of these procedures is not affected by the change of the symbol
- *   table implementation.
+ *  The rest of these procedures is not affected by the change of the symbol
+ *  table implementation.
  */
 PRIVATE void defsequence(pEnv env);  /* forward */
 PRIVATE void compound_def(pEnv env); /* forward */
 
 /*
- *   Read a definition. Instead of a definition, an embedded compound
- *   definition is also possible.
+ *  Read a definition. Instead of a definition, an embedded compound
+ *  definition is also possible.
  */
 PRIVATE void definition(pEnv env)
 {
@@ -262,9 +260,9 @@ PRIVATE void definition(pEnv env)
 }
 
 /*
- *   defsequence - when reading the private section ahead, symbols are entered
- *		   in the symbol table, such that local symbols can call each
- *		   other.
+ *  defsequence - when reading the private section ahead, symbols are entered
+ *		  in the symbol table, such that local symbols can call each
+ *		  other.
  */
 PRIVATE void defsequence(pEnv env)
 {
@@ -371,10 +369,10 @@ PRIVATE void report_clock(pEnv env)
 #endif
 
 /*
- *   copyright - Print all copyright notices, even historical ones.
+ *  copyright - Print all copyright notices, even historical ones.
  *
- *   The version must be set on the commandline when compiling:
- *   -DJVERSION="\"alpha\"" or whatever.
+ *  The version must be set on the commandline when compiling:
+ *  -DJVERSION="\"alpha\"" or whatever.
  */
 #ifdef COPYRIGHT
 PRIVATE void copyright(char *file)
@@ -473,11 +471,11 @@ PRIVATE void options(void)
     exit(EXIT_SUCCESS);
 }
 
-int start_main(int argc, char **argv)
+PRIVATE int my_main(int argc, char **argv)
 {
     static unsigned char mustinclude = 1;
-    int i, j;
     char *ptr;
+    int i, j, ch;
     unsigned char helping = 0;
 #ifdef COPYRIGHT
     unsigned char verbose = 1;
@@ -486,29 +484,32 @@ int start_main(int argc, char **argv)
     unsigned char symdump = 0;
 #endif
 
-    Env env; /* memory, symbol table, stack, and buckets */
+    Env env; /* global variables */
     memset(&env, 0, sizeof(env));
     /*
-     *    Start the clock. my_atexit is called from quit_ that is called in
-     *    scan.c after reading EOF on the first input file.
+     *  Start the clock. my_atexit is called from quit_ that is called in
+     *  scan.c after reading EOF on the first input file.
      */
     env.startclock = clock();
 #ifdef STATS
     my_atexit(report_clock);
 #endif
+    vec_init(env.tokens);
+    vec_init(env.symtab);
     /*
-     *    Initialize srcfile and other environmental parameters.
+     *  Initialize yyin and other environmental parameters.
      */
     env.srcfile = stdin;
-    env.pathname = argv[0];
-    if ((ptr = strrchr(env.pathname, '/')) != 0)
-	*ptr = 0;
-    else if ((ptr = strrchr(env.pathname, '\\')) != 0)
-	*ptr = 0;
-    else
+    if ((ptr = strrchr(env.pathname = argv[0], '/')) != 0) {
+	*ptr++ = 0;
+	argv[0] = ptr;
+    } else if ((ptr = strrchr(env.pathname, '\\')) != 0) {
+	*ptr++ = 0;
+	argv[0] = ptr;
+    } else
 	env.pathname = ".";
     /*
-     *    First look for options. They start with -.
+     *  First look for options. They start with -.
      */
     for (i = 1; i < argc; i++)
 	if (argv[i][0] == '-') {
@@ -533,18 +534,19 @@ int start_main(int argc, char **argv)
 	    break;
 	}
     /*
-     *    Look for a possible filename parameter. Filenames cannot start with -
-     *    and cannot start with a digit, unless preceded by a path: e.g. './'.
+     *  Look for a possible filename parameter. Filenames cannot start with -
+     *  and cannot start with a digit, unless preceded by a path: e.g. './'.
      */
-    for (i = 1; i < argc; i++)
-	if (!isdigit((int)argv[i][0])) {
+    for (i = 1; i < argc; i++) {
+	ch = argv[i][0];
+	if (!isdigit(ch)) {
 	    if ((env.srcfile = freopen(filename = argv[i], "r", stdin)) == 0) {
 		fprintf(stderr, "failed to open the file '%s'.\n", filename);
 		return 0;
 	    }
 	    /*
-	     *   Overwrite argv[0] with the filename and shift subsequent
-	     *   parameters.
+	     *  Overwrite argv[0] with the filename and shift subsequent
+	     *  parameters.
 	     */
 	    if ((ptr = strrchr(argv[0] = filename, '/')) != 0) {
 		*ptr++ = 0;
@@ -554,6 +556,7 @@ int start_main(int argc, char **argv)
 		argv[i] = argv[i + 1];
 	    break;
 	}
+    }
     env.g_argc = argc;
     env.g_argv = argv;
 #ifdef COPYRIGHT
@@ -574,25 +577,25 @@ int start_main(int argc, char **argv)
     env.undeferror = INIUNDEFERROR;
     inilinebuffer(&env, filename);
     inisymboltable(&env);
-    setjmp(begin); /* return here after error or abort */
+    setjmp(begin);		/* return here after error or abort */
 #ifdef NOBDW
-    inimem1(&env, 0); /* does not clear the stack */
+    inimem1(&env, 0);		/* does not clear the stack */
     inimem2(&env);
 #endif
-    env.prog = 0; /* clear program, just to be sure */
+    env.prog = 0;		/* clear program, just to be sure */
     if (mustinclude) {
 	mustinclude = include(&env, "usrlib.joy", ERROR_ON_USRLIB);
-	fflush(stdout); /* flush include messages */
+	fflush(stdout);		/* flush include messages */
     }
     while (1) {
 	getsym(&env);
 	if (env.symb == LIBRA || env.symb == HIDE || env.symb == MODULE) {
 #ifdef NOBDW
-	    inimem1(&env, 1); /* also clears the stack */
+	    inimem1(&env, 1);	/* also clears the stack */
 #endif
 	    compound_def(&env);
 #ifdef NOBDW
-	    inimem2(&env); /* enlarge definition space */
+	    inimem2(&env);	/* enlarge definition space */
 #endif
 	} else {
 	    readterm(&env);
@@ -641,7 +644,7 @@ int start_main(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
-    int (*volatile m)(int, char **) = start_main;
+    int (*volatile m)(int, char **) = my_main;
 
 #ifdef NOBDW
     bottom_of_stack = (char *)&argc;
