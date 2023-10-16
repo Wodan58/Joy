@@ -111,6 +111,6 @@ LIBRA
     AGGLIB == "agglib.joy - aggregate library\n".
 						(* end LIBRA *)
 
-"agglib  is loaded\r\n" putchars.
+"agglib  is loaded\n" putchars.
 
 (* END   agglib.joy *)

@@ -1,6 +1,6 @@
 (* FILE:  lsptst.joy *)
 
-"\r\nTesting the Lisp interpreter lisp in the library lsplib.joy\r\n"
+"\nTesting the Lisp interpreter lisp in the library lsplib.joy\n"
 putchars.
 
 "lsplib" libload.

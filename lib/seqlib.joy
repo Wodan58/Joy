@@ -12,9 +12,9 @@ LIBRA
 	[ pop ]
 	[ unswons
 	  put
-	  [ "\r\n  " putchars put ] step ]
+	  [ "\n  " putchars put ] step ]
 	ifte
-	"]\r\n" putchars;
+	"]\n" putchars;
     reverse == [[]] [""] iflist swap shunt;
     reverselist == [] swap shunt;
     reversestring == "" swap shunt;
@@ -143,6 +143,6 @@ LIBRA
     SEQLIB == "seqlib.joy - sequence library, assumes agglib.joy\n".
 							 (* end LIBRA *)
 
-"seqlib  is loaded\r\n" putchars.
+"seqlib  is loaded\n" putchars.
 
 (* END   seqlib.joy *)

@@ -10,9 +10,9 @@ IN
     st_new      == [];
     st_push     == swons;
     st_null     == dup null;
-    st_top      == [null] ["st_top\r\n" _st_chk] [dup first] ifte;
-    st_pop      == [null] ["st_pop\r\n" _st_chk] [rest] ifte;
-    st_pull     == [null] ["st_pull\r\n" _st_chk] [unswons] ifte
+    st_top      == [null] ["st_top\n" _st_chk] [dup first] ifte;
+    st_pop      == [null] ["st_pop\n" _st_chk] [rest] ifte;
+    st_pull     == [null] ["st_pull\n" _st_chk] [unswons] ifte
 END;
 
 HIDE                                            (* queue *)
@@ -23,8 +23,8 @@ IN
     q_null      == _q_prep dup null;
     q_add       == swap [swons] dip;
     q_addl      == swap [shunt] dip; (* add a list *)
-    q_front     == _q_prep [null] ["q_front\r\n" _q_chk] [dup first] ifte;
-    q_rem       == _q_prep [null] ["q_rem \r\n" _q_chk] [unswons] ifte
+    q_front     == _q_prep [null] ["q_front\n" _q_chk] [dup first] ifte;
+    q_rem       == _q_prep [null] ["q_rem \n" _q_chk] [unswons] ifte
 END;
 
 HIDE                                    (* tree *)
@@ -40,10 +40,10 @@ IN
     t_add       == unitlist unitlist cons;
     t_null      == _t_prep dup null;
     t_front     == _t_prep
-                    [null] ["t_front\r\n" _t_chk] [dup first first] ifte;
+                    [null] ["t_front\n" _t_chk] [dup first first] ifte;
     t_rem       == _t_prep
                    [null]
-                   ["t_rem\r\n" _t_chk]
+                   ["t_rem\n" _t_chk]
                    [unswons unswons [swons] dip]
                    ifte;
     _t_sample == [1 20 [3 40] [5 60] 70 [[[8]]] ]

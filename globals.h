@@ -1,8 +1,8 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.76
- *  date    : 09/13/23
+ *  version : 1.77
+ *  date    : 10/16/23
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -19,13 +19,9 @@
 #include <math.h>
 #include <time.h>
 #include <inttypes.h>
-
-#ifdef _MSC_VER
-#include <io.h>
-#pragma warning(disable : 4267)
-#else
-#include <unistd.h>
-#endif
+#include <gc.h>
+#include "kvec.h"
+#include "khash.h"
 
 #ifdef NOBDW
 #define nodetype(n)  vec_at(env->memory, n).op
@@ -154,10 +150,6 @@ typedef struct Token {
     Symbol symb;
 } Token;
 
-#include <gc.h>
-#include "kvec.h"
-#include "khash.h"
-
 KHASH_MAP_INIT_STR(Symtab, pEntry)
 
 typedef struct Env {
@@ -180,7 +172,7 @@ typedef struct Env {
     pEntry location;       /* getsym */
     Symbol symb;	   /* scanner */
     int hide_stack[DISPLAYMAX];
-    struct module {
+    struct my_module {
 	char *name;
 	int hide;
     } module_stack[DISPLAYMAX];
@@ -199,7 +191,7 @@ typedef struct Env {
 	WORD = "ABCD" - up to four chars
 	LIST of SETs of char [S0 S1 S2 S3]
 		LISTS - binary tree [left right]
-			" with info [info left right]
+			" with info [info left right] "
 	STRING of 32 chars = 32 * 8 bits = 256 bits = bigset
 	CHAR = 2 HEX
 	32 SET = 2 * 16SET
@@ -242,18 +234,14 @@ PUBLIC void error(pEnv env, char *message);
 PUBLIC int redirect(pEnv env, char *name, FILE *fp);
 PUBLIC int include(pEnv env, char *name, int error);
 PUBLIC void getsym(pEnv env);
-/* stackavail.c */
-size_t stackavail(void);
 /* utils.c */
 #ifdef NOBDW
 PUBLIC void inimem1(pEnv env, int status);
 PUBLIC void inimem2(pEnv env);
 PUBLIC void printnode(pEnv env, Index p);
 PUBLIC void my_gc(pEnv env);
-PUBLIC Index newnode(pEnv env, Operator o, Types u, Index r);
-#else
-PUBLIC Node *newnode(pEnv env, Operator o, Types u, Node *r);
 #endif
+PUBLIC Index newnode(pEnv env, Operator o, Types u, Index r);
 PUBLIC void my_memoryindex(pEnv env);
 PUBLIC void my_memorymax(pEnv env);
 /* quit.c */

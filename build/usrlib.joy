@@ -11,7 +11,7 @@ LIBRA
 						etc *)
 
 HIDE
-    returned == "\007\r\nReturned to Joy\r\n" putchars
+    returned == "\007\nReturned to Joy\n" putchars
 IN
 						(* unix: *)
     unix == true;
@@ -20,7 +20,7 @@ IN
     ls == "ls -la" system;
     editor == "vi ";
     escape ==
-	"\r\nTo return to Joy, type:   exit\r\n" putchars
+	"\nTo return to Joy, type:   exit\n" putchars
 	"csh" system
 	returned;
     						(* etc *)
@@ -40,7 +40,7 @@ IN
 
     edit ==
 	dup editor swap concat system
-	dup "Including  " putchars putchars '\r putch '\n putch
+	dup "Including  " putchars putchars '\n putch
 	include
 	returned;
 
@@ -49,7 +49,7 @@ IN
 	    " " swap concat concat "grep " swap concat system ]
 	  [ [ [vms] first body null not ]
 	    swap " " swap concat concat "SEARCH " swap concat system ]
-	  [ "unknown operating system for  find-in\r\n" putchars ] ]
+	  [ "unknown operating system for  find-in\n" putchars ] ]
  	cond
 	returned;
     standard-setting == 1 setautoput 1 setundeferror;
@@ -61,7 +61,7 @@ END.						(* end HIDE and LIBRA *)
 "library"   "*.joy"  find-in.
 						etc *)
 
-"usrlib  is loaded\r\n"  putchars.
+"usrlib  is loaded\n"  putchars.
 
 standard-setting.
 

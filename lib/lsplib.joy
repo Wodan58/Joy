@@ -98,7 +98,7 @@ apply ==
 	    swons ]				(* install new frame  *)
 	  dip eval				(* new-env body	      *)
 	  popd ]				(* restore old env    *)
-	[ "apply: unknown procedure type -\r\n"
+	[ "apply: unknown procedure type -\n"
 	  putchars abort ] ]
       case ]
 
@@ -159,10 +159,10 @@ lib0 ==
 l-prompt == "L: ";
 
 lisp ==
-	[ "\r\nLisp interpreter\r\n"
-	  "\t\tTo include the Lisp library, type\r\n"
-	  "\t\t\t[ include  \"OK\"  \"lsplib.lsp\" ]\r\n"
-	  "GO\r\n\n" ]
+	[ "\nLisp interpreter\n"
+	  "\t\tTo include the Lisp library, type\n"
+	  "\t\t\t[ include  \"OK\"  \"lsplib.lsp\" ]\n"
+	  "GO\n\n" ]
 	putstrings
 	lib0						(* load lib0  *)
 	l-prompt putchars get
@@ -171,12 +171,12 @@ lisp ==
 	  l-prompt putchars get ]
 	while
 	pop pop
-	"exit from Lisp interpreter\r\n" putchars;
+	"exit from Lisp interpreter\n" putchars;
 
     LSPLIB == "lsplib.joy - (eval-apply) Lisp interpreter\n".
 
 							(* end LIBRA *)
 
-"lsplib  is loaded\r\n" putchars.
+"lsplib  is loaded\n" putchars.
 
 (* END   lsplib.joy *)

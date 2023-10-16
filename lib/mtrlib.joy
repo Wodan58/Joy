@@ -109,6 +109,6 @@ m-print == putlist;
 						(* end LIBRA *)
 
 
-"mtrlib  is loaded\r\n" putchars.
+"mtrlib  is loaded\n" putchars.
 
 (* END   mtrlib.joy *)

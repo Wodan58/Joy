@@ -15,15 +15,15 @@ toc-of-tutorial ==
 q1 ==
 	"What will the program   " putchars
 	putchars
-	"   leave on the stack ?\r\n" putchars
+	"   leave on the stack ?\n" putchars
 	i
 	expecting;
 q2 ==
-	"What will the dots   ...   have to be, so that\r\n\t" putchars
+	"What will the dots   ...   have to be, so that\n\t" putchars
 	putchars
-	"\r\nleaves    " putchars
+	"\nleaves    " putchars
 	putchars
-	"    on the stack ?\r\n" putchars
+	"    on the stack ?\n" putchars
 	i
 	expecting;
 
@@ -33,19 +33,19 @@ sec0 == toc-of-tutorial rest [first i] step;
 
 sec1 == 1 toc-one-heading
 ini-stats
-[ "One of the data types in Joy is the type of integers.\r\n"
-  "Literal integers are written in ordinary decimal notation.\r\n"
-  "The usual binary operators are:  +  -  *  /\r\n"
-  "But these operators are written after their arguments.\r\n" ]
+[ "One of the data types in Joy is the type of integers.\n"
+  "Literal integers are written in ordinary decimal notation.\n"
+  "The usual binary operators are:  +  -  *  /\n"
+  "But these operators are written after their arguments.\n" ]
 putstrings
 [get-integer  5 ]	"2  3  +"			q1
 [get-integer 42 ]	"7  6  *"			q1
 [get-integer 37 ]	"7  6  *  2  3  +  -"		q1
-[ "The most important aggregate datatype is that of lists.\r\n"
-  "These are written inside square brackets, like this:\r\n"
-  "        [42 17 3 9 35]\r\n"
-  "Some important operators for lists are:\r\n"
-  "    first      rest      cons      concat\r\n" ]
+[ "The most important aggregate datatype is that of lists.\n"
+  "These are written inside square brackets, like this:\n"
+  "        [42 17 3 9 35]\n"
+  "Some important operators for lists are:\n"
+  "    first      rest      cons      concat\n" ]
 putstrings
 [get-integer 5           ]  "[5 4 2 7]  first"		q1
 [get-list  [4 2 7]       ]  "[5 4 2 7]  rest"		q1
@@ -58,58 +58,58 @@ put-stats;
 
 sec2 == 2 toc-one-heading
 ini-stats
-[ "Combinators are similar to operators, they expect something\r\n"
-  "on the stack. But combinators always expect a quoted program\r\n"
-  "and perhaps something else. For example, the   map   combinator\r\n"
-  "expects a single program and below that an aggregate, e.g. a list.\r\n"
+[ "Combinators are similar to operators, they expect something\n"
+  "on the stack. But combinators always expect a quoted program\n"
+  "and perhaps something else. For example, the   map   combinator\n"
+  "expects a single program and below that an aggregate, e.g. a list.\n"
 ] putstrings
 [get-list  [6 4 8]      ]  "[3 2 4] [dup +] map"	q1
 [get-quote [10 + ]      ]
   "[13 12 14]"		    "[3 2 4]  ...  map"		q2
-[ "Another example is the   filter   combinator, which expects a\r\n"
-  "program that computes a truth value, and below that an aggregate.\r\n"
+[ "Another example is the   filter   combinator, which expects a\n"
+  "program that computes a truth value, and below that an aggregate.\n"
 ] putstrings
-[get-list  [5 3 7]	 ]  "\r\n\t[5 16 3 7 14]  [10 <]  filter"	q1
-"For the next question, provide the shortest answer\r\n" putchars
+[get-list  [5 3 7]	 ]  "\n\t[5 16 3 7 14]  [10 <]  filter"	q1
+"For the next question, provide the shortest answer\n" putchars
 [get-quote [20 <]	 ]
   "[15 19 12]"	     "[5 10 9 11 2]  [10 +]  map   ...  filter"	q2
 put-stats;
 
 sec3 == 3 toc-one-heading
 ini-stats
-[ "Two more complicated combinators are the  ifte  and the  linrec\r\n"
+[ "Two more complicated combinators are the  ifte  and the  linrec\n"
   "combinators.  The  ifte  combinator expects three quotation "
-  "parameters\r\non the stack. In most cases they have been pushed just"
-  " beforehand.\r\n" ] putstrings
+  "parameters\non the stack. In most cases they have been pushed just"
+  " beforehand.\n" ] putstrings
 [get-integer 15 ]  "5  [7 <]  [10 +]  [10 -]  ifte"	q1
 [get-integer -2 ]  "8  [7 <]  [10 +]  [10 -]  ifte"	q1
-[ "A programmer wants to write a recursive definition of the\r\n"
-  "factorial function, which has the form:\r\n"
-  "    factorial ==\r\n"
-  "      ...                           (* first  quote *)\r\n"
-  "      ...                           (* second quote *)\r\n"
-  "      ...                           (* third  quote *)\r\n"
-  "      ifte\r\n" ]
+[ "A programmer wants to write a recursive definition of the\n"
+  "factorial function, which has the form:\n"
+  "    factorial ==\n"
+  "      ...                           (* first  quote *)\n"
+  "      ...                           (* second quote *)\n"
+  "      ...                           (* third  quote *)\n"
+  "      ifte\n" ]
 putstrings
-"What could be used as the first quote?\r\n" putchars
+"What could be used as the first quote?\n" putchars
 get-quote [[null][0 =][1 <]]  expecting-from
-"What could be used as the second quote?\r\n" putchars
+"What could be used as the second quote?\n" putchars
 get-quote [[pop 1][succ][1 +]]  expecting-from
-"This question is harder:\r\n" putchars
-"What could be used as the third quote?\r\n" putchars
+"This question is harder:\n" putchars
+"What could be used as the third quote?\n" putchars
 get-quote [[dup pred factorial *][dup 1 - factorial *]] expecting-from
-[ "Later the programmer realises that the factorial function\r\n"
-  "is only needed in one place of the program, so it would be good\r\nnot"
-  "to have the definition at all, by using the  linrec  combinator:\r\n"
-  "      [ null ] 			(* first  quote *)\r\n"
-  "      [ succ ]                       (* second quote *)\r\n"
-  "      ...                            (* third  quote *)\r\n"
-  "      ...                            (* fourth quote *)\r\n"
-  "      linrec\r\n" ]
+[ "Later the programmer realises that the factorial function\n"
+  "is only needed in one place of the program, so it would be good\nnot"
+  "to have the definition at all, by using the  linrec  combinator:\n"
+  "      [ null ] 			(* first  quote *)\n"
+  "      [ succ ]                       (* second quote *)\n"
+  "      ...                            (* third  quote *)\n"
+  "      ...                            (* fourth quote *)\n"
+  "      linrec\n" ]
 putstrings
-"What could be used as the third quote ?\r\n" putchars
+"What could be used as the third quote ?\n" putchars
 get-quote [[dup pred][dup 1 -]] expecting-from
-"What could be used as the fourth quote ?\r\n" putchars
+"What could be used as the fourth quote ?\n" putchars
 get-quote [*] expecting
 put-stats;
 

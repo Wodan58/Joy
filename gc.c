@@ -1,7 +1,7 @@
 /*
     module  : gc.c
-    version : 1.37
-    date    : 08/27/23
+    version : 1.38
+    date    : 10/12/23
 */
 #include <stdio.h>
 #include <string.h>
@@ -39,7 +39,13 @@
 #define BSS_ALIGN	4
 #define MIN_ITEMS	4
 #define MAX_ITEMS	2
+/*
+    Size is set to 50 MB, unless another definition is given in gc.h;
+    limiting the size may prevent a process from entering swap hell.
+*/
+#ifndef MAX_SIZE
 #define MAX_SIZE	50000000
+#endif
 
 /*
     When pointers are 16 bit aligned, the lower 4 bits are always zero.
@@ -81,7 +87,8 @@ static void mem_fatal(void)
 }
 
 /*
-    Determine sections of memory.
+    Determine sections of memory. This is highly system dependent and not
+    tested on __APPLE__.
 */
 #ifdef SCAN_BSS_MEMORY
 static void init_heap(void)

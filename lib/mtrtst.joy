@@ -3,9 +3,9 @@
 "mtrlib" libload.
 "numlib" libload.
 
-"output from test file  mtrtst.joy  (* MATRICES and VECTORS *)\r\n"
+"output from test file  mtrtst.joy  (* MATRICES and VECTORS *)\n"
 putchars.
-"user input is indented by one tab\r\n"
+"user input is indented by one tab\n"
 putchars.
 0 __settracegc.
 2 setecho.

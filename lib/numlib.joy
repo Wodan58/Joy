@@ -106,6 +106,6 @@ LIBRA
     NUMLIB == "numlib.joy - numerical library\n".
 						(* end LIBRA *)
 
-"numlib  is loaded\r\n" putchars.
+"numlib  is loaded\n" putchars.
 
 (* END   numlib.joy *)

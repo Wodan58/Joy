@@ -1,6 +1,6 @@
 (* FILE:   grmtst.joy *)
 
-"\r\ntesting the grammar library in file  grmlib.joy\r\n\n" putchars.
+"\ntesting the grammar library in file  grmlib.joy\n\n" putchars.
 
 (*
 DEFINE old_in == in;

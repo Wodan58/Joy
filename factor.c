@@ -1,8 +1,8 @@
 /* FILE: factor.c */
 /*
  *  module  : factor.c
- *  version : 1.22
- *  date    : 09/07/23
+ *  version : 1.23
+ *  date    : 10/12/23
  */
 #include "globals.h"
 
@@ -196,7 +196,7 @@ PUBLIC void writefactor(pEnv env, Index n, FILE *fp)
 	else if (nodevalue(n).fil == stderr)
 	    fprintf(fp, "file:stderr");
 	else
-	    fprintf(fp, "file:%p", nodevalue(n).fil);
+	    fprintf(fp, "file:%p", (void *)nodevalue(n).fil);
 	return;
     default:
 	error(env, "a factor cannot begin with this symbol");

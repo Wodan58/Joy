@@ -1,8 +1,8 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.78
- *  date    : 10/01/23
+ *  version : 1.80
+ *  date    : 10/16/23
  */
 
 /*
@@ -123,9 +123,7 @@ Manfred von Thun, 2006
 static jmp_buf begin;
 static char *filename = "stdin";
 
-#ifdef NOBDW
 char *bottom_of_stack; /* needed in gc.c */
-#endif
 
 /*
  *  Initialise the symbol table with builtins. There is no need to classify
@@ -378,34 +376,32 @@ PRIVATE void report_clock(pEnv env)
 PRIVATE void copyright(char *file)
 {
     int i, j = 0;
-    char str[BUFFERMAX], *ptr;
+    char str[BUFFERMAX];
 
     static struct {
 	char *file;
 	time_t stamp;
 	char *gc;
     } table[] = {
-	{ "joytut.inp", 994075177, "NOBDW" },
-	{ "jp-joytst.joy", 994075177, "NOBDW" },
-	{ "laztst.joy", 1005579152, "BDW" },
-	{ "symtst.joy", 1012575285, "BDW" },
-	{ "plgtst.joy", 1012575285, "BDW" },
-	{ "lsptst.joy", 1012575285, "BDW" },
-	{ "mtrtst.joy", 1017847160, "BDW" },
-	{ "grmtst.joy", 1017847160, "BDW" },
-	{ "reptst.joy", 1047653638, "NOBDW" },
-	{ "jp-reprodtst.joy", 1047653638, "NOBDW" },
-	{ "flatjoy.joy", 1047653638, "NOBDW" },
-	{ "modtst.joy", 1047920271, "BDW" },
+	{ "joytut", 994075177, "NOBDW" },
+	{ "jp-joytst", 994075177, "NOBDW" },
+	{ "laztst", 1005579152, "BDW" },
+	{ "symtst", 1012575285, "BDW" },
+	{ "plgtst", 1012575285, "BDW" },
+	{ "lsptst", 1012575285, "BDW" },
+	{ "mtrtst", 1017847160, "BDW" },
+	{ "grmtst", 1017847160, "BDW" },
+	{ "reptst", 1047653638, "NOBDW" },
+	{ "jp-reprodtst", 1047653638, "NOBDW" },
+	{ "flatjoy", 1047653638, "NOBDW" },
+	{ "modtst", 1047920271, "BDW" },
 	{ 0, 1056113062, "NOBDW" } };
 
     if (strcmp(file, "stdin")) {
-	if ((ptr = strrchr(file, '/')) != 0)
-	    file = ptr + 1;
 	for (i = 0; table[i].file; i++) {
-	    if (!strcmp(file, table[i].file)) {
+	    if (!strncmp(file, table[i].file, strlen(table[i].file))) {
 		strftime(str, sizeof(str), "%H:%M:%S on %b %e %Y",
-		    gmtime(&table[i].stamp));
+			 gmtime(&table[i].stamp));
 		printf("JOY  -  compiled at %s (%s)\n", str, table[i].gc);
 		j = 1;
 		break;
@@ -450,7 +446,7 @@ PRIVATE void dump_table(pEnv env)
     options - print help on startup options and exit: options are those that
 	      cannot be set from within the language itself.
 */
-PRIVATE void options(void)
+PRIVATE void options(pEnv env)
 {
     printf("Usage: joy [options] [filename] [parameters]\n");
     printf("options, filename, parameters can be given in any order\n");
@@ -468,7 +464,7 @@ PRIVATE void options(void)
 #ifdef COPYRIGHT
     printf("  -v : do not print a copyright notice\n");
 #endif
-    exit(EXIT_SUCCESS);
+    quit_(env);
 }
 
 PRIVATE int my_main(int argc, char **argv)
@@ -567,16 +563,14 @@ PRIVATE int my_main(int argc, char **argv)
     if (symdump)
 	my_atexit(dump_table);
 #endif
-    if (helping)
-	options();
     env.echoflag = INIECHOFLAG;
-#ifdef NOBDW
     env.tracegc = INITRACEGC;
-#endif
     env.autoput = INIAUTOPUT;
     env.undeferror = INIUNDEFERROR;
     inilinebuffer(&env, filename);
     inisymboltable(&env);
+    if (helping)
+	options(&env);
     setjmp(begin);		/* return here after error or abort */
 #ifdef NOBDW
     inimem1(&env, 0);		/* does not clear the stack */
@@ -646,9 +640,7 @@ int main(int argc, char **argv)
 {
     int (*volatile m)(int, char **) = my_main;
 
-#ifdef NOBDW
     bottom_of_stack = (char *)&argc;
-#endif
     GC_INIT();
     return (*m)(argc, argv);
 }

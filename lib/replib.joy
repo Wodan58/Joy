@@ -99,6 +99,6 @@ END;     # MODULE rep
 
 END      # LIBRA
 
-"replib  is loaded\r\n" putchars.
+"replib  is loaded\n" putchars.
 
 (* END   replib.joy *)

@@ -310,6 +310,6 @@ END; # Floy translators
     SYMLIB == "symlib.joy - symbolic manipulation library\n".
 
 							(*  end LIBRA *)
-"symlib  is loaded\r\n" putchars.
+"symlib  is loaded\n" putchars.
 
 (* END   symlib.joy *)
