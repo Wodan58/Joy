@@ -5,5 +5,3 @@ Makefile
 cmake_install.cmake
 *.o
 joy.*
-builtin.*
-table.c

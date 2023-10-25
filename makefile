@@ -1,7 +1,7 @@
 #
 #   module  : makefile
-#   version : 1.7
-#   date    : 10/12/23
+#   version : 1.8
+#   date    : 10/23/23
 #
 .SUFFIXES:
 .SUFFIXES: .c .o
@@ -12,7 +12,7 @@ CFLAGS = -DCOPYRIGHT -DNOBDW -I. -O3 -Wall -Wextra -Wpedantic \
 HDRS   = globals.h
 OBJS   = interp.o scan.o utils.o main.o factor.o module.o gc.o
 
-joy:	prep $(OBJS)
+joy:	$(OBJS)
 	$(CC) -o$@ $(OBJS) -lm
 
 $(OBJS): $(HDRS)
