@@ -1,7 +1,7 @@
 #
 #   module  : makefile
-#   version : 1.8
-#   date    : 10/23/23
+#   version : 1.10
+#   date    : 10/25/23
 #
 .SUFFIXES:
 .SUFFIXES: .c .o
@@ -22,7 +22,7 @@ prep:
 	sh table.sh .
 
 clean:
-	rm -f $(OBJS) builtin.* table.c
+	rm -f $(OBJS)
 
 .c.o:
 	SOURCE_DATE_EPOCH=1047920271 $(CC) -o$@ $(CFLAGS) -c $<
