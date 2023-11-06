@@ -1,8 +1,8 @@
 /* FILE: factor.c */
 /*
  *  module  : factor.c
- *  version : 1.23
- *  date    : 10/12/23
+ *  version : 1.24
+ *  date    : 11/06/23
  */
 #include "globals.h"
 
@@ -154,7 +154,7 @@ PUBLIC void writefactor(pEnv env, Index n, FILE *fp)
 	else
 	    fprintf(fp, "'%c", (int)nodevalue(n).num);
 	return;
-    case UNKNOWN_:
+    case KEYWORD_:
     case INTEGER_:
 	fprintf(fp, "%" PRId64, nodevalue(n).num);
 	return;

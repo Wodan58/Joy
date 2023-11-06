@@ -1,8 +1,8 @@
 /* FILE: interp.c */
 /*
  *  module  : interp.c
- *  version : 1.75
- *  date    : 09/13/23
+ *  version : 1.76
+ *  date    : 11/06/23
  */
 
 /*
@@ -354,8 +354,10 @@ start:
 #ifdef TRACING
 	if (env->debugging) {
 	    writestack(env, env->stck);
-	    printf(" : ");
-	    writeterm(env, stepper, stdout);
+	    if (env->debugging == 2) {
+		printf(" : ");
+		writeterm(env, stepper, stdout);
+	    }
 	    putchar('\n');
 	}
 #endif

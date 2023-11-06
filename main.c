@@ -1,8 +1,8 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.80
- *  date    : 10/16/23
+ *  version : 1.81
+ *  date    : 11/06/23
  */
 
 /*
@@ -383,7 +383,7 @@ PRIVATE void copyright(char *file)
 	time_t stamp;
 	char *gc;
     } table[] = {
-	{ "joytut", 994075177, "NOBDW" },
+	{ "tutinp", 994075177, "NOBDW" },
 	{ "jp-joytst", 994075177, "NOBDW" },
 	{ "laztst", 1005579152, "BDW" },
 	{ "symtst", 1012575285, "BDW" },
@@ -456,10 +456,13 @@ PRIVATE void options(pEnv env)
     printf("Options:\n");
     printf("  -h : print this help text and exit\n");
 #ifdef TRACING
-    printf("  -d : print a trace of program execution\n");
+    printf("  -d : print a trace of stack development\n");
 #endif
 #ifdef SYMBOLS
     printf("  -s : dump user-defined functions after execution\n");
+#endif
+#ifdef TRACING
+    printf("  -t : print a trace of program execution\n");
 #endif
 #ifdef COPYRIGHT
     printf("  -v : do not print a copyright notice\n");
@@ -517,6 +520,9 @@ PRIVATE int my_main(int argc, char **argv)
 #endif
 #ifdef SYMBOLS
 		case 's' : symdump = 1; break;
+#endif
+#ifdef TRACING
+		case 't' : env.debugging = 2; break;
 #endif
 #ifdef COPYRIGHT
 		case 'v' : verbose = 0; break;

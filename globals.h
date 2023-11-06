@@ -1,8 +1,8 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.77
- *  date    : 10/16/23
+ *  version : 1.78
+ *  date    : 11/06/23
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -59,8 +59,8 @@
 
 /* symbols from getsym		*/
 #define ILLEGAL_ 0
-#define UNKNOWN_ 1
 #define COPIED_ 1
+#define KEYWORD_ 1
 #define USR_ 2
 #define ANON_FUNCT_ 3
 #define BOOLEAN_ 4
@@ -172,7 +172,7 @@ typedef struct Env {
     pEntry location;       /* getsym */
     Symbol symb;	   /* scanner */
     int hide_stack[DISPLAYMAX];
-    struct my_module {
+    struct module {
 	char *name;
 	int hide;
     } module_stack[DISPLAYMAX];

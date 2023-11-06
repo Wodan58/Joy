@@ -1,7 +1,7 @@
 #
 #   module  : CMakeLists.txt
-#   version : 1.8
-#   date    : 08/28/23
+#   version : 1.9
+#   date    : 11/06/23
 #
 macro(exe9 src)
 add_custom_target(${src}.out ALL
@@ -21,9 +21,8 @@ exe9(__symtabindex)
 exe9(__symtabmax)
 exe9(_help)
 exe9(abort)
-exe9(plus)
+exe9(abs)
 exe9(acos)
-exe9(add)
 exe9(all2)
 exe9(and)
 exe9(app1)
@@ -143,6 +142,7 @@ exe9(map)
 exe9(max)
 exe9(maxint)
 exe9(min)
+exe9(minus)
 exe9(mktime)
 exe9(modf)
 exe9(mul)
@@ -158,6 +158,7 @@ exe9(or)
 exe9(ord)
 exe9(over)
 exe9(pick)
+exe9(plus)
 exe9(pop)
 exe9(popd)
 exe9(pow)
@@ -202,7 +203,6 @@ exe9(strftime)
 exe9(string)
 exe9(strtod)
 exe9(strtol)
-exe9(minus)
 exe9(succ)
 exe9(swap)
 exe9(swapd)

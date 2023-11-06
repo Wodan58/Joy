@@ -1,7 +1,7 @@
 /*
     module  : fget.c
-    version : 1.7
-    date    : 09/07/23
+    version : 1.8
+    date    : 11/06/23
 */
 #ifndef FGET_C
 #define FGET_C
@@ -32,7 +32,7 @@ PRIVATE void fget_(pEnv env)
 	break;
     default:
 	env->bucket.num = env->symb;
-	env->stck = newnode(env, UNKNOWN_, env->bucket, env->stck);
+	env->stck = newnode(env, KEYWORD_, env->bucket, env->stck);
 	break;
     }
 }
