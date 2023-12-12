@@ -1,8 +1,8 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.78
- *  date    : 11/06/23
+ *  version : 1.81
+ *  date    : 12/12/23
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -54,8 +54,8 @@
 #define INIUNDEFERROR 0
 
 /* installation dependent	*/
-#define SETSIZE 64
-#define MAXINT 9223372036854775807LL
+#define SETSIZE (int)(CHAR_BIT * sizeof(uint64_t))	/* from limits.h */
+#define MAXINT INT64_MAX				/* from stdint.h */
 
 /* symbols from getsym		*/
 #define ILLEGAL_ 0
@@ -122,13 +122,13 @@ typedef void (*proc_t)(pEnv);	/* procedure */
 
 typedef union {
     int64_t num;	/* USR, BOOLEAN, CHAR, INTEGER */
+    proc_t proc;	/* ANON_FUNCT */
     uint64_t set;	/* SET */
     char *str;		/* STRING */
+    Index lis;		/* LIST */
     double dbl;		/* FLOAT */
     FILE *fil;		/* FILE */
-    Index lis;		/* LIST */
     pEntry ent;		/* SYMBOL */
-    proc_t proc;	/* ANON_FUNCT */
 } Types;
 
 typedef struct Node {
@@ -206,7 +206,7 @@ PUBLIC proc_t operproc(int o);
 PUBLIC int operflags(int o);
 PUBLIC int operindex(proc_t proc);
 /* factor.c */
-PUBLIC void readfactor(pEnv env) /* read a JOY factor */;
+PUBLIC void readfactor(pEnv env);	/* read a JOY factor */
 PUBLIC void readterm(pEnv env);
 PUBLIC void writefactor(pEnv env, Index n, FILE *fp);
 PUBLIC void writeterm(pEnv env, Index n, FILE *fp);

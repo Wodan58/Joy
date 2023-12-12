@@ -1,16 +1,19 @@
  ![](Wynn.PNG)
 ==============
 
+
 Introduction
 ============
 
-This presents a note about the technicalities of this Joy implementation. Most
-of the remarks from joy1, the BDW version, also apply here.
+This presents a note about the technicalities of this Joy implementation.
+The remarks in
+[joy1](https://github.com/Wodan58/joy1/blob/master/doc/JOYimplJOY.md),
+the BDW version, also apply here.
 
 Recent changes
 ==============
 
-Both the memory area and the symbol table can grow when needed.
+Symbol table, memory area, and tokenlist can grow when needed.
 
 This repository is referred to from the wikipedia page about Joy. That page
 contains this text: "Its library routines mirror those of ISO C, though the

@@ -1,7 +1,7 @@
 /*
  *  module  : utils.c
- *  version : 1.24
- *  date    : 09/12/23
+ *  version : 1.25
+ *  date    : 12/12/23
  */
 #include "globals.h"
 
@@ -85,12 +85,10 @@ PUBLIC void inimem2(pEnv env)
 #ifdef ENABLE_TRACEGC
 PUBLIC void printnode(pEnv env, Index p)
 {
-    printf("%5d: %10s ", p, vec_at(env->symtab, nodetype(p)).name);
-    if (nodetype(p) == USR_)
-	printf("%10s", vec_at(env->symtab, nodevalue(p).num).name);
-    else
-	printf("%10" PRId64, nodevalue(p).num);
-    printf(" %5d\n", nextnode1(p));
+    printf("%d: ", p);
+    writefactor(env, p, stdout);
+    printf(" :%d\n", nextnode1(p));
+
 }
 #endif
 

@@ -1,8 +1,8 @@
 /* FILE: interp.c */
 /*
  *  module  : interp.c
- *  version : 1.76
- *  date    : 11/06/23
+ *  version : 1.77
+ *  date    : 12/12/23
  */
 
 /*
@@ -338,7 +338,7 @@ start:
 #endif
 #ifdef ENABLE_TRACEGC
 	if (env->tracegc > 5) {
-	    printf("exeterm1: %d ", nodevalue(env->conts).lis);
+	    printf("exeterm1: ");
 	    printnode(env, nodevalue(env->conts).lis);
 	}
 #endif
@@ -415,7 +415,7 @@ start:
 	}
 #ifdef ENABLE_TRACEGC
 	if (env->tracegc > 5) {
-	    printf("exeterm2: %d ", stepper);
+	    printf("exeterm2: ");
 	    printnode(env, stepper);
 	}
 #endif
