@@ -1,8 +1,8 @@
 /* FILE: scan.c */
 /*
  *  module  : scan.c
- *  version : 1.62
- *  date    : 02/12/24
+ *  version : 1.63
+ *  date    : 02/13/24
  */
 #include "globals.h"
 
@@ -96,8 +96,12 @@ again:
 	if (env->echoflag && echo)
 	    putline(env, stdout, 1);	/* echo line to stdout */
 	if (linbuf[0] == SHELLESCAPE) {
-	    if (!env->ignore)
-		system(&linbuf[1]);
+	    if (!env->ignore) {
+		if ((i = system(&linbuf[1])) != 0) {
+		    fflush(stdout);
+		    fprintf(stderr, "system: %d\n", i);
+		}
+	    }
 	    goto again;
 	}
     }
