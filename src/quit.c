@@ -1,7 +1,7 @@
 /*
     module  : quit.c
-    version : 1.5
-    date    : 09/04/23
+    version : 1.8
+    date    : 02/02/24
 */
 #ifndef QUIT_C
 #define QUIT_C
@@ -15,10 +15,8 @@ Exit from Joy.
 */
 PUBLIC void my_atexit(void (*proc)(pEnv))
 {
-#if 0
     if (exit_index == DISPLAYMAX)
 	return;
-#endif
     table[exit_index++] = proc;
 }
 

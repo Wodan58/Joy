@@ -1,8 +1,8 @@
 /* FILE: interp.c */
 /*
  *  module  : interp.c
- *  version : 1.77
- *  date    : 12/12/23
+ *  version : 1.79
+ *  date    : 02/12/24
  */
 
 /*
@@ -289,8 +289,10 @@
 #ifdef STATS
 static double calls, opers;
 
-PRIVATE void report_stats(void)
+PRIVATE void report_stats(pEnv env)
 {
+    if (!env->statistics)
+	return;
     fflush(stdout);
     fprintf(stderr, "%.0f calls to joy interpreter\n", calls);
     fprintf(stderr, "%.0f operations executed\n", opers);
@@ -324,7 +326,7 @@ PUBLIC void exeterm(pEnv env, Index n)
 start:
 #ifdef STATS
     if (++calls == 1)
-	atexit(report_stats);
+	my_atexit(report_stats);
 #endif
     if (root == n)
 	return;
@@ -444,11 +446,13 @@ start:
 #include "src/plusminus.h"
 #include "src/predsucc.h"
 #include "src/push.h"
+#include "src/push2.h"
 #include "src/someall.h"
 #include "src/type.h"
 #include "src/ufloat.h"
 #include "src/unmktime.h"
 #include "src/usetop.h"
+#include "src/usetop2.h"
 #include "builtin.h"
 
 static struct {
@@ -484,7 +488,7 @@ static struct {
 {OK,	" set type",		id_,	    "->  {...}",
 "The type of sets of small non-negative integers.\nThe maximum is platform dependent, typically the range is 0..31.\nLiterals are written inside curly braces.\nExamples:  {}  {0}  {1 3 5}  {19 18 17}."},
 
-{OK,	" string type",		id_,	    "->  \"...\" ",
+{OK,	" string type",		id_,	    "->  \"...\"",
 "The type of strings of characters. Literals are written inside double quotes.\nExamples: \"\"  \"A\"  \"hello world\" \"123\".\nUnix style escapes are accepted."},
 
 {OK,	" list type",		id_,	    "->  [...]",

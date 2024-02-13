@@ -1,7 +1,7 @@
 /*
     module  : treerec.c
-    version : 1.7
-    date    : 09/04/23
+    version : 1.8
+    date    : 01/17/24
 */
 #ifndef TREEREC_C
 #define TREEREC_C
@@ -15,6 +15,6 @@ PRIVATE void treerec_(pEnv env)
     THREEPARAMS("treerec");
     TWOQUOTES("treerec");
     cons_(env);
-    _treerec_(env);
+    treerecaux_(env);
 }
 #endif

@@ -1,8 +1,8 @@
 /* FILE: scan.c */
 /*
  *  module  : scan.c
- *  version : 1.57
- *  date    : 09/07/23
+ *  version : 1.62
+ *  date    : 02/12/24
  */
 #include "globals.h"
 
@@ -19,7 +19,6 @@ static int linelength, currentcolumn;
 static int errorcount;
 #endif
 static int ch = ' ';
-static int fget_eof;
 
 static struct keys {
     char *name;
@@ -55,6 +54,8 @@ PRIVATE void putline(pEnv env, FILE *fp, int echo)
 {
     int i;
 
+    if (!linenumber)
+	return;
     if (echo) {
 	if (env->echoflag > 2)
 	    fprintf(fp, "%4d", linenumber);
@@ -71,7 +72,7 @@ PRIVATE void putline(pEnv env, FILE *fp, int echo)
 */
 PRIVATE void getch(pEnv env)
 {
-    int i;
+    int i, echo = 1;
 
     if (currentcolumn == linelength) {
 again:
@@ -83,20 +84,20 @@ again:
 		;
 	    linelength = i;
 	} else if (ilevel > 0) {
-	    if (!strcmp(infile[ilevel].name, "fget"))
-		fget_eof = 1;
 	    fclose(infile[ilevel].fp);
 	    infile[ilevel].fp = 0;	/* invalidate file pointer */
 	    env->srcfile = infile[--ilevel].fp;
 	    linenumber = infile[ilevel].line;
+	    echo = 0;			/* do not echo this line again */
 	} else
 	    quit_(env);
 	linbuf[linelength++] = ' ';	/* to help getsym for numbers */
 	linbuf[linelength++] = 0;
-	if (env->echoflag)
+	if (env->echoflag && echo)
 	    putline(env, stdout, 1);	/* echo line to stdout */
 	if (linbuf[0] == SHELLESCAPE) {
-	    system(&linbuf[1]);
+	    if (!env->ignore)
+		system(&linbuf[1]);
 	    goto again;
 	}
     }
@@ -130,70 +131,98 @@ PUBLIC void error(pEnv env, char *message)
 
 /*
     redirect - read from another file descriptor. Some special processing in
-	       case of reading with fget.
+	       the case of reading with fget.
 */
-PUBLIC int redirect(pEnv env, char *name, FILE *fp)
+PUBLIC void redirect(pEnv env, char *str, FILE *fp)
 {
-    if (fget_eof) {			/* stop reading from this file */
-	fget_eof = 0;
-	return 0;			/* abort fget functionality */
-    }
-    if (!strcmp(infile[ilevel].name, name))
-	return 1;			/* already reading from this file */
+    if (infile[ilevel].fp == fp)
+	return;				/* already reading from this file */
     infile[ilevel].line = linenumber;	/* save last line number and line */
     if (ilevel + 1 == INPSTACKMAX)	/* increase the include level */
 	execerror("fewer include files", "include");
     infile[++ilevel].fp = env->srcfile = fp;
-    infile[ilevel].line = 1;		/* start with line 1 */
-    infile[ilevel].name = name;
-    return 1;				/* ok, switched to new file, buffer */
+    infile[ilevel].line = linenumber = 0;	/* start with line 0 */
+    infile[ilevel].name = str;		/* switch to new file */
 }
 
 /*
     include - insert the contents of a file in the input.
 
-	      Files are read in the current directory or if that fails
-	      from the same directory as where the executable is stored.
-	      If that path also fails an error is generated unless error
-	      is set to 0.
+    Files are read in the current directory or if that fails from the
+    previous location. If that also fails an error is generated.
 */
-PUBLIC int include(pEnv env, char *name, int error)
+PUBLIC void include(pEnv env, char *name)
 {
+    /*
+     * mustinclude - determine whether an attempt must be made to include
+     * usrlib.joy
+     */
     FILE *fp;
     char *ptr, *str;
 
-/*
-    First try to open name in the current working directory.
-*/
-    if ((fp = fopen(name, "r")) != 0) {
-/*
-    Replace the pathname of argv[0] with the pathname of name.
-*/
-	if (strchr(name, '/')) {
-	    env->pathname = GC_strdup(name);
-	    ptr = strrchr(env->pathname, '/');
-	    *ptr = 0;
+    /*
+     * usrlib.joy is tried first in the current directory, then in the home
+     * directory and then in the directory where the joy binary is located.
+     *
+     * If all of that fails, no harm done.
+     */
+    str = name;						/* name copied to str */
+    if (!strcmp(name, "usrlib.joy")) {			/* check usrlib.joy */
+	if ((fp = fopen(str, "r")) != 0)
+	    goto normal;
+	if ((ptr = getenv("USERPROFILE")) != 0) {	/* windows */
+	    str = GC_malloc_atomic(strlen(ptr) + strlen(name) + 2);
+	    sprintf(str, "%s/%s", ptr, name);
+	    if ((fp = fopen(str, "r")) != 0)
+		goto normal;
 	}
-/*
-    Prepend pathname to the filename and try again.
-*/
-    } else if (strcmp(env->pathname, ".")) {
-	str = GC_malloc_atomic(strlen(env->pathname) + strlen(name) + 2);
-	sprintf(str, "%s/%s", env->pathname, name);
-	if ((fp = fopen(str, "r")) != 0) {
-/*
-    If this succeeds, establish a new pathname.
-*/
+	if ((ptr = getenv("HOME")) != 0) {
+	    str = GC_malloc_atomic(strlen(ptr) + strlen(name) + 2);
+	    sprintf(str, "%s/%s", ptr, name);
+	    if ((fp = fopen(str, "r")) != 0)
+		goto normal;
+	}
+	if (strcmp(env->pathname, ".")) {
+	    str = GC_malloc_atomic(strlen(env->pathname) + strlen(name) + 2);
+	    sprintf(str, "%s/%s", env->pathname, name);
+	    if ((fp = fopen(str, "r")) != 0)
+		goto normal;
+	}
+	/*
+	 * Failure to open usrlib.joy need not be reported.
+	 */
+	return;
+normal:
+	/*
+	 * If there is a new pathname, replace the old one.
+	 */
+	if (strrchr(str, '/')) {
 	    env->pathname = GC_strdup(str);
 	    ptr = strrchr(env->pathname, '/');
 	    *ptr = 0;
 	}
+	redirect(env, name, fp);
+	return;
     }
-    if (fp && redirect(env, name, fp))
-	return 0; /* ok */
-    if (error)
-	execerror("valid file name", "include");
-    return 1; /* nok */
+    /*
+     * A file other that usrlib.joy is first tried in the current directory.
+     */
+    if ((fp = fopen(name, "r")) != 0)
+	goto normal;
+    /*
+     * If that fails, the pathname is prepended and the file is tried again.
+     */
+    if (strcmp(env->pathname, ".")) {
+	str = GC_malloc_atomic(strlen(env->pathname) + strlen(name) + 2);
+	sprintf(str, "%s/%s", env->pathname, name);
+	if ((fp = fopen(str, "r")) != 0)
+	    goto normal;
+    }
+    /*
+     * If that also fails, no other path can be tried and an error is
+     * generated.
+     */
+    execerror("valid file name", "include");
 }
 
 /*
@@ -422,7 +451,7 @@ next:
 einde:;
 }
 
-#ifdef DUMP_TOKENS
+#ifdef TOKENS
 PRIVATE void dumptok(Token tok, int num)
 {
     printf("%d) ", num);
@@ -504,7 +533,7 @@ PUBLIC void getsym(pEnv env)
 */
     if (vec_size(env->tokens)) {
 	tok = vec_pop(env->tokens);
-#ifdef DUMP_TOKENS
+#ifdef TOKENS
 	dumptok(tok, 1); /* tokens from the first pop */
 #endif
 	env->symb = tok.symb;
@@ -579,13 +608,13 @@ done:	undomod(hide, modl, hcnt);
 */
     if (vec_size(env->tokens)) {
 	tok = vec_pop(env->tokens);
-#ifdef DUMP_TOKENS
+#ifdef TOKENS
 	dumptok(tok, 2); /* tokens from the second pop */
 #endif
 	env->symb = tok.symb;
 	env->yylval = tok.yylval;
     } else {
-#ifdef DUMP_TOKENS
+#ifdef TOKENS
 	tok.symb = env->symb;
 	tok.yylval = env->yylval;
 	dumptok(tok, 3); /* there was no value popped */

@@ -1,7 +1,7 @@
 (*
     module  : test01.joy
-    version : 1.3
-    date    : 04/13/22
+    version : 1.4
+    date    : 02/13/24
 *)
 1 setundeferror.
 2 setautoput.
@@ -22,6 +22,9 @@
 
 (* testing escape sequences *)
 "\b\t\n\v\f\r\'\"\v\\\a".
+
+(* " <- this double quote is needed; testing escape sequence for character *)
+'\007.
 
 (* this should issue an error message if there are fewer than 3 digits *)
 "\007".

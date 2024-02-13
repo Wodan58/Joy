@@ -1,7 +1,7 @@
 /*
  *  module  : utils.c
- *  version : 1.25
- *  date    : 12/12/23
+ *  version : 1.27
+ *  date    : 02/12/24
  */
 #include "globals.h"
 
@@ -44,8 +44,10 @@ PUBLIC void inimem1(pEnv env, int status)
 #ifdef STATS
 static double avail;
 
-static void report_avail(void)
+static void report_avail(pEnv env)
 {
+    if (!env->statistics)
+	return;
     fflush(stdout);
     fprintf(stderr, "%.0f user nodes available\n", avail);
 }
@@ -55,7 +57,7 @@ static void count_avail(void)
     double new_avail;
 
     if (!avail)
-	atexit(report_avail);
+	my_atexit(report_avail);
     new_avail = memorymax - mem_low;
     if (avail > new_avail || !avail)
 	avail = new_avail;
@@ -157,16 +159,19 @@ PRIVATE void copyall(pEnv env)
 #ifdef STATS
 static double collect;
 
-static void report_collect(void)
+static void report_collect(pEnv env)
 {
+    if (!env->statistics)
+	return;
     fflush(stdout);
     fprintf(stderr, "%.0f garbage collections\n", collect);
+    fprintf(stderr, "%.0f 2nd garbage collect\n", (double)GC_get_gc_no());
 }
 
 static void count_collect(void)
 {
     if (++collect == 1)
-	atexit(report_collect);
+	my_atexit(report_collect);
 }
 #endif
 
@@ -242,8 +247,10 @@ PUBLIC void my_gc(pEnv env)
 #ifdef STATS
 static double nodes;
 
-static void report_nodes(void)
+static void report_nodes(pEnv env)
 {
+    if (!env->statistics)
+	return;
     fflush(stdout);
     fprintf(stderr, "%.0f nodes used\n", nodes);
 }
@@ -251,7 +258,7 @@ static void report_nodes(void)
 static void count_nodes(void)
 {
     if (++nodes == 1)
-	atexit(report_nodes);
+	my_atexit(report_nodes);
 }
 #endif
 
@@ -297,7 +304,10 @@ PUBLIC Index newnode(pEnv env, Operator o, Types u, Index r)
 */
 PUBLIC void my_memoryindex(pEnv env)
 {
-    env->bucket.num = vec_size(env->memory);
+    if (env->ignore)
+	env->bucket.num = 0;
+    else
+	env->bucket.num = vec_size(env->memory);
     env->stck = newnode(env, INTEGER_, env->bucket, env->stck);
 }
 
@@ -306,6 +316,9 @@ PUBLIC void my_memoryindex(pEnv env)
 */
 PUBLIC void my_memorymax(pEnv env)
 {
-    env->bucket.num = vec_max(env->memory);
+    if (env->ignore)
+	env->bucket.num = 0;
+    else
+	env->bucket.num = vec_max(env->memory);
     env->stck = newnode(env, INTEGER_, env->bucket, env->stck);
 }

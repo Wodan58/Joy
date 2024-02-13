@@ -1,14 +1,14 @@
 /*
     module  : fput.c
-    version : 1.6
-    date    : 09/07/23
+    version : 1.7
+    date    : 01/17/24
 */
 #ifndef FPUT_C
 #define FPUT_C
 
 /**
 OK 1940  fput  :  S X  ->  S
-Writes X to stream S, pops X off stack.
+[FOREIGN] Writes X to stream S, pops X off stack.
 */
 PRIVATE void fput_(pEnv env)
 {

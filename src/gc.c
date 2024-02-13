@@ -1,14 +1,14 @@
 /*
     module  : gc.c
-    version : 1.3
-    date    : 09/04/23
+    version : 1.4
+    date    : 01/17/24
 */
 #ifndef GC_C
 #define GC_C
 
 /**
 OK 3010  gc  :  ->
-Initiates garbage collection.
+[IMPURE] Initiates garbage collection.
 */
 PUBLIC void gc_(pEnv env)
 {

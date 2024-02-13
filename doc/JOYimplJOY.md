@@ -20,7 +20,16 @@ contains this text: "Its library routines mirror those of ISO C, though the
 current implementation is not easily extensible with functions written in C".
 This implementation makes adding a function easier. All it takes is to write
 the function and relocate the source code in the src-directory. The build
-system takes it from there. Not a general FFI, but probably good enough.
+system takes it from there.
+
+Conversely, it is also possible to remove FOREIGN (or IMPURE) functions:
+
+    cd src
+    mkdir ATTIC
+    mv `grep -l FOREIGN *.c` ATTIC
+
+Then rebuild Joy in the usual way. The functions documented as FOREIGN can
+savely be removed, as none of the test files in the lib-directory use them.
 
 Comparison
 ==========

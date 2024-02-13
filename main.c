@@ -1,8 +1,8 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.81
- *  date    : 11/06/23
+ *  version : 1.90
+ *  date    : 02/12/24
  */
 
 /*
@@ -116,14 +116,11 @@ Manfred von Thun, 2006
 */
 #include "globals.h"
 
-#define ERROR_ON_USRLIB 0
-#define DONT_READ_AHEAD 0
-#define READ_PRIV_AHEAD 1
+static jmp_buf begin;		/* restart with empty program */
 
-static jmp_buf begin;
-static char *filename = "stdin";
+static char *filename;		/* used in execerror */
 
-char *bottom_of_stack; /* needed in gc.c */
+char *bottom_of_stack;		/* needed in gc.c */
 
 /*
  *  Initialise the symbol table with builtins. There is no need to classify
@@ -157,9 +154,9 @@ PRIVATE void enterglobal(pEnv env, char *name)
     khiter_t key;
 
     env->location = vec_size(env->symtab);
-    ent.flags = 0;
     ent.name = name;
     ent.is_user = 1;
+    ent.flags = 0;
     ent.u.body = 0; /* may be assigned in definition */
     key = kh_put(Symtab, env->hash, ent.name, &rv);
     kh_value(env->hash, key) = env->location;
@@ -217,6 +214,7 @@ PRIVATE void compound_def(pEnv env); /* forward */
 PRIVATE void definition(pEnv env)
 {
     Entry ent;
+    char *name;
     pEntry here = 0;
 
     if (env->symb == LIBRA || env->symb == JPRIVATE || env->symb == HIDE
@@ -237,6 +235,16 @@ PRIVATE void definition(pEnv env)
 	return;
 
     /* symb == ATOM : */
+    name = env->yylval.str;
+
+    getsym(env);
+    if (env->symb == EQDEF)
+	getsym(env);
+    else
+	error(env, " == expected in definition");
+    readterm(env);
+
+    env->yylval.str = name;
     enteratom(env);
     ent = vec_at(env->symtab, env->location);
     if (!ent.is_user) {
@@ -245,12 +253,7 @@ PRIVATE void definition(pEnv env)
 	enterglobal(env, classify(env, env->yylval.str));
     }
     here = env->location;
-    getsym(env);
-    if (env->symb == EQDEF)
-	getsym(env);
-    else
-	error(env, " == expected in definition");
-    readterm(env);
+
     if (here && env->stck && nodetype(env->stck) == LIST_) {
 	vec_at(env->symtab, here).u.body = nodevalue(env->stck).lis;
 	env->stck = nextnode1(env->stck);
@@ -352,16 +355,21 @@ PRIVATE void report_clock(pEnv env)
 #ifdef NOBDW
     double perc;
 #endif
-    clock_t diff;
+    double diff;
 
-    diff = clock() - env->startclock;
+    if (!env->statistics)
+	return;
+    if ((diff = clock() - env->startclock) < 0)
+	diff = 0;
     fflush(stdout);
-    fprintf(stderr, "%ld milliseconds CPU to execute\n",
+    fprintf(stderr, "%.0f milliseconds CPU to execute\n",
 	    diff * 1000 / CLOCKS_PER_SEC);
 #ifdef NOBDW
-    perc = (double)env->gc_clock * 100 / diff;
-    fprintf(stderr, "%ld milliseconds CPU for gc (=%.0f%%)\n",
-	    env->gc_clock * 1000 / CLOCKS_PER_SEC, perc);
+    if (diff && env->gc_clock) {
+	perc = env->gc_clock * 100.0 / diff;
+	fprintf(stderr, "%.0f milliseconds CPU for gc (=%.0f%%)\n",
+		env->gc_clock * 1000.0 / CLOCKS_PER_SEC, perc);
+    }
 #endif
 }
 #endif
@@ -370,7 +378,7 @@ PRIVATE void report_clock(pEnv env)
  *  copyright - Print all copyright notices, even historical ones.
  *
  *  The version must be set on the commandline when compiling:
- *  -DJVERSION="\"alpha\"" or whatever.
+ *  -DVERS="\"alpha\"" or whatever.
  */
 #ifdef COPYRIGHT
 PRIVATE void copyright(char *file)
@@ -409,8 +417,8 @@ PRIVATE void copyright(char *file)
 	}
     } else {
 	printf("JOY  -  compiled at %s on %s", __TIME__, __DATE__);
-#ifdef JVERSION
-	printf(" (%s)", JVERSION);
+#ifdef VERS
+	printf(" (%s)", VERS);
 #endif
 	putchar('\n');
 	j = 1;
@@ -448,34 +456,127 @@ PRIVATE void dump_table(pEnv env)
 */
 PRIVATE void options(pEnv env)
 {
-    printf("Usage: joy [options] [filename] [parameters]\n");
-    printf("options, filename, parameters can be given in any order\n");
-    printf("options start with '-' and are all given together\n");
-    printf("parameters start with a digit\n");
-    printf("the filename parameter cannot start with '-' or a digit\n");
+    char str[BUFFERMAX];
+
+    printf("Usage: joy (options | filenames | parameters)*\n");
+    printf("options, filenames, parameters can be given in any order\n");
+    printf("options start with '-' and parameters start with a digit\n");
+    printf("filenames can be preceded by a pathname: e.g. './'\n");
+    printf("Features included (+) or not (-):\n");
+    sprintf(str, " symbols  copyright  jversion  tracing  stats  ncheck");
+#ifdef SYMBOLS
+    str[0] = '+';
+#else
+    str[0] = '-';
+#endif
+#ifdef COPYRIGHT
+    str[9] = '+';
+#else
+    str[9] = '-';
+#endif
+#ifdef VERS
+    str[20] = '+';
+#else
+    str[20] = '-';
+#endif
+#ifdef TRACING
+    str[30] = '+';
+#else
+    str[30] = '-';
+#endif
+#ifdef STATS
+    str[39] = '+';
+#else
+    str[39] = '-';
+#endif
+#ifdef NCHECK
+    str[46] = '+';
+#else
+    str[46] = '-';
+#endif
+    printf("%s\n", str);
+    sprintf(str, " tokens  ndebug  nobdw  tracegc  settings");
+#ifdef TOKENS
+    str[0] = '+';
+#else
+    str[0] = '-';
+#endif
+#ifdef NDEBUG
+    str[8] = '+';
+#else
+    str[8] = '-';
+#endif
+#ifdef NOBDW
+    str[16] = '+';
+#else
+    str[16] = '-';
+#endif
+#ifdef ENABLE_TRACEGC
+    str[23] = '+';
+#else
+    str[23] = '-';
+#endif
+#ifdef SETTINGS
+    str[32] = '+';
+#else
+    str[32] = '-';
+#endif
+    printf("%s\n", str);
+#ifdef COMP
+    printf("Compile flags: %s\n", COMP);
+#endif
+#ifdef LINK
+    printf("Linker flags: %s\n", LINK);
+#endif
     printf("Options:\n");
-    printf("  -h : print this help text and exit\n");
+#ifdef SETTINGS
+    printf("  -a : set the autoput flag (0-2)\n");
+#endif
 #ifdef TRACING
     printf("  -d : print a trace of stack development\n");
 #endif
+#ifdef SETTINGS
+    printf("  -e : set the echoflag (0-3)\n");
+#endif
+#ifdef ENABLE_TRACEGC
+    printf("  -g : set the __tracegc flag (0-6)\n");
+#endif
+    printf("  -h : print this help text and exit\n");
+#ifdef SETTINGS
+    printf("  -i : ignore impure functions\n");
+    printf("  -l : do not read usrlib.joy at startup\n");
+#endif
 #ifdef SYMBOLS
-    printf("  -s : dump user-defined functions after execution\n");
+    printf("  -s : dump symbol table after execution\n");
 #endif
 #ifdef TRACING
     printf("  -t : print a trace of program execution\n");
 #endif
+#ifdef SETTINGS
+    printf("  -u : set the undeferror flag (0,1)\n");
+#endif
 #ifdef COPYRIGHT
     printf("  -v : do not print a copyright notice\n");
 #endif
+#ifdef STATS
+    printf("  -x : print statistics after program finishes\n");
+#endif
+    quit_(env);
+}
+
+PRIVATE void unknown_opt(pEnv env, char *exe, int ch)
+{
+    printf("Unknown option argument: \"-%c\"\n", ch);
+    printf("More info with: \"%s -h\"\n", exe);
     quit_(env);
 }
 
 PRIVATE int my_main(int argc, char **argv)
 {
     static unsigned char mustinclude = 1;
-    char *ptr;
+    char *ptr, *exe;		/* exe: name of joy binary */
     int i, j, ch;
-    unsigned char helping = 0;
+    unsigned char helping = 0, unknown = 0;
 #ifdef COPYRIGHT
     unsigned char verbose = 1;
 #endif
@@ -483,13 +584,14 @@ PRIVATE int my_main(int argc, char **argv)
     unsigned char symdump = 0;
 #endif
 
-    Env env; /* global variables */
+    Env env;	/* global variables */
     memset(&env, 0, sizeof(env));
     /*
      *  Start the clock. my_atexit is called from quit_ that is called in
      *  scan.c after reading EOF on the first input file.
      */
     env.startclock = clock();
+    setbuf(stdout, 0);
 #ifdef STATS
     my_atexit(report_clock);
 #endif
@@ -498,25 +600,76 @@ PRIVATE int my_main(int argc, char **argv)
     /*
      *  Initialize yyin and other environmental parameters.
      */
+    filename = "stdin";
     env.srcfile = stdin;
-    if ((ptr = strrchr(env.pathname = argv[0], '/')) != 0) {
+    if ((ptr = strrchr(env.pathname = exe = argv[0], '/')) != 0) {
 	*ptr++ = 0;
-	argv[0] = ptr;
+	argv[0] = exe = ptr;
     } else if ((ptr = strrchr(env.pathname, '\\')) != 0) {
 	*ptr++ = 0;
-	argv[0] = ptr;
+	argv[0] = exe = ptr;
     } else
 	env.pathname = ".";
     /*
+     * These flags are initialized here, allowing them to be overruled by the
+     * command line. The program must be compiled with -DSETTINGS for that to
+     * happen. When set on the command line, they can not be overruled in the
+     * source code.
+     */
+    env.autoput = INIAUTOPUT;
+    env.echoflag = INIECHOFLAG;
+    env.undeferror = INIUNDEFERROR;
+    env.tracegc = INITRACEGC;
+
+    /*
      *  First look for options. They start with -.
      */
-    for (i = 1; i < argc; i++)
+    for (i = 1; i < argc; i++) {
 	if (argv[i][0] == '-') {
-	    for (j = 1; argv[i][j]; j++)
+	    for (j = 1; argv[i][j]; j++) {
 		switch (argv[i][j]) {
-		case 'h' : helping = 1; break;
+#ifdef SETTINGS
+		case 'a' : ptr = &argv[i][j + 1];
+			   env.autoput = atoi(ptr);	/* numeric payload */
+			   env.autoput_set = 1;
+			   ch = *ptr;			/* first digit */
+			   while (isdigit(ch)) {
+			       j++;			/* point last digit */
+			       ptr++;
+			       ch = *ptr;
+			   }
+			   break;
+#endif
 #ifdef TRACING
 		case 'd' : env.debugging = 1; break;
+#endif
+#ifdef SETTINGS
+		case 'e' : ptr = &argv[i][j + 1];
+			   env.echoflag = atoi(ptr);	/* numeric payload */
+			   env.echoflag_set = 1;
+			   ch = *ptr;			/* first digit */
+			   while (isdigit(ch)) {
+			       j++;			/* point last digit */
+			       ptr++;
+			       ch = *ptr;
+			   }
+			   break;
+#endif
+#ifdef ENABLE_TRACEGC
+		case 'g' : ptr = &argv[i][j + 1];
+			   env.tracegc = atoi(ptr);	/* numeric payload */
+			   ch = *ptr;			/* first digit */
+			   while (isdigit(ch)) {
+			       j++;			/* point last digit */
+			       ptr++;
+			       ch = *ptr;
+			   }
+			   break;
+#endif
+		case 'h' : helping = 1; break;
+#ifdef SETTINGS
+		case 'i' : env.ignore = 1; break;
+		case 'l' : mustinclude = 0; break;
 #endif
 #ifdef SYMBOLS
 		case 's' : symdump = 1; break;
@@ -524,17 +677,38 @@ PRIVATE int my_main(int argc, char **argv)
 #ifdef TRACING
 		case 't' : env.debugging = 2; break;
 #endif
+#ifdef SETTINGS
+		case 'u' : ptr = &argv[i][j + 1];
+			   env.undeferror = atoi(ptr);	/* numeric payload */
+			   env.undeferror_set = 1;
+			   ch = *ptr;			/* first digit */
+			   while (isdigit(ch)) {
+			       j++;			/* point last digit */
+			       ptr++;
+			       ch = *ptr;
+			   }
+			   break;
+#endif
 #ifdef COPYRIGHT
 		case 'v' : verbose = 0; break;
 #endif
-		}
+#ifdef STATS
+		case 'x' : env.statistics = 1; break;
+#endif
+		default  : unknown = argv[i][j]; break;
+		} /* end switch */
+	    } /* end for */
+
 	    /*
-		Overwrite the options with subsequent parameters.
+		Overwrite the options with subsequent parameters. Index i is
+		decreased, because the next parameter is copied to the current
+		index and i is increased in the for-loop.
 	    */
-	    for (--argc; i < argc; i++)
-		argv[i] = argv[i + 1];
-	    break;
-	}
+	    for (--argc, j = i--; j < argc; j++)
+		argv[j] = argv[j + 1];
+	} /* end if */
+    } /* end for */
+
     /*
      *  Look for a possible filename parameter. Filenames cannot start with -
      *  and cannot start with a digit, unless preceded by a path: e.g. './'.
@@ -542,7 +716,7 @@ PRIVATE int my_main(int argc, char **argv)
     for (i = 1; i < argc; i++) {
 	ch = argv[i][0];
 	if (!isdigit(ch)) {
-	    if ((env.srcfile = freopen(filename = argv[i], "r", stdin)) == 0) {
+	    if ((env.srcfile = fopen(filename = argv[i], "r")) == 0) {
 		fprintf(stderr, "failed to open the file '%s'.\n", filename);
 		return 0;
 	    }
@@ -557,8 +731,9 @@ PRIVATE int my_main(int argc, char **argv)
 	    for (--argc; i < argc; i++)
 		argv[i] = argv[i + 1];
 	    break;
-	}
-    }
+	} /* end if */
+    } /* end for */
+
     env.g_argc = argc;
     env.g_argv = argv;
 #ifdef COPYRIGHT
@@ -569,14 +744,12 @@ PRIVATE int my_main(int argc, char **argv)
     if (symdump)
 	my_atexit(dump_table);
 #endif
-    env.echoflag = INIECHOFLAG;
-    env.tracegc = INITRACEGC;
-    env.autoput = INIAUTOPUT;
-    env.undeferror = INIUNDEFERROR;
     inilinebuffer(&env, filename);
     inisymboltable(&env);
     if (helping)
 	options(&env);
+    if (unknown)
+	unknown_opt(&env, exe, unknown);
     setjmp(begin);		/* return here after error or abort */
 #ifdef NOBDW
     inimem1(&env, 0);		/* does not clear the stack */
@@ -584,7 +757,8 @@ PRIVATE int my_main(int argc, char **argv)
 #endif
     env.prog = 0;		/* clear program, just to be sure */
     if (mustinclude) {
-	mustinclude = include(&env, "usrlib.joy", ERROR_ON_USRLIB);
+	mustinclude = 0;	/* try only once */
+	include(&env, "usrlib.joy");
 	fflush(stdout);		/* flush include messages */
     }
     while (1) {
@@ -635,7 +809,8 @@ PRIVATE int my_main(int argc, char **argv)
 		    env.stck = nextnode1(env.stck);
 #endif
 		}
-		putchar('\n');
+		if (env.autoput && !env.ignore)
+		    putchar('\n');
 	    }
 	}
     }

@@ -1,14 +1,14 @@
 /*
     module  : __memorymax.c
-    version : 1.3
-    date    : 08/13/23
+    version : 1.4
+    date    : 02/01/24
 */
 #ifndef __MEMORYMAX_C
 #define __MEMORYMAX_C
 
 /**
 OK 1160  __memorymax  :  ->  I
-Pushes value of total size of memory.
+[IMPURE] Pushes value of total size of memory.
 */
 PUBLIC void __memorymax_(pEnv env)
 {

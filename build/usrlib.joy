@@ -63,12 +63,12 @@ END.						(* end HIDE and LIBRA *)
 
 "usrlib  is loaded\n"  putchars.
 
-standard-setting.
+# standard-setting.
 
 "../lib/inilib.joy" include.
 				(* assuming inilib.joy was included:  *)
 "agglib" libload.
 
-DEFINE verbose == true. (* Example of over-riding  inilib.joy *)
+DEFINE verbose == true. 	(* Example of over-riding  inilib.joy *)
 
 (* END  usrlib.joy *)

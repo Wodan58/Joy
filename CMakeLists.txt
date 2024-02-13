@@ -1,31 +1,42 @@
 #
 #   module  : CMakeLists.txt
-#   version : 1.19
-#   date    : 10/02/23
+#   version : 1.23
+#   date    : 01/25/24
 #
 cmake_minimum_required(VERSION 3.0)
 project(Joy VERSION 1.0)
 if("${CMAKE_BUILD_TYPE}" STREQUAL "")
   set(CMAKE_BUILD_TYPE "Release")
 endif()
-option(RUN_TESTS "Run standard tests" OFF)
-add_definitions(-DNOBDW -DCOPYRIGHT -DJVERSION="NOBDW ${CMAKE_BUILD_TYPE} ${CMAKE_PROJECT_VERSION}")
-include_directories(.)
-add_executable(joy interp.c scan.c utils.c main.c factor.c module.c gc.c)
-add_dependencies(joy always)
-add_custom_target(always
-		  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-		  COMMAND sh table.sh .
-		  COMMAND sh prims.sh .)
-if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-  add_definitions(-DGC_NOT_DLL -D_CRT_SECURE_NO_WARNINGS)
-# target_link_libraries(joy gc-lib)
-# include_directories(bdwgc/include)
-# add_subdirectory(bdwgc)
+if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+  option(RUN_TESTS "Run standard tests" ON)
 else()
-  if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O0 --coverage -fprofile-arcs -ftest-coverage") # debug, no optimization
+  option(RUN_TESTS "Run standard tests" OFF)
+endif()
+add_executable(joy main.c interp.c scan.c utils.c factor.c module.c gc.c)
+add_definitions(-DLINK="\\"${CMAKE_EXE_LINKER_FLAGS}\\"")
+add_definitions(-DVERS="NOBDW ${CMAKE_BUILD_TYPE} ${CMAKE_PROJECT_VERSION}")
+#
+#    MSVC: cmake --build . --config Release
+#
+if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+  set(CMAKE_VERBOSE_MAKEFILE ON)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCOPYRIGHT -DNOBDW -DGC_NOT_DLL -D_CRT_SECURE_NO_WARNINGS")
+  add_definitions(-DCOMP="\\"${CMAKE_C_FLAGS}\\"")
+else()
+  add_dependencies(joy always)
+  add_custom_target(always
+		    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+		    COMMAND sh table.sh .
+		    COMMAND sh prims.sh .)
+  set(CF "-DCOPYRIGHT -DNOBDW -Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter")
+  if("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
+    set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${CF}")
+    add_definitions(-DCOMP="\\"${CMAKE_C_FLAGS_RELEASE}\\"")
+  else()
+    set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${CF} -g -O0 --coverage -fprofile-arcs -ftest-coverage") # debug, no optimization
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage") # enabling coverage
+    add_definitions(-DCOMP="\\"${CMAKE_C_FLAGS_DEBUG}\\"")
   endif()
   target_link_libraries(joy m)
   if(RUN_TESTS)

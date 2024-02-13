@@ -1,8 +1,12 @@
 (*
     module  : take.joy
-    version : 1.7
-    date    : 09/19/23
+    version : 1.8
+    date    : 01/25/24
 *)
 [1 2 3] 2 take [1 2] equal.
 "test" 2 take "te" =.
 {1 2 3} 2 take {1 2} =.
+
+"te\001st" 10 take "te\001st" =.
+
+'\001 1 =.

@@ -32,10 +32,21 @@ Build instructions
 ------------------
 
     cd build
-    SOURCE_DATE_EPOCH=1047920271 cmake ..
+    cmake ..
     cmake --build .
 
-There is a customized version of usrlib.joy waiting in the build directory.
+Build with MSVC
+---------------
+
+    cd build
+    cmake ..
+    cmake --build . --config Release
+    copy Release\joy.exe
+
+Running
+-------
+
+There is a copy of usrlib.joy in the build directory.
 
 Testing
 -------
@@ -49,18 +60,13 @@ Testing
 
 There are some false positives.
 
-Bugs
-----
-
-This implementation of Joy has the intent to stay as close to the legacy
-version as possible. All unintended deviations and all remaining bugs are
-copyright © Wodan58.
-
 See also
 --------
 
 Implementation|Dependencies
 --------------|------------
+[42minjoy](https://github.com/Wodan58/42minjoy)|
+[joy0](https://github.com/Wodan58/joy0)|
 [joy1](https://github.com/Wodan58/joy1)|[BDW garbage collector](https://github.com/ivmai/bdwgc)
 [Moy](https://github.com/Wodan58/Moy)|[BDW garbage collector](https://github.com/ivmai/bdwgc) and [Lex & Yacc](https://sourceforge.net/projects/winflexbison/files/win_flex_bison-latest.zip)
 

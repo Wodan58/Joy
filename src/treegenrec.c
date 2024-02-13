@@ -1,7 +1,7 @@
 /*
     module  : treegenrec.c
-    version : 1.7
-    date    : 09/04/23
+    version : 1.8
+    date    : 01/17/24
 */
 #ifndef TREEGENREC_C
 #define TREEGENREC_C
@@ -17,6 +17,6 @@ PRIVATE void treegenrec_(pEnv env)
     THREEQUOTES("treegenrec");
     cons_(env);
     cons_(env);
-    _treegenrec_(env);
+    treegenrecaux_(env);
 }
 #endif

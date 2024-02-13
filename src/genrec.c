@@ -1,7 +1,7 @@
 /*
     module  : genrec.c
-    version : 1.9
-    date    : 09/04/23
+    version : 1.10
+    date    : 01/17/24
 */
 #ifndef GENREC_C
 #define GENREC_C
@@ -18,6 +18,6 @@ PRIVATE void genrec_(pEnv env)
     cons_(env);
     cons_(env);
     cons_(env);
-    _genrec_(env);
+    genrecaux_(env);
 }
 #endif

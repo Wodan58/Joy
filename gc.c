@@ -1,7 +1,7 @@
 /*
     module  : gc.c
-    version : 1.38
-    date    : 10/12/23
+    version : 1.40
+    date    : 02/12/24
 */
 #include <stdio.h>
 #include <string.h>
@@ -10,6 +10,10 @@
 #include <stdint.h>
 #include <setjmp.h>
 #include <signal.h>
+
+#ifdef _MSC_VER
+#pragma warning(disable: 4267)
+#endif
 
 #ifdef __linux__
 #include <unistd.h>
@@ -39,9 +43,9 @@
 #define BSS_ALIGN	4
 #define MIN_ITEMS	4
 #define MAX_ITEMS	2
+
 /*
-    Size is set to 50 MB, unless another definition is given in gc.h;
-    limiting the size may prevent a process from entering swap hell.
+    Size is set to 50 MB, unless another definition is given in gc.h.
 */
 #ifndef MAX_SIZE
 #define MAX_SIZE	50000000
@@ -65,6 +69,9 @@ KHASH_INIT(Backup, uint64_t, mem_info, 1, HASH_FUNCTION, kh_int64_hash_equal)
 static khint_t max_items;	/* max. items before gc */
 static khash_t(Backup) *MEM;	/* backup of pointers */
 static uint64_t lower, upper;	/* heap bounds */
+#ifdef COUNT_COLLECTIONS
+static size_t GC_gc_no;		/* number of garbage collections */
+#endif
 
 /*
     Pointers to memory segments.
@@ -255,6 +262,9 @@ void GC_gcollect(void)
     mark_bss();
 #endif
     scan();
+#ifdef COUNT_COLLECTIONS
+    GC_gc_no++;
+#endif
 }
 
 /*
@@ -392,5 +402,15 @@ size_t GC_get_free_bytes(void)
 size_t GC_get_memory_use(void)
 {
     return upper - lower;
+}
+#endif
+
+#ifdef COUNT_COLLECTIONS
+/*
+ * Return the number of garbage collections.
+ */
+size_t GC_get_gc_no(void)
+{
+    return GC_gc_no;
 }
 #endif

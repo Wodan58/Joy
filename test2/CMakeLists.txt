@@ -1,7 +1,7 @@
 #
 #   module  : CMakeLists.txt
-#   version : 1.9
-#   date    : 11/06/23
+#   version : 1.10
+#   date    : 02/05/24
 #
 macro(exe9 src)
 add_custom_target(${src}.out ALL
@@ -76,7 +76,6 @@ exe9(fclose)
 exe9(feof)
 exe9(ferror)
 exe9(fflush)
-exe9(fget)
 exe9(fgetch)
 exe9(fgets)
 exe9(file)

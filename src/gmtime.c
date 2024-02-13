@@ -1,12 +1,12 @@
 /*
     module  : gmtime.c
-    version : 1.2
-    date    : 08/13/23
+    version : 1.3
+    date    : 01/17/24
 */
 #ifndef GMTIME_C
 #define GMTIME_C
 
-#ifdef WIN32
+#if defined(_MSC_VER) || defined(WIN32)
 void gmtime_r(time_t *t, struct tm *tm)
 {
     *tm = *gmtime(t);

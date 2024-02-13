@@ -1,14 +1,14 @@
 /*
     module  : helpdetail.c
-    version : 1.10
-    date    : 09/07/23
+    version : 1.12
+    date    : 01/22/24
 */
 #ifndef HELPDETAIL_C
 #define HELPDETAIL_C
 
 /**
 OK 2920  helpdetail  :  [ S1 S2 .. ]  ->
-Gives brief help on each symbol S in the list.
+[IMPURE] Gives brief help on each symbol S in the list.
 */
 PRIVATE void helpdetail_(pEnv env)
 {
@@ -18,6 +18,10 @@ PRIVATE void helpdetail_(pEnv env)
 
     ONEPARAM("HELP");
     LIST("HELP");
+    if (env->ignore) {
+	POP(env->stck);
+	return;
+    }
     printf("\n");
     n = nodevalue(env->stck).lis;
     while (n) {

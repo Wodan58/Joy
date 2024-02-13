@@ -1,73 +1,44 @@
 (*
     This program determines the version of the Joy language processor.
+    The versions to be detected are: Moy, joy1, Joy, the legacy version,
+    joy0, 42minjoy.
 
-    Detection is based on features that are part of the language implementation
-    that cannot be changed. Setundeferror may or may not be present, due to
-    inclusion of usrlib.joy.
-
-    Normally, differences are bugs, because all implementations should do the
-    same thing, but there are differences that result from implementation
-    choices. This program makes use of these differences, thereby documenting
-    them. Differences in builtins should be repaired.
+    Detection is based on features that are part of the language
+    implementation that cannot be changed.
 *)
 
 (*
-    Doy unifies 42minjoy and Joy. As such it has features that do not exist in
-    other Joy implementations.
+    42minjoy accepts numbers in an alternative radix. The default is 2.
 *)
-[&10 2 =] ["The Doy implementation of Joy is executing.\n" putchars quit] []
-ifte.
+[&10 2 = [[] [['4'2'm'i'n'j'o'y' 'i's' 'e'x'e'c'u't'i'n'g'.'\010]
+[putch] step]] index i].
 
 (*
-    The original joy0 is the only one that has nullval as builtin. This joy0
-    does not know about putchars and that does not change. The intention is to
-    change joy0 only if there is a bug that prevents normal execution.
+    The original joy0 has nullval as builtin.
 *)
-[[1 2 3] nullval [] equal] ["The original joy0 is executing.\n" [putch] step
-quit] [] ifte.
+[0 nullval =] ["The original joy0 is executing.\n" [putch] step quit]
+[] ifte.
 
 (*
-    Joy as opposed to joy1 and other implementations clears the stack after a
-    definition. This feature is caused by the copying garbage collector and the
-    desire not to garbage collect definitions. This feature is documented and
-    will not go away for a very long time.
+    Joy clears the stack after a definition. This is caused by the copying
+    garbage collector and the desire not to recycle definitions.
 *)
-123 dup.
+123.
 DEFINE a == 456.
 [stack size null] ["The Joy with NOBDW is executing.\n" putchars quit] [] ifte.
 
 (*
-    Moy uses a flex scanner that is rather picky about strings, accepting only
-    those escapes that have been defined in the language. Other implementations
-    may be more permissive in this, but it is a feature of Moy that it uses
-    flex and flex requires precise definitions. Moy also uses yacc and that
-    makes another test possible. This is also true in Coy, right?
+    Moy lets of/at accept a boolean as index, just like 42minjoy's index.
 *)
-DEFINE in == in.
-[in] first body first [user] [] ["The Moy with yacc parser executing.\n"
-putchars quit] ifte.
+false [["The Moy with yacc parser executing.\n" putchars quit] []] of i.
 
 (*
-    Coy is able to read keywords with get. This feature becomes necessary if
-    the need arises to develop a compiler in Joy itself. It helps enormously
-    that Joy is then able to use get to read source code. Reading a character
-    at a time is possible, but requires a lot more work.
+    The legacy version does not allow "true" to be redefined.
 *)
-get dup.
-LIBRA
-[stack size null] [] ["The Coy vector version executing.\n" putchars quit]
-ifte.
+DEFINE true == 0.
+true [] ["The legacy version is executing.\n" putchars quit] [] ifte.
 
 (*
-    joy1 does not know about %LISTING, so if echo is still 0 after setting the
-    listing, it must be joy1. %LISTING was added to Moy and is also present in
-    Doy. It is not needed, because setecho does the same job.
+    No other implementation is known, so it must be joy1 compiled with BDW.
 *)
-%LISTING 1
-[] unstack.
-[echo null] ["The joy1 with BDW is executing.\n" putchars quit] [] ifte.
-
-(*
-    No other implementation is known, so it must be an unknown implementation.
-*)
-"An unknown Joy implementation is executing.\n" putchars.
+"The joy1 with BDW is executing.\n" putchars pop pop.

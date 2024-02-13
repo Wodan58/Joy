@@ -1,16 +1,16 @@
 /*
     module  : rand.c
-    version : 1.3
-    date    : 08/13/23
+    version : 1.5
+    date    : 01/22/24
 */
 #ifndef RAND_C
 #define RAND_C
 
 /**
 OK 1150  rand  :  ->  I
-I is a random integer.
+[IMPURE] I is a random integer.
 */
-PUSH(rand_, INTEGER_NEWNODE, rand())
+PUSH2(rand_, INTEGER_NEWNODE, rand())
 
 
 

@@ -1,41 +1,39 @@
 /*
     module  : inhas.h
-    version : 1.5
-    date    : 07/19/23
+    version : 1.6
+    date    : 02/01/24
 */
 #ifndef INHAS_H
 #define INHAS_H
 
-#define INHAS(PROCEDURE, NAME, AGGR, ELEM)                                     \
-    PRIVATE void PROCEDURE(pEnv env)                                           \
-    {                                                                          \
-        int found = 0;                                                         \
-        TWOPARAMS(NAME);                                                       \
-        switch (nodetype(AGGR)) {                                              \
-        case SET_:                                                             \
-            CHECKSETMEMBER(ELEM, NAME);                                        \
-            found                                                              \
-                = ((nodevalue(AGGR).set) & ((int64_t)1 << nodevalue(ELEM).num))\
-                > 0;                                                           \
-            break;                                                             \
-        case STRING_: {                                                        \
-            char *s;                                                           \
-            for (s = nodevalue(AGGR).str;                                      \
-                 *s != '\0' && *s != nodevalue(ELEM).num; s++)                 \
-                ;                                                              \
-            found = *s != '\0';                                                \
-            break;                                                             \
-        }                                                                      \
-        case LIST_: {                                                          \
-            Index n = nodevalue(AGGR).lis;                                     \
-            while (n && Compare(env, n, ELEM))                                 \
-                n = nextnode1(n);                                              \
-            found = n != 0;                                                    \
-            break;                                                             \
-        }                                                                      \
-        default:                                                               \
-            BADAGGREGATE(NAME);                                                \
-        }                                                                      \
-        BINARY(BOOLEAN_NEWNODE, found);                                        \
+#define INHAS(PROCEDURE, NAME, AGGR, ELEM)				\
+    PRIVATE void PROCEDURE(pEnv env)					\
+    {									\
+	int found = 0;							\
+	char *str;							\
+	Index node;							\
+	TWOPARAMS(NAME);						\
+	switch (nodetype(AGGR)) {					\
+	case SET_:							\
+	    CHECKSETMEMBER(ELEM, NAME);					\
+	    found = ((nodevalue(AGGR).set) &				\
+		    ((int64_t)1 << nodevalue(ELEM).num)) > 0;		\
+	    break;							\
+	case STRING_:							\
+	    for (str = nodevalue(AGGR).str;				\
+		 *str != '\0' && *str != nodevalue(ELEM).num; str++)	\
+		;							\
+	    found = *str != '\0';					\
+	    break;							\
+	case LIST_:							\
+	    node = nodevalue(AGGR).lis;					\
+	    while (node && Compare(env, node, ELEM))			\
+		node = nextnode1(node);					\
+	    found = node != 0;						\
+	    break;							\
+	default:							\
+	    BADAGGREGATE(NAME);						\
+	}								\
+	BINARY(BOOLEAN_NEWNODE, found);					\
     }
 #endif

@@ -1,14 +1,14 @@
 /*
     module  : stdout.c
-    version : 1.2
-    date    : 08/13/23
+    version : 1.4
+    date    : 01/26/24
 */
 #ifndef STDOUT_C
 #define STDOUT_C
 
 /**
-OK 1180  stdout  :  ->  S
-Pushes the standard output stream.
+IMMEDIATE  1180  stdout  :  ->  S
+[FOREIGN] Pushes the standard output stream.
 */
 PUSH(stdout_, FILE_NEWNODE, stdout)
 

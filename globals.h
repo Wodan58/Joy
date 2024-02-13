@@ -1,8 +1,8 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.81
- *  date    : 12/12/23
+ *  version : 1.86
+ *  date    : 02/12/24
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -19,9 +19,17 @@
 #include <math.h>
 #include <time.h>
 #include <inttypes.h>
+#ifndef NOBDW
 #include <gc.h>
+#else
+#include "gc.h"
+#endif
 #include "kvec.h"
 #include "khash.h"
+
+#ifdef _MSC_VER
+#pragma warning(disable: 4244 4267)
+#endif
 
 #ifdef NOBDW
 #define nodetype(n)  vec_at(env->memory, n).op
@@ -39,6 +47,9 @@
 #define nextnode3(p) (nextnode2(p))->next
 #define nextnode4(p) (nextnode3(p))->next
 #define nextnode5(p) (nextnode4(p))->next
+#ifdef ENABLE_TRACEGC
+#undef ENABLE_TRACEGC
+#endif
 #endif
 
 /* configure			*/
@@ -46,8 +57,8 @@
 #define INPSTACKMAX 10
 #define INPLINEMAX 255
 #define BUFFERMAX 80
-#define ALEN 45 /* module + member */
-#define DISPLAYMAX 10 /* nesting in HIDE & MODULE */
+#define ALEN 42			/* module + '.' + member + \0 */
+#define DISPLAYMAX 10		/* nesting in HIDE & MODULE */
 #define INIECHOFLAG 0
 #define INIAUTOPUT 1
 #define INITRACEGC 1
@@ -60,7 +71,6 @@
 /* symbols from getsym		*/
 #define ILLEGAL_ 0
 #define COPIED_ 1
-#define KEYWORD_ 1
 #define USR_ 2
 #define ANON_FUNCT_ 3
 #define BOOLEAN_ 4
@@ -71,6 +81,8 @@
 #define LIST_ 9
 #define FLOAT_ 10
 #define FILE_ 11
+#define BIGNUM_ 12
+#define KEYWORD_ 13
 #define LBRACK 900
 #define LBRACE 901
 #define LPAREN 902
@@ -177,10 +189,16 @@ typedef struct Env {
 	int hide;
     } module_stack[DISPLAYMAX];
     unsigned char autoput; /* options */
+    unsigned char autoput_set;
     unsigned char echoflag;
+    unsigned char echoflag_set;
     unsigned char undeferror;
+    unsigned char undeferror_set;
     unsigned char tracegc;
+    unsigned char tracegc_set;
     unsigned char debugging;
+    unsigned char ignore;
+    unsigned char statistics;
 } Env;
 
 /* GOOD REFS:
@@ -206,7 +224,7 @@ PUBLIC proc_t operproc(int o);
 PUBLIC int operflags(int o);
 PUBLIC int operindex(proc_t proc);
 /* factor.c */
-PUBLIC void readfactor(pEnv env);	/* read a JOY factor */
+PUBLIC int readfactor(pEnv env);	/* read a JOY factor */
 PUBLIC void readterm(pEnv env);
 PUBLIC void writefactor(pEnv env, Index n, FILE *fp);
 PUBLIC void writeterm(pEnv env, Index n, FILE *fp);
@@ -231,8 +249,7 @@ pEntry qualify(pEnv env, char *name);
 /* scan.c */
 PUBLIC void inilinebuffer(pEnv env, char *str);
 PUBLIC void error(pEnv env, char *message);
-PUBLIC int redirect(pEnv env, char *name, FILE *fp);
-PUBLIC int include(pEnv env, char *name, int error);
+PUBLIC void include(pEnv env, char *name);
 PUBLIC void getsym(pEnv env);
 /* utils.c */
 #ifdef NOBDW

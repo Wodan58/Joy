@@ -1,7 +1,7 @@
 /*
     module  : manual.h
-    version : 1.3
-    date    : 09/04/23
+    version : 1.5
+    date    : 02/01/24
 */
 #ifndef MANUAL_H
 #define MANUAL_H
@@ -32,16 +32,15 @@ PRIVATE void make_manual(int style /* 0=plain, 1=HTML, 2=Latex */)
     if (HTML)
 	printf("<HTML>\n<DL>\n");
     for (i = BOOLEAN_; (n = opername(i)) != 0; i++) {
-	/* clang-format off */
 	HEADER(n, " truth value type", "literal") else
 	HEADER(n, "false", "operand") else
 	HEADER(n, "id", "operator") else
 	HEADER(n, "null", "predicate") else
 	HEADER(n, "i", "combinator") else
 	HEADER(n, "help", "miscellaneous commands") else
-	HEADER(n, "casting", "additional commands")
+	HEADER(n, "casting", "additional commands") else
+	HEADER(n, "#genrec", "runtime commands")
 	if (n[0] != '_') {
-	    /* clang-format on */
 	    if (HTML)
 		printf("\n<DT>");
 	    else if (LATEX) {
@@ -61,7 +60,7 @@ PRIVATE void make_manual(int style /* 0=plain, 1=HTML, 2=Latex */)
 		printf(" <CODE>      :  </CODE> ");
 	    /* the above line does not produce the spaces around ":" */
 	    else
-		printf("\t:  ");
+		printf("  :  ");
 	    printf("%s", optable[i].messg1);
 	    if (HTML)
 		printf("\n<DD>");

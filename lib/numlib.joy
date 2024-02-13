@@ -93,7 +93,7 @@ LIBRA
 *)
     newton ==		(*  Usage: guess [F] newton		*)
 	dup deriv		(* guess [F] [D]		*)
-	[ pop i abs 0.001 > ]	(* too big ?		R.W.	*)
+	[ pop i abs 0.0001 > ]	(* too big ?			*)
 	[ [dupd] dip      	(* guess guess [F] [D]		*)
 	  dup2			(* guess guess [F] [D] [F] [D]	*)
 	  [[cleave / - ] dip]

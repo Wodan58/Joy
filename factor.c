@@ -1,16 +1,17 @@
 /* FILE: factor.c */
 /*
  *  module  : factor.c
- *  version : 1.24
- *  date    : 11/06/23
+ *  version : 1.27
+ *  date    : 01/26/24
  */
 #include "globals.h"
 
 /*
     readfactor - read a factor from srcfile and push it on the stack.
 		 In case of LPAREN nothing gets pushed.
+		 The return value: success=1, failure=0.
 */
-PUBLIC void readfactor(pEnv env) /* read a JOY factor */
+PUBLIC int readfactor(pEnv env) /* read a JOY factor */
 {
     Entry ent;
     uint64_t set = 0;
@@ -20,7 +21,7 @@ PUBLIC void readfactor(pEnv env) /* read a JOY factor */
 	lookup(env);
 	if (!env->location && strchr(env->yylval.str, '.')) {
 	    error(env, "no such field in module");
-	    return;
+	    return 0;
 	}
 	ent = vec_at(env->symtab, env->location);
 	/* execute immediate functions at compile time */
@@ -33,14 +34,14 @@ PUBLIC void readfactor(pEnv env) /* read a JOY factor */
 	    env->yylval.proc = ent.u.proc;
 	    env->stck = newnode(env, ANON_FUNCT_, env->yylval, env->stck);
 	}
-	return;
+	return 1;
     case BOOLEAN_:
     case CHAR_:
     case INTEGER_:
     case STRING_:
     case FLOAT_:
 	env->stck = newnode(env, env->symb, env->yylval, env->stck);
-	return;
+	return 1;
     case LBRACE:
 	while (getsym(env), env->symb <= ATOM)
 	    if ((env->symb != CHAR_ && env->symb != INTEGER_)
@@ -52,20 +53,22 @@ PUBLIC void readfactor(pEnv env) /* read a JOY factor */
 	env->stck = newnode(env, SET_, env->bucket, env->stck);
 	if (env->symb != RBRACE)
 	    error(env, "'}' expected");
-	return;
+	return 1;
     case LBRACK:
 	getsym(env);
 	readterm(env);
 	if (env->symb != RBRACK)
 	    error(env, "']' expected");
-	return;
+	return 1;
     case LPAREN:
 	error(env, "'(' not implemented");
 	getsym(env);
-	return;
+	return 0;
     default:
 	error(env, "a factor cannot begin with this symbol");
+	return 0;
     }
+    return 0;
 }
 
 /*
@@ -77,16 +80,14 @@ PUBLIC void readterm(pEnv env)
     env->bucket.lis = 0;
     env->stck = newnode(env, LIST_, env->bucket, env->stck);
     if (env->symb <= ATOM) {
-	readfactor(env);
-	if (env->stck) {
+	if (readfactor(env)) {
 	    nodevalue(nextnode1(env->stck)).lis = env->stck;
 	    env->stck = nextnode1(env->stck);
 	    nextnode1(nodevalue(env->stck).lis) = 0;
 	    env->dump = newnode(env, LIST_, nodevalue(env->stck), env->dump);
 	}
 	while (getsym(env), env->symb <= ATOM) {
-	    readfactor(env);
-	    if (env->stck) {
+	    if (readfactor(env)) {
 		nextnode1(nodevalue(env->dump).lis) = env->stck;
 		env->stck = nextnode1(env->stck);
 		nextnode2(nodevalue(env->dump).lis) = 0;
@@ -108,8 +109,7 @@ PUBLIC void readterm(pEnv env)
     env->stck = newnode(env, LIST_, env->bucket, env->stck);
     dump = &nodevalue(env->stck).lis;
     while (env->symb <= ATOM) {
-	readfactor(env);
-	if (env->stck) {
+	if (readfactor(env)) {
 	    *dump = env->stck;
 	    dump = &nextnode1(env->stck);
 	    env->stck = *dump;
@@ -126,8 +126,8 @@ PUBLIC void readterm(pEnv env)
 PUBLIC void writefactor(pEnv env, Index n, FILE *fp)
 {
     int i;
-    char *p;
-    uint64_t set;
+    uint64_t set, j;
+    char *ptr, buf[BUFFERMAX], tmp[BUFFERMAX];
 
 /*
     This cannot happen. Factor has a small number of customers: writeterm,
@@ -151,19 +151,24 @@ PUBLIC void writefactor(pEnv env, Index n, FILE *fp)
     case CHAR_:
 	if (nodevalue(n).num >= 8 && nodevalue(n).num <= 13)
 	    fprintf(fp, "'\\%c", "btnvfr"[nodevalue(n).num - 8]);
+	else if (iscntrl(nodevalue(n).num))
+	    fprintf(fp, "'\\%03d", (int)nodevalue(n).num);
 	else
 	    fprintf(fp, "'%c", (int)nodevalue(n).num);
 	return;
     case KEYWORD_:
+	putc('#', fp);
+	goto keyword;
     case INTEGER_:
+keyword:
 	fprintf(fp, "%" PRId64, nodevalue(n).num);
 	return;
     case SET_:
 	putc('{', fp);
-	for (i = 0, set = nodevalue(n).set; i < SETSIZE; i++)
-	    if (set & ((int64_t)1 << i)) {
+	for (i = 0, j = 1, set = nodevalue(n).set; i < SETSIZE; i++, j <<= 1)
+	    if (set & j) {
 		fprintf(fp, "%d", i);
-		set &= ~((int64_t)1 << i);
+		set &= ~j;
 		if (set)
 		    putc(' ', fp);
 	    }
@@ -171,11 +176,15 @@ PUBLIC void writefactor(pEnv env, Index n, FILE *fp)
 	return;
     case STRING_:
 	putc('"', fp);
-	for (p = nodevalue(n).str; *p; p++)
-	    if (*p >= 8 && *p <= 13)
-		fprintf(fp, "\\%c", "btnvfr"[*p - 8]);
+	for (ptr = nodevalue(n).str; *ptr; ptr++)
+	    if (*ptr == '"')
+		fprintf(fp, "\\\"");
+	    else if (*ptr >= 8 && *ptr <= 13)
+		fprintf(fp, "\\%c", "btnvfr"[*ptr - 8]);
+	    else if (iscntrl((int)*ptr))
+		fprintf(fp, "\\%03d", *ptr);
 	    else
-		putc(*p, fp);
+		putc(*ptr, fp);
 	putc('"', fp);
 	return;
     case LIST_:
@@ -184,19 +193,31 @@ PUBLIC void writefactor(pEnv env, Index n, FILE *fp)
 	putc(']', fp);
 	return;
     case FLOAT_:
-	fprintf(fp, "%g", nodevalue(n).dbl);
+	sprintf(buf, "%g", nodevalue(n).dbl);	/* exponent character is e */
+	if ((ptr = strchr(buf, '.')) == 0) {	/* locate decimal point */
+	    if ((ptr = strchr(buf, 'e')) == 0)  /* locate start of exponent */
+		strcat(buf, ".0");		/* add decimal point and 0 */
+	    else {
+		strcpy(tmp, ptr);		/* save exponent */
+		sprintf(ptr, ".0%s", tmp);	/* insert decimal point + 0 */
+	    }
+        }
+	fprintf(fp, "%s", buf);
 	return;
     case FILE_:
 	if (!nodevalue(n).fil)
 	    fprintf(fp, "file:NULL");
 	else if (nodevalue(n).fil == stdin)
-	    fprintf(fp, "file:stdin");
+	    fprintf(fp, "stdin");
 	else if (nodevalue(n).fil == stdout)
-	    fprintf(fp, "file:stdout");
+	    fprintf(fp, "stdout");
 	else if (nodevalue(n).fil == stderr)
-	    fprintf(fp, "file:stderr");
+	    fprintf(fp, "stderr");
 	else
 	    fprintf(fp, "file:%p", (void *)nodevalue(n).fil);
+	return;
+    case BIGNUM_:
+	fprintf(fp, "%s", nodevalue(n).str);
 	return;
     default:
 	error(env, "a factor cannot begin with this symbol");
