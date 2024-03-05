@@ -1,7 +1,7 @@
 /*
     module  : map.c
-    version : 1.6
-    date    : 09/04/23
+    version : 1.7
+    date    : 03/05/24
 */
 #ifndef MAP_C
 #define MAP_C
@@ -13,11 +13,15 @@ collects results in sametype aggregate B.
 */
 PRIVATE void map_(pEnv env)
 {
+    int i = 0;
+    uint64_t resultset;
+    char *str, *resultstr;
+
     TWOPARAMS("map");
     ONEQUOTE("map");
     SAVESTACK;
     switch (nodetype(SAVED2)) {
-    case LIST_: {
+    case LIST_:
         env->dump1
             = newnode(env, LIST_, nodevalue(SAVED2), env->dump1); /* step old */
         env->dump2 = LIST_NEWNODE(0L, env->dump2); /* head new */
@@ -41,26 +45,19 @@ PRIVATE void map_(pEnv env)
         POP(env->dump2);
         POP(env->dump1);
         break;
-    }
-    case STRING_: {
-        char *s, *resultstring;
-        int j = 0;
-        resultstring
-            = (char *)GC_malloc_atomic(strlen(nodevalue(SAVED2).str) + 1);
-        for (s = nodevalue(SAVED2).str; *s != '\0'; s++) {
-            env->stck = CHAR_NEWNODE((int64_t)*s, SAVED3);
+    case STRING_:
+        resultstr = GC_malloc_atomic(strlen(nodevalue(SAVED2).str) + 1);
+        for (str = nodevalue(SAVED2).str; *str != '\0'; str++) {
+            env->stck = CHAR_NEWNODE(*str, SAVED3);
             exeterm(env, nodevalue(SAVED1).lis);
             CHECKSTACK("map");
-            resultstring[j++] = (char)nodevalue(env->stck).num;
+            resultstr[i++] = nodevalue(env->stck).num;
         }
-        resultstring[j] = '\0';
-        env->stck = STRING_NEWNODE(resultstring, SAVED3);
+        resultstr[i] = '\0';
+        env->stck = STRING_NEWNODE(resultstr, SAVED3);
         break;
-    }
-    case SET_: {
-        int i;
-        uint64_t resultset = 0;
-        for (i = 0; i < SETSIZE; i++)
+    case SET_:
+        for (resultset = i = 0; i < SETSIZE; i++)
             if (nodevalue(SAVED2).set & ((int64_t)1 << i)) {
                 env->stck = INTEGER_NEWNODE(i, SAVED3);
                 exeterm(env, nodevalue(SAVED1).lis);
@@ -69,7 +66,6 @@ PRIVATE void map_(pEnv env)
             }
         env->stck = SET_NEWNODE(resultset, SAVED3);
         break;
-    }
     default:
         BADAGGREGATE("map");
     }

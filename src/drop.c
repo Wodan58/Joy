@@ -1,7 +1,7 @@
 /*
     module  : drop.c
-    version : 1.7
-    date    : 09/04/23
+    version : 1.8
+    date    : 03/05/24
 */
 #ifndef DROP_C
 #define DROP_C
@@ -12,39 +12,37 @@ Aggregate B is the result of deleting the first N elements of A.
 */
 PRIVATE void drop_(pEnv env)
 {
-    int n;
+    int i, n;
+    char *str;
+    Index list;
+    uint64_t set;
 
     TWOPARAMS("drop");
     POSITIVEINDEX(env->stck, "drop");
     n = nodevalue(env->stck).num;
     switch (nodetype(nextnode1(env->stck))) {
-    case SET_: {
-        int i;
-        uint64_t result = 0;
-        for (i = 0; i < SETSIZE; i++)
+    case SET_:
+        for (set = i = 0; i < SETSIZE; i++)
             if (nodevalue(nextnode1(env->stck)).set & ((int64_t)1 << i)) {
                 if (n < 1)
-                    result |= ((int64_t)1 << i);
+                    set |= ((int64_t)1 << i);
                 else
                     n--;
             }
-        BINARY(SET_NEWNODE, result);
-        return;
-    }
-    case STRING_: {
-        char *result = nodevalue(nextnode1(env->stck)).str;
-        while (n-- > 0 && *result != '\0')
-            ++result;
-        BINARY(STRING_NEWNODE, GC_strdup(result));
-        return;
-    }
-    case LIST_: {
-        Index result = nodevalue(nextnode1(env->stck)).lis;
-        while (n-- > 0 && result)
-            result = nextnode1(result);
-        BINARY(LIST_NEWNODE, result);
-        return;
-    }
+        BINARY(SET_NEWNODE, set);
+        break;
+    case STRING_:
+        str = nodevalue(nextnode1(env->stck)).str;
+        while (n-- > 0 && *str != '\0')
+            ++str;
+        BINARY(STRING_NEWNODE, GC_strdup(str));
+        break;
+    case LIST_:
+        list = nodevalue(nextnode1(env->stck)).lis;
+        while (n-- > 0 && list)
+            list = nextnode1(list);
+        BINARY(LIST_NEWNODE, list);
+        break;
     default:
         BADAGGREGATE("drop");
     }

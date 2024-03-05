@@ -34,11 +34,5 @@ savely be removed, as none of the test files in the lib-directory use them.
 Comparison
 ==========
 
-Comparing the different versions of joy is now the task of
+Comparing the different versions of joy is the task of
 [joyid.joy](https://github.com/Wodan58/Joy/blob/master/doc/joyid.joy).
-
-Summary
-=======
-
-This updated version of Joy tries to stay as close to the legacy version as
-possible.

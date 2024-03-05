@@ -1,7 +1,7 @@
 /*
     module  : size.c
-    version : 1.6
-    date    : 09/04/23
+    version : 1.7
+    date    : 03/05/24
 */
 #ifndef SIZE_C
 #define SIZE_C
@@ -12,30 +12,30 @@ Integer I is the number of elements of aggregate A.
 */
 PRIVATE void size_(pEnv env)
 {
-    int64_t siz = 0;
+    int i;
+    Index list;
+    int64_t size = 0;
+
     ONEPARAM("size");
     switch (nodetype(env->stck)) {
-    case SET_: {
-        int i;
+    case SET_:
         for (i = 0; i < SETSIZE; i++)
             if (nodevalue(env->stck).set & ((int64_t)1 << i))
-                siz++;
+                size++;
         break;
-    }
     case STRING_:
-        siz = strlen(nodevalue(env->stck).str);
+        size = strlen(nodevalue(env->stck).str);
         break;
-    case LIST_: {
-        Index e = nodevalue(env->stck).lis;
-        while (e) {
-            e = nextnode1(e);
-            siz++;
+    case LIST_:
+        list = nodevalue(env->stck).lis;
+        while (list) {
+            list = nextnode1(list);
+            size++;
         }
         break;
-    }
     default:
         BADAGGREGATE("size");
     }
-    UNARY(INTEGER_NEWNODE, siz);
+    UNARY(INTEGER_NEWNODE, size);
 }
 #endif

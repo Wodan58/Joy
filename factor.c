@@ -1,8 +1,8 @@
 /* FILE: factor.c */
 /*
  *  module  : factor.c
- *  version : 1.27
- *  date    : 01/26/24
+ *  version : 1.28
+ *  date    : 03/05/24
  */
 #include "globals.h"
 
@@ -127,7 +127,7 @@ PUBLIC void writefactor(pEnv env, Index n, FILE *fp)
 {
     int i;
     uint64_t set, j;
-    char *ptr, buf[BUFFERMAX], tmp[BUFFERMAX];
+    char *ptr, buf[MAXNUM], tmp[MAXNUM];
 
 /*
     This cannot happen. Factor has a small number of customers: writeterm,
@@ -136,14 +136,14 @@ PUBLIC void writefactor(pEnv env, Index n, FILE *fp)
 */
 #if 0
     if (!n)
-	execerror("non-empty stack", "print");
+	execerror("non-empty stack", "writefactor");
 #endif
     switch (nodetype(n)) {
     case USR_:
 	fprintf(fp, "%s", vec_at(env->symtab, nodevalue(n).ent).name);
 	return;
     case ANON_FUNCT_:
-	fprintf(fp, "%s", opername(operindex(nodevalue(n).proc)));
+	fprintf(fp, "%s", opername(operindex(env, nodevalue(n).proc)));
 	return;
     case BOOLEAN_:
 	fprintf(fp, "%s", nodevalue(n).num ? "true" : "false");
@@ -151,7 +151,7 @@ PUBLIC void writefactor(pEnv env, Index n, FILE *fp)
     case CHAR_:
 	if (nodevalue(n).num >= 8 && nodevalue(n).num <= 13)
 	    fprintf(fp, "'\\%c", "btnvfr"[nodevalue(n).num - 8]);
-	else if (iscntrl(nodevalue(n).num))
+	else if (iscntrl(nodevalue(n).num) || nodevalue(n).num == 32)
 	    fprintf(fp, "'\\%03d", (int)nodevalue(n).num);
 	else
 	    fprintf(fp, "'%c", (int)nodevalue(n).num);
@@ -206,7 +206,7 @@ keyword:
 	return;
     case FILE_:
 	if (!nodevalue(n).fil)
-	    fprintf(fp, "file:NULL");
+	    fprintf(fp, "file:NULL");		/* not a legal Joy factor */
 	else if (nodevalue(n).fil == stdin)
 	    fprintf(fp, "stdin");
 	else if (nodevalue(n).fil == stdout)
@@ -214,7 +214,7 @@ keyword:
 	else if (nodevalue(n).fil == stderr)
 	    fprintf(fp, "stderr");
 	else
-	    fprintf(fp, "file:%p", (void *)nodevalue(n).fil);
+	    fprintf(fp, "file:%p", (void *)nodevalue(n).fil);	/* no factor */
 	return;
     case BIGNUM_:
 	fprintf(fp, "%s", nodevalue(n).str);

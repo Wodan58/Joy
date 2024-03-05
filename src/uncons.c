@@ -1,7 +1,7 @@
 /*
     module  : uncons.c
-    version : 1.5
-    date    : 09/04/23
+    version : 1.6
+    date    : 03/05/24
 */
 #ifndef UNCONS_C
 #define UNCONS_C
@@ -12,25 +12,26 @@ F and R are the first and the rest of non-empty aggregate A.
 */
 PRIVATE void uncons_(pEnv env)
 {
+    int i = 0;
+    char *str;
+    uint64_t set;
+
     ONEPARAM("uncons");
     switch (nodetype(env->stck)) {
-    case SET_: {
-        int i = 0;
-        uint64_t set = nodevalue(env->stck).set;
+    case SET_:
+        set = nodevalue(env->stck).set;
         CHECKEMPTYSET(set, "uncons");
         while (!(set & ((int64_t)1 << i)))
             i++;
         UNARY(INTEGER_NEWNODE, i);
         NULLARY(SET_NEWNODE, set & ~((int64_t)1 << i));
         break;
-    }
-    case STRING_: {
-        char *s = nodevalue(env->stck).str;
-        CHECKEMPTYSTRING(s, "uncons");
-        UNARY(CHAR_NEWNODE, *s);
-        NULLARY(STRING_NEWNODE, GC_strdup(++s));
+    case STRING_:
+        str = nodevalue(env->stck).str;
+        CHECKEMPTYSTRING(str, "uncons");
+        UNARY(CHAR_NEWNODE, *str);
+        NULLARY(STRING_NEWNODE, GC_strdup(++str));
         break;
-    }
     case LIST_:
         SAVESTACK;
         CHECKEMPTYLIST(nodevalue(SAVED1).lis, "uncons");
@@ -38,7 +39,7 @@ PRIVATE void uncons_(pEnv env)
             nodetype(nodevalue(SAVED1).lis), nodevalue(nodevalue(SAVED1).lis));
         NULLARY(LIST_NEWNODE, nextnode1(nodevalue(SAVED1).lis));
         POP(env->dump);
-        return;
+        break;
     default:
         BADAGGREGATE("uncons");
     }

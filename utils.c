@@ -1,12 +1,12 @@
 /*
  *  module  : utils.c
- *  version : 1.27
- *  date    : 02/12/24
+ *  version : 1.28
+ *  date    : 03/05/24
  */
 #include "globals.h"
 
-#define LOWER_LIMIT	  10000		/* minimum number of nodes */
-#define UPPER_LIMIT	1000000		/* maximum number of nodes */
+#define LOWER_LIMIT	  20000		/* minimum number of nodes */
+#define UPPER_LIMIT	2000000		/* maximum number of nodes */
 
 static clock_t start_gc_clock;
 static vector(Node) *orig_memory;
@@ -31,11 +31,11 @@ PUBLIC void inimem1(pEnv env, int status)
     if (!init) {
 	init = 1;
 	memset(&node, 0, sizeof(Node));
-	vec_init(env->memory); /* initialize memory */
-	vec_push(env->memory, node); /* null pointer */
+	vec_init(env->memory);			/* initialize memory */
+	vec_push(env->memory, node);		/* null pointer */
     } else if (status) {
-	vec_setsize(env->memory, mem_low); /* retain only definitions */
-	env->stck = 0; /* also clear the stack */
+	vec_setsize(env->memory, mem_low);	/* retain only definitions */
+	env->stck = 0;				/* also clear the stack */
     }
     env->conts = env->dump = env->dump1 = env->dump2 =
     env->dump3 = env->dump4 = env->dump5 = 0;
@@ -70,7 +70,7 @@ static void count_avail(void)
 */
 PUBLIC void inimem2(pEnv env)
 {
-    mem_low = vec_size(env->memory); /* enlarge definition space */
+    mem_low = vec_size(env->memory);		/* enlarge definition space */
 
 #ifdef STATS
     count_avail();
@@ -165,7 +165,7 @@ static void report_collect(pEnv env)
 	return;
     fflush(stdout);
     fprintf(stderr, "%.0f garbage collections\n", collect);
-    fprintf(stderr, "%.0f 2nd garbage collect\n", (double)GC_get_gc_no());
+    fprintf(stderr, "%.0f 2nd garbage collector\n", (double)GC_get_gc_no());
 }
 
 static void count_collect(void)

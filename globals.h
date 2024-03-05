@@ -1,8 +1,8 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.86
- *  date    : 02/12/24
+ *  version : 1.87
+ *  date    : 03/05/24
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -56,7 +56,8 @@
 #define SHELLESCAPE '$'
 #define INPSTACKMAX 10
 #define INPLINEMAX 255
-#define BUFFERMAX 80
+#define BUFFERMAX 80		/* smaller buffer */
+#define MAXNUM 32		/* even smaller buffer */
 #define ALEN 42			/* module + '.' + member + \0 */
 #define DISPLAYMAX 10		/* nesting in HIDE & MODULE */
 #define INIECHOFLAG 0
@@ -163,11 +164,13 @@ typedef struct Token {
 } Token;
 
 KHASH_MAP_INIT_STR(Symtab, pEntry)
+KHASH_MAP_INIT_INT64(Funtab, pEntry)
 
 typedef struct Env {
     vector(Token) *tokens; /* read ahead table */
     vector(Entry) *symtab; /* symbol table */
     khash_t(Symtab) *hash;
+    khash_t(Funtab) *prim;
 #ifdef NOBDW
     clock_t gc_clock;
     vector(Node) *memory;  /* dynamic memory */
@@ -195,7 +198,6 @@ typedef struct Env {
     unsigned char undeferror;
     unsigned char undeferror_set;
     unsigned char tracegc;
-    unsigned char tracegc_set;
     unsigned char debugging;
     unsigned char ignore;
     unsigned char statistics;
@@ -222,7 +224,7 @@ PUBLIC char *nickname(int ch);
 PUBLIC char *opername(int o);
 PUBLIC proc_t operproc(int o);
 PUBLIC int operflags(int o);
-PUBLIC int operindex(proc_t proc);
+PUBLIC int operindex(pEnv env, proc_t proc);
 /* factor.c */
 PUBLIC int readfactor(pEnv env);	/* read a JOY factor */
 PUBLIC void readterm(pEnv env);

@@ -1,7 +1,7 @@
 /*
     module  : compare.h
-    version : 1.15
-    date    : 01/25/24
+    version : 1.16
+    date    : 03/05/24
 */
 #ifndef COMPARE_H
 #define COMPARE_H
@@ -24,7 +24,7 @@ PUBLIC int Compare(pEnv env, Index first, Index second)
 	    name2 = vec_at(env->symtab, nodevalue(second).ent).name;
 	    goto cmpstr;
 	case ANON_FUNCT_:
-	    name2 = nickname(operindex(nodevalue(second).proc));
+	    name2 = nickname(operindex(env, nodevalue(second).proc));
 	    goto cmpstr;
 	case BOOLEAN_:
 	case CHAR_:
@@ -40,13 +40,13 @@ PUBLIC int Compare(pEnv env, Index first, Index second)
 	}
 	break;
     case ANON_FUNCT_:
-	name1 = nickname(operindex(nodevalue(first).proc));
+	name1 = nickname(operindex(env, nodevalue(first).proc));
 	switch (type2) {
 	case USR_:
 	    name2 = vec_at(env->symtab, nodevalue(second).ent).name;
 	    goto cmpstr;
 	case ANON_FUNCT_:
-	    name2 = nickname(operindex(nodevalue(second).proc));
+	    name2 = nickname(operindex(env, nodevalue(second).proc));
 	    goto cmpstr;
 	case BOOLEAN_:
 	case CHAR_:
@@ -136,7 +136,7 @@ PUBLIC int Compare(pEnv env, Index first, Index second)
 	    name2 = vec_at(env->symtab, nodevalue(second).ent).name;
 	    goto cmpstr;
 	case ANON_FUNCT_:
-	    name2 = nickname(operindex(nodevalue(second).proc));
+	    name2 = nickname(operindex(env, nodevalue(second).proc));
 	    goto cmpstr;
 	case BOOLEAN_:
 	case CHAR_:
@@ -152,6 +152,8 @@ PUBLIC int Compare(pEnv env, Index first, Index second)
 	}
 	break;
     case LIST_:
+	if (type2 == LIST_)
+	    return nodevalue(first).lis != nodevalue(second).lis;
 	return 1; /* unequal */
 	break;
     case FLOAT_:

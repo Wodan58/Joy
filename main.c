@@ -1,8 +1,8 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.90
- *  date    : 02/12/24
+ *  version : 1.91
+ *  date    : 03/05/24
  */
 
 /*
@@ -133,12 +133,15 @@ PRIVATE void inisymboltable(pEnv env) /* initialise */
     khiter_t key;
 
     env->hash = kh_init(Symtab);
+    env->prim = kh_init(Funtab);
     for (i = 0; (ent.name = opername(i)) != 0; i++) {
 	ent.is_user = 0;
 	ent.flags = operflags(i);
 	ent.u.proc = operproc(i);
 	key = kh_put(Symtab, env->hash, ent.name, &rv);
 	kh_value(env->hash, key) = i;
+	key = kh_put(Funtab, env->prim, (int64_t)ent.u.proc, &rv);
+	kh_value(env->prim, key) = i;
 	vec_push(env->symtab, ent);
     }
 }
@@ -574,8 +577,9 @@ PRIVATE void unknown_opt(pEnv env, char *exe, int ch)
 PRIVATE int my_main(int argc, char **argv)
 {
     static unsigned char mustinclude = 1;
-    char *ptr, *exe;		/* exe: name of joy binary */
+
     int i, j, ch;
+    char *ptr, *exe;		/* exe: name of joy binary */
     unsigned char helping = 0, unknown = 0;
 #ifdef COPYRIGHT
     unsigned char verbose = 1;
@@ -591,7 +595,6 @@ PRIVATE int my_main(int argc, char **argv)
      *  scan.c after reading EOF on the first input file.
      */
     env.startclock = clock();
-    setbuf(stdout, 0);
 #ifdef STATS
     my_atexit(report_clock);
 #endif
@@ -750,6 +753,7 @@ PRIVATE int my_main(int argc, char **argv)
 	options(&env);
     if (unknown)
 	unknown_opt(&env, exe, unknown);
+    setbuf(stdout, 0);		/* necessary when writing to a pipe */
     setjmp(begin);		/* return here after error or abort */
 #ifdef NOBDW
     inimem1(&env, 0);		/* does not clear the stack */

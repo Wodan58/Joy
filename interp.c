@@ -1,8 +1,8 @@
 /* FILE: interp.c */
 /*
  *  module  : interp.c
- *  version : 1.79
- *  date    : 02/12/24
+ *  version : 1.80
+ *  date    : 03/05/24
  */
 
 /*
@@ -556,16 +556,14 @@ PUBLIC int operflags(int o)
 }
 
 /*
-    operindex - return the optable entry for an operator; requires search.
+    operindex - return the optable entry for an operator.
 */
-PUBLIC int operindex(proc_t proc)
+PUBLIC int operindex(pEnv env, proc_t proc)
 {
-    int i, size;
+    khiter_t key;
 
-    size = sizeof(optable) / sizeof(optable[0]);
-    for (i = size - 1; i > FILE_; i--)
-	if (optable[i].proc == proc)
-	    return i;
-    return ANON_FUNCT_;
+    if ((key = kh_get(Funtab, env->prim, (int64_t)proc)) != kh_end(env->prim))
+	return kh_value(env->prim, key);
+    return ANON_FUNCT_; /* if not found, return the index of ANON_FUNCT_ */
 }
 /* END of INTERP.C */

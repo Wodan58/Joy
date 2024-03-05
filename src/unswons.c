@@ -1,7 +1,7 @@
 /*
     module  : unswons.c
-    version : 1.5
-    date    : 09/04/23
+    version : 1.6
+    date    : 03/05/24
 */
 #ifndef UNSWONS_C
 #define UNSWONS_C
@@ -12,25 +12,26 @@ R and F are the rest and the first of non-empty aggregate A.
 */
 PRIVATE void unswons_(pEnv env)
 {
+    int i = 0;
+    char *str;
+    uint64_t set;
+
     ONEPARAM("unswons");
     switch (nodetype(env->stck)) {
-    case SET_: {
-        int i = 0;
-        uint64_t set = nodevalue(env->stck).set;
+    case SET_:
+        set = nodevalue(env->stck).set;
         CHECKEMPTYSET(set, "unswons");
         while (!(set & ((int64_t)1 << i)))
             i++;
         UNARY(SET_NEWNODE, set & ~((int64_t)1 << i));
         NULLARY(INTEGER_NEWNODE, i);
         break;
-    }
-    case STRING_: {
-        char *s = nodevalue(env->stck).str;
-        CHECKEMPTYSTRING(s, "unswons");
-        UNARY(STRING_NEWNODE, GC_strdup(++s));
-        NULLARY(CHAR_NEWNODE, *--s);
+    case STRING_:
+        str = nodevalue(env->stck).str;
+        CHECKEMPTYSTRING(str, "unswons");
+        UNARY(STRING_NEWNODE, GC_strdup(++str));
+        NULLARY(CHAR_NEWNODE, *--str);
         break;
-    }
     case LIST_:
         SAVESTACK;
         CHECKEMPTYLIST(nodevalue(SAVED1).lis, "unswons");
@@ -38,7 +39,7 @@ PRIVATE void unswons_(pEnv env)
         GNULLARY(
             nodetype(nodevalue(SAVED1).lis), nodevalue(nodevalue(SAVED1).lis));
         POP(env->dump);
-        return;
+        break;
     default:
         BADAGGREGATE("unswons");
     }

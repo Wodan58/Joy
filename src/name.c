@@ -1,7 +1,7 @@
 /*
     module  : name.c
-    version : 1.4
-    date    : 09/04/23
+    version : 1.5
+    date    : 03/05/24
 */
 #ifndef NAME_C
 #define NAME_C
@@ -20,7 +20,7 @@ PRIVATE void name_(pEnv env)
     if ((op = nodetype(env->stck)) == USR_)
 	str = vec_at(env->symtab, nodevalue(env->stck).ent).name;
     else if (op == ANON_FUNCT_)
-        str = nickname(operindex(nodevalue(env->stck).proc));
+        str = nickname(operindex(env, nodevalue(env->stck).proc));
     else
 	str = opername(op);
     UNARY(STRING_NEWNODE, str);

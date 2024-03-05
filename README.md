@@ -6,7 +6,6 @@ Build|Linux|Windows|Coverity
 status|[![GitHub CI build status](https://github.com/Wodan58/Joy/actions/workflows/cmake.yml/badge.svg)](https://github.com/Wodan58/Joy/actions/workflows/cmake.yml)|[![AppVeyor CI build status](https://ci.appveyor.com/api/projects/status/github/Wodan58/Joy?branch=master&svg=true)](https://ci.appveyor.com/project/Wodan58/Joy)|[![Coverity Scan Build Status](https://img.shields.io/coverity/scan/14641.svg)](https://scan.coverity.com/projects/wodan58-joy)
 
 This is the NOBDW version of [Joy1](https://github.com/Wodan58/joy1).
-The two versions are drifting apart.
 [Joy](http://www.complang.tuwien.ac.at/anton/euroforth/ef01/thun01.pdf) is a
 decent language and needs a ditto
 [presentation](http://www.complang.tuwien.ac.at/anton/euroforth/ef01/thomas01a.pdf). The original version can be seen [here](https://github.com/Wodan58/joy0).
@@ -51,7 +50,7 @@ There is a copy of usrlib.joy in the build directory.
 Testing
 -------
 
-    cd test2
+    cd ../test2
     for i in *.joy
     do
       ../build/joy $i >$i.out
@@ -70,7 +69,7 @@ Implementation|Dependencies
 [joy1](https://github.com/Wodan58/joy1)|[BDW garbage collector](https://github.com/ivmai/bdwgc)
 [Moy](https://github.com/Wodan58/Moy)|[BDW garbage collector](https://github.com/ivmai/bdwgc) and [Lex & Yacc](https://sourceforge.net/projects/winflexbison/files/win_flex_bison-latest.zip)
 
-Documentation
--------------
-
+Documentation|
+-------------|
 [Legacy Docs](https://wodan58.github.io)
+[User Manual](https://wodan58.github.io/j09imp.html)

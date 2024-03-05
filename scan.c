@@ -1,8 +1,8 @@
 /* FILE: scan.c */
 /*
  *  module  : scan.c
- *  version : 1.63
- *  date    : 02/13/24
+ *  version : 1.64
+ *  date    : 03/05/24
  */
 #include "globals.h"
 
@@ -54,8 +54,6 @@ PRIVATE void putline(pEnv env, FILE *fp, int echo)
 {
     int i;
 
-    if (!linenumber)
-	return;
     if (echo) {
 	if (env->echoflag > 2)
 	    fprintf(fp, "%4d", linenumber);
@@ -134,13 +132,10 @@ PUBLIC void error(pEnv env, char *message)
 }
 
 /*
-    redirect - read from another file descriptor. Some special processing in
-	       the case of reading with fget.
+    redirect - read from another file descriptor.
 */
 PUBLIC void redirect(pEnv env, char *str, FILE *fp)
 {
-    if (infile[ilevel].fp == fp)
-	return;				/* already reading from this file */
     infile[ilevel].line = linenumber;	/* save last line number and line */
     if (ilevel + 1 == INPSTACKMAX)	/* increase the include level */
 	execerror("fewer include files", "include");
@@ -174,13 +169,13 @@ PUBLIC void include(pEnv env, char *name)
     if (!strcmp(name, "usrlib.joy")) {			/* check usrlib.joy */
 	if ((fp = fopen(str, "r")) != 0)
 	    goto normal;
-	if ((ptr = getenv("USERPROFILE")) != 0) {	/* windows */
+	if ((ptr = getenv("HOME")) != 0) {		/* unix/cygwin */
 	    str = GC_malloc_atomic(strlen(ptr) + strlen(name) + 2);
 	    sprintf(str, "%s/%s", ptr, name);
 	    if ((fp = fopen(str, "r")) != 0)
 		goto normal;
 	}
-	if ((ptr = getenv("HOME")) != 0) {
+	if ((ptr = getenv("USERPROFILE")) != 0) {	/* windows */
 	    str = GC_malloc_atomic(strlen(ptr) + strlen(name) + 2);
 	    sprintf(str, "%s/%s", ptr, name);
 	    if ((fp = fopen(str, "r")) != 0)
@@ -307,7 +302,7 @@ start:
 	    goto start;
 	}
 	env->symb = LPAREN;
-	goto einde;
+	return;
     case '#':
 	currentcolumn = linelength;
 	getch(env);
@@ -315,31 +310,31 @@ start:
     case ')':
 	env->symb = RPAREN;
 	getch(env);
-	goto einde;
+	return;
     case '[':
 	env->symb = LBRACK;
 	getch(env);
-	goto einde;
+	return;
     case ']':
 	env->symb = RBRACK;
 	getch(env);
-	goto einde;
+	return;
     case '{':
 	env->symb = LBRACE;
 	getch(env);
-	goto einde;
+	return;
     case '}':
 	env->symb = RBRACE;
 	getch(env);
-	goto einde;
+	return;
     case '.':
 	env->symb = PERIOD;
 	getch(env);
-	goto einde;
+	return;
     case ';':
 	env->symb = SEMICOL;
 	getch(env);
-	goto einde;
+	return;
     case '\'':
 	getch(env);
 	if (ch == '\\')
@@ -347,7 +342,7 @@ start:
 	env->yylval.num = ch;
 	env->symb = CHAR_;
 	getch(env);
-	goto einde;
+	return;
     case '"':
 	getch(env);
 	while (ch != '"' && !endofbuffer()) {
@@ -360,7 +355,7 @@ start:
 	getch(env);
 	env->yylval.str = GC_strdup(string);
 	env->symb = STRING_;
-	goto einde;
+	return;
     case '-': /* PERHAPS unary minus */
     case '0':
     case '1':
@@ -408,7 +403,7 @@ first:
 		}
 		env->yylval.dbl = strtod(&linbuf[begin], 0);
 		env->symb = FLOAT_;
-		goto einde;
+		return;
 	    }
 done:
 	    env->yylval.num = strtoll(&linbuf[begin] +
@@ -421,7 +416,7 @@ done:
 		    env->yylval.num = -env->yylval.num;
 		env->symb = INTEGER_;
 	    }
-	    goto einde;
+	    return;
 	}
 	goto next;
 next:
@@ -447,12 +442,11 @@ next:
 	    for (i = 0; i < (int)(sizeof(keywords) / sizeof(keywords[0])); i++)
 		if (!strcmp(ident, keywords[i].name)) {
 		    env->symb = keywords[i].symb;
-		    goto einde;
+		    return;
 		}
 	env->yylval.str = GC_strdup(ident);
 	env->symb = ATOM;
     }
-einde:;
 }
 
 #ifdef TOKENS
@@ -542,7 +536,7 @@ PUBLIC void getsym(pEnv env)
 #endif
 	env->symb = tok.symb;
 	env->yylval = tok.yylval;
-	goto einde;
+	return;
     }
 /*
     There is no tokenlist, use the normal procedure to get one.
@@ -624,5 +618,4 @@ done:	undomod(hide, modl, hcnt);
 	dumptok(tok, 3); /* there was no value popped */
 #endif
     }
-einde:;
 }

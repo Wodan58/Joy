@@ -1,7 +1,7 @@
 /*
     module  : sametype.c
-    version : 1.5
-    date    : 02/01/24
+    version : 1.6
+    date    : 03/05/24
 */
 #ifndef SAMETYPE_C
 #define SAMETYPE_C
@@ -16,7 +16,7 @@ PRIVATE void sametype_(pEnv env)
 
     TWOPARAMS("sametype");
     if ((op = nodetype(env->stck)) == ANON_FUNCT_)
-	op = nodevalue(env->stck).lis == nodevalue(nextnode1(env->stck)).lis;
+	op = nodevalue(env->stck).proc == nodevalue(nextnode1(env->stck)).proc;
     else
 	op = op == nodetype(nextnode1(env->stck));
     BINARY(BOOLEAN_NEWNODE, op);
