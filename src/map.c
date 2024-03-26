@@ -1,7 +1,7 @@
 /*
     module  : map.c
-    version : 1.7
-    date    : 03/05/24
+    version : 1.8
+    date    : 03/21/24
 */
 #ifndef MAP_C
 #define MAP_C
@@ -11,7 +11,7 @@ OK 2790  map  :  A [P]  ->  B
 Executes P on each member of aggregate A,
 collects results in sametype aggregate B.
 */
-PRIVATE void map_(pEnv env)
+void map_(pEnv env)
 {
     int i = 0;
     uint64_t resultset;

@@ -1,7 +1,7 @@
 /*
     module  : rest.c
-    version : 1.6
-    date    : 03/05/24
+    version : 1.7
+    date    : 03/21/24
 */
 #ifndef REST_C
 #define REST_C
@@ -10,7 +10,7 @@
 OK 2040  rest  :  A  ->  R
 R is the non-empty aggregate A with its first member removed.
 */
-PRIVATE void rest_(pEnv env)
+void rest_(pEnv env)
 {
     int i = 0;
     char *str;

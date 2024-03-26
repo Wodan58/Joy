@@ -1,7 +1,7 @@
 /*
     module  : size.c
-    version : 1.7
-    date    : 03/05/24
+    version : 1.8
+    date    : 03/21/24
 */
 #ifndef SIZE_C
 #define SIZE_C
@@ -10,7 +10,7 @@
 OK 2080  size  :  A  ->  I
 Integer I is the number of elements of aggregate A.
 */
-PRIVATE void size_(pEnv env)
+void size_(pEnv env)
 {
     int i;
     Index list;

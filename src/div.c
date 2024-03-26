@@ -1,7 +1,7 @@
 /*
     module  : div.c
-    version : 1.3
-    date    : 08/13/23
+    version : 1.4
+    date    : 03/21/24
 */
 #ifndef DIV_C
 #define DIV_C
@@ -10,7 +10,7 @@
 OK 1430  div  :  I J  ->  K L
 Integers K and L are the quotient and remainder of dividing I by J.
 */
-PRIVATE void div_(pEnv env)
+void div_(pEnv env)
 {
     lldiv_t result;
 

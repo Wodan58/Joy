@@ -1,7 +1,7 @@
 /*
     module  : strtod.c
-    version : 1.3
-    date    : 08/13/23
+    version : 1.4
+    date    : 03/21/24
 */
 #ifndef STRTOD_C
 #define STRTOD_C
@@ -10,7 +10,7 @@
 OK 1750  strtod  :  S  ->  R
 String S is converted to the float R.
 */
-PRIVATE void strtod_(pEnv env)
+void strtod_(pEnv env)
 {
     ONEPARAM("strtod");
     STRING("strtod");

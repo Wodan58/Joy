@@ -1,7 +1,7 @@
 (*
     module  : case.joy
-    version : 1.4
-    date    : 09/19/23
+    version : 1.5
+    date    : 03/21/24
 *)
 DEFINE	test == [[1 [one] first]
 		 [2 [two] first]

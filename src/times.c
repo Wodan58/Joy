@@ -1,7 +1,7 @@
 /*
     module  : times.c
-    version : 1.3
-    date    : 09/04/23
+    version : 1.4
+    date    : 03/21/24
 */
 #ifndef TIMES_C
 #define TIMES_C
@@ -10,7 +10,7 @@
 OK 2800  times  :  N [P]  ->  ...
 N times executes P.
 */
-PRIVATE void times_(pEnv env)
+void times_(pEnv env)
 {
     int i, n;
 

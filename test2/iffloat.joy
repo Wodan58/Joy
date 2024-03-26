@@ -1,7 +1,7 @@
 (*
     module  : iffloat.joy
-    version : 1.3
-    date    : 09/19/23
+    version : 1.4
+    date    : 03/21/24
 *)
 1.0 ["isfloat"] ["nofloat"] iffloat "isfloat" =.
 10 ["isfloat"] ["nofloat"] iffloat "nofloat" =.

@@ -1,13 +1,13 @@
 /*
     module  : inhas.h
-    version : 1.6
-    date    : 02/01/24
+    version : 1.7
+    date    : 03/21/24
 */
 #ifndef INHAS_H
 #define INHAS_H
 
 #define INHAS(PROCEDURE, NAME, AGGR, ELEM)				\
-    PRIVATE void PROCEDURE(pEnv env)					\
+    void PROCEDURE(pEnv env)						\
     {									\
 	int found = 0;							\
 	char *str;							\

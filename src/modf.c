@@ -1,7 +1,7 @@
 /*
     module  : modf.c
-    version : 1.2
-    date    : 08/13/23
+    version : 1.3
+    date    : 03/21/24
 */
 #ifndef MODF_C
 #define MODF_C
@@ -11,7 +11,7 @@ OK 1620  modf  :  F  ->  G H
 G is the fractional part and H is the integer part
 (but expressed as a float) of F.
 */
-PRIVATE void modf_(pEnv env)
+void modf_(pEnv env)
 {
     double exp;
 

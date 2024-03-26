@@ -1,7 +1,7 @@
 /*
     module  : while.c
-    version : 1.4
-    date    : 09/04/23
+    version : 1.5
+    date    : 03/21/24
 */
 #ifndef WHILE_C
 #define WHILE_C
@@ -10,7 +10,7 @@
 OK 2700  while  :  [B] [D]  ->  ...
 While executing B yields true executes D.
 */
-PRIVATE void while_(pEnv env)
+void while_(pEnv env)
 {
     TWOPARAMS("while");
     TWOQUOTES("while");

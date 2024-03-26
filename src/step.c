@@ -1,7 +1,7 @@
 /*
     module  : step.c
-    version : 1.6
-    date    : 03/05/24
+    version : 1.7
+    date    : 03/21/24
 */
 #ifndef STEP_C
 #define STEP_C
@@ -11,7 +11,7 @@ OK 2770  step  :  A [P]  ->  ...
 Sequentially putting members of aggregate A onto stack,
 executes P for each member of A.
 */
-PRIVATE void step_(pEnv env)
+void step_(pEnv env)
 {
     int i;
     char *str;

@@ -1,7 +1,7 @@
 /*
     module  : sign.c
-    version : 1.3
-    date    : 08/13/23
+    version : 1.4
+    date    : 03/21/24
 */
 #ifndef SIGN_C
 #define SIGN_C
@@ -11,7 +11,7 @@ OK 1440  sign  :  N1  ->  N2
 Integer N2 is the sign (-1 or 0 or +1) of integer N1,
 or float N2 is the sign (-1.0 or 0.0 or 1.0) of float N1.
 */
-PRIVATE void sign_(pEnv env)
+void sign_(pEnv env)
 {
     double dbl;
 

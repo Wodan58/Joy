@@ -1,7 +1,7 @@
 (*
     module  : equal.joy
-    version : 1.7
-    date    : 01/25/24
+    version : 1.8
+    date    : 03/21/24
 *)
 DEFINE	last == dup rest null [first] [rest last] branch.
 
@@ -47,3 +47,5 @@ stdin argv equal false =.
 {1 2 3} 3.14 equal false =.
 3.14 {1 2 3} equal false =.
 {1 2 3} "1 2 3" equal false =.
+
+{} [pop] first equal false =.

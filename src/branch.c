@@ -1,7 +1,7 @@
 /*
     module  : branch.c
-    version : 1.3
-    date    : 09/04/23
+    version : 1.4
+    date    : 03/21/24
 */
 #ifndef BRANCH_C
 #define BRANCH_C
@@ -10,7 +10,7 @@
 OK 2590  branch  :  B [T] [F]  ->  ...
 If B is true, then executes T else executes F.
 */
-PRIVATE void branch_(pEnv env)
+void branch_(pEnv env)
 {
     THREEPARAMS("branch");
     TWOQUOTES("branch");

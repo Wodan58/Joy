@@ -1,13 +1,13 @@
 /*
     module  : n_ary.h
-    version : 1.3
-    date    : 02/01/24
+    version : 1.4
+    date    : 03/21/24
 */
 #ifndef N_ARY_H
 #define N_ARY_H
 
 #define N_ARY(PROCEDURE, NAME, PARAMCOUNT, TOP)				\
-    PRIVATE void PROCEDURE(pEnv env)					\
+    void PROCEDURE(pEnv env)						\
     {									\
 	PARAMCOUNT(NAME);						\
 	ONEQUOTE(NAME);							\

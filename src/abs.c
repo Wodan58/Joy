@@ -1,7 +1,7 @@
 /*
     module  : abs.c
-    version : 1.2
-    date    : 08/13/23
+    version : 1.3
+    date    : 03/21/24
 */
 #ifndef ABS_C
 #define ABS_C
@@ -11,7 +11,7 @@ OK 1480  abs  :  N1  ->  N2
 Integer N2 is the absolute value (0,1,2..) of integer N1,
 or float N2 is the absolute value (0.0 ..) of float N1.
 */
-PRIVATE void abs_(pEnv env)
+void abs_(pEnv env)
 {
     ONEPARAM("abs");
     /* start new */

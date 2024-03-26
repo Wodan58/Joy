@@ -1,13 +1,13 @@
 /*
     module  : someall.h
-    version : 1.5
-    date    : 02/01/24
+    version : 1.6
+    date    : 03/21/24
 */
 #ifndef SOMEALL_H
 #define SOMEALL_H
 
 #define SOMEALL(PROCEDURE, NAME, INITIAL)				\
-    PRIVATE void PROCEDURE(pEnv env)					\
+    void PROCEDURE(pEnv env)						\
     {									\
 	int j, result = INITIAL;					\
 	char *str;							\

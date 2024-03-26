@@ -1,7 +1,7 @@
 /*
     module  : opcase.c
-    version : 1.7
-    date    : 09/04/23
+    version : 1.8
+    date    : 03/21/24
 */
 #ifndef OPCASE_C
 #define OPCASE_C
@@ -10,7 +10,7 @@
 OK 2090  opcase  :  X [..[X Xs]..]  ->  X [Xs]
 Indexing on type of X, returns the list [Xs].
 */
-PRIVATE void opcase_(pEnv env)
+void opcase_(pEnv env)
 {
     int op;
     proc_t proc;

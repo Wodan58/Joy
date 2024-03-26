@@ -1,13 +1,13 @@
 /*
     module  : predsucc.h
-    version : 1.2
-    date    : 02/01/24
+    version : 1.3
+    date    : 03/21/24
 */
 #ifndef PREDSUCC_H
 #define PREDSUCC_H
 
 #define PREDSUCC(PROCEDURE, NAME, OPER)					\
-    PRIVATE void PROCEDURE(pEnv env)					\
+    void PROCEDURE(pEnv env)						\
     {									\
 	ONEPARAM(NAME);							\
 	NUMERICTYPE(NAME);						\

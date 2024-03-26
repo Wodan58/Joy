@@ -1,7 +1,7 @@
 /*
     module  : unary2.c
-    version : 1.3
-    date    : 09/04/23
+    version : 1.4
+    date    : 03/21/24
 */
 #ifndef UNARY2_C
 #define UNARY2_C
@@ -11,7 +11,7 @@ OK 2500  unary2  :  X1 X2 [P]  ->  R1 R2
 Executes P twice, with X1 and X2 on top of the stack.
 Returns the two values R1 and R2.
 */
-PRIVATE void unary2_(pEnv env)
+void unary2_(pEnv env)
 { /*   Y  Z  [P]  unary2     ==>  Y'  Z'  */
     THREEPARAMS("unary2");
     ONEQUOTE("unary2");

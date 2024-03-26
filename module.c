@@ -1,7 +1,7 @@
 /*
     module  : module.c
-    version : 1.11
-    date    : 08/28/23
+    version : 1.12
+    date    : 03/21/24
 */
 #include "globals.h"
 
@@ -20,7 +20,7 @@ static int module_index = -1;
 
 /*
  * savemod saves the global variables, to be restored later with undomod.
-*/
+ */
 void savemod(int *hide, int *modl, int *hcnt)
 {
     *hide = hide_index;
@@ -115,7 +115,7 @@ void exitmod(void)
 char *classify(pEnv env, char *name)
 {
     size_t leng;
-    char temp[BUFFERMAX], *buf = 0, *str;
+    char temp[MAXNUM], *buf = 0, *str;
 
     /*
      * if name already has a prefix, there is no need to add another one.
@@ -164,12 +164,12 @@ char *classify(pEnv env, char *name)
  *
  * qualify is used when reading a name, as part of a definition.
  */
-pEntry qualify(pEnv env, char *name)
+int qualify(pEnv env, char *name)
 {
     size_t leng;
     khiter_t key;
     int index, limit;
-    char temp[BUFFERMAX], *buf, *str;
+    char temp[MAXNUM], *buf, *str;
 
     /*
      * if name has a prefix, it is already a fully qualified name and can be

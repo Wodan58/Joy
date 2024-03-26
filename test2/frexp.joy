@@ -1,7 +1,7 @@
 (*
     module  : frexp.joy
-    version : 1.4
-    date    : 09/19/23
+    version : 1.5
+    date    : 03/21/24
 *)
 1.5 frexp stack [1 0.75] equal.
 pop pop.

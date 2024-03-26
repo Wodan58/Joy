@@ -1,7 +1,7 @@
 /*
     module  : case.c
-    version : 1.5
-    date    : 09/04/23
+    version : 1.6
+    date    : 03/21/24
 */
 #ifndef CASE_C
 #define CASE_C
@@ -12,7 +12,7 @@
 OK 2100  case  :  X [..[X Y]..]  ->  Y i
 Indexing on the value of X, execute the matching Y.
 */
-PRIVATE void case_(pEnv env)
+void case_(pEnv env)
 {
     Index n;
 
@@ -20,11 +20,12 @@ PRIVATE void case_(pEnv env)
     LIST("case");
     n = nodevalue(env->stck).lis;
     CHECKEMPTYLIST(n, "case");
-    while (nextnode1(n)) {
+    while (nextnode1(n) && nodetype(n) == LIST_) {
         if (!Compare(env, nodevalue(n).lis, nextnode1(env->stck)))
             break;
         n = nextnode1(n);
     }
+    CHECKLIST(nodetype(n), "case");
     if (nextnode1(n)) {
         env->stck = nextnode2(env->stck);
         exeterm(env, nextnode1(nodevalue(n).lis));

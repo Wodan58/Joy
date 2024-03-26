@@ -1,7 +1,7 @@
 /*
     module  : format.c
-    version : 1.4
-    date    : 08/18/23
+    version : 1.5
+    date    : 03/21/24
 */
 #ifndef FORMAT_C
 #define FORMAT_C
@@ -13,7 +13,7 @@ S is the formatted version of N in mode C
 'X = hex with lower or upper case letters)
 with maximum width I and minimum width J.
 */
-PRIVATE void format_(pEnv env)
+void format_(pEnv env)
 {
     int width, prec, leng;
     char spec, format[7], *result;

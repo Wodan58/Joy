@@ -1,7 +1,7 @@
 /*
     module  : app1.c
-    version : 1.4
-    date    : 03/05/24
+    version : 1.5
+    date    : 03/21/24
 */
 #ifndef APP1_C
 #define APP1_C
@@ -10,7 +10,7 @@
 OK 2440  app1  :  X [P]  ->  R
 Obsolescent.  Executes P, pushes result R on stack.
 */
-PRIVATE void app1_(pEnv env)
+void app1_(pEnv env)
 {
     TWOPARAMS("app1");
     ONEQUOTE("app1");

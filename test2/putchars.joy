@@ -1,10 +1,15 @@
 (*
     module  : putchars.joy
-    version : 1.4
-    date    : 01/25/24
+    version : 1.5
+    date    : 03/21/24
 *)
 "test" putchars '\n putch.
 
+(* cast to bignum, that is printed without enclosing quotes, as desired *)
 "Hello, World" 12 casting.
 
+(*
+    1 is not allowed in a string constant;
+    it is allowed in a character constant
+*)
 '\001 1 =.

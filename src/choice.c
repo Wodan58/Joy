@@ -1,7 +1,7 @@
 /*
     module  : choice.c
-    version : 1.2
-    date    : 08/13/23
+    version : 1.3
+    date    : 03/21/24
 */
 #ifndef CHOICE_C
 #define CHOICE_C
@@ -10,7 +10,7 @@
 OK 1330  choice  :  B T F  ->  X
 If B is true, then X = T else X = F.
 */
-PRIVATE void choice_(pEnv env)
+void choice_(pEnv env)
 {
     THREEPARAMS("choice");
     if (nodevalue(nextnode2(env->stck)).num)

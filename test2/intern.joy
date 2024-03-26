@@ -1,7 +1,9 @@
 (*
     module  : intern.joy
-    version : 1.4
-    date    : 09/19/23
+    version : 1.5
+    date    : 03/21/24
 *)
 1 "succ" intern [] cons i 2 =.
-# "1 2 3" intern [] cons i.
+
+(* The next intern is not allowed *)
+"1 2 3" intern.

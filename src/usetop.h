@@ -1,18 +1,17 @@
 /*
     module  : usetop.h
-    version : 1.2
-    date    : 01/22/24
+    version : 1.3
+    date    : 03/21/24
 */
 #ifndef USETOP_H
 #define USETOP_H
 
 #define USETOP(PROCEDURE, NAME, TYPE, BODY)				\
-    PRIVATE void PROCEDURE(pEnv env)					\
+    void PROCEDURE(pEnv env)						\
     {									\
 	ONEPARAM(NAME);							\
 	TYPE(NAME);							\
-	if (!env->ignore)						\
-	    BODY;							\
+	BODY;								\
 	POP(env->stck);							\
     }
 #endif

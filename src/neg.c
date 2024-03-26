@@ -1,7 +1,7 @@
 /*
     module  : neg.c
-    version : 1.2
-    date    : 08/13/23
+    version : 1.3
+    date    : 03/21/24
 */
 #ifndef NEG_C
 #define NEG_C
@@ -10,7 +10,7 @@
 OK 1450  neg  :  I  ->  J
 Integer J is the negative of integer I.  Also supports float.
 */
-PRIVATE void neg_(pEnv env)
+void neg_(pEnv env)
 {
     ONEPARAM("neg");
     /* start new */

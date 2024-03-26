@@ -1,7 +1,7 @@
 /*
     module  : rolldown.c
-    version : 1.2
-    date    : 08/13/23
+    version : 1.3
+    date    : 03/21/24
 */
 #ifndef ROLLDOWN_C
 #define ROLLDOWN_C
@@ -10,7 +10,7 @@
 OK 1240  rolldown  :  X Y Z  ->  Y Z X
 Moves Y and Z down, moves X up.
 */
-PRIVATE void rolldown_(pEnv env)
+void rolldown_(pEnv env)
 {
     THREEPARAMS("rolldown");
     SAVESTACK;

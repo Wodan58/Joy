@@ -1,13 +1,13 @@
 /*
     module  : bfloat.h
-    version : 1.2
-    date    : 02/01/24
+    version : 1.3
+    date    : 03/21/24
 */
 #ifndef BFLOAT_H
 #define BFLOAT_H
 
 #define BFLOAT(PROCEDURE, NAME, FUNC)					\
-    PRIVATE void PROCEDURE(pEnv env)					\
+    void PROCEDURE(pEnv env)						\
     {									\
 	TWOPARAMS(NAME);						\
 	FLOAT2(NAME);							\

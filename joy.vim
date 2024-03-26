@@ -13,21 +13,31 @@ syntax case match
 
 syntax match joyError oneline "]"
 
-syntax match joySpecial /[(==)\.\;]/
+syntax match joySpecial /[()\.\;]/
 syntax region joyString start=/"/ end=/"/
 syntax region joyList matchgroup=joyBracket start=/\[/ end=/\]/ contains=ALL
 syntax region joyComment start=/(\*/ end=/\*)/
 syntax match joySymbol /[^\[\]"\.\; ]+/
 
+syntax match joySpecial /==/
 syntax match joyComment /[#].*/
-syntax match joySpecial /DEFINE/
 syntax match joySpecial /LIBRA/
-syntax match joySpecial /MODULE/
-syntax match joySpecial /PRIVATE/
-syntax match joySpecial /PUBLIC/
+syntax match joySpecial /DEFINE/
 syntax match joySpecial /HIDE/
 syntax match joySpecial /IN/
 syntax match joySpecial /END/
+syntax match joySpecial /MODULE/
+syntax match joySpecial /PRIVATE/
+syntax match joySpecial /PUBLIC/
+syntax match joySpecial /CONST/
+syntax match joySpecial /INLINE/
+syntax match joySpecial /%IF/
+syntax match joySpecial /%SET/
+syntax match joySpecial /%INCLUDE/
+syntax match joySpecial /%PUT/
+syntax match joySpecial /%LISTING/
+syntax match joySpecial /%TRACE/
+syntax match joySpecial /%COMPILE/
 
 if version >= 508 || !exists("did_joy_syntax_inits")
   if version < 508

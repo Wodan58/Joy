@@ -1,7 +1,7 @@
 (*
     module  : mul.joy
-    version : 1.4
-    date    : 09/19/23
+    version : 1.5
+    date    : 03/21/24
 *)
 3 100 * 300 =.
 3.14 100.0 * 314 =.

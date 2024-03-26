@@ -30,6 +30,7 @@ the implementation in C was started in 1995.
 Build instructions
 ------------------
 
+    mkdir build
     cd build
     cmake ..
     cmake --build .
@@ -37,15 +38,25 @@ Build instructions
 Build with MSVC
 ---------------
 
+    mkdir build
     cd build
     cmake ..
     cmake --build . --config Release
     copy Release\joy.exe
 
+    copy ..\lib\usrlib.joy %USERPROFILE%
+    mkdir %USERPROFILE%\usrlib
+    copy ..\lib\*.* %USERPROFILE%\usrlib
+
+Then manually change the path to inilib.joy in %USERPROFILE%\usrlib.joy
+from "../lib" to "usrlib".
+
 Running
 -------
 
-There is a copy of usrlib.joy in the build directory.
+    joy -h
+
+gives an overview of available options.
 
 Testing
 -------
@@ -67,6 +78,7 @@ Implementation|Dependencies
 [42minjoy](https://github.com/Wodan58/42minjoy)|
 [joy0](https://github.com/Wodan58/joy0)|
 [joy1](https://github.com/Wodan58/joy1)|[BDW garbage collector](https://github.com/ivmai/bdwgc)
+[Foy](https://github.com/Wodan58/Foy)|[BDW garbage collector](https://github.com/ivmai/bdwgc)
 [Moy](https://github.com/Wodan58/Moy)|[BDW garbage collector](https://github.com/ivmai/bdwgc) and [Lex & Yacc](https://sourceforge.net/projects/winflexbison/files/win_flex_bison-latest.zip)
 
 Documentation|

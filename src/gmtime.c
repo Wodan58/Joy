@@ -1,17 +1,10 @@
 /*
     module  : gmtime.c
-    version : 1.3
-    date    : 01/17/24
+    version : 1.4
+    date    : 03/22/24
 */
 #ifndef GMTIME_C
 #define GMTIME_C
-
-#if defined(_MSC_VER) || defined(WIN32)
-void gmtime_r(time_t *t, struct tm *tm)
-{
-    *tm = *gmtime(t);
-}
-#endif
 
 /**
 OK 1710  gmtime  :  I  ->  T
@@ -20,5 +13,5 @@ Converts a time I into a list T representing universal time:
 Month is 1 = January ... 12 = December;
 isdst is false; weekday is 1 = Monday ... 7 = Sunday.
 */
-UNMKTIME(gmtime_, "gmtime", gmtime_r)
+UNMKTIME(gmtime_, "gmtime", gmtime)
 #endif

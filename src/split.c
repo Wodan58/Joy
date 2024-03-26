@@ -1,7 +1,7 @@
 /*
     module  : split.c
-    version : 1.7
-    date    : 03/05/24
+    version : 1.8
+    date    : 03/21/24
 */
 #ifndef SPLIT_C
 #define SPLIT_C
@@ -10,7 +10,7 @@
 OK 2840  split  :  A [B]  ->  A1 A2
 Uses test B to split aggregate A into sametype aggregates A1 and A2.
 */
-PRIVATE void split_(pEnv env)
+void split_(pEnv env)
 {
     int i, yesptr = 0, noptr = 0;
     uint64_t yes_set = 0, no_set = 0;

@@ -1,7 +1,7 @@
 /*
     module  : ldexp.c
-    version : 1.2
-    date    : 08/13/23
+    version : 1.3
+    date    : 03/21/24
 */
 #ifndef LDEXP_C
 #define LDEXP_C
@@ -10,7 +10,7 @@
 OK 1590  ldexp  :  F I  ->  G
 G is F times 2 to the Ith power.
 */
-PRIVATE void ldexp_(pEnv env)
+void ldexp_(pEnv env)
 {
     int exp;
 

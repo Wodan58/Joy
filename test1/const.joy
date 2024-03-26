@@ -1,0 +1,17 @@
+(*
+    module  : const.joy
+    version : 1.1
+    date    : 03/21/24
+*)
+CONST
+Ctrl-Q == 17;
+Ctrl-S == 19;
+Ctrl-F == 6.
+
+DEFINE
+Ctrl-X == 24;
+Ctrl-Z == 26.
+
+[Ctrl-Q Ctrl-S Ctrl-F Ctrl-X Ctrl-Z].
+
+{Ctrl-Q Ctrl-S Ctrl-F Ctrl-X 'A} size.

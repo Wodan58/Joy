@@ -1,0 +1,14 @@
+(*
+    module  : quad.joy
+    version : 1.1
+    date    : 03/21/24
+*)
+DEFINE
+quad == [C] assign neg [B] assign 2 * [A] assign
+B dup * 2 A C * * -
+[0 <] ["determinant is negative\n" putchars abort] [] ifte
+sqrt [R] assign
+B R + A /
+B R - A /.
+
+2 -4 -6 quad..

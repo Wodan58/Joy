@@ -1,7 +1,7 @@
 /*
     module  : fwrite.c
-    version : 1.6
-    date    : 01/17/24
+    version : 1.7
+    date    : 03/21/24
 */
 #ifndef FWRITE_C
 #define FWRITE_C
@@ -11,7 +11,7 @@ OK 1910  fwrite  :  S L  ->  S
 [FOREIGN] A list of integers are written as bytes to the current position of
 stream S.
 */
-PRIVATE void fwrite_(pEnv env)
+void fwrite_(pEnv env)
 {
     int length, i;
     unsigned char *buff;

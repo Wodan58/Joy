@@ -1,7 +1,7 @@
 /*
     module  : mul.c
-    version : 1.3
-    date    : 08/13/23
+    version : 1.4
+    date    : 03/21/24
 */
 #ifndef MUL_C
 #define MUL_C
@@ -10,7 +10,7 @@
 OK 1400  *\0ast  :  I J  ->  K
 Integer K is the product of integers I and J.  Also supports float.
 */
-PRIVATE void mul_(pEnv env)
+void mul_(pEnv env)
 {
     TWOPARAMS("*");
     FLOAT_I(*);

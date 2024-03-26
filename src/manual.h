@@ -1,7 +1,7 @@
 /*
     module  : manual.h
-    version : 1.6
-    date    : 03/05/24
+    version : 1.7
+    date    : 03/21/24
 */
 #ifndef MANUAL_H
 #define MANUAL_H
@@ -24,14 +24,16 @@
 	printf("\n\n");							\
     }
 
-PRIVATE void make_manual(int style)	/* 0=plain, 1=HTML, 2=Latex */
+void make_manual(int style)	/* 0=plain, 1=HTML, 2=Latex */
 {
-    int i;
     char *n;
+    int i, j;
 
     if (HTML)
 	printf("<HTML>\n<DL>\n");
-    for (i = BOOLEAN_; (n = opername(i)) != 0; i++) {
+    j = sizeof(optable) / sizeof(optable[0]);
+    for (i = BOOLEAN_; i < j; i++) {
+	n = optable[i].name;
 	HEADER(n, " truth value type", "literal") else
 	HEADER(n, "false", "operand") else
 	HEADER(n, "id", "operator") else

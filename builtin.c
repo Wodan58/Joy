@@ -22,6 +22,7 @@
 #include "./src/argc.c"
 #include "./src/argv.c"
 #include "./src/asin.c"
+#include "./src/assign.c"
 #include "./src/at.c"
 #include "./src/atan.c"
 #include "./src/atan2.c"

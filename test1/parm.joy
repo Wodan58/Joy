@@ -1,0 +1,619 @@
+(*
+    module  : parm.joy
+    version : 1.1
+    date    : 03/21/24
+*)
+[] unstack.
+
+(* rolldownd needs four parameters *)
+rolldownd.
+
+(* rolldown needs three parameters *)
+rolldown.
+
+(* swap needs two parameters *)
+swap.
+
+(* pop needs one parameter *)
+pop.
+
+[] unstack.
+
+(* unary4 needs 5 parameters *)
+1 2 3 [succ] unary4.
+
+[] unstack.
+
+(* unary3 needs 4 parameters *)
+1 2 [succ] unary3.
+
+[] unstack.
+
+(* unary2 needs 3 parameters *)
+1 [succ] unary2.
+
+[] unstack.
+
+(* dip needs a parameter *)
+dip.
+
+(* dip needs a quotation *)
+1 dip.
+
+[] unstack.
+
+(* while needs two parameters *)
+while.
+
+(* while needs two quotations *)
+1 2 while.
+
+(* while needs two quotations *)
+1 [] while.
+
+[] unstack.
+
+(* ifte needs three parameters *)
+ifte.
+
+(* ifte needs three quotations *)
+1 2 3 ifte.
+
+(* ifte needs three quotations *)
+1 2 [] ifte.
+
+(* ifte needs three quotations *)
+1 [] [] ifte.
+
+[] unstack.
+
+(* linrec needs four parameters *)
+linrec.
+
+(* linrec needs four quotations *)
+1 2 3 4 linrec.
+
+(* linrec needs four quotations *)
+1 2 3 [] linrec.
+
+(* linrec needs four quotations *)
+1 2 [] [] linrec.
+
+(* linrec needs four quotations *)
+1 [] [] [] linrec.
+
+[] unstack.
+
+(* helpdetail needs one parameter *)
+helpdetail.
+
+(* helpdetail needs one quotation *)
+1 helpdetail.
+
+[] unstack.
+
+(* infra needs two parameters *)
+infra.
+
+(* infra needs two quotations *)
+[] 1 infra.
+
+(* infra needs two quotations *)
+1 [] infra.
+
+[] unstack.
+
+(* cos needs one parameter *)
+cos.
+
+(* cos needs a float or integer *)
+[] cos.
+
+[] unstack.
+
+(* atan2 needs two parameters *)
+atan2.
+
+(* atan2 needs two floats or integers *)
+[] [] atan2.
+
+(* atan2 needs two floats or integers *)
+[] 1 atan2.
+
+[] unstack.
+
+(* fget needs one parameter *)
+fget.
+
+(* fget needs a file parameter *)
+10 fget.
+
+[] unstack.
+
+(* fput needs two parameters *)
+fput.
+
+(* fput needs a file as second parameter *)
+10 10 fput.
+
+[] unstack.
+
+(* strftime needs two parameters *)
+strftime.
+
+(* strftime needs a string as top parameter *)
+"" [] strftime.
+
+(* strftime needs a list as second parameter *)
+"" "" strftime.
+
+[] unstack.
+
+(* fputchars needs two parameters *)
+fputchars.
+
+(* fputchars needs a string as top parameter *)
+10 10 fputchars.
+
+(* fputchars needs a file as second parameter *)
+10 "" fputchars.
+
+[] unstack.
+
+(* strtod needs one parameter *)
+strtod.
+
+(* strtod needs a string as top parameter *)
+10 strtod.
+
+[] unstack.
+
+(* fopen needs two parameters *)
+fopen.
+
+(* fopen needs two string parameters *)
+[] [] fopen.
+
+(* fopen needs two string parameters *)
+[] "" fopen.
+
+[] unstack.
+
+(* unmktime needs one parameter *)
+localtime.
+
+(* unmktime needs an integer parameter *)
+[] localtime.
+
+[] unstack.
+
+(* fread needs two parameters *)
+fread.
+
+(* fread needs an integer as top parameter *)
+[] [] fread.
+
+(* fread needs a file as second parameter *)
+[] 10 fread.
+
+[] unstack.
+
+(* ldexp needs two parameters *)
+ldexp.
+
+(* ldexp needs an integer as top parameter *)
+[] [] ldexp.
+
+(* ldexp needs a float or integer as second parameter *)
+[] 10 ldexp.
+
+[] unstack.
+
+(* strtol needs two parameters *)
+strtol.
+
+(* strtol needs an integer as top parameter *)
+[] [] strtol.
+
+(* strtol needs a string as second parameter *)
+[] 10 strtol.
+
+[] unstack.
+
+(* fseek needs three parameters *)
+fseek.
+
+(* fseek needs two integer parameters *)
+[] [] [] fseek.
+
+(* fseek needs a file parameter *)
+[] 10 10 fseek.
+
+[] unstack.
+
+(* times needs two parameters *)
+times.
+
+(* times needs a quotation as top parameter *)
+[] 10 times.
+
+(* times needs an integer as second parameter *)
+[] [] times.
+
+[] unstack.
+
+(* max needs two parameters *)
+max.
+
+(* max needs a numeric as top parameter *)
+[] [] max.
+
+(* max needs two parameters of the same type *)
+[] 10 max.
+
+[] unstack.
+
+(* pred needs two parameters *)
+pred.
+
+(* pred needs a numeric parameter *)
+[] pred.
+
+[] unstack.
+
+(* plus needs two parameters *)
++.
+
+(* plus needs an integer or character as second parameter *)
+[] 10 +.
+
+(* plus needs an integer as top parameter *)
+'A 'A +.
+
+[] unstack.
+
+(* size needs one parameter *)
+size.
+
+(* size needs an aggregate parameter *)
+10 size.
+
+[] unstack.
+
+(* step needs two parameters *)
+step.
+
+(* step needs a quotation as top parameter *)
+10 10 step.
+
+(* step needs an aggregate as second parameter *)
+10 [] step.
+
+[] unstack.
+
+(* take needs two parameters *)
+take.
+
+(* take needs an integer as top parameter *)
+10 [] take.
+
+(* take needs an aggregate as second parameter *)
+10 10 take.
+
+[] unstack.
+
+(* concat needs two parameters *)
+concat.
+
+(* concat needs an aggregate as top parameter *)
+10 10 concat.
+
+(* concat needs two parameters of the same type *)
+[] "" concat.
+
+[] unstack.
+
+(* and needs two parameters *)
+and.
+
+(* and needs two parameters of the same type *)
+[] 10 and.
+
+(* and needs a set or a numeric as top parameter *)
+[] [] and.
+
+[] unstack.
+
+(* not needs one parameter *)
+not.
+
+(* not needs a set or a numeric as top parameter *)
+[] not.
+
+[] unstack.
+
+(* primrec needs three parameters *)
+primrec.
+
+(* primrec needs two quotations as parameters *)
+10 10 10 primrec.
+
+(* primrec needs an aggregate or integer as third parameter *)
+[] [] [] primrec.
+
+(* primrec cannot use a character as third parameter *)
+'A [] [] primrec.
+
+[] unstack.
+
+(* small needs one parameter *)
+small.
+
+(* small needs an aggregate, integer, or boolean as parameter *)
+'A small.
+
+[] unstack.
+
+(* body needs one parameter *)
+body.
+
+(* body needs a user defined symbol as parameter *)
+10 body.
+
+[] unstack.
+
+(* intern needs one parameter *)
+intern.
+
+(* intern needs a string as parameter *)
+[] intern.
+
+(* intern is not valid for a negative number *)
+"-1" intern.
+
+(* a name cannot start with # *)
+"#1" intern.
+
+(* a name cannot contain a . *)
+"a.b" intern.
+
+[] unstack.
+
+(* format needs four parameters *)
+format.
+
+(* format needs two integer parameters *)
+[] [] [] [] format.
+
+(* format needs a character as third parameter *)
+[] [] 10 10 format.
+
+(* format needs a specific character as third parameter *)
+[] 'A 10 10 format.
+
+(* format needs a numeric as fourth parameter *)
+[] 'd 10 10 format.
+
+[] unstack.
+
+(* formatf needs four parameters *)
+formatf.
+
+(* formatf needs two integer parameters *)
+[] [] [] [] formatf.
+
+(* formatf needs a character as third parameter *)
+[] [] 10 10 formatf.
+
+(* formatf needs a specific character as third parameter *)
+[] 'A 10 10 formatf.
+
+(* formatf needs a float as fourth parameter *)
+[] 'g 10 10 formatf.
+
+[] unstack.
+
+(* cons needs two parameters *)
+cons.
+
+(* cons needs an aggregate as top parameter *)
+10 10 cons.
+
+(* cons needs a character as second parameter *)
+10 "" cons.
+
+(* cons needs a small numeric as second parameter *)
+100 {} cons.
+
+[] unstack.
+
+(* has needs two parameters *)
+has.
+
+(* has needs an aggregate as second parameter *)
+10 10 has.
+
+(* has can use a list as second parameter *)
+[] 10 has.
+
+(* has needs a character as top parameter *)
+"" 10 has.
+
+(* has needs a small numeric as top parameter *)
+{} 100 has.
+
+[] unstack.
+
+(* case needs two parameters *)
+case.
+
+(* case needs a list as top parameter *)
+10 10 case.
+
+(* case needs a non-empty list as top parameter *)
+10 [] case.
+
+(* case needs an internal list as top parameter *)
+10 [10] case.
+
+[] unstack.
+
+(* first needs one parameter *)
+first.
+
+(* first needs an aggregate parameter *)
+10 first.
+
+(* first needs a non-empty aggregate parameter *)
+[] first.
+"" first.
+{} first.
+
+[] unstack.
+
+(* of needs two parameters *)
+of.
+
+(* of needs a non-negative integer as second parameter *)
+-1 [] of.
+
+(* of needs an aggregate as top parameter *)
+0 0 of.
+
+(* of needs a non-empty aggregate parameter *)
+0 [] of.
+0 "" of.
+0 {} of.
+
+(* of needs a small enough index parameter *)
+10 [0] of.
+10 "0" of.
+10 {0} of.
+
+[] unstack.
+
+(* at needs two parameters *)
+at.
+
+(* at needs a non-negative integer as top parameter *)
+[] -1 at.
+
+(* at needs an aggregate as second parameter *)
+10 10 at.
+
+(* at needs a non-empty aggregate parameter *)
+[] 0 at.
+"" 0 at.
+{} 0 at.
+
+(* at needs a small enough index parameter *)
+[0] 10 at.
+"0" 10 at.
+{0} 10 at.
+
+[] unstack.
+
+(* div needs two parameters *)
+div.
+
+(* div needs two integer parameters *)
+[] [] div.
+
+(* div needs a non-zero top parameter *)
+10 0 div.
+
+[] unstack.
+
+(* rem needs two parameters *)
+rem.
+
+(* rem needs two float or integer parameters *)
+[] [] rem.
+
+(* rem needs two float or integer parameters *)
+[] 10 rem.
+
+(* rem needs a non-zero top parameter *)
+10 0 rem.
+
+[] unstack.
+
+(* divide needs two parameters *)
+/.
+
+(* divide needs two float or integer parameters *)
+[] [] /.
+
+(* divide needs two float or integer parameters *)
+[] 10 /.
+
+(* divide needs a non-zero top parameter *)
+10 0 /.
+
+[] unstack.
+
+(* fwrite needs two parameters *)
+fwrite.
+
+(* fwrite needs a list as top parameter *)
+10 10 fwrite.
+
+(* fwrite needs a file as second parameter *)
+10 [] fwrite.
+
+(* fwrite needs a numeric list as parameter *)
+stdout ['A] fwrite.
+(* fwrite needs a list of integers *)
+
+(* dip needs a quote on top of the stack *)
+1 1 dip.
+
+(* mul needs two parameters *)
+[] unstack.
+10 *.
+10 [] *.
+[] 10 *.
+
+(* in needs two parameters *)
+[] unstack.
+{} in.
+
+(* set needs a small numeric *)
+65 {} in.
+
+(* in needs two parameters *)
+in.
+
+(* in needs an aggregate as second parameter *)
+10 10 in.
+
+(* in can use a list as second parameter *)
+10 [] in.
+
+(* in needs a character as top parameter *)
+10 "" in.
+
+(* in needs a small numeric as top parameter *)
+100 {} in.
+
+(* clear stack *)
+[] unstack.
+
+(* feof needs a parameter *)
+feof.
+
+(* feof needs a FILE parameter *)
+0 feof.
+
+(* assign needs two parameters *)
+[] unstack.
+[A] assign.
+
+(* assign needs quotation on top *)
+[] 1 assign.
+
+(* assign needs non-empty list *)
+1 [] assign.
+
+(* assign needs user defined symbol *)
+1 [pop] assign.

@@ -1,7 +1,7 @@
 /*
     module  : tailrec.c
-    version : 1.4
-    date    : 09/04/23
+    version : 1.5
+    date    : 03/21/24
 */
 #ifndef TAILREC_C
 #define TAILREC_C
@@ -11,7 +11,7 @@ OK 2720  tailrec  :  [P] [T] [R1]  ->  ...
 Executes P. If that yields true, executes T.
 Else executes R1, recurses.
 */
-PRIVATE void tailrecaux(pEnv env)
+void tailrecaux(pEnv env)
 {
     int result;
 tailrec:
@@ -29,7 +29,7 @@ tailrec:
     }
 }
 
-PRIVATE void tailrec_(pEnv env)
+void tailrec_(pEnv env)
 {
     THREEPARAMS("tailrec");
     THREEQUOTES("tailrec");

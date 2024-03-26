@@ -1,0 +1,150 @@
+(*
+    module  : tut.joy
+    version : 1.2
+    date    : 03/11/24
+*)
+111 222 +.
+1 2 + 3 4 + *.
+2 2 + 2 2 * =.
+
+6 6 * 5 7 * >.
+true false or true and not.
+
+DEFINE	reverse == [] swap shunt;
+	shunt == [cnos] step;
+	cnos == swap cons.
+
+[1 2 3 4 5] reverse.
+
+[peter paul] [mary jane] concat.
+
+DEFINE	last == dup rest null [first] [rest last] branch;
+	car == uncons pop;
+	pair == [] cons cons.
+
+[11 false 'X 44] last.
+
+DEFINE	member == swap contains;
+	contains == false swap [= or] cons fold.
+
+3 [1 5 3 4 2] member.
+3 [1 5 6 4 2] member.
+
+DEFINE	sum == 0 [+] fold;
+	space == 32;
+	product == 1 [*] fold.
+
+[1 2 3 4] dup sum put space putch product.
+
+111 [222 333] cons.
+
+DEFINE	putsp == put space putch;
+	newline == '\n putch;
+	putln == put newline.
+
+[11 22 33 44 55] uncons uncons putsp putsp putsp newline.
+
+['a 'b] ['d 'e 'f] concat dup.
+uncons uncons 'c swap cons cons cons dup.
+
+DEFINE	length == 0 [pop 1 +] fold.
+
+dup length.
+reverse length.
+
+get get +.
+123 456
+
+111 222 [+ putln] i.
+111 [putln +] reverse 222 swap i.
+3 7 100 [*] dip +.
+[1 2 3] [dup * putsp] step newline.
+2 [dup *] i.
+
+DEFINE	twice == dup b;
+	b == [i] dip i.
+
+2 [dup *] twice.
+
+DEFINE	thrice == dup [twice] dip i.
+
+2 [dup *] thrice.
+
+DEFINE	square == dup *.
+
+2 0 [square] times.
+2 1 [square] times.
+2 2 [square] times.
+2 3 [square] times.
+2 4 [square] times.
+2 5 [square] times.
+
+10 [7] times stack.
+
+[1 2 3] [dup *] map.
+[1 2 3] 0 [dup * +] fold.
+
+DEFINE	unit == [] cons;
+	construct2 == [[nullary] cons i] map.
+
+11 12 [[+] [*] [pop unit] [dup pair]] construct2.
+
+DEFINE	unpair == uncons uncons pop.
+
+[[pair [square] map unpair +] [pop] []] construct2.
+[] unstack.
+11111.
+64.
+64.
+255.
+'\065.
+'\097.
+'g.
+[Smith Jones Robinson] last.
+
+DEFINE	definition == first body.
+
+[last] definition.
+[Smith Jones Robinson] [last] definition i.
+
+DEFINE	cdr == uncons swap pop.
+
+[Smith Jones Robinson]
+[swap dup rest null [car swap pop] [cdr swap x] branch] x.
+
+DEFINE	y == fix i;
+	fix == [duco] first swap cons duco;
+	duco == dup cons.
+
+[Smith Jones Robinson]
+[swap dup rest null [car swap pop] [cdr swap i] branch] y.
+
+DEFINE	factorial_rec == dup 1 <= [pop 1] [dup pred factorial_rec *] branch.
+
+6 factorial_rec.
+
+6 [swap dup 1 <= [pop pop 1] [dup pred rolldown x *] branch] x.
+6 [swap dup 1 <= [pop pop 1] [dup pred rolldown i *] branch] y.
+
+DEFINE	quicksort == dup small [] [partition quicksort [quicksort] dip
+		     concat] branch;
+	partition == [[] []] dip dup [first > [cnos] [swap [cnos] dip]
+		     branch] cons [dup] first cnos step.
+
+[1 9 2 8 3 7 4 6 5] quicksort.
+[5 6 4 7 3 8 2 9 1] quicksort.
+[1 2 3 4 5 6 7 8 9] quicksort.
+[9 8 7 6 5 4 3 2 1] quicksort.
+[quicksort] definition.
+
+DEFINE	quicksort1 == dup small [] [partition1 quicksort1 [quicksort1] dip
+		      concat] branch;
+	partition1 == [[] []] dip dup first [first > [cnos] [swap [cnos] dip]
+		      branch] cons [first] first cnos [dup] first cnos step.
+
+[[1 Smith] [3 Jones] [2 Robinson] [4 Brown]] quicksort1.
+[] [NURKS Peter 1989 year 3 major Computer Science] cnos
+   [ABELSON Mary 1990 year 2 major Logic] cnos
+   [ZEEMAN Fred 1988 year 2 major Accounting] cnos
+   [MORRIS Janna 1992 year 1 major undecided] cnos
+quicksort1 dup [putln] step pop.

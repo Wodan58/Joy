@@ -1,7 +1,7 @@
 /*
     module  : i.c
-    version : 1.3
-    date    : 09/04/23
+    version : 1.4
+    date    : 03/21/24
 */
 #ifndef I_C
 #define I_C
@@ -10,7 +10,7 @@
 OK 2410  i  :  [P]  ->  ...
 Executes P. So, [P] i  ==  P.
 */
-PRIVATE void i_(pEnv env)
+void i_(pEnv env)
 {
     ONEPARAM("i");
     ONEQUOTE("i");

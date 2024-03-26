@@ -1,8 +1,8 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.87
- *  date    : 03/05/24
+ *  version : 1.93
+ *  date    : 03/24/24
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -28,7 +28,14 @@
 #include "khash.h"
 
 #ifdef _MSC_VER
-#pragma warning(disable: 4244 4267)
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#include <io.h>
+#pragma warning(disable: 4244 4267 4996)
+#else
+#include <unistd.h>
+#include <termios.h>
+#include <sys/ioctl.h>
 #endif
 
 #ifdef NOBDW
@@ -47,87 +54,79 @@
 #define nextnode3(p) (nextnode2(p))->next
 #define nextnode4(p) (nextnode3(p))->next
 #define nextnode5(p) (nextnode4(p))->next
-#ifdef ENABLE_TRACEGC
-#undef ENABLE_TRACEGC
+#ifdef TRACEGC
+#undef TRACEGC
 #endif
 #endif
 
 /* configure			*/
-#define SHELLESCAPE '$'
-#define INPSTACKMAX 10
-#define INPLINEMAX 255
-#define BUFFERMAX 80		/* smaller buffer */
-#define MAXNUM 32		/* even smaller buffer */
-#define ALEN 42			/* module + '.' + member + \0 */
-#define DISPLAYMAX 10		/* nesting in HIDE & MODULE */
-#define INIECHOFLAG 0
-#define INIAUTOPUT 1
-#define INITRACEGC 1
-#define INIUNDEFERROR 0
+#define SHELLESCAPE	'$'
+#define INPSTACKMAX	10
+#define INPLINEMAX	255
+#define BUFFERMAX	80	/* smaller buffer */
+#define HELPLINEMAX	72
+#define MAXNUM		32	/* even smaller buffer */
+#define FILENAMEMAX	14
+#define DISPLAYMAX	10	/* nesting in HIDE & MODULE */
+#define INIECHOFLAG	0
+#define INIAUTOPUT	1
+#define INITRACEGC	1
+#define INIUNDEFERROR	0
+#define INIWARNING	1
 
 /* installation dependent	*/
 #define SETSIZE (int)(CHAR_BIT * sizeof(uint64_t))	/* from limits.h */
-#define MAXINT INT64_MAX				/* from stdint.h */
+#define MAXINT_ INT64_MAX				/* from stdint.h */
 
 /* symbols from getsym		*/
-#define ILLEGAL_ 0
-#define COPIED_ 1
-#define USR_ 2
-#define ANON_FUNCT_ 3
-#define BOOLEAN_ 4
-#define CHAR_ 5
-#define INTEGER_ 6
-#define SET_ 7
-#define STRING_ 8
-#define LIST_ 9
-#define FLOAT_ 10
-#define FILE_ 11
-#define BIGNUM_ 12
-#define KEYWORD_ 13
-#define LBRACK 900
-#define LBRACE 901
-#define LPAREN 902
-#define ATOM 999 /* last legal factor begin */
-#define RBRACK 1001
-#define RPAREN 1003
-#define RBRACE 1005
-#define PERIOD 1006
-#define SEMICOL 1007
-#define LIBRA 1100
-#define EQDEF 1101
-#define HIDE 1102
-#define IN 1103
-#define END 1104
-#define MODULE 1105
-#define JPRIVATE 1106
-#define JPUBLIC 1107
+enum {
+    ILLEGAL_,
+    COPIED_,
+    USR_,
+    ANON_FUNCT_,
+    BOOLEAN_,
+    CHAR_,
+    INTEGER_,
+    SET_,
+    STRING_,
+    LIST_,
+    FLOAT_,
+    FILE_,
+    BIGNUM_,
 
-#define PRIVATE
-#define PUBLIC
-
-typedef enum {
-    NOT_USED,
-    MY_ABORT,
-    MOD_NAME,
-    EXEC_ERR
-} Aborts;
+    LIBRA,
+    EQDEF,
+    HIDE,
+    IN__,
+    MODULE_,
+    PRIVATE,
+    PUBLIC,
+    CONST_
+};
 
 typedef enum {
     OK,
-    IMMEDIATE
+    IGNORE_OK,
+    IGNORE_PUSH,
+    IGNORE_POP,
+    IMMEDIATE,
+    POSTPONE
 } Flags;
 
+typedef enum {
+    ABORT_NONE,
+    ABORT_RETRY,
+    ABORT_QUIT
+} Abort;
+
 /* types			*/
-typedef int Symbol;		/* symbol created by scanner */
-typedef int Operator;		/* opcode / datatype */
+typedef unsigned char Operator;	/* opcode / datatype */
 
 #ifdef NOBDW
 typedef unsigned Index;
 #else
 typedef struct Node *Index;
 #endif
-
-typedef unsigned pEntry;	/* index in symbol table */
 
 typedef struct Env *pEnv;
 
@@ -141,7 +140,7 @@ typedef union {
     Index lis;		/* LIST */
     double dbl;		/* FLOAT */
     FILE *fil;		/* FILE */
-    pEntry ent;		/* SYMBOL */
+    int ent;		/* SYMBOL */
 } Types;
 
 typedef struct Node {
@@ -158,49 +157,55 @@ typedef struct Entry {
     } u;
 } Entry;
 
-typedef struct Token {
-    Types yylval;
-    Symbol symb;
-} Token;
-
-KHASH_MAP_INIT_STR(Symtab, pEntry)
-KHASH_MAP_INIT_INT64(Funtab, pEntry)
+KHASH_MAP_INIT_STR(Symtab, int)
+KHASH_MAP_INIT_INT64(Funtab, int)
 
 typedef struct Env {
-    vector(Token) *tokens; /* read ahead table */
-    vector(Entry) *symtab; /* symbol table */
+    double nodes;		/* statistics */
+    double avail;
+    double collect;
+    double calls;
+    double opers;
+    double dbl;			/* numerics */
+    int64_t num;
+    char *str;			/* string */
+    clock_t startclock;		/* main */
+    char **g_argv;		/* command line */
+    char *pathname;
+    char *mod_name;		/* name of module */
+    vector(char) *string;	/* value */
+    vector(char) *pushback;	/* push back buffer */
+    vector(Node) *tokens;	/* read ahead table */
+    vector(Entry) *symtab;	/* symbol table */
     khash_t(Symtab) *hash;
     khash_t(Funtab) *prim;
+    Types bucket;		/* used by NEWNODE defines */
 #ifdef NOBDW
     clock_t gc_clock;
-    vector(Node) *memory;  /* dynamic memory */
+    vector(Node) *memory;	/* dynamic memory */
     Index prog, stck, conts, dump, dump1, dump2, dump3, dump4, dump5;
 #else
     Node *prog, *stck;
 #endif
-    Types yylval, bucket;  /* used by NEWNODE defines */
-    clock_t startclock;    /* main */
-    FILE *srcfile;
-    char *pathname;
-    char **g_argv;
-    int g_argc;
-    pEntry location;       /* getsym */
-    Symbol symb;	   /* scanner */
+    int g_argc;			/* command line */
     int hide_stack[DISPLAYMAX];
-    struct module {
+    struct {
 	char *name;
 	int hide;
     } module_stack[DISPLAYMAX];
-    unsigned char autoput; /* options */
+    Operator sym;		/* symbol */
+    unsigned char inlining;
+    unsigned char autoput;
     unsigned char autoput_set;
     unsigned char echoflag;
     unsigned char echoflag_set;
+    unsigned char tracegc;
     unsigned char undeferror;
     unsigned char undeferror_set;
-    unsigned char tracegc;
     unsigned char debugging;
     unsigned char ignore;
-    unsigned char statistics;
+    unsigned char overwrite;
+    unsigned char printing;
 } Env;
 
 /* GOOD REFS:
@@ -218,26 +223,20 @@ typedef struct Env {
 */
 
 /* Public procedures: */
-/* interp.c */
-PUBLIC void exeterm(pEnv env, Index n);
-PUBLIC char *nickname(int ch);
-PUBLIC char *opername(int o);
-PUBLIC proc_t operproc(int o);
-PUBLIC int operflags(int o);
-PUBLIC int operindex(pEnv env, proc_t proc);
 /* factor.c */
-PUBLIC int readfactor(pEnv env);	/* read a JOY factor */
-PUBLIC void readterm(pEnv env);
-PUBLIC void writefactor(pEnv env, Index n, FILE *fp);
-PUBLIC void writeterm(pEnv env, Index n, FILE *fp);
+int readfactor(pEnv env, int ch, int *rv);	/* read a JOY factor */
+int readterm(pEnv env, int ch);
+void writefactor(pEnv env, Index n, FILE *fp);
+void writeterm(pEnv env, Index n, FILE *fp);
 #ifdef NOBDW
-PUBLIC void writedump(pEnv env, Index n, FILE *fp);
+void writedump(pEnv env, Index n, FILE *fp);
 #endif
+/* interp.c */
+void exeterm(pEnv env, Index n);
 /* main.c */
-PUBLIC void lookup(pEnv env);
-PUBLIC void enteratom(pEnv env);
-PUBLIC void abortexecution_(int num);
-PUBLIC void execerror(char *str, char *op);
+void abortexecution_(int num);
+void stats(pEnv env);
+void dump(pEnv env);
 /* module.c */
 void savemod(int *hide, int *modl, int *hcnt);
 void undomod(int hide, int modl, int hcnt);
@@ -247,23 +246,34 @@ void stoppriv(void);
 void exitpriv(void);
 void exitmod(void);
 char *classify(pEnv env, char *name);
-pEntry qualify(pEnv env, char *name);
+int qualify(pEnv env, char *name);
+/* optable.c */
+char *nickname(int ch);
+char *opername(int o);
+int operindex(pEnv env, proc_t proc);
+void inisymboltable(pEnv env);	/* initialise */
 /* scan.c */
-PUBLIC void inilinebuffer(pEnv env, char *str);
-PUBLIC void error(pEnv env, char *message);
-PUBLIC void include(pEnv env, char *name);
-PUBLIC void getsym(pEnv env);
+void inilinebuffer(FILE *fp, char *str);
+int getch(pEnv env);
+void ungetch(int ch);
+void error(char *message);
+void execerror(char *str, char *op);
+void include(pEnv env, char *name);
+int getsym(pEnv env, int ch);
+/* symbol.c */
+int lookup(pEnv env, char *name);
+int enteratom(pEnv env, char *name);
+int compound_def(pEnv env, int ch);
+/* undefs.c */
+void hide_inner_modules(pEnv env, int flag);
 /* utils.c */
 #ifdef NOBDW
-PUBLIC void inimem1(pEnv env, int status);
-PUBLIC void inimem2(pEnv env);
-PUBLIC void printnode(pEnv env, Index p);
-PUBLIC void my_gc(pEnv env);
+void inimem1(pEnv env, int status);
+void inimem2(pEnv env);
+void printnode(pEnv env, Index p);
+void my_gc(pEnv env);
 #endif
-PUBLIC Index newnode(pEnv env, Operator o, Types u, Index r);
-PUBLIC void my_memoryindex(pEnv env);
-PUBLIC void my_memorymax(pEnv env);
-/* quit.c */
-void quit_(pEnv env);
-void my_atexit(void (*proc)(pEnv));
+Index newnode(pEnv env, Operator o, Types u, Index r);
+void my_memoryindex(pEnv env);
+void my_memorymax(pEnv env);
 #endif

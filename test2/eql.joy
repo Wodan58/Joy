@@ -1,29 +1,78 @@
 (*
     module  : eql.joy
-    version : 1.5
-    date    : 09/19/23
+    version : 1.7
+    date    : 03/23/24
 *)
 DEFINE 	sum == 0.0 [+] fold;
  	average == [sum] [size] cleave /.
 
+(* sum and average are user defined functions *)
 [sum] first [average] first = false =.
-[pop] first [pop] first =.
+
+(* pop is a builtin function *)
+[sum] first [pop] first = false =.
+
+[sum] first 'A = false =.
+
+(* user defined function compared with its name *)
+[sum] first "sum" =.
+
+(* pop and dup are builtin functions *)
 [pop] first [dup] first = false =.
+
+(* sum is a user defined function *)
+[pop] first [sum] first = false =.
+
+[pop] first 'A = false =.
+
+(* builtin function compared with its name *)
+[pop] first "pop" =.
+
+[pop] first [pop] first =.
+
+(* boolean values *)
 1 true =.
 false 0 =.
+false 0.0 =.
+false [] = false =.
+
+(* characters *)
 65 'A =.
 '@ 64 =.
 '\n 10 =.
 9 '\t =.
+'A 65.0 =.
+'A [] = false =.
+
+(* sets *)
 123456789 {0 2 4 8 10 11 14 15 16 17 19 20 22 24 25 26} =.
 {0 2 4 8 10 11 14 15 16 17 19 20 22 24 25 26} 123456789 =.
-0 [] equal false =.
-[] 0 equal false =.
+{} [] =.
+[] {} =.
+
+(* strings *)
+"sum" [sum] first =.
+"pop" [pop] first =.
+"sum" 'A = false =.
+"sum" "sum" =.
+
+(* lists *)
+0 [] = false =.
+[] 0 = false =.
+[] [] =.
+[] [1 2 3] = false =.
+[1 2 3] dup =.
+[1 2 3] [1 2 3] = false =.
+
+(* floats *)
 1 1.0 =.
 1.0 1 =.
+1.0 "1.0" = false =.
 3.14159 {1 2 3 5 6 9 10 15 16 17 19 20 28 29 30 31 32 35 36 37 38 39 40 45 48
 51 62} =.
         {1 2 3 5 6 9 10 15 16 17 19 20 28 29 30 31 32 35 36 37 38 39 40 45 48
 51 62} 3.14159 =.
-argv stdin equal false =.
-stdin argv equal false =.
+
+(* files *)
+stdin argv = false =.
+stdin stdout = false =.

@@ -1,10 +1,8 @@
 (*
     module  : m21.joy
     version : 1.1
-    date    : 05/16/22
+    date    : 03/21/24
 *)
-1 setundeferror.
-
 HIDE
   a == 1;
   HIDE
@@ -27,11 +25,6 @@ HIDE
                    a == 1;
                    HIDE
                      a == 1;
-                     HIDE
-                       a == 1;
-                     IN
-                       b == a;
-                     END;
                    IN
                      b == a;
                    END;

@@ -1,0 +1,35 @@
+(*
+    module  : m22.joy
+    version : 1.1
+    date    : 03/21/24
+*)
+
+(*
+    Module with PRIVATE section, with forward calling.
+*)
+MODULE m1
+  PRIVATE
+    b == a "b" concat;
+    a == "a"
+  PUBLIC
+    test == b
+.
+
+# should print "ab".
+m1.test.
+
+(*
+    Module with PRIVATE and PUBLIC section, both with forward calling.
+*)
+MODULE m2
+  PRIVATE
+    b == a "b" concat;
+    a == "a"
+  PUBLIC
+    test == B b concat;
+    B == A "B" concat;
+    A == "A"
+.
+
+# should print "ABab"
+m2.test.

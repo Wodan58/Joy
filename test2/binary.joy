@@ -1,7 +1,7 @@
 (*
     module  : binary.joy
-    version : 1.4
-    date    : 09/19/23
+    version : 1.5
+    date    : 03/21/24
 *)
 3 4 5 [+] binary stack [9 3] equal.
 

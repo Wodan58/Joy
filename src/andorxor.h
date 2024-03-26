@@ -1,13 +1,13 @@
 /*
     module  : andorxor.h
-    version : 1.2
-    date    : 02/01/24
+    version : 1.3
+    date    : 03/21/24
 */
 #ifndef ANDORXOR_H
 #define ANDORXOR_H
 
 #define ANDORXOR(PROCEDURE, NAME, OPER1, OPER2)				\
-    PRIVATE void PROCEDURE(pEnv env)					\
+    void PROCEDURE(pEnv env)						\
     {									\
 	TWOPARAMS(NAME);						\
 	SAME2TYPES(NAME);						\

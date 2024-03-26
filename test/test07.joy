@@ -1,8 +1,0 @@
-(*
-    module  : test07.joy
-    version : 1.2
-    date    : 04/11/22
-*)
-MODULE m PUBLIC a == "a".
-MODULE 10 PUBLIC a == "a".
-m.10.

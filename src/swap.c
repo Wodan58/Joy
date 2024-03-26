@@ -1,7 +1,7 @@
 /*
     module  : swap.c
-    version : 1.2
-    date    : 08/13/23
+    version : 1.3
+    date    : 03/21/24
 */
 #ifndef SWAP_C
 #define SWAP_C
@@ -10,7 +10,7 @@
 OK 1220  swap  :  X Y  ->  Y X
 Interchanges X and Y on top of the stack.
 */
-PRIVATE void swap_(pEnv env)
+void swap_(pEnv env)
 {
     TWOPARAMS("swap");
     SAVESTACK;

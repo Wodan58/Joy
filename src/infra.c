@@ -1,7 +1,7 @@
 /*
     module  : infra.c
-    version : 1.3
-    date    : 09/04/23
+    version : 1.4
+    date    : 03/21/24
 */
 #ifndef INFRA_C
 #define INFRA_C
@@ -12,7 +12,7 @@ Using list L1 as stack, executes P and returns a new list L2.
 The first element of L1 is used as the top of stack,
 and after execution of P the top of stack becomes the first element of L2.
 */
-PRIVATE void infra_(pEnv env)
+void infra_(pEnv env)
 {
     TWOPARAMS("infra");
     ONEQUOTE("infra");

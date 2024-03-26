@@ -1,7 +1,7 @@
 /*
     module  : fread.c
-    version : 1.6
-    date    : 01/17/24
+    version : 1.7
+    date    : 03/21/24
 */
 #ifndef FREAD_C
 #define FREAD_C
@@ -11,7 +11,7 @@ OK 1900  fread  :  S I  ->  S L
 [FOREIGN] I bytes are read from the current position of stream S
 and returned as a list of I integers.
 */
-PRIVATE void fread_(pEnv env)
+void fread_(pEnv env)
 {
     unsigned char *buf;
     int64_t count;

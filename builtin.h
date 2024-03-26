@@ -22,6 +22,7 @@ void app4_(pEnv env);
 void argc_(pEnv env);
 void argv_(pEnv env);
 void asin_(pEnv env);
+void assign_(pEnv env);
 void at_(pEnv env);
 void atan_(pEnv env);
 void atan2_(pEnv env);

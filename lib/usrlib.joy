@@ -69,6 +69,6 @@ standard-setting.
 				(* assuming inilib.joy was included:  *)
 "agglib" libload.
 
-DEFINE verbose == true. (* Example of over-riding  inilib.joy *)
+DEFINE verbose == true.		(* Example of over-riding  inilib.joy *)
 
 (* END  usrlib.joy *)

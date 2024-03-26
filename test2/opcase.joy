@@ -1,9 +1,10 @@
 (*
     module  : opcase.joy
-    version : 1.4
-    date    : 09/19/23
+    version : 1.5
+    date    : 03/21/24
 *)
 DEFINE	test == [['A "ischar"]
+		 [dup "isdup"]
 		 [pop "ispop"]
 		 [10 "isinteger"]
 		 ["isother"]] opcase i.

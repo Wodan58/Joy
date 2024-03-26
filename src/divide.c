@@ -1,7 +1,7 @@
 /*
     module  : divide.c
-    version : 1.4
-    date    : 08/13/23
+    version : 1.5
+    date    : 03/21/24
 */
 #ifndef DIVIDE_C
 #define DIVIDE_C
@@ -10,12 +10,12 @@
 OK 1410  /\0divide  :  I J  ->  K
 Integer K is the (rounded) ratio of integers I and J.  Also supports float.
 */
-PRIVATE void divide_(pEnv env)
+void divide_(pEnv env)
 {
-    TWOPARAMS("/");
-    CHECKDIVISOR("/");
+    TWOPARAMS("divide");
+    CHECKDIVISOR("divide");
     FLOAT_I(/);
-    INTEGERS2("/");
+    INTEGERS2("divide");
     BINARY(INTEGER_NEWNODE,
         nodevalue(nextnode1(env->stck)).num / nodevalue(env->stck).num);
 }

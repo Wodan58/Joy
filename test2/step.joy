@@ -1,7 +1,7 @@
 (*
     module  : step.joy
-    version : 1.5
-    date    : 09/19/23
+    version : 1.6
+    date    : 03/21/24
 *)
 0 [1 2 3] [+] step 6 =.
 0 "test" [swap + ord] step 448 =.
@@ -14,3 +14,5 @@
 0 [1 2 3] [] step 3 =.
 0 "test" [] step 't =.
 0 {1 2 3} [] step 3 =.
+
+10 [] step.

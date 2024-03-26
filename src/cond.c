@@ -1,7 +1,7 @@
 /*
     module  : cond.c
-    version : 1.4
-    date    : 09/04/23
+    version : 1.5
+    date    : 03/21/24
 */
 #ifndef COND_C
 #define COND_C
@@ -11,7 +11,7 @@ OK 2690  cond  :  [..[[Bi] Ti]..[D]]  ->  ...
 Tries each Bi. If that yields true, then executes Ti and exits.
 If no Bi yields true, executes default D.
 */
-PRIVATE void cond_(pEnv env)
+void cond_(pEnv env)
 {
     Index my_dump;
     int result = 0;

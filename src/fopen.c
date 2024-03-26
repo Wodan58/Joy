@@ -1,7 +1,7 @@
 /*
     module  : fopen.c
-    version : 1.4
-    date    : 01/17/24
+    version : 1.5
+    date    : 03/21/24
 */
 #ifndef FOPEN_C
 #define FOPEN_C
@@ -12,7 +12,7 @@ OK 1890  fopen  :  P M  ->  S
 (r, w, a, etc.) and stream object S is pushed; if the open fails, file:NULL
 is pushed.
 */
-PRIVATE void fopen_(pEnv env)
+void fopen_(pEnv env)
 {
     TWOPARAMS("fopen");
     STRING("fopen");

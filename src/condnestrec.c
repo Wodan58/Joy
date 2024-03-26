@@ -1,7 +1,7 @@
 /*
     module  : condnestrec.c
-    version : 1.4
-    date    : 09/04/23
+    version : 1.5
+    date    : 03/21/24
 */
 #ifndef CONDNESTREC_C
 #define CONDNESTREC_C
@@ -14,7 +14,7 @@ Each [Ci] is of the form [[B] [R1] [R2] .. [Rn]] and [D] is of the form
 For the case taken, executes each [Ri] but recurses between any two
 consecutive [Ri] (n > 3 would be exceptional.)
 */
-PRIVATE void condnestrecaux(pEnv env)
+void condnestrecaux(pEnv env)
 {
     int result = 0;
     env->dump1 = newnode(env, LIST_, nodevalue(SAVED1), env->dump1);
@@ -40,7 +40,7 @@ PRIVATE void condnestrecaux(pEnv env)
     POP(env->dump1);
 }
 
-PRIVATE void condnestrec_(pEnv env)
+void condnestrec_(pEnv env)
 {
     ONEPARAM("condnestrec");
     LIST("condnestrec");

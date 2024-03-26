@@ -1,7 +1,7 @@
 /*
     module  : unary3.c
-    version : 1.3
-    date    : 09/04/23
+    version : 1.4
+    date    : 03/21/24
 */
 #ifndef UNARY3_C
 #define UNARY3_C
@@ -10,7 +10,7 @@
 OK 2510  unary3  :  X1 X2 X3 [P]  ->  R1 R2 R3
 Executes P three times, with Xi, returns Ri (i = 1..3).
 */
-PRIVATE void unary3_(pEnv env)
+void unary3_(pEnv env)
 { /*  X Y Z [P]  unary3    ==>  X' Y' Z'        */
     FOURPARAMS("unary3");
     ONEQUOTE("unary3");

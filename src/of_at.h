@@ -1,13 +1,13 @@
 /*
     module  : of_at.h
-    version : 1.7
-    date    : 03/05/24
+    version : 1.8
+    date    : 03/21/24
 */
 #ifndef OF_AT_H
 #define OF_AT_H
 
 #define OF_AT(PROCEDURE, NAME, AGGR, INDEX)				\
-    PRIVATE void PROCEDURE(pEnv env)					\
+    void PROCEDURE(pEnv env)						\
     {									\
 	Index n;							\
 	int i, indx;							\

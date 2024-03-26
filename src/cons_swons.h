@@ -1,13 +1,13 @@
 /*
     module  : cons_swons.h
-    version : 1.7
-    date    : 02/01/24
+    version : 1.8
+    date    : 03/21/24
 */
 #ifndef CONS_SWONS_H
 #define CONS_SWONS_H
 
 #define CONS_SWONS(PROCEDURE, NAME, AGGR, ELEM)				\
-    PRIVATE void PROCEDURE(pEnv env)					\
+    void PROCEDURE(pEnv env)						\
     {									\
 	Index temp;							\
 	char *str;							\

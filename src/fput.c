@@ -1,7 +1,7 @@
 /*
     module  : fput.c
-    version : 1.7
-    date    : 01/17/24
+    version : 1.8
+    date    : 03/21/24
 */
 #ifndef FPUT_C
 #define FPUT_C
@@ -10,7 +10,7 @@
 OK 1940  fput  :  S X  ->  S
 [FOREIGN] Writes X to stream S, pops X off stack.
 */
-PRIVATE void fput_(pEnv env)
+void fput_(pEnv env)
 {
     FILE *fp;
     Index node;

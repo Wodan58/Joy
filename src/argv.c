@@ -1,7 +1,7 @@
 /*
     module  : argv.c
-    version : 1.4
-    date    : 09/04/23
+    version : 1.5
+    date    : 03/21/24
 */
 #ifndef ARGV_C
 #define ARGV_C
@@ -10,7 +10,7 @@
 OK 3040  argv  :  ->  A
 Creates an aggregate A containing the interpreter's command line arguments.
 */
-PRIVATE void argv_(pEnv env)
+void argv_(pEnv env)
 {
     int i;
     Index *my_dump;

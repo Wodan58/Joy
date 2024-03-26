@@ -1,7 +1,7 @@
 /*
     module  : first.c
-    version : 1.6
-    date    : 03/05/24
+    version : 1.7
+    date    : 03/21/24
 */
 #ifndef FIRST_C
 #define FIRST_C
@@ -10,7 +10,7 @@
 OK 2030  first  :  A  ->  F
 F is the first member of the non-empty aggregate A.
 */
-PRIVATE void first_(pEnv env)
+void first_(pEnv env)
 {
     int i = 0;
 

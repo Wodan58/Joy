@@ -1,6 +1,6 @@
 (* FILE:   mtrlib.joy *)
 
-"seqlib" libload  "numlib" libload.
+"seqlib" libload. "numlib" libload.
 
 LIBRA
 

@@ -1,7 +1,7 @@
 /*
     module  : sametype.c
-    version : 1.6
-    date    : 03/05/24
+    version : 1.7
+    date    : 03/21/24
 */
 #ifndef SAMETYPE_C
 #define SAMETYPE_C
@@ -10,7 +10,7 @@
 OK 3210  sametype  :  X Y  ->  B
 [EXT] Tests whether X and Y have the same type.
 */
-PRIVATE void sametype_(pEnv env)
+void sametype_(pEnv env)
 {
     int op;
 

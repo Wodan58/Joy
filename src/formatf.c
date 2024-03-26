@@ -1,7 +1,7 @@
 /*
     module  : formatf.c
-    version : 1.6
-    date    : 08/18/23
+    version : 1.7
+    date    : 03/21/24
 */
 #ifndef FORMATF_C
 #define FORMATF_C
@@ -13,7 +13,7 @@ S is the formatted version of F in mode C
 'g or G = general with lower or upper case letters)
 with maximum width I and precision J.
 */
-PRIVATE void formatf_(pEnv env)
+void formatf_(pEnv env)
 {
     int width, prec, leng;
     char spec, format[6], *result;

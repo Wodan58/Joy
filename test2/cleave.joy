@@ -1,7 +1,7 @@
 (*
     module  : cleave.joy
-    version : 1.6
-    date    : 09/20/23
+    version : 1.7
+    date    : 03/21/24
 *)
 DEFINE 	sum == 0.0 [+] fold;
  	average == [dup sum] [size] cleave /.

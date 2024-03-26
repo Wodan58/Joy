@@ -1,7 +1,7 @@
 /*
     module  : cleave.c
-    version : 1.3
-    date    : 09/04/23
+    version : 1.4
+    date    : 03/21/24
 */
 #ifndef CLEAVE_C
 #define CLEAVE_C
@@ -10,7 +10,7 @@
 OK 2580  cleave  :  X [P1] [P2]  ->  R1 R2
 Executes P1 and P2, each with X on top, producing two results.
 */
-PRIVATE void cleave_(pEnv env)
+void cleave_(pEnv env)
 { /*  X [P1] [P2] cleave ==>  X1 X2        */
     THREEPARAMS("cleave");
     TWOQUOTES("cleave");

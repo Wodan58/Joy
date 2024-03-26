@@ -1,7 +1,7 @@
 /*
     module  : treestep.c
-    version : 1.4
-    date    : 09/04/23
+    version : 1.5
+    date    : 03/21/24
 */
 #ifndef TREESTEP_C
 #define TREESTEP_C
@@ -10,7 +10,7 @@
 OK 2870  treestep  :  T [P]  ->  ...
 Recursively traverses leaves of tree T, executes P for each leaf.
 */
-PRIVATE void treestepaux(pEnv env, Index item)
+void treestepaux(pEnv env, Index item)
 {
     if (nodetype(item) != LIST_) {
         GNULLARY(nodetype(item), nodevalue(item));
@@ -25,7 +25,7 @@ PRIVATE void treestepaux(pEnv env, Index item)
     }
 }
 
-PRIVATE void treestep_(pEnv env)
+void treestep_(pEnv env)
 {
     TWOPARAMS("treestep");
     ONEQUOTE("treestep");

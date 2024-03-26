@@ -1,7 +1,7 @@
 /*
     module  : uncons.c
-    version : 1.6
-    date    : 03/05/24
+    version : 1.7
+    date    : 03/21/24
 */
 #ifndef UNCONS_C
 #define UNCONS_C
@@ -10,7 +10,7 @@
 OK 2110  uncons  :  A  ->  F R
 F and R are the first and the rest of non-empty aggregate A.
 */
-PRIVATE void uncons_(pEnv env)
+void uncons_(pEnv env)
 {
     int i = 0;
     char *str;

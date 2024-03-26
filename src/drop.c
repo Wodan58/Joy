@@ -1,7 +1,7 @@
 /*
     module  : drop.c
-    version : 1.8
-    date    : 03/05/24
+    version : 1.9
+    date    : 03/21/24
 */
 #ifndef DROP_C
 #define DROP_C
@@ -10,7 +10,7 @@
 OK 2130  drop  :  A N  ->  B
 Aggregate B is the result of deleting the first N elements of A.
 */
-PRIVATE void drop_(pEnv env)
+void drop_(pEnv env)
 {
     int i, n;
     char *str;

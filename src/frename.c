@@ -1,7 +1,7 @@
 /*
     module  : frename.c
-    version : 1.4
-    date    : 01/17/24
+    version : 1.5
+    date    : 03/21/24
 */
 #ifndef FRENAME_C
 #define FRENAME_C
@@ -11,7 +11,7 @@ OK 1930  frename  :  P1 P2  ->  B
 [FOREIGN] The file system object with pathname P1 is renamed to P2.
 B is a boolean indicating success or failure.
 */
-PRIVATE void frename_(pEnv env)
+void frename_(pEnv env)
 {
     TWOPARAMS("frename");
     STRING("frename");

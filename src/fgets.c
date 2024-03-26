@@ -1,7 +1,7 @@
 /*
     module  : fgets.c
-    version : 1.4
-    date    : 01/17/24
+    version : 1.5
+    date    : 03/21/24
 */
 #ifndef FGETS_C
 #define FGETS_C
@@ -10,7 +10,7 @@
 OK 1880  fgets  :  S  ->  S L
 [FOREIGN] L is the next available line (as a string) from stream S.
 */
-PRIVATE void fgets_(pEnv env)
+void fgets_(pEnv env)
 {
     char *buf;
     size_t leng, size = INPLINEMAX;

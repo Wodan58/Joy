@@ -1,13 +1,13 @@
 /*
     module  : plusminus.h
-    version : 1.2
-    date    : 02/01/24
+    version : 1.3
+    date    : 03/21/24
 */
 #ifndef PLUSMINUS_H
 #define PLUSMINUS_H
 
 #define PLUSMINUS(PROCEDURE, NAME, OPER)				\
-    PRIVATE void PROCEDURE(pEnv env)					\
+    void PROCEDURE(pEnv env)						\
     {									\
 	TWOPARAMS(NAME);						\
 	FLOAT_I(OPER);							\

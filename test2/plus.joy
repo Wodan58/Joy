@@ -1,7 +1,7 @@
 (*
     module  : plus.joy
-    version : 1.6
-    date    : 09/19/23
+    version : 1.7
+    date    : 03/21/24
 *)
 2 3 + 5 =.
 'A 2 + 'C =.

@@ -1,7 +1,7 @@
 /*
     module  : genrecaux.c
-    version : 1.4
-    date    : 02/01/24
+    version : 1.5
+    date    : 03/21/24
 */
 #ifndef GENRECAUX_C
 #define GENRECAUX_C
@@ -11,7 +11,7 @@ OK 3240  #genrec  :  [[B] [T] [R1] R2]  ->  ...
 Executes B, if that yields true, executes T.
 Else executes R1 and then [[[B] [T] [R1] R2] genrec] R2.
 */
-PRIVATE void genrecaux_(pEnv env)
+void genrecaux_(pEnv env)
 {
     Index temp;
     int result;

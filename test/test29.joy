@@ -1,9 +1,0 @@
-(*
-    module  : test29.joy
-    version : 1.4
-    date    : 08/12/23
-*)
-"agglib" libload.
-
-1 50000 from-to-list.	(* segfault *)
-"Back from list\n" putchars.

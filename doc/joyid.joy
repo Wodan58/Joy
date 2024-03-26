@@ -1,6 +1,6 @@
 (*
     This program determines the version of the Joy language processor.
-    The versions to be detected are: Moy, joy1, Joy, the legacy version,
+    The versions to be detected are: Moy, Foy, joy1, Joy, the legacy version,
     joy0, 42minjoy.
 
     Detection is based on features that are part of the language
@@ -11,7 +11,7 @@
     42minjoy accepts numbers in an alternative radix. The default is 2.
 *)
 [&10 2 = [[] [['4'2'm'i'n'j'o'y' 'i's' 'e'x'e'c'u't'i'n'g'.'\010]
-[putch] step]] index i].
+[putch] step]] of i].
 
 (*
     The original joy0 has nullval as builtin.
@@ -25,12 +25,19 @@
 *)
 123.
 DEFINE a == 456.
-[stack size null] ["The Joy with NOBDW is executing.\n" putchars quit] [] ifte.
+[stack size] [] ["The Joy with NOBDW is executing.\n" putchars quit] ifte.
 
 (*
-    Moy lets of/at accept a boolean as index, just like 42minjoy's index.
+    Foy gets symbols as strings.
 *)
-false [["The Moy with yacc parser executing.\n" putchars quit] []] of i.
+get dup.
+EXIT
+["The Foy is executing.\n" putchars quit] [] ifstring.
+
+(*
+    Moy lets of/at accept a character as index, just like 42minjoy.
+*)
+'\001 [[] ["The Moy with yacc parser executing.\n" putchars quit]] of i.
 
 (*
     The legacy version does not allow "true" to be redefined.

@@ -1,6 +1,8 @@
 (*
     module  : fwrite.joy
-    version : 1.5
-    date    : 09/19/23
+    version : 1.7
+    date    : 03/22/24
 *)
 "test" "w" fopen [34 65 66 67 34 10] fwrite fclose.
+$ cat test
+$ rm test

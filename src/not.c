@@ -1,7 +1,7 @@
 /*
     module  : not.c
-    version : 1.2
-    date    : 08/13/23
+    version : 1.3
+    date    : 03/21/24
 */
 #ifndef NOT_C
 #define NOT_C
@@ -10,7 +10,7 @@
 OK 1370  not  :  X  ->  Y
 Y is the complement of set X, logical negation for truth values.
 */
-PRIVATE void not_(pEnv env)
+void not_(pEnv env)
 {
     ONEPARAM("not");
     switch (nodetype(env->stck)) {

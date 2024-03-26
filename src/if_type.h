@@ -1,13 +1,13 @@
 /*
     module  : if_type.h
-    version : 1.3
-    date    : 02/01/24
+    version : 1.4
+    date    : 03/21/24
 */
 #ifndef IF_TYPE_H
 #define IF_TYPE_H
 
 #define IF_TYPE(PROCEDURE, NAME, TYP)					\
-    PRIVATE void PROCEDURE(pEnv env)					\
+    void PROCEDURE(pEnv env)						\
     {									\
 	THREEPARAMS(NAME);						\
 	TWOQUOTES(NAME);						\

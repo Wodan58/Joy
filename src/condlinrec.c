@@ -1,7 +1,7 @@
 /*
     module  : condlinrec.c
-    version : 1.4
-    date    : 09/04/23
+    version : 1.5
+    date    : 03/21/24
 */
 #ifndef CONDLINREC_C
 #define CONDLINREC_C
@@ -15,7 +15,7 @@ Subsequent case are ignored. If no B yields true, then [D] is used.
 It is then of the form [[T]] or [[R1] [R2]]. For the former, executes T.
 For the latter executes R1, recurses, executes R2.
 */
-PRIVATE void condlinrecaux(pEnv env)
+void condlinrecaux(pEnv env)
 {
     int result = 0;
     env->dump1 = newnode(env, LIST_, nodevalue(SAVED1), env->dump1);
@@ -45,7 +45,7 @@ PRIVATE void condlinrecaux(pEnv env)
     POP(env->dump1);
 }
 
-PRIVATE void condlinrec_(pEnv env)
+void condlinrec_(pEnv env)
 {
     ONEPARAM("condlinrec");
     LIST("condlinrec");

@@ -1,9 +1,0 @@
-(*
-    module  : test09.joy
-    version : 1.2
-    date    : 04/11/22
-*)
-LIBRA a .
-[ 1 2 3 .
-"test" include .
-1 2 3 .

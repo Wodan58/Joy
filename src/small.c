@@ -1,7 +1,7 @@
 /*
     module  : small.c
-    version : 1.6
-    date    : 03/05/24
+    version : 1.7
+    date    : 03/21/24
 */
 #ifndef SMALL_C
 #define SMALL_C
@@ -10,7 +10,7 @@
 OK 2210  small  :  X  ->  B
 Tests whether aggregate X has 0 or 1 members, or numeric 0 or 1.
 */
-PRIVATE void small_(pEnv env)
+void small_(pEnv env)
 {
     int i = 0, small = 0;
 

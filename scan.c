@@ -1,163 +1,172 @@
-/* FILE: scan.c */
 /*
- *  module  : scan.c
- *  version : 1.64
- *  date    : 03/05/24
- */
+    module  : scan.c
+    version : 1.67
+    date    : 03/23/24
+*/
 #include "globals.h"
-
-static struct {
-    FILE *fp;
-    int line;
-    char *name;
-} infile[INPSTACKMAX];
-static int ilevel;
-static int linenumber;
-static char linbuf[INPLINEMAX + 2];
-static int linelength, currentcolumn;
-#if 0
-static int errorcount;
-#endif
-static int ch = ' ';
 
 static struct keys {
     char *name;
-    Symbol symb;
+    Operator sym;
 } keywords[] = {
-    { "LIBRA",   LIBRA    },
-    { "DEFINE",  LIBRA    },
-    { "HIDE",    HIDE     },
-    { "IN",      IN       },
-    { "END",     END      },
-    { "MODULE",  MODULE   },
-    { "PRIVATE", JPRIVATE },
-    { "PUBLIC",  JPUBLIC  },
+    { "LIBRA",   LIBRA   },
+    { "DEFINE",  LIBRA   },
+    { "HIDE",    HIDE    },
+    { "IN",      IN__    },
+    { "END",     '.'     },
+    { "MODULE",  MODULE_ },
+    { "PRIVATE", PRIVATE },
+    { "PUBLIC",  PUBLIC  },
+    { "CONST",   CONST_  },
+    { "INLINE",  CONST_  },
     /* possibly other uppers here */
-    { "==",      EQDEF    }
+    { "==",      EQDEF   }
 };
 
+static FILE *srcfile;			/* FILE pointer to input file */
+static char *filenam;			/* name of input file in messages */
+static int linenum, linepos;		/* line number for errors */
+static char linebuf[INPLINEMAX + 1];	/* buffered input line */
+static struct {
+    FILE *fp;
+    int line;
+    char name[FILENAMEMAX + 1];		/* filename in error messages */
+} infile[INPSTACKMAX];
+static int ilevel, startpos;		/* index in infile-structure */
+
 /*
-    inilinebuffer - initialise the stack of input files. The filename parameter
-		    could be used in error messages.
-*/
-PUBLIC void inilinebuffer(pEnv env, char *str)
+ * inilinebuffer - initialise the stack of input files. The filename parameter
+ *		   is used in error messages.
+ */
+void inilinebuffer(FILE *fp, char *str)
 {
-    infile[0].fp = env->srcfile;
-    infile[0].line = 1;
-    infile[0].name = str;
+    infile[0].fp = srcfile = fp;
+    infile[0].line = linenum = 1;
+    strncpy(infile[0].name, str, FILENAMEMAX);
+    filenam = infile[0].name;
 }
 
 /*
-    putline - echo an input line.
-*/
-PRIVATE void putline(pEnv env, FILE *fp, int echo)
+ * getch reads the next character from srcfile.
+ */
+int getch(pEnv env)
 {
-    int i;
+    int ch;
 
-    if (echo) {
-	if (env->echoflag > 2)
-	    fprintf(fp, "%4d", linenumber);
-	if (env->echoflag > 1)
-	    fputc('\t', fp);
-    }
-    for (i = 0; linbuf[i] && linbuf[i] != '\n'; i++)
-	fputc(linbuf[i], fp);
-    fputc('\n', fp);
-}
-
-/*
-    getch - return one character in ch.
-*/
-PRIVATE void getch(pEnv env)
-{
-    int i, echo = 1;
-
-    if (currentcolumn == linelength) {
 again:
-	currentcolumn = linelength = 0;
-	if (linenumber >= 0)
-	    linenumber++;
-	if (fgets(linbuf, INPLINEMAX, env->srcfile)) {
-	    for (i = 0; linbuf[i]; i++)
-		;
-	    linelength = i;
-	} else if (ilevel > 0) {
-	    fclose(infile[ilevel].fp);
-	    infile[ilevel].fp = 0;	/* invalidate file pointer */
-	    env->srcfile = infile[--ilevel].fp;
-	    linenumber = infile[ilevel].line;
-	    echo = 0;			/* do not echo this line again */
-	} else
-	    quit_(env);
-	linbuf[linelength++] = ' ';	/* to help getsym for numbers */
-	linbuf[linelength++] = 0;
-	if (env->echoflag && echo)
-	    putline(env, stdout, 1);	/* echo line to stdout */
-	if (linbuf[0] == SHELLESCAPE) {
-	    if (!env->ignore) {
-		if ((i = system(&linbuf[1])) != 0) {
-		    fflush(stdout);
-		    fprintf(stderr, "system: %d\n", i);
-		}
-	    }
-	    goto again;
-	}
+    if (vec_size(env->pushback)) {
+	ch = vec_pop(env->pushback);
+	return ch;
     }
-    ch = linbuf[currentcolumn++];
+    if ((ch = fgetc(srcfile)) == EOF) {
+	if (!ilevel)
+	    abortexecution_(ABORT_QUIT);
+	fclose(srcfile);
+	srcfile = infile[--ilevel].fp;
+	linenum = infile[ilevel].line;
+	filenam = infile[ilevel].name;
+	goto again;
+    }
+    if (!linepos && ch == SHELLESCAPE) {
+	vec_setsize(env->string, 0);
+	while ((ch = fgetc(srcfile)) != '\n' && ch != EOF)
+	    vec_push(env->string, ch);
+	vec_push(env->string, 0);
+	if (!env->ignore)
+	    if ((ch = system(&vec_at(env->string, 0))) != 0) {
+		fflush(stdout);
+		fprintf(stderr, "system: %d\n", ch);
+	    }
+	vec_setsize(env->string, 0);
+	goto again;
+    }
+    if (ch == '\n') {
+	if (env->echoflag > 2)
+	    printf("%4d", linenum);
+	if (env->echoflag > 1)
+	    putchar('\t');
+	if (env->echoflag)
+	    printf("%.*s\n", linepos, linebuf);	/* echo line */
+	linenum++;
+	linepos = 0;
+    } else if (linepos < INPLINEMAX) {
+	linebuf[linepos++] = ch;
+	linebuf[linepos] = 0;
+    }
+    return ch;
 }
 
 /*
-    endofbuffer - test whether the entire buffer has been processed.
-*/
-PRIVATE int endofbuffer(void)
+ * ungetch unreads a character.
+ */
+void ungetch(int ch)
 {
-    return currentcolumn == linelength;
+    if (ch == '\n')
+	ch = ' ';
+    ungetc(ch, srcfile);
+    linepos--;			/* read too far, push back */
 }
 
 /*
-    error - error processing during source file reads to stderr.
-*/
-PUBLIC void error(pEnv env, char *message)
+ * error prints a message in case of an error.
+ */
+void error(char *str)
 {
     int leng;
 
     fflush(stdout);
-    leng = fprintf(stderr, "%s:%d:", infile[ilevel].name, linenumber);
-    putline(env, stderr, 0); /* line w/o line number to stderr */
-    leng += currentcolumn - 2; /* no tab expansion */
-    fprintf(stderr, "%*s^\n%*s%s\n", leng, "", leng, "", message);
-#if 0
-    errorcount++;
-#endif
+    leng = fprintf(stderr, "%s:%d:", filenam, linenum);
+    leng += fprintf(stderr, "%.*s", linepos, linebuf);	/* echo line */
+    fprintf(stderr, "\n%*s^", --leng, "");		/* caret corrected */
+    fprintf(stderr, "\n%*s%s\n", leng, "", str);	/* message */
 }
 
 /*
-    redirect - read from another file descriptor.
-*/
-PUBLIC void redirect(pEnv env, char *str, FILE *fp)
+ * print a runtime error to stderr and abort execution of the current program.
+ */
+void execerror(char *message, char *op)
 {
-    infile[ilevel].line = linenumber;	/* save last line number and line */
-    if (ilevel + 1 == INPSTACKMAX)	/* increase the include level */
-	execerror("fewer include files", "include");
-    infile[++ilevel].fp = env->srcfile = fp;
-    infile[ilevel].line = linenumber = 0;	/* start with line 0 */
-    infile[ilevel].name = str;		/* switch to new file */
-}
-
-/*
-    include - insert the contents of a file in the input.
-
-    Files are read in the current directory or if that fails from the
-    previous location. If that also fails an error is generated.
-*/
-PUBLIC void include(pEnv env, char *name)
-{
-    /*
-     * mustinclude - determine whether an attempt must be made to include
-     * usrlib.joy
-     */
-    FILE *fp;
+    int leng = 0;
     char *ptr, *str;
+
+    if ((ptr = strrchr(op, '/')) != 0)
+	ptr++;
+    else
+	ptr = op;
+    if ((str = strrchr(ptr, '.')) != 0 && str[1] == 'c')
+	leng = str - ptr;
+    else
+	leng = strlen(ptr);
+    fflush(stdout);
+    fprintf(stderr, "%s:run time error: %s needed for %.*s\n", filenam, message,
+	    leng, ptr);
+    abortexecution_(ABORT_RETRY);
+}
+
+/*
+ * redirect - read from another file descriptor.
+ */
+static void redirect(FILE *fp, char *name)
+{
+    infile[ilevel].line = linenum;		/* save last line number */
+    if (ilevel + 1 == INPSTACKMAX)		/* increase include level */
+	execerror("fewer include files", "include");
+    infile[++ilevel].fp = srcfile = fp;		/* use new file pointer */
+    infile[ilevel].line = linenum = 1;		/* start with line 1 */
+    strncpy(infile[ilevel].name, name, FILENAMEMAX);
+    filenam = infile[ilevel].name;		/* switch to new file */
+}
+
+/*
+ * include - insert the contents of a file in the input.
+ *
+ * Files are read in the current directory or if that fails from the previous
+ * location. If that also fails an error is generated.
+ */
+void include(pEnv env, char *name)
+{
+    FILE *fp;
+    char *path = 0, *str = name;
 
     /*
      * usrlib.joy is tried first in the current directory, then in the home
@@ -165,25 +174,25 @@ PUBLIC void include(pEnv env, char *name)
      *
      * If all of that fails, no harm done.
      */
-    str = name;						/* name copied to str */
     if (!strcmp(name, "usrlib.joy")) {			/* check usrlib.joy */
-	if ((fp = fopen(str, "r")) != 0)
+	if ((fp = fopen(name, "r")) != 0)
 	    goto normal;
-	if ((ptr = getenv("HOME")) != 0) {		/* unix/cygwin */
-	    str = GC_malloc_atomic(strlen(ptr) + strlen(name) + 2);
-	    sprintf(str, "%s/%s", ptr, name);
+	if ((path = getenv("HOME")) != 0) {		/* unix/cygwin */
+	    str = GC_malloc_atomic(strlen(path) + strlen(name) + 2);
+	    sprintf(str, "%s/%s", path, name);
 	    if ((fp = fopen(str, "r")) != 0)
 		goto normal;
 	}
-	if ((ptr = getenv("USERPROFILE")) != 0) {	/* windows */
-	    str = GC_malloc_atomic(strlen(ptr) + strlen(name) + 2);
-	    sprintf(str, "%s/%s", ptr, name);
+	if ((path = getenv("USERPROFILE")) != 0) {	/* windows */
+	    str = GC_malloc_atomic(strlen(path) + strlen(name) + 2);
+	    sprintf(str, "%s/%s", path, name);
 	    if ((fp = fopen(str, "r")) != 0)
 		goto normal;
 	}
-	if (strcmp(env->pathname, ".")) {
-	    str = GC_malloc_atomic(strlen(env->pathname) + strlen(name) + 2);
-	    sprintf(str, "%s/%s", env->pathname, name);
+	path = env->pathname;				/* joy binary */
+	if (strcmp(path, ".")) {
+	    str = GC_malloc_atomic(strlen(path) + strlen(name) + 2);
+	    sprintf(str, "%s/%s", path, name);
 	    if ((fp = fopen(str, "r")) != 0)
 		goto normal;
 	}
@@ -197,23 +206,24 @@ normal:
 	 */
 	if (strrchr(str, '/')) {
 	    env->pathname = GC_strdup(str);
-	    ptr = strrchr(env->pathname, '/');
-	    *ptr = 0;
+	    path = strrchr(env->pathname, '/');
+	    *path = 0;
 	}
-	redirect(env, name, fp);
+	redirect(fp, name);
 	return;
     }
     /*
-     * A file other that usrlib.joy is first tried in the current directory.
+     * A file other than usrlib.joy is tried first in the current directory.
      */
     if ((fp = fopen(name, "r")) != 0)
 	goto normal;
     /*
      * If that fails, the pathname is prepended and the file is tried again.
      */
-    if (strcmp(env->pathname, ".")) {
-	str = GC_malloc_atomic(strlen(env->pathname) + strlen(name) + 2);
-	sprintf(str, "%s/%s", env->pathname, name);
+    path = env->pathname;
+    if (strcmp(path, ".")) {
+	str = GC_malloc_atomic(strlen(path) + strlen(name) + 2);
+	sprintf(str, "%s/%s", path, name);
 	if ((fp = fopen(str, "r")) != 0)
 	    goto normal;
     }
@@ -225,11 +235,13 @@ normal:
 }
 
 /*
-    specialchar - handle character escape sequences.
-*/
-PRIVATE int specialchar(pEnv env)
+ * special reads a character escape sequence.
+ */
+static int special(pEnv env)
 {
-    getch(env);
+    int ch, i, my_num;
+
+    ch = getch(env);
     switch (ch) {
     case 'b':
 	return '\b';
@@ -251,234 +263,189 @@ PRIVATE int specialchar(pEnv env)
 	return '\\';
     default:
 	if (isdigit(ch)) {
-	    int i, num = ch - '0';
+	    my_num = ch - '0';
 	    for (i = 0; i < 2; i++) {
-		getch(env);
+		ch = getch(env);
 		if (!isdigit(ch)) {
-		    currentcolumn++; /* to get pointer OK */
-		    error(env, "digit expected");
-		    currentcolumn--;
+		    error("digit expected");
+		    ungetch(ch);		/* not a digit, push back */
+		    break;
 		}
-		num = 10 * num + ch - '0';
+		my_num = 10 * my_num + ch - '0';
 	    }
-	    return num;
+	    return my_num;
 	}
 	return ch;
     }
 }
 
 /*
-    peek - look at the next character.
-*/
-PRIVATE int peek(void)
+ * getsym reads the next symbol from code or from srcfile. The return value is
+ * the character after the symbol that was read.
+ */
+static int my_getsym(pEnv env, int ch)
 {
-    return linbuf[currentcolumn];
-}
+    static char exclude[] = "\"#'().;[]{}", include[] = "-=_";
+    char *ptr;
+    int i, sign, type;
 
-/*
-    getsym - lexical analyzer, filling env->yylval and returning the token type
-	     in env->symb.
-*/
-PRIVATE void my_getsym(pEnv env)
-{
-    int i = 0, begin, next;
-    char ident[ALEN], string[INPLINEMAX + 2];
-
-    ident[0] = 0;
+    vec_setsize(env->string, 0);
 start:
+    startpos = linepos;		/* start position of a token */
     while (ch <= ' ')
-	getch(env);
+	ch = getch(env);
     switch (ch) {
     case '(':
-	getch(env);
+	ch = getch(env);
 	if (ch == '*') {
-	    getch(env);
+	    ch = getch(env);
 	    do {
 		while (ch != '*')
-		    getch(env);
-		getch(env);
+		    ch = getch(env);
+		ch = getch(env);
 	    } while (ch != ')');
-	    getch(env);
+	    ch = getch(env);
 	    goto start;
 	}
-	env->symb = LPAREN;
-	return;
+	env->sym = '(';
+	return ch;
+
     case '#':
-	currentcolumn = linelength;
-	getch(env);
+	do
+	    ch = getch(env);
+	while (ch != '\n');
 	goto start;
+
     case ')':
-	env->symb = RPAREN;
-	getch(env);
-	return;
     case '[':
-	env->symb = LBRACK;
-	getch(env);
-	return;
     case ']':
-	env->symb = RBRACK;
-	getch(env);
-	return;
     case '{':
-	env->symb = LBRACE;
-	getch(env);
-	return;
     case '}':
-	env->symb = RBRACE;
-	getch(env);
-	return;
     case '.':
-	env->symb = PERIOD;
-	getch(env);
-	return;
     case ';':
-	env->symb = SEMICOL;
-	getch(env);
-	return;
+	env->sym = ch;
+	return getch(env);	/* read past ch */
+
     case '\'':
-	getch(env);
+	ch = getch(env);
 	if (ch == '\\')
-	    ch = specialchar(env);
-	env->yylval.num = ch;
-	env->symb = CHAR_;
-	getch(env);
-	return;
+	    ch = special(env);
+	env->num = ch;
+	env->sym = CHAR_;
+	return getch(env);	/* read past ch */
+
     case '"':
-	getch(env);
-	while (ch != '"' && !endofbuffer()) {
+	ch = getch(env);
+	while (ch != '"') {
 	    if (ch == '\\')
-		ch = specialchar(env);
-	    string[i++] = ch;
-	    getch(env);
+		ch = special(env);
+	    vec_push(env->string, ch);
+	    ch = getch(env);
 	}
-	string[i] = 0;
-	getch(env);
-	env->yylval.str = GC_strdup(string);
-	env->symb = STRING_;
-	return;
-    case '-': /* PERHAPS unary minus */
-    case '0':
-    case '1':
-    case '2':
-    case '3':
-    case '4':
-    case '5':
-    case '6':
-    case '7':
-    case '8':
-    case '9':
-	if (isdigit(ch) || isdigit(peek())) {
-	    begin = currentcolumn - 1;
-	    if (ch == '-')
-		getch(env);
-	    else if (ch == '0') {
-		if ((next = peek()) == 'x' || next == 'X') {
-		    getch(env);
-		    do
-			getch(env);
-		    while (isxdigit(ch));
-		    goto done;
-		} else if (next >= '1' && next <= '7') {
-		    do
-			getch(env);
-		    while (ch >= '0' && ch <= '7');
-		    goto done;
-		}
-		getch(env);
-		goto first;
-	    }
-	    while (isdigit(ch))
-		getch(env);
-first:
-	    if (ch == '.' && isdigit(peek())) {
-		do
-		    getch(env);
-		while (isdigit(ch));
-		if (ch == 'e' || ch == 'E') {
-		    getch(env);
-		    if (ch == '-' || ch == '+')
-			getch(env);
-		    while (isdigit(ch))
-			getch(env);
-		}
-		env->yylval.dbl = strtod(&linbuf[begin], 0);
-		env->symb = FLOAT_;
-		return;
-	    }
-done:
-	    env->yylval.num = strtoll(&linbuf[begin] +
-				      (linbuf[begin] == '-' ? 1 : 0), 0, 0);
-	    if (env->yylval.num == MAXINT) {
-		env->yylval.dbl = strtod(&linbuf[begin], 0);
-		env->symb = FLOAT_;
-	    } else {
-		if (linbuf[begin] == '-')
-		    env->yylval.num = -env->yylval.num;
-		env->symb = INTEGER_;
-	    }
-	    return;
-	}
-	goto next;
-next:
-    /* ELSE '-' is not unary minus, fall through */
+	vec_push(env->string, 0);
+	env->str = GC_strdup(&vec_at(env->string, 0));
+	env->sym = STRING_;
+	return getch(env);	/* read past " */
+
     default:
-	do {
-	    if (i < ALEN - 1)
-		ident[i++] = ch;
-	    getch(env);
-	} while (isalnum(ch) || strchr("-=_", ch));
-	if (ch == '.') {
-	    next = peek();
-	    if (isalnum(next) || strchr("-=_", next)) {
-		do {
-		    if (i < ALEN - 1)
-			ident[i++] = ch;
-		    getch(env);
-		} while (isalnum(ch) || strchr("-=_", ch));
-	    }
+	vec_push(env->string, ch);
+	sign = ch;		/* possible sign */
+	ch = getch(env);
+	type = isdigit(sign) || (sign == '-' && isdigit(ch));	/* numeric */
+	while (ch > ' ' && !strchr(exclude, ch)) {
+	    vec_push(env->string, ch);
+	    ch = getch(env);
 	}
-	ident[i] = 0;
-	if (isupper((int)ident[1]) || ident[0] == '=')
-	    for (i = 0; i < (int)(sizeof(keywords) / sizeof(keywords[0])); i++)
-		if (!strcmp(ident, keywords[i].name)) {
-		    env->symb = keywords[i].symb;
-		    return;
+	if (ch != '.')
+	    goto done;
+	ch = getch(env);
+	if (type) {
+	    if (!isdigit(ch))	/* test float */
+		goto undo;
+	    type = 2;		/* floating point */
+	} else if (!isalnum(ch) && !strchr(include, ch))	/* member */
+	    goto undo;
+	vec_push(env->string, '.');
+	while (ch > ' ' && !strchr(exclude, ch)) {
+	    vec_push(env->string, ch);
+	    ch = getch(env);
+	}
+	goto done;
+undo:
+	ungetch(ch);		/* read too far, push back */
+	ch = '.';		/* restore full stop */
+done:
+	vec_push(env->string, 0);
+	if (type) {
+	    if (type == 2) {
+		env->dbl = strtod(&vec_at(env->string, 0), &ptr);
+		env->sym = FLOAT_;
+	    } else {
+		if (sign == '-')
+		    env->num = strtoll(&vec_at(env->string, 1), &ptr, 0);
+		else
+		    env->num = strtoll(&vec_at(env->string, 0), &ptr, 0);
+		if (env->num == MAXINT_) {
+		    env->dbl = strtod(&vec_at(env->string, 0), &ptr);
+		    env->sym = FLOAT_;
+		} else {
+		    if (sign == '-')
+			env->num = -env->num;
+		    env->sym = INTEGER_;
 		}
-	env->yylval.str = GC_strdup(ident);
-	env->symb = ATOM;
+	    }
+	    if (*ptr) {
+		vec_push(env->pushback, ch);
+		for (i = strlen(ptr) - 1; i >= 0; i--)
+		    vec_push(env->pushback, ptr[i]);
+		return getch(env);
+	    }
+	    return ch;
+	}
+	type = vec_at(env->string, 1);
+	if (isupper(type) || type == '=') {
+	    type = sizeof(keywords) / sizeof(keywords[0]);
+	    for (sign = 0; sign < type; sign++)
+		if (!strcmp(&vec_at(env->string, 0), keywords[sign].name)) {
+		    env->sym = keywords[sign].sym;
+		    return ch;
+		}
+	}
+	env->str = GC_strdup(&vec_at(env->string, 0));
+	env->sym = USR_;
+	return ch;
     }
 }
 
-#ifdef TOKENS
-PRIVATE void dumptok(Token tok, int num)
+static void dumptok(pEnv env)
 {
-    printf("%d) ", num);
-    switch (tok.symb) {
-    case CHAR_    : printf("%d", (int)tok.yylval.num);
+    printf("(%d,%d) ", linenum, startpos);
+    switch (env->sym) {
+    case CHAR_    : printf("%d", (int)env->num);
 		    break;
-    case STRING_  : printf("\"%s\"", tok.yylval.str);
+    case STRING_  : printf("\"%s\"", env->str);
 		    break;
-    case FLOAT_   : printf("%g", tok.yylval.dbl);
+    case FLOAT_   : printf("%g", env->dbl);
 		    break;
-    case INTEGER_ : printf("%" PRId64, tok.yylval.num);
+    case INTEGER_ : printf("%" PRId64, env->num);
 		    break;
-    case ATOM     : printf("%s", tok.yylval.str);
+    case USR_     : printf("%s", env->str);
 		    break;
-    case LBRACK   : printf("LBRACK");
+    case '['      : printf("LBRACK");
 		    break;
-    case LBRACE   : printf("LBRACE");
+    case ']'      : printf("RBRACK");
 		    break;
-    case LPAREN   : printf("LPAREN");
+    case '{'      : printf("LBRACE");
 		    break;
-    case RBRACK   : printf("RBRACK");
+    case '}'      : printf("RBRACE");
 		    break;
-    case RPAREN   : printf("RPAREN");
+    case '('      : printf("LPAREN");
 		    break;
-    case RBRACE   : printf("RBRACE");
+    case ')'      : printf("RPAREN");
 		    break;
-    case PERIOD   : printf("PERIOD");
+    case '.'      : printf("PERIOD");
 		    break;
-    case SEMICOL  : printf("SEMICOL");
+    case ';'      : printf("SEMICOL");
 		    break;
     case LIBRA    : printf("LIBRA");
 		    break;
@@ -486,99 +453,120 @@ PRIVATE void dumptok(Token tok, int num)
 		    break;
     case HIDE     : printf("HIDE");
 		    break;
-    case IN       : printf("IN");
+    case IN__     : printf("IN");
 		    break;
-    case END      : printf("END");
+    case MODULE_  : printf("MODULE");
 		    break;
-    case MODULE   : printf("MODULE");
+    case PRIVATE  : printf("PRIVATE");
 		    break;
-    case JPRIVATE : printf("PRIVATE");
+    case PUBLIC   : printf("PUBLIC");
 		    break;
-    case JPUBLIC  : printf("PUBLIC");
+    case CONST_   : printf("CONST");
 		    break;
     }
     printf("\n");
 }
-#endif
 
 /*
-    Push a symbol into the tokenlist.
-*/
-static void push_symb(pEnv env)
+ * push_sym - push a symbol into the tokenlist.
+ */
+static void push_sym(pEnv env)
 {
-    Token tok;
+    Node node;
 
-    tok.symb = env->symb;
-    tok.yylval = env->yylval;
-    vec_push(env->tokens, tok);
+    node.op = env->sym;
+    switch (node.op) {
+    case CHAR_:
+    case INTEGER_:
+	node.u.num = env->num;
+	break;
+    case FLOAT_:
+	node.u.dbl = env->dbl;
+	break;
+    case STRING_:
+    case USR_:
+	node.u.str = env->str;
+	break;
+    }
+    vec_push(env->tokens, node);
 }
 
 /*
-    getsym - wrapper around my_getsym, storing tokens read, reading from the
-	     store or just calling my_getsym itself. This allows tokens to be
-	     read twice.
-
-    After reading MODULE or JPRIVATE, read all tokens upto END, and include
-    them in the tokenlist. All symbols preceding "==" are declared.
-*/
-PUBLIC void getsym(pEnv env)
+ * getsym - wrapper around my_getsym, storing tokens read, reading from the
+ *	    store or just calling my_getsym itself. This allows tokens to be
+ *	    read twice.
+ *
+ * After reading MODULE or PRIVATE, read all tokens upto END, and include them
+ * in the tokenlist. All symbols preceding "==" are declared.
+ */
+int getsym(pEnv env, int ch)
 {
-    Token tok;
+    Node node;
     int module = 0, private = 0, hide = 0, modl = 0, hcnt = 0;
 
 /*
-    If there is a tokenlist, extract tokens from there.
-*/
+ * If there is a tokenlist, extract tokens from there.
+ */
     if (vec_size(env->tokens)) {
-	tok = vec_pop(env->tokens);
-#ifdef TOKENS
-	dumptok(tok, 1); /* tokens from the first pop */
-#endif
-	env->symb = tok.symb;
-	env->yylval = tok.yylval;
-	return;
+begin:
+	node = vec_pop(env->tokens);
+	env->sym = node.op;
+	switch (node.op) {
+	case CHAR_:
+	case INTEGER_:
+	    env->num = node.u.num;
+	    break;
+	case FLOAT_:
+	    env->dbl = node.u.dbl;
+	    break;
+	case STRING_:
+	case USR_:
+	    env->str = node.u.str;
+	    break;
+	}
+	if (env->printing)
+	    dumptok(env);	/* tokens from the tokenlist */
+	return ch;
     }
 /*
-    There is no tokenlist, use the normal procedure to get one.
-*/
-    my_getsym(env);
+ * There is no tokenlist, use the normal procedure to get one.
+ */
+    ch = my_getsym(env, ch);
 /*
-    There is a token available, do some extra processing, in case the token is
-    MODULE or HIDE: MODULE .. END or HIDE .. END.
-*/
-    if (env->symb == MODULE || env->symb == HIDE) {
+ * There is a token available, do some extra processing, in case the token is
+ * MODULE or HIDE: MODULE .. END or HIDE .. END.
+ */
+    if (env->sym == MODULE_ || env->sym == HIDE) {
 /*
-    Copy the global variables of modl.c into local variables.
-*/
-	tok.symb = env->symb;
+ * Copy the global variables of modl.c into local variables.
+ */
+	node.op = env->sym;
 	savemod(&hide, &modl, &hcnt);
 	do {
-	    switch (env->symb) {
-	    case MODULE	  : push_symb(env);
-			    my_getsym(env);
-			    if (env->symb == ATOM) {
-				initmod(env, env->yylval.str);
+	    switch (env->sym) {
+	    case MODULE_  : push_sym(env);
+			    ch = my_getsym(env, ch);
+			    if (env->sym == USR_) {
+				initmod(env, env->str);
 				module++;
 			    } else
-				error(env, "atom expected as name of module");
+				error("atom expected as name of module");
 			    break;
 	    case HIDE	  :
-	    case JPRIVATE : initpriv(env);
+	    case PRIVATE  : initpriv(env);
 			    if (!module)
 				private++;
 			    break;
-	    case IN	  :
-	    case JPUBLIC  : stoppriv();
+	    case IN__	  :
+	    case PUBLIC   : stoppriv();
 			    break;
-	    case EQDEF	  : if (tok.symb == ATOM) {
-				if (strchr(env->yylval.str, '.') == 0)
-				    env->yylval.str = classify(env,
-							       env->yylval.str);
-				enteratom(env);
+	    case EQDEF	  : if (node.op == USR_) {
+				if (!strchr(env->str, '.'))
+				    env->str = classify(env, env->str);
+				enteratom(env, env->str);
 			    }
 			    break;
-	    case PERIOD	  :
-	    case END	  : if (module) {
+	    case '.'	  : if (module) {
 				exitmod();
 				module--;
 			    } else if (private) {
@@ -586,36 +574,27 @@ PUBLIC void getsym(pEnv env)
 				private--;
 			    }
 			    if (!module && !private)
-				goto done;
+				goto einde;
 			    break;
 	    }
-	    tok.symb = env->symb; /* previous symbol */
-	    push_symb(env);
-	    my_getsym(env);
+	    node.op = env->sym;	/* previous symbol */
+	    push_sym(env);
+	    ch = my_getsym(env, ch);
 	} while (1);
 /*
-    Restore the global variables in module.c from the local copies.
-*/
-done:	undomod(hide, modl, hcnt);
-	push_symb(env); /* store the last symbol that was read */
-	push_symb(env); /* extra sym for the benefit of reverse */
+ * Restore the global variables in module.c from the local copies.
+ */
+einde:	undomod(hide, modl, hcnt);
+	push_sym(env);		/* store the last symbol that was read */
+	push_sym(env);		/* extra sym for the benefit of reverse */
 	vec_reverse(env->tokens);
     }
 /*
-    If there is a tokenlist, extract tokens from there.
-*/
-    if (vec_size(env->tokens)) {
-	tok = vec_pop(env->tokens);
-#ifdef TOKENS
-	dumptok(tok, 2); /* tokens from the second pop */
-#endif
-	env->symb = tok.symb;
-	env->yylval = tok.yylval;
-    } else {
-#ifdef TOKENS
-	tok.symb = env->symb;
-	tok.yylval = env->yylval;
-	dumptok(tok, 3); /* there was no value popped */
-#endif
-    }
+ * If there is a tokenlist, extract tokens from there.
+ */
+    if (vec_size(env->tokens))
+	goto begin;
+    if (env->printing)
+	dumptok(env);		/* tokens read directly */
+    return ch;
 }

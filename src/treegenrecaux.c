@@ -1,7 +1,7 @@
 /*
     module  : treegenrecaux.c
-    version : 1.4
-    date    : 02/01/24
+    version : 1.5
+    date    : 03/21/24
 */
 #ifndef TREEGENRECAUX_C
 #define TREEGENRECAUX_C
@@ -11,7 +11,7 @@ OK 3250  #treegenrec  :  T [[O1] [O2] C]  ->  ...
 T is a tree. If T is a leaf, executes O1.
 Else executes O2 and then [[[O1] [O2] C] treegenrec] C.
 */
-PRIVATE void treegenrecaux_(pEnv env)
+void treegenrecaux_(pEnv env)
 {
     Index temp;
 

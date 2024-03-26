@@ -1,7 +1,7 @@
 /*
     module  : ifte.c
-    version : 1.3
-    date    : 09/04/23
+    version : 1.4
+    date    : 03/21/24
 */
 #ifndef IFTE_C
 #define IFTE_C
@@ -10,7 +10,7 @@
 OK 2600  ifte  :  [B] [T] [F]  ->  ...
 Executes B. If that yields true, then executes T else executes F.
 */
-PRIVATE void ifte_(pEnv env)
+void ifte_(pEnv env)
 {
     int result;
     THREEPARAMS("ifte");

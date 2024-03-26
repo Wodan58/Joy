@@ -1,7 +1,7 @@
 /*
     module  : unswons.c
-    version : 1.6
-    date    : 03/05/24
+    version : 1.7
+    date    : 03/21/24
 */
 #ifndef UNSWONS_C
 #define UNSWONS_C
@@ -10,7 +10,7 @@
 OK 2120  unswons  :  A  ->  R F
 R and F are the rest and the first of non-empty aggregate A.
 */
-PRIVATE void unswons_(pEnv env)
+void unswons_(pEnv env)
 {
     int i = 0;
     char *str;

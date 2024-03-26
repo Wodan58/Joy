@@ -1,13 +1,13 @@
 /*
     module  : maxmin.h
-    version : 1.2
-    date    : 02/01/24
+    version : 1.3
+    date    : 03/21/24
 */
 #ifndef MAXMIN_H
 #define MAXMIN_H
 
 #define MAXMIN(PROCEDURE, NAME, OPER)					\
-    PRIVATE void PROCEDURE(pEnv env)					\
+    void PROCEDURE(pEnv env)						\
     {									\
 	TWOPARAMS(NAME);						\
 	if (FLOATABLE2) {						\

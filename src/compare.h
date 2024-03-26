@@ -1,12 +1,12 @@
 /*
     module  : compare.h
-    version : 1.16
-    date    : 03/05/24
+    version : 1.17
+    date    : 03/21/24
 */
 #ifndef COMPARE_H
 #define COMPARE_H
 
-PUBLIC int Compare(pEnv env, Index first, Index second)
+int Compare(pEnv env, Index first, Index second)
 {
     FILE *fp1, *fp2;
     int type1, type2;

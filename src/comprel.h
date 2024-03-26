@@ -1,13 +1,13 @@
 /*
     module  : comprel.h
-    version : 1.7
-    date    : 02/01/24
+    version : 1.8
+    date    : 03/21/24
 */
 #ifndef COMPREL_H
 #define COMPREL_H
 
 #define COMPREL(PROCEDURE, NAME, CONSTRUCTOR, OPR, SETCMP)		\
-    PRIVATE void PROCEDURE(pEnv env)					\
+    void PROCEDURE(pEnv env)						\
     {									\
 	uint64_t i, j;							\
 	int comp = 0;							\

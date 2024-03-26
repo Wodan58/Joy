@@ -1,7 +1,7 @@
 (*
     module  : dip.joy
-    version : 1.4
-    date    : 09/19/23
+    version : 1.5
+    date    : 03/21/24
 *)
 2 3 4 [+] dip stack [4 5] equal.
 
