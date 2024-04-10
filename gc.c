@@ -1,7 +1,7 @@
 /*
     module  : gc.c
-    version : 1.40
-    date    : 02/12/24
+    version : 1.43
+    date    : 04/10/24
 */
 #include <stdio.h>
 #include <string.h>
@@ -156,7 +156,7 @@ static void mem_exit(void)
 /*
     Initialise gc memory.
 */
-void GC_INIT()
+void GC_INIT(void)
 {
 #ifdef SCAN_BSS_MEMORY
     init_heap();
@@ -296,7 +296,7 @@ static void remind(char *ptr, size_t size, int flags)
 */
 static void *mem_block(size_t size, int f)
 {
-    void *ptr;
+    void *ptr = 0;
 
     if (size > MAX_SIZE || (ptr = malloc(size)) == 0)
 	mem_fatal();
@@ -329,6 +329,7 @@ void *GC_malloc(size_t size)
     Update the size of a memory block.
 */
 #ifdef USE_GC_REALLOC
+#if 0
 static void update(void *ptr, size_t size)
 {
     khiter_t key;
@@ -336,6 +337,7 @@ static void update(void *ptr, size_t size)
     if ((key = kh_get(Backup, MEM, (uint64_t)ptr)) != kh_end(MEM))
 	kh_value(MEM, key).size = size;
 }
+#endif
 
 /*
     Forget about a memory block and return its flags.
@@ -358,15 +360,14 @@ static unsigned char forget(void *ptr)
 void *GC_realloc(void *old, size_t size)
 {
     void *ptr;
+    unsigned char flags;
 
     if (!old)
 	return GC_malloc(size);
+    flags = forget(old);
     if ((ptr = realloc(old, size)) == 0)
 	mem_fatal();
-    if (ptr == old)
-	update(ptr, size);
-    else
-	remind(ptr, size, forget(old));
+    remind(ptr, size, flags);
     return ptr;
 }
 #endif
