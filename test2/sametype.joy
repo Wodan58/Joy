@@ -1,11 +1,8 @@
 (*
     module  : sametype.joy
-    version : 1.6
-    date    : 03/21/24
+    version : 1.7
+    date    : 04/15/24
 *)
-DEFINE 	sum == 0.0 [+] fold;
- 	average == [sum] [size] cleave /.
-
 [sum] first [average] first sametype.
 [pop] first [pop] first sametype.
 [pop] first [dup] first sametype false =.

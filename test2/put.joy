@@ -1,18 +1,17 @@
 (*
     module  : put.joy
-    version : 1.4
-    date    : 03/21/24
+    version : 1.5
+    date    : 04/15/24
 *)
-DEFINE	last == dup rest null [first] [rest last] branch;
-	nl == '\n putch.
+DEFINE	last == dup rest null [first] [rest last] branch.
 
-[pop] first put nl.
-[last] first put nl.
-true put nl.
-'A put nl.
-10 put nl.
-{1 2 3} put nl.
-"test" put nl.
-[1 2 3] put nl.
-3.14 put nl.
-stdin put nl.
+[pop] first putln.
+[last] first putln.
+true putln.
+'A putln.
+10 putln.
+{1 2 3} putln.
+"test" putln.
+[1 2 3] putln.
+3.14 putln.
+stdin putln.

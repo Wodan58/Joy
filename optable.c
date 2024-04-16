@@ -1,7 +1,7 @@
 /*
  *  module  : optable.c
- *  version : 1.2
- *  date    : 03/22/24
+ *  version : 1.3
+ *  date    : 04/11/24
  */
 #include "globals.h"
 
@@ -264,6 +264,7 @@
 #include "src/andorxor.h"
 #include "src/bfloat.h"
 #include "src/comprel.h"
+#include "src/comprel2.h"
 #include "src/cons_swons.h"
 #include "src/dipped.h"
 #include "src/fileget.h"
@@ -328,6 +329,9 @@ static struct {
 
 {OK,	" file type",		id_,	    "->  FILE:",
 "The type of references to open I/O streams,\ntypically but not necessarily files.\nThe only literals of this type are stdin, stdout, and stderr."},
+
+{OK,	" bignum type",		id_,	    "->  F",
+"The type of arbitrary precision floating-point numbers.\nLiterals of this type are written with embedded decimal points (like 1.2)\nand optional exponent specifiers (like 1.5E2)."},
 
 #include "table.c"	/* the rest of optable */
 };

@@ -35,6 +35,13 @@ Build instructions
     cmake ..
     cmake --build .
 
+    cp ../lib/usrlib.joy ~
+    mkdir ~/usrlib
+    cp ../lib/* ~/usrlib
+
+Then manually change the path to inilib.joy in ~/usrlib.joy
+from "../lib" to "usrlib".
+
 Build with MSVC
 ---------------
 
@@ -68,7 +75,8 @@ Testing
     done
     grep -l false *.out
 
-There are some false positives.
+There are some false positives. The test files assume that usrlib.joy was
+included successfully.
 
 See also
 --------

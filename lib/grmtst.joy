@@ -2,15 +2,6 @@
 
 "\ntesting the grammar library in file  grmlib.joy\n\n" putchars.
 
-(*
-DEFINE old_in == in;
-           in == [[string] [pop false]] dip [old_in] cons ifte.
-*)
-(*
-DEFINE old_in == in;
-           in == _in.
-*)
-
 "grmlib" libload.
 0 __settracegc.
 1 setecho.

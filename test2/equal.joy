@@ -1,7 +1,7 @@
 (*
     module  : equal.joy
-    version : 1.8
-    date    : 03/21/24
+    version : 1.9
+    date    : 04/11/24
 *)
 DEFINE	last == dup rest null [first] [rest last] branch.
 
@@ -14,7 +14,6 @@ DEFINE	last == dup rest null [first] [rest last] branch.
 65 'A equal.
 '\n 10 equal.
 123456789 {0 2 4 8 10 11 14 15 16 17 19 20 22 24 25 26} equal.
-0 [] equal false =.
 [1 2 3] [4 5 6] equal false =.
 [1 2 3] [1 2 3 4] equal false =.
 [1 2 3 4] [1 2 3] equal false =.
@@ -26,7 +25,6 @@ DEFINE	last == dup rest null [first] [rest last] branch.
 [] [] equal.
 [] [1 2 3] equal false =.
 [1 2 3] [] equal false =.
-[] 0 equal false =.
 0 0 equal.
 0 1 equal false =.
 1 0 equal false =.

@@ -42,8 +42,8 @@ LIBRA
 	0 0 ;
     put-stats ==
 	"You answered " putchars [put] dip
-	"of the " putchars put
-	"questions correctly.\n\n" putchars;
+	" of the " putchars put
+	" questions correctly.\n\n" putchars;
 
 (* the following assume a "Table Of Contents" definition of the form
 	toc-of-tutorial == [ [ [Q0] "Title" ]

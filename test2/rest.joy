@@ -1,10 +1,11 @@
 (*
     module  : rest.joy
-    version : 1.4
-    date    : 03/21/24
+    version : 1.5
+    date    : 04/11/24
 *)
 [1 2 3] rest [2 3] equal.
 "test" rest "est" =.
 {1 2 3} rest {2 3} =.
 
-'A rest null.
+(* error *)
+'A rest.

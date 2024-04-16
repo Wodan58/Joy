@@ -1,7 +1,7 @@
 /*
     module  : help.h
-    version : 1.4
-    date    : 03/21/24
+    version : 1.5
+    date    : 04/11/24
 */
 #ifndef HELP_H
 #define HELP_H
@@ -15,7 +15,7 @@
 	Entry ent;							\
 	while (i) {							\
 	    ent = vec_at(env->symtab, --i);				\
-	    if (ent.name[0] REL '_' && !isdigit((int)ent.name[0])) {	\
+	    if (strchr("#0123456789_", ent.name[0]) REL 0) {		\
 		name_length = strlen(ent.name) + 1;			\
 		if (column + name_length > HELPLINEMAX) {		\
 		    printf("\n");					\

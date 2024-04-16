@@ -30,7 +30,7 @@ HIDE
     show-put ==
 	pop put newline pop;
     show-put-step ==
-	pop [put] step newline pop;
+	pop [put space] step newline pop;
     show-putchars-step ==
 	pop [putchars] step newline pop;
     show-putchars-sp-step ==
@@ -132,7 +132,7 @@ HIDE
     parse-string-residues ==
 	pop [ succ dup put ": " putchars ] dip [putch] step newline;
     parse-list-residues ==
-	pop [ succ dup put ": " putchars ] dip [put] step newline;
+	pop [ succ dup put ": " putchars ] dip [put space] step newline;
     parse-test == pop pop true or;
     parse-count == # "count" put stack putln
 		 pop pop succ;

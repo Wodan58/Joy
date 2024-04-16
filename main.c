@@ -1,8 +1,8 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.94
- *  date    : 03/23/24
+ *  version : 1.95
+ *  date    : 04/11/24
  */
 
 /*
@@ -130,6 +130,9 @@ static jmp_buf begin;		/* restart with empty program */
 
 char *bottom_of_stack;		/* needed in gc.c */
 
+static void stats(pEnv env);
+static void dump(pEnv env);
+
 /*
  * abort execution and restart reading from srcfile; the stack is not cleared.
  */
@@ -139,10 +142,20 @@ void abortexecution_(int num)
 }
 
 /*
+ * fatal terminates the application with an error message.
+ */
+void fatal(char *str)
+{
+    fflush(stdout);
+    fprintf(stderr, "fatal error: %s\n", str);
+    abortexecution_(ABORT_QUIT);
+}
+
+/*
  * options - print help on startup options and exit: options are those that
  *	     cannot be set from within the language itself.
  */
-static void options()
+static void options(void)
 {
     printf("JOY  -  compiled at %s on %s", __TIME__, __DATE__);
 #ifdef VERS
@@ -167,12 +180,13 @@ static void options()
     printf("  -h : print this help text and exit\n");
     printf("  -i : ignore impure imperative functions\n");
     printf("  -l : do not read usrlib.joy at startup\n");
+    printf("  -n : number nodes at maximum allocation\n");
     printf("  -p : print debug list of tokens\n");
     printf("  -s : dump symbol table after execution\n");
     printf("  -t : print a trace of program execution\n");
     printf("  -u : set the undeferror flag (0,1)\n");
-    printf("  -w : suppress warnings overwrite, arity\n");
-    printf("  -x : print statistics after program end\n");
+    printf("  -w : no warnings: overwriting, arities\n");
+    printf("  -x : print statistics at end of program\n");
 }
 
 /*
@@ -187,11 +201,10 @@ static void opt_unknown(char *exe, int ch)
 static int my_main(int argc, char **argv)
 {
     static unsigned char psdump = 0, pstats = 0;
-    Env env;		/* global variables */
+    Env env;				/* global variables */
     FILE *srcfile;
-    char *filenam;
-    char *ptr, *exe;	/* exe: name of joy binary */
     int i, j, ch, flag;
+    char *filenam, *ptr, *tmp, *exe;	/* exe: name of joy binary */
     unsigned char mustinclude = 1, helping = 0, unknown = 0;
 
     memset(&env, 0, sizeof(env));
@@ -233,50 +246,33 @@ static int my_main(int argc, char **argv)
 	    for (j = 1; argv[i][j]; j++) {
 		switch (argv[i][j]) {
 		case 'a' : ptr = &argv[i][j + 1];
-			   env.autoput = atoi(ptr);	/* numeric payload */
-			   env.autoput_set = 1;
-			   ch = *ptr;			/* first digit */
-			   while (isdigit(ch)) {
-			       j++;			/* point last digit */
-			       ptr++;
-			       ch = *ptr;
-			   }
+			   env.autoput = strtoll(ptr, &tmp, 0);
+			   j += tmp - ptr;
+			   env.autoput_set = 1;		/* disable usrlib.joy */
 			   break;
 		case 'd' : env.debugging = 1; break;
 		case 'e' : ptr = &argv[i][j + 1];
-			   env.echoflag = atoi(ptr);	/* numeric payload */
-			   env.echoflag_set = 1;
-			   ch = *ptr;			/* first digit */
-			   while (isdigit(ch)) {
-			       j++;			/* point last digit */
-			       ptr++;
-			       ch = *ptr;
-			   }
+			   env.echoflag = strtoll(ptr, &tmp, 0);
+			   j += tmp - ptr;
 			   break;
 		case 'g' : ptr = &argv[i][j + 1];
-			   env.tracegc = atoi(ptr);	/* numeric payload */
-			   ch = *ptr;			/* first digit */
-			   while (isdigit(ch)) {
-			       j++;			/* point last digit */
-			       ptr++;
-			       ch = *ptr;
-			   }
+			   env.tracegc = strtoll(ptr, &tmp, 0);
+			   j += tmp - ptr;
 			   break;
 		case 'h' : helping = 1; break;
 		case 'i' : env.ignore = 1; break;
 		case 'l' : mustinclude = 0; break;
+		case 'n' : ptr = &argv[i][j + 1];
+			   env.maxnodes = strtod(ptr, &tmp);
+			   j += tmp - ptr;
+			   break;
 		case 'p' : env.printing = 1; break;
 		case 's' : psdump = 1; break;
 		case 't' : env.debugging = 2; break;
 		case 'u' : ptr = &argv[i][j + 1];
-			   env.undeferror = atoi(ptr);	/* numeric payload */
-			   env.undeferror_set = 1;
-			   ch = *ptr;			/* first digit */
-			   while (isdigit(ch)) {
-			       j++;			/* point last digit */
-			       ptr++;
-			       ch = *ptr;
-			   }
+			   env.undeferror = strtoll(ptr, &tmp, 0);
+			   j += tmp - ptr;
+			   env.undeferror_set = 1;	/* disable usrlib.joy */
 			   break;
 		case 'w' : env.overwrite = 0; break;
 		case 'x' : pstats = 1; break;
@@ -309,11 +305,11 @@ static int my_main(int argc, char **argv)
 	     */
 	    if ((ptr = strrchr(argv[0] = filenam, '/')) != 0) {
 		*ptr++ = 0;
-		argv[0] = filenam = ptr; /* basename */
+		argv[0] = filenam = ptr;	/* basename */
 	    }
 	    for (--argc; i < argc; i++)
 		argv[i] = argv[i + 1];
-	    break;
+	    break;				/* only one filename */
 	} /* end if */
     } /* end for */
     inilinebuffer(srcfile, filenam);
@@ -441,7 +437,7 @@ int main(int argc, char **argv)
 /*
  * print statistics.
  */
-void stats(pEnv env)
+static void stats(pEnv env)
 {
 #ifdef NOBDW
     double perc;
@@ -472,7 +468,7 @@ void stats(pEnv env)
 /*
  * dump the symbol table.
  */
-void dump(pEnv env)
+static void dump(pEnv env)
 {
     int i;
     Entry ent;

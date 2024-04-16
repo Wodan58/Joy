@@ -1,8 +1,8 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.93
- *  date    : 03/24/24
+ *  version : 1.95
+ *  date    : 04/12/24
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -150,7 +150,7 @@ typedef struct Node {
 } Node;
 
 typedef struct Entry {
-    char *name, is_user, flags;
+    char *name, is_user, flags, is_ok;
     union {
 	Index body;
 	proc_t proc;
@@ -161,6 +161,7 @@ KHASH_MAP_INIT_STR(Symtab, int)
 KHASH_MAP_INIT_INT64(Funtab, int)
 
 typedef struct Env {
+    double maxnodes;
     double nodes;		/* statistics */
     double avail;
     double collect;
@@ -198,7 +199,6 @@ typedef struct Env {
     unsigned char autoput;
     unsigned char autoput_set;
     unsigned char echoflag;
-    unsigned char echoflag_set;
     unsigned char tracegc;
     unsigned char undeferror;
     unsigned char undeferror_set;
@@ -223,20 +223,36 @@ typedef struct Env {
 */
 
 /* Public procedures: */
+/* main.c */
+void abortexecution_(int num);
+void fatal(char *str);
+/* interp.c */
+void exeterm(pEnv env, Index n);
+/* scan.c */
+void inilinebuffer(FILE *fp, char *str);
+int getch(pEnv env);
+void ungetch(int ch);
+void error(char *str);
+void execerror(char *message, char *op);
+void include(pEnv env, char *name);
+int getsym(pEnv env, int ch);
+/* utils.c */
+Index newnode(pEnv env, Operator o, Types u, Index r);
+void my_memoryindex(pEnv env);
+void my_memorymax(pEnv env);
+#ifdef NOBDW
+void writedump(pEnv env, Index n, FILE *fp);
+void inimem1(pEnv env, int status);
+void inimem2(pEnv env);
+void printnode(pEnv env, Index p);
+void my_gc(pEnv env);
+#endif
 /* factor.c */
 int readfactor(pEnv env, int ch, int *rv);	/* read a JOY factor */
 int readterm(pEnv env, int ch);
 void writefactor(pEnv env, Index n, FILE *fp);
 void writeterm(pEnv env, Index n, FILE *fp);
-#ifdef NOBDW
 void writedump(pEnv env, Index n, FILE *fp);
-#endif
-/* interp.c */
-void exeterm(pEnv env, Index n);
-/* main.c */
-void abortexecution_(int num);
-void stats(pEnv env);
-void dump(pEnv env);
 /* module.c */
 void savemod(int *hide, int *modl, int *hcnt);
 void undomod(int hide, int modl, int hcnt);
@@ -252,28 +268,10 @@ char *nickname(int ch);
 char *opername(int o);
 int operindex(pEnv env, proc_t proc);
 void inisymboltable(pEnv env);	/* initialise */
-/* scan.c */
-void inilinebuffer(FILE *fp, char *str);
-int getch(pEnv env);
-void ungetch(int ch);
-void error(char *message);
-void execerror(char *str, char *op);
-void include(pEnv env, char *name);
-int getsym(pEnv env, int ch);
 /* symbol.c */
 int lookup(pEnv env, char *name);
 int enteratom(pEnv env, char *name);
 int compound_def(pEnv env, int ch);
 /* undefs.c */
 void hide_inner_modules(pEnv env, int flag);
-/* utils.c */
-#ifdef NOBDW
-void inimem1(pEnv env, int status);
-void inimem2(pEnv env);
-void printnode(pEnv env, Index p);
-void my_gc(pEnv env);
-#endif
-Index newnode(pEnv env, Operator o, Types u, Index r);
-void my_memoryindex(pEnv env);
-void my_memorymax(pEnv env);
 #endif

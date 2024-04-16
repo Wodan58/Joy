@@ -1,7 +1,7 @@
 /*
  *  module  : utils.c
- *  version : 1.30
- *  date    : 03/23/24
+ *  version : 1.31
+ *  date    : 04/09/24
  */
 #include "globals.h"
 
@@ -75,7 +75,7 @@ void printnode(pEnv env, Index p)
 /*
  * Copy a single node from from_space to to_space.
  */
-Index copyone(pEnv env, Index n)
+static Index copyone(pEnv env, Index n)
 {
 #ifdef TRACEGC
     nodesinspected++;
@@ -103,7 +103,7 @@ Index copyone(pEnv env, Index n)
 /*
  * Repeat copying single nodes until done.
  */
-void copyall(pEnv env)
+static void copyall(pEnv env)
 {
     Index scan;
 
@@ -120,8 +120,8 @@ void copyall(pEnv env)
  * Occupancy should be between 70% and 80%. If occupancy drops below 40%,
  * then the next maximum size can be set at 80% of what it was.
  * If occupancy is more than 80%, the next maximum is doubled, up to a limit.
- * If, after garbage collection, the number of live nodes equals UPPER_LIMIT
- * an error is generated. The UPPER_LIMIT prevents an ever increasing heap.
+ * This UPPER_LIMIT prevents that the heap becomes too large. Likewise, the
+ * LOWER_LIMIT prevents that the heap becomes too small.
  */
     if (memoryindex * 100.0 / memorymax < 40) {		/* less than 40% */
 	memorymax *= 0.8;				/* decrease memory */
@@ -135,9 +135,9 @@ void copyall(pEnv env)
 }
 
 #ifdef TRACEGC
-void gc1(pEnv env, char *mess)
+static void gc1(pEnv env, char *mess)
 #else
-void gc1(pEnv env)
+static void gc1(pEnv env)
 #endif
 {
     start_gc_clock = clock();
@@ -172,9 +172,9 @@ void gc1(pEnv env)
 }
 
 #ifdef TRACEGC
-void gc2(pEnv env, char *mess)
+static void gc2(pEnv env, char *mess)
 #else
-void gc2(pEnv env)
+static void gc2(pEnv env)
 #endif
 {
     clock_t this_gc_clock;
@@ -211,6 +211,8 @@ Index newnode(pEnv env, Operator o, Types u, Index r)
     Index p;
     Node node;
 
+    if (env->maxnodes && env->nodes >= env->maxnodes)
+	fatal("memory excedes maxnodes");
     if (vec_size(env->memory) == memorymax) {
 #ifdef TRACEGC
 	gc1(env, "automatic");
@@ -225,8 +227,6 @@ Index newnode(pEnv env, Operator o, Types u, Index r)
 #else
 	gc2(env);
 #endif
-	if (vec_size(env->memory) == UPPER_LIMIT)
-	    execerror("memory", "copying");
     }
     memset(&node, 0, sizeof(Node));
     node.u = u;

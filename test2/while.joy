@@ -1,9 +1,8 @@
 (*
     module  : while.joy
-    version : 1.4
-    date    : 03/21/24
+    version : 1.5
+    date    : 04/15/24
 *)
-DEFINE	prime == 2 [[[dup * >] nullary [rem 0 >] dip and] nullary] [succ]
-	while dup * <.
+"numlib" libload.
 
 19 prime.

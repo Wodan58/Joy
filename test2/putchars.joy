@@ -1,9 +1,9 @@
 (*
     module  : putchars.joy
-    version : 1.5
-    date    : 03/21/24
+    version : 1.6
+    date    : 04/15/24
 *)
-"test" putchars '\n putch.
+"test" putchars newline.
 
 (* cast to bignum, that is printed without enclosing quotes, as desired *)
 "Hello, World" 12 casting.

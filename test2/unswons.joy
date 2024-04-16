@@ -1,7 +1,7 @@
 (*
     module  : unswons.joy
-    version : 1.5
-    date    : 03/21/24
+    version : 1.6
+    date    : 04/11/24
 *)
 [1 2 3] unswons
 1 =.
@@ -15,5 +15,5 @@
 
 [1] unswons 1 =.
 
-[] unstack.
-'A unswons false =.
+(* error *)
+'A unswons.

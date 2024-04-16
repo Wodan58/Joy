@@ -1,7 +1,7 @@
 /*
     module  : formatf.c
-    version : 1.7
-    date    : 03/21/24
+    version : 1.8
+    date    : 04/11/24
 */
 #ifndef FORMATF_C
 #define FORMATF_C
@@ -16,7 +16,7 @@ with maximum width I and precision J.
 void formatf_(pEnv env)
 {
     int width, prec, leng;
-    char spec, format[6], *result;
+    char spec, format[MAXNUM], *result;
 
     FOURPARAMS("formatf");
     INTEGERS2("formatf");

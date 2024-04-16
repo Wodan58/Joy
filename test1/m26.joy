@@ -1,0 +1,27 @@
+(*
+    module  : m26.joy
+    version : 1.1
+    date    : 04/12/24
+*)
+MODULE m3
+  PRIVATE
+    a == "A";
+  PUBLIC
+    c == a "B" concat;
+END
+
+MODULE m1
+  PRIVATE
+    a == "a";
+  PUBLIC
+    MODULE m2
+      PUBLIC
+	b == "b";
+    END;
+    c == m2.b "c" concat;
+END
+
+m3.c.
+m1.a.
+m2.b.
+m1.c.

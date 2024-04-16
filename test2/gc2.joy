@@ -1,17 +1,8 @@
 (*
     module  : gc2.joy
-    version : 1.8
-    date    : 03/21/24
+    version : 1.9
+    date    : 04/15/24
 *)
-DEFINE
-    from-to ==		(*  lo  hi  agg  *)
-	[] cons  [pop pop] swap concat
-	[over over >] swap
-	[ [dup succ] dip ]
-	[cons]
-	linrec;
-    from-to-list == [] from-to.
-
 __memorymax
 1 300 from-to-list pop gc
 __memorymax <.

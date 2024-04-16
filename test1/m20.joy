@@ -1,7 +1,7 @@
 (*
     module  : m20.joy
-    version : 1.1
-    date    : 03/21/24
+    version : 1.2
+    date    : 04/11/24
 *)
 
 (*
@@ -15,7 +15,7 @@ MODULE m1.
 *)
 MODULE m1
   PRIVATE
-.
+END
 
 (*
     Module with empty PUBLIC section.
@@ -23,7 +23,7 @@ MODULE m1
 *)
 MODULE m1
   PUBLIC
-.
+END
 
 (*
     Module with both a PRIVATE and a PUBLIC section that are empty.
@@ -31,7 +31,7 @@ MODULE m1
 MODULE m1
   PRIVATE
   PUBLIC
-.
+END
 
 (*
     Module with a definition in the PRIVATE section.
@@ -39,7 +39,7 @@ MODULE m1
 MODULE m1
   PRIVATE
     a == "a"
-.
+END
 
 (*
     Module with a definition in the PRIVATE section and a PUBLIC section.
@@ -48,49 +48,7 @@ MODULE m1
   PRIVATE
     a == "a"
   PUBLIC
-.
-
-(*
-    Module with a PUBLIC section and forward calling.
-*)
-MODULE m1
-  PUBLIC
-    b == a "b" concat;
-    a == "a"
-.
-
-# should print "ab".
-m1.b.
-
-(*
-    Module with a PRIVATE section and forward calling.
-*)
-MODULE m1
-  PRIVATE
-    b == a "b" concat;
-    a == "a"
-  PUBLIC
-    test == b
-.
-
-# should print "ab".
-m1.test.
-
-(*
-    Module with PRIVATE and PUBLIC section, both with forward calling.
-*)
-MODULE m2
-  PRIVATE
-    b == a "b" concat;
-    a == "a"
-  PUBLIC
-    test == B b concat;
-    B == A "B" concat;
-    A == "A"
-.
-
-# should print "ABab"
-m2.test.
+END
 
 (*
     HIDE section with forward calling.
@@ -100,13 +58,7 @@ HIDE
   a == "a"
 IN
   test == b
-.
+END
 
 # should print "ab"
 test.
-
-# should print an error
-m2.a.
-
-# should print an error
-a.

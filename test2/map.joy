@@ -1,7 +1,7 @@
 (*
     module  : map.joy
-    version : 1.5
-    date    : 03/21/24
+    version : 1.6
+    date    : 04/11/24
 *)
 [1 2 3] [succ] map [2 3 4] equal.
 "test" [succ] map "uftu" =.
@@ -11,8 +11,9 @@
 "test" [] map "test" =.
 {1 2 3} [] map {1 2 3} =.
 
-[] [succ] map [] equal.
+[] [succ] map [] =.
 "" [succ] map "" =.
 {} [succ] map {} =.
 
-'A [] map false =.
+(* error *)
+'A [] map.

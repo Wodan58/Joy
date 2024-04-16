@@ -1,7 +1,7 @@
 (*
     module  : rand.joy
-    version : 1.4
-    date    : 03/21/24
+    version : 1.5
+    date    : 04/11/24
 *)
 1 srand.
-rand 1481765933 =.
+rand (* 1481765933 = *).

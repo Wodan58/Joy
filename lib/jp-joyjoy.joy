@@ -81,7 +81,7 @@ joy0s  ==  (* joy0 with short trace *)
 
 joy0l  == (* joy0 with long trace *)
     newline "joy0l :" putchars newline
-    [ dup put (* long trace *)
+    [ dup put space (* long trace *)
       [ [ joy0l		body		joy0l	 ]
 	[ []				 	 ]
 	[ pop		pop		pop	 ]

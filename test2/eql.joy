@@ -1,11 +1,8 @@
 (*
     module  : eql.joy
-    version : 1.7
-    date    : 03/23/24
+    version : 1.9
+    date    : 04/15/24
 *)
-DEFINE 	sum == 0.0 [+] fold;
- 	average == [sum] [size] cleave /.
-
 (* sum and average are user defined functions *)
 [sum] first [average] first = false =.
 
@@ -34,7 +31,7 @@ DEFINE 	sum == 0.0 [+] fold;
 1 true =.
 false 0 =.
 false 0.0 =.
-false [] = false =.
+false [] =.
 
 (* characters *)
 65 'A =.
@@ -57,11 +54,11 @@ false [] = false =.
 "sum" "sum" =.
 
 (* lists *)
-0 [] = false =.
-[] 0 = false =.
+0 [] =.
+[] 0 =.
 [] [] =.
 [] [1 2 3] = false =.
-[1 2 3] dup =.
+[1 2 3] dup = false =.
 [1 2 3] [1 2 3] = false =.
 
 (* floats *)

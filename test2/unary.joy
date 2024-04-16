@@ -1,9 +1,9 @@
 (*
     module  : unary.joy
-    version : 1.5
-    date    : 03/21/24
+    version : 1.6
+    date    : 04/15/24
 *)
-DEFINE	fib == [1 0] dip [swap [+] unary] times popd.
+"numlib" libload.
 
 10 fib 55 =.
 

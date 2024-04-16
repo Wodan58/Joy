@@ -10,8 +10,8 @@
 (*
     42minjoy accepts numbers in an alternative radix. The default is 2.
 *)
-[&10 2 = [[] [['4'2'm'i'n'j'o'y' 'i's' 'e'x'e'c'u't'i'n'g'.'\010]
-[putch] step]] of i].
+&10 2 = [[] [['4'2'm'i'n'j'o'y' 'i's' 'e'x'e'c'u't'i'n'g'.'\010]
+[putch] step]] of i.
 
 (*
     The original joy0 has nullval as builtin.
@@ -25,19 +25,14 @@
 *)
 123.
 DEFINE a == 456.
-[stack size] [] ["The Joy with NOBDW is executing.\n" putchars quit] ifte.
+[stack size] [] ["Joy with NOBDW is executing.\n" putchars quit] ifte.
 
 (*
     Foy gets symbols as strings.
 *)
 get dup.
 EXIT
-["The Foy is executing.\n" putchars quit] [] ifstring.
-
-(*
-    Moy lets of/at accept a character as index, just like 42minjoy.
-*)
-'\001 [[] ["The Moy with yacc parser executing.\n" putchars quit]] of i.
+["Foy is executing.\n" putchars quit] [] ifstring.
 
 (*
     The legacy version does not allow "true" to be redefined.
@@ -46,6 +41,14 @@ DEFINE true == 0.
 true [] ["The legacy version is executing.\n" putchars quit] [] ifte.
 
 (*
+    Moy uses a flex scanner that is very precise: 00 is parsed as two integers.
+*)
+[] unstack.
+00.
+[stack size null not] ["Moy with yacc parser executing.\n" putchars quit]
+[] ifte.
+
+(*
     No other implementation is known, so it must be joy1 compiled with BDW.
 *)
-"The joy1 with BDW is executing.\n" putchars pop pop.
+"The joy1 with BDW is executing.\n" putchars quit.

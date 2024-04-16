@@ -1,7 +1,7 @@
 /*
     module  : helpdetail.c
-    version : 1.15
-    date    : 03/23/24
+    version : 1.16
+    date    : 04/11/24
 */
 #ifndef HELPDETAIL_C
 #define HELPDETAIL_C
@@ -19,35 +19,42 @@ void helpdetail_(pEnv env)
     ONEPARAM("HELP");
     LIST("HELP");
     printf("\n");
-    n = nodevalue(env->stck).lis;
-    while (n) {
-	if ((op = nodetype(n)) == USR_) {
+    for (n = nodevalue(env->stck).lis; n; n = nextnode1(n)) {
+	switch (op = nodetype(n)) {
+	case USR_:
 	    ent = vec_at(env->symtab, nodevalue(n).ent);
 	    printf("%s  ==\n    ", ent.name);
 	    writeterm(env, ent.u.body, stdout);
 	    printf("\n\n");
-	} else {
-	    if (op == ANON_FUNCT_)    
-		op = operindex(env, nodevalue(n).proc);
-	    else if (op == BOOLEAN_)
-		op = nodevalue(n).num ? operindex(env, true_)
-				      : operindex(env, false_);
-	    else if (op == INTEGER_ && nodevalue(n).num == MAXINT_)
+	    continue;
+
+	case ANON_FUNCT_:
+	    op = operindex(env, nodevalue(n).proc);
+	    break;
+
+	case BOOLEAN_:
+	    op = nodevalue(n).num ? operindex(env, true_)
+				  : operindex(env, false_);
+	    break;
+
+	case INTEGER_:
+	    if (nodevalue(n).num == MAXINT_)
 		op = operindex(env, maxint_);
-	    else if (op == FILE_) {
-		if (nodevalue(n).fil == stdin)
-		    op = operindex(env, stdin_);
-		else if (nodevalue(n).fil == stdout)
-		    op = operindex(env, stdout_);
-		else if (nodevalue(n).fil == stderr)
-		    op = operindex(env, stderr_);
-	    }
-	    printf("%s\t:  %s.\n%s\n", optable[op].name,
-		optable[op].messg1, optable[op].messg2);
-	    if (op <= BIGNUM_)
-		printf("\n");
+	    break;
+
+	case FILE_:
+	    if (nodevalue(n).fil == stdin)
+		op = operindex(env, stdin_);
+	    else if (nodevalue(n).fil == stdout)
+		op = operindex(env, stdout_);
+	    else if (nodevalue(n).fil == stderr)
+		op = operindex(env, stderr_);
+	    break;
 	}
-	n = nextnode1(n);
+	printf("%s\t:  %s.\n%s\n", optable[op].name, optable[op].messg1,
+		optable[op].messg2);
+	if (op <= BIGNUM_)
+	    printf("\n");
     }
     POP(env->stck);
 }

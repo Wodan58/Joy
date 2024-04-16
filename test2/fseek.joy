@@ -1,6 +1,6 @@
 (*
     module  : fseek.joy
-    version : 1.5
-    date    : 03/21/24
+    version : 1.6
+    date    : 04/15/24
 *)
-"fseek.joy" "r" fopen 7 0 fseek not put '\n putch fgets 6 take "module" =.
+"fseek.joy" "r" fopen 7 0 fseek not putln fgets 6 take "module" =.

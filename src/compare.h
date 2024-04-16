@@ -1,10 +1,35 @@
 /*
     module  : compare.h
-    version : 1.17
-    date    : 03/21/24
+    version : 1.18
+    date    : 04/11/24
 */
 #ifndef COMPARE_H
 #define COMPARE_H
+
+int is_null(pEnv env, Index node)
+{
+    switch (nodetype(node)) {
+    case USR_:
+        return !nodevalue(node).ent;
+    case ANON_FUNCT_:
+        return !nodevalue(node).proc;
+    case BOOLEAN_:
+    case CHAR_:
+    case INTEGER_:
+        return !nodevalue(node).num;
+    case SET_:
+        return !nodevalue(node).set;
+    case STRING_:
+        return !*nodevalue(node).str;
+    case LIST_:
+        return !nodevalue(node).lis;
+    case FLOAT_:
+        return !nodevalue(node).dbl;
+    case FILE_:
+        return !nodevalue(node).fil;
+    }
+    return 0;
+}
 
 int Compare(pEnv env, Index first, Index second)
 {
@@ -14,6 +39,8 @@ int Compare(pEnv env, Index first, Index second)
     double dbl1 = 0, dbl2 = 0;
     int64_t num1 = 0, num2 = 0;
 
+    if (is_null(env, first) && is_null(env, second))	/* nothing is unique */
+	return 0;
     type1 = nodetype(first);
     type2 = nodetype(second);
     switch (type1) {
@@ -119,12 +146,9 @@ int Compare(pEnv env, Index first, Index second)
 	case CHAR_:
 	case INTEGER_:
 	case SET_:
+	case FLOAT_:
 	    num2 = nodevalue(second).num;
 	    goto cmpnum;
-	case FLOAT_:
-	    dbl1 = num1;
-	    dbl2 = nodevalue(second).dbl;
-	    goto cmpdbl;
 	default:
 	    return 1; /* unequal */
 	}
@@ -152,19 +176,19 @@ int Compare(pEnv env, Index first, Index second)
 	}
 	break;
     case LIST_:
-	if (type2 == LIST_)
-	    return nodevalue(first).lis != nodevalue(second).lis;
 	return 1; /* unequal */
-	break;
     case FLOAT_:
 	dbl1 = nodevalue(first).dbl;
 	switch (type2) {
 	case BOOLEAN_:
 	case CHAR_:
 	case INTEGER_:
-	case SET_:
 	    dbl2 = nodevalue(second).num;
 	    goto cmpdbl;
+	case SET_:
+	    num1 = nodevalue(first).num;
+	    num2 = nodevalue(second).num;
+	    goto cmpnum;
 	case FLOAT_:
 	    dbl2 = nodevalue(second).dbl;
 	    goto cmpdbl;

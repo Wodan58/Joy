@@ -1,6 +1,6 @@
 (*
     module  : stdout.joy
-    version : 1.4
-    date    : 03/21/24
+    version : 1.5
+    date    : 04/15/24
 *)
-stdout dup put '\n putch file.
+stdout dup putln file.

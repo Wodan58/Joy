@@ -1,11 +1,11 @@
 (*
     module  : uncons.joy
-    version : 1.4
-    date    : 03/21/24
+    version : 1.5
+    date    : 04/11/24
 *)
 [1 2 3] uncons stack [[2 3] 1] equal.
 pop pop "test" uncons stack ["est" 't] equal.
 pop pop {1 2 3} uncons stack [{2 3} 1] equal.
 
-[] unstack.
-'A uncons false =.
+(* error *)
+'A uncons.

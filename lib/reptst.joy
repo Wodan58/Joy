@@ -173,11 +173,11 @@ DEFINE
     steps == "steps: " putchars state putln;
     trace == "trace: " putchars state putln.
 
-3 4 5  fact-fix   i swap put i swap put i swap putln pop.
+3 4 5  fact-fix   i swap put space i swap put space i swap putln pop.
 
-3 4 5  fact-fix-c i swap put i swap put i swap putln steps.
+3 4 5  fact-fix-c i swap put space i swap put space i swap putln steps.
 
-3 4 5  fact-fix-a i swap put i swap put i swap putln trace.
+3 4 5  fact-fix-a i swap put space i swap put space i swap putln trace.
 
 DEFINE
     nfib ==
@@ -218,11 +218,11 @@ DEFINE
 
 4 fact-fix i pop.
 
-[2 5 3 7 6] [a b c] length-fix-a i swap put i swap putln trace.
+[2 5 3 7 6] [a b c] length-fix-a i swap put space i swap putln trace.
 
 6 nfib-fix i pop.
 
-6 nfib-bin [] [[dup put] dip] rep.fix-i i newline pop.
+6 nfib-bin [] [[dup put space] dip] rep.fix-i i newline pop.
 
 DEFINE
     qsort-bin == [small] [] [uncons [>] split] [enconcat] rep.binary;

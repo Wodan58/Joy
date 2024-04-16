@@ -1,7 +1,7 @@
 /*
  *  module  : undefs.c
- *  version : 1.1
- *  date    : 03/23/24
+ *  version : 1.3
+ *  date    : 04/12/24
  */
 #include "globals.h"
 
@@ -9,9 +9,9 @@ void hide_inner_modules(pEnv env, int flag)
 {
     Node node;
     Entry ent;
+    char *name;
     khiter_t key;
-    char *name, *ptr;
-    int i, leng, first = 0, last = 0;
+    int i, leng, last = 0;
 
     /*
      * There are two calls to this function. In the first call, the name of
@@ -30,22 +30,20 @@ void hide_inner_modules(pEnv env, int flag)
     name = env->mod_name;	/* name of module */
     leng = strlen(name);	/* length of name */
     /*
-     * Look in the symbol table for the first and last mention of this name.
-     * Stop looking at the first builtin.
+     * Look in the symbol table for the last mention of this name. The first
+     * may not be present, because private symbols are not stored with the
+     * name of the module.
      */
-    for (i = vec_size(env->symtab) - 1; i >= 0; i--) {
+    for (i = vec_size(env->symtab) - 1; i > 0; i--) {
 	ent = vec_at(env->symtab, i);
-	if (leng > (int)strlen(ent.name))	/* ent.name is too short */
-	    continue;
-	if (ent.name[leng] != '.')		/* ent.name is not a module */
-	    continue;
-	if (!strncmp(name, ent.name, leng)) {
-	    if (!last)
-		last = i;
-	    first = i;				/* found one */
-	}
-	if (!ent.is_user)			/* builtins */
+	if (!ent.is_user || ent.is_ok)		/* builtins or verified ok */
 	    break;
+	if (strchr(ent.name, '.') == 0)		/* ent.name is not a module */
+	    break;
+	if (!last && !strncmp(name, ent.name, leng)) {
+	    last = i;				/* found a public definition */
+	    vec_at(env->symtab, i).is_ok = 1;	/* register as end of module */
+	}					/* continue search for start */
     }
     /*
      * If there are other modules within this range, they should be
@@ -53,11 +51,13 @@ void hide_inner_modules(pEnv env, int flag)
      * table. The module is still present in the symbol table, but cannot be
      * found. Exactly what is needed.
      */
-    for (i = first + 1; i < last; i++) {
+    for (++i; i < last; i++) {
 	ent = vec_at(env->symtab, i);
+	if (ent.is_ok)				/* previous modules are ok */
+	    continue;
 	if (isdigit((int)ent.name[0]))		/* hidden names are ok */
 	    continue;
-	if ((ptr = strchr(ent.name, '.')) == 0)	/* ent.name is not a module */
+	if (strchr(ent.name, '.') == 0)		/* ent.name is not a module */
 	    continue;
 	if (strncmp(name, ent.name, leng)) {	/* an inner module was found */
 	    if ((key = kh_get(Symtab, env->hash, ent.name)) !=
