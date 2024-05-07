@@ -1,7 +1,7 @@
 /*
  *  module  : optable.c
- *  version : 1.3
- *  date    : 04/11/24
+ *  version : 1.4
+ *  date    : 04/29/24
  */
 #include "globals.h"
 
@@ -95,6 +95,9 @@
 #define INTEGER(NAME)							\
     if (nodetype(env->stck) != INTEGER_)				\
     execerror("integer", NAME)
+#define POSITIVEINTEGER(NAME)						\
+    if (nodetype(env->stck) != INTEGER_ || nodevalue(env->stck).num < 0)\
+    execerror("non-negative integer", NAME)
 #define INTEGER2(NAME)							\
     if (nodetype(nextnode1(env->stck)) != INTEGER_)			\
     execerror("integer as second parameter", NAME)
@@ -200,6 +203,7 @@
 #define STRING(NAME)
 #define STRING2(NAME)
 #define INTEGER(NAME)
+#define POSITIVEINTEGER(NAME)
 #define INTEGER2(NAME)
 #define CHARACTER(NAME)
 #define INTEGERS2(NAME)

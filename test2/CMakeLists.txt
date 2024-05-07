@@ -1,7 +1,7 @@
 #
 #   module  : CMakeLists.txt
-#   version : 1.12
-#   date    : 04/11/24
+#   version : 1.13
+#   date    : 05/02/24
 #
 macro(exe9 src)
 add_custom_target(${src}.out ALL
@@ -104,7 +104,6 @@ exe9(gc2)
 exe9(genrec)
 exe9(geql)
 exe9(get)
-exe9(getch)
 exe9(getenv)
 exe9(gmtime)
 exe9(greater)

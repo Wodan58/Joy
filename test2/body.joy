@@ -1,8 +1,6 @@
 (*
     module  : body.joy
-    version : 1.4
-    date    : 03/21/24
+    version : 1.5
+    date    : 04/19/24
 *)
-DEFINE	last == dup rest null [first] [rest last] branch.
-
-[last] first body [dup rest null [first] [rest last] branch] equal.
+[sum] first body [0 [+] fold] equal.

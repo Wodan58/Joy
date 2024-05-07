@@ -1,7 +1,7 @@
 /*
     module  : scan.c
-    version : 1.67
-    date    : 03/23/24
+    version : 1.68
+    date    : 05/02/24
 */
 #include "globals.h"
 
@@ -54,14 +54,14 @@ int getch(pEnv env)
     int ch;
 
 again:
-    if (vec_size(env->pushback)) {
-	ch = vec_pop(env->pushback);
-	return ch;
-    }
+    if (vec_size(env->pushback))
+	return vec_pop(env->pushback);
     if ((ch = fgetc(srcfile)) == EOF) {
 	if (!ilevel)
 	    abortexecution_(ABORT_QUIT);
 	fclose(srcfile);
+	if (env->finclude_busy)
+	    longjmp(env->finclude, 1);	/* back to finclude */
 	srcfile = infile[--ilevel].fp;
 	linenum = infile[ilevel].line;
 	filenam = infile[ilevel].name;

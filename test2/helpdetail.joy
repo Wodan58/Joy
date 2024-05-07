@@ -1,12 +1,10 @@
 (*
     module  : helpdetail.joy
-    version : 1.5
-    date    : 03/22/24
+    version : 1.6
+    date    : 04/19/24
 *)
-DEFINE	last == dup rest null [first] [rest last] branch.
-
 "test" "w" fopen
-[stdin stdout stderr 3.14 [] "" {} 10 'A true maxint helpdetail last dummy]
+[stdin stdout stderr 3.14 [] "" {} 10 'A true maxint helpdetail sum dummy]
 cons helpdetail.
 $ cat test
 $ rm test

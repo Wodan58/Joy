@@ -1,7 +1,7 @@
 #
 #   module  : table.sh
-#   version : 1.5
-#   date    : 08/13/23
+#   version : 1.6
+#   date    : 04/19/24
 #
 #   Generate table.c
 #   The directory needs to be given as parameter.
@@ -49,4 +49,4 @@ do
 	P
   }' <$i
 done | sort >$1/table.c
-touch $1/interp.c
+touch $1/optable.c

@@ -76,7 +76,7 @@ Testing
     grep -l false *.out
 
 There are some false positives. The test files assume that usrlib.joy was
-included successfully.
+loaded successfully.
 
 See also
 --------

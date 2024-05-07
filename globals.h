@@ -1,8 +1,8 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.95
- *  date    : 04/12/24
+ *  version : 1.96
+ *  date    : 05/02/24
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -161,6 +161,7 @@ KHASH_MAP_INIT_STR(Symtab, int)
 KHASH_MAP_INIT_INT64(Funtab, int)
 
 typedef struct Env {
+    jmp_buf finclude;		/* return point in finclude */
     double maxnodes;
     double nodes;		/* statistics */
     double avail;
@@ -184,10 +185,9 @@ typedef struct Env {
 #ifdef NOBDW
     clock_t gc_clock;
     vector(Node) *memory;	/* dynamic memory */
-    Index prog, stck, conts, dump, dump1, dump2, dump3, dump4, dump5;
-#else
-    Node *prog, *stck;
+    Index conts, dump, dump1, dump2, dump3, dump4, dump5;
 #endif
+    Index prog, stck;
     int g_argc;			/* command line */
     int hide_stack[DISPLAYMAX];
     struct {
@@ -206,6 +206,7 @@ typedef struct Env {
     unsigned char ignore;
     unsigned char overwrite;
     unsigned char printing;
+    unsigned char finclude_busy;
 } Env;
 
 /* GOOD REFS:

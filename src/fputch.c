@@ -1,7 +1,7 @@
 /*
     module  : fputch.c
-    version : 1.5
-    date    : 03/21/24
+    version : 1.6
+    date    : 04/29/24
 */
 #ifndef FPUTCH_C
 #define FPUTCH_C
@@ -15,7 +15,7 @@ void fputch_(pEnv env)
     int ch;
 
     TWOPARAMS("fputch");
-    INTEGER("fputch");
+    NUMERICTYPE("fputch");
     ch = nodevalue(env->stck).num;
     POP(env->stck);
     FILE("fputch");

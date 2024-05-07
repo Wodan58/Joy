@@ -1,7 +1,7 @@
 /*
     module  : fput.c
-    version : 1.8
-    date    : 03/21/24
+    version : 1.9
+    date    : 04/27/24
 */
 #ifndef FPUT_C
 #define FPUT_C
@@ -21,6 +21,5 @@ void fput_(pEnv env)
     FILE("fput");
     fp = nodevalue(env->stck).fil;
     writefactor(env, node, fp);
-    putc(' ', fp);
 }
 #endif

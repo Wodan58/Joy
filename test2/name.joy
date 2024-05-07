@@ -1,12 +1,10 @@
 (*
     module  : name.joy
-    version : 1.4
-    date    : 03/21/24
+    version : 1.5
+    date    : 04/19/24
 *)
-DEFINE	last == dup rest null [first] [rest last] branch.
-
 [pop] first name "pop" =.
-[last] first name "last" =.
+[sum] first name "sum" =.
 true name " truth value type" =.
 'A name " character type" =.
 10 name " integer type" =.

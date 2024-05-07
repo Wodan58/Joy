@@ -1,12 +1,10 @@
 (*
     module  : put.joy
-    version : 1.5
-    date    : 04/15/24
+    version : 1.6
+    date    : 04/19/24
 *)
-DEFINE	last == dup rest null [first] [rest last] branch.
-
 [pop] first putln.
-[last] first putln.
+[sum] first putln.
 true putln.
 'A putln.
 10 putln.

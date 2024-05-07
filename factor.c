@@ -1,8 +1,8 @@
 /* FILE: factor.c */
 /*
  *  module  : factor.c
- *  version : 1.30
- *  date    : 03/23/24
+ *  version : 1.31
+ *  date    : 04/19/24
  */
 #include "globals.h"
 
@@ -257,9 +257,11 @@ void writefactor(pEnv env, Index n, FILE *fp)
     case FLOAT_:
 	sprintf(buf, "%g", nodevalue(n).dbl);	/* exponent character is e */
 	if ((ptr = strchr(buf, '.')) == 0) {	/* locate decimal point */
-	    if ((ptr = strchr(buf, 'e')) == 0)  /* locate start of exponent */
-		strcat(buf, ".0");		/* add decimal point and 0 */
-	    else {
+	    if ((ptr = strchr(buf, 'e')) == 0) {/* locate start of exponent */
+		i = buf[strlen(buf) - 1];
+		if (isdigit(i))			/* check digit present */
+		    strcat(buf, ".0");		/* add decimal point and 0 */
+	    } else {
 		strcpy(tmp, ptr);		/* save exponent */
 		sprintf(ptr, ".0%s", tmp);	/* insert decimal point + 0 */
 	    }

@@ -1,8 +1,8 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.95
- *  date    : 04/11/24
+ *  version : 1.96
+ *  date    : 04/19/24
  */
 
 /*
@@ -138,6 +138,7 @@ static void dump(pEnv env);
  */
 void abortexecution_(int num)
 {
+    fflush(stdin);
     longjmp(begin, num);
 }
 
