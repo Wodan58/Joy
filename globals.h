@@ -1,8 +1,8 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.96
- *  date    : 05/02/24
+ *  version : 1.98
+ *  date    : 05/28/24
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -19,24 +19,26 @@
 #include <math.h>
 #include <time.h>
 #include <inttypes.h>
+
+#ifdef _MSC_VER
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>		/* pollute name space as much as possible */
+#include <io.h>			/* also import deprecated POSIX names */
+#pragma warning(disable: 4244 4267 4996)
+#define kh_packed		/* forget about __attribute__ ((packed)) */
+#else
+#include <unistd.h>
+#include <termios.h>
+#include <sys/ioctl.h>
+#endif
+
 #ifndef NOBDW
 #include <gc.h>
 #else
 #include "gc.h"
 #endif
 #include "kvec.h"
-#include "khash.h"
-
-#ifdef _MSC_VER
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <io.h>
-#pragma warning(disable: 4244 4267 4996)
-#else
-#include <unistd.h>
-#include <termios.h>
-#include <sys/ioctl.h>
-#endif
+#include "khashl.h"
 
 #ifdef NOBDW
 #define nodetype(n)  vec_at(env->memory, n).op
@@ -157,8 +159,10 @@ typedef struct Entry {
     } u;
 } Entry;
 
-KHASH_MAP_INIT_STR(Symtab, int)
-KHASH_MAP_INIT_INT64(Funtab, int)
+KHASHL_MAP_INIT(KH_LOCAL, symtab_t, symtab, const char *, int, kh_hash_str,
+		kh_eq_str)
+KHASHL_MAP_INIT(KH_LOCAL, funtab_t, funtab, uint64_t, int, kh_hash_uint64,
+		kh_eq_generic)
 
 typedef struct Env {
     jmp_buf finclude;		/* return point in finclude */
@@ -179,8 +183,8 @@ typedef struct Env {
     vector(char) *pushback;	/* push back buffer */
     vector(Node) *tokens;	/* read ahead table */
     vector(Entry) *symtab;	/* symbol table */
-    khash_t(Symtab) *hash;
-    khash_t(Funtab) *prim;
+    symtab_t *hash;		/* hash tables that index the symbol table */
+    funtab_t *prim;
     Types bucket;		/* used by NEWNODE defines */
 #ifdef NOBDW
     clock_t gc_clock;
@@ -235,7 +239,7 @@ int getch(pEnv env);
 void ungetch(int ch);
 void error(char *str);
 void execerror(char *message, char *op);
-void include(pEnv env, char *name);
+int include(pEnv env, char *name);
 int getsym(pEnv env, int ch);
 /* utils.c */
 Index newnode(pEnv env, Operator o, Types u, Index r);
@@ -268,7 +272,7 @@ int qualify(pEnv env, char *name);
 char *nickname(int ch);
 char *opername(int o);
 int operindex(pEnv env, proc_t proc);
-void inisymboltable(pEnv env);	/* initialise */
+void inisymboltable(pEnv env);			/* initialise */
 /* symbol.c */
 int lookup(pEnv env, char *name);
 int enteratom(pEnv env, char *name);

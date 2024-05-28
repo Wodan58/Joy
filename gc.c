@@ -1,7 +1,7 @@
 /*
     module  : gc.c
-    version : 1.46
-    date    : 04/12/24
+    version : 1.48
+    date    : 05/27/24
 */
 #include <stdio.h>
 #include <string.h>
@@ -10,6 +10,13 @@
 #include <stdint.h>
 #include <setjmp.h>
 #include <signal.h>
+
+/*
+ * khashl.h is not officially supported.
+ */
+#if 0
+#define USE_KHASHL
+#endif
 
 #ifdef _MSC_VER
 #pragma warning(disable: 4267)
@@ -23,26 +30,30 @@
 #include <mach-o/getsect.h>
 #endif
 
+#ifdef USE_KHASHL
+#include "khashl.h"
+#else
 #include "khash.h"
+#endif
 #include "gc.h"
 
 #ifdef _MSC_VER
 #define DOWN_64K	~0xFFFF
-#define PEPOINTER       15
-#define IMAGE_BASE      13
-#define BASE_OF_CODE    11
-#define SIZE_OF_CODE     7
-#define SIZE_OF_DATA     8
-#define SIZE_OF_BSS      9
+#define PEPOINTER	15
+#define IMAGE_BASE	13
+#define BASE_OF_CODE	11
+#define SIZE_OF_CODE	7
+#define SIZE_OF_DATA	8
+#define SIZE_OF_BSS	9
 #endif
 
 #define GC_COLL		0
 #define GC_LEAF		1
 #define GC_MARK		2
 
+#define GROW_FACTOR	2
 #define BSS_ALIGN	4
-#define MIN_ITEMS	4
-#define MAX_ITEMS	2
+#define MAX_ITEMS	10
 
 /*
  * When pointers are aligned at 16 bytes, the lower 4 bits are always zero.
@@ -57,10 +68,18 @@ typedef struct mem_info {
 /*
  * The map contains a pointer as key and mem_info as value.
  */
+#ifdef USE_KHASHL
+KHASHL_MAP_INIT(KH_LOCAL, backup_t, backup, uint64_t, mem_info, HASH_FUNCTION,
+		kh_eq_generic)
+
+static backup_t *MEM;		/* backup of pointers */
+#else
 KHASH_INIT(Backup, uint64_t, mem_info, 1, HASH_FUNCTION, kh_int64_hash_equal)
 
-static khint_t max_items;	/* max. items before gc */
 static khash_t(Backup) *MEM;	/* backup of pointers */
+#endif
+
+static khint_t max_items;	/* max. items before gc */
 static uint64_t lower, upper;	/* heap bounds */
 #ifdef COUNT_COLLECTIONS
 static size_t GC_gc_no;		/* number of garbage collections */
@@ -77,14 +96,14 @@ static uint64_t start_of_text,
 #endif
 
 /*
- * fatal - Report a fatal error and end the program. The message is taken
- *	   from yacc. The function should be present in main.c
+ * fatal - Report a fatal error and end the program. The message is taken from
+ *	   yacc. The function should be present in main.c
  */
 void fatal(char *str);
 
 /*
- * Determine sections of memory. This is highly system dependent and not
- * tested on __APPLE__.
+ * Determine sections of memory. This is highly system dependent and not tested
+ * on __APPLE__.
  */
 #ifdef SCAN_BSS_MEMORY
 static void init_heap(void)
@@ -133,12 +152,16 @@ static void init_heap(void)
 #ifdef FREE_ON_EXIT
 static void mem_exit(void)
 {
-    khiter_t key;
+    khint_t key;
 
-    for (key = kh_begin(MEM); key != kh_end(MEM); key++)
+    for (key = 0; key != kh_end(MEM); key++)
 	if (kh_exist(MEM, key))
 	    free((void *)kh_key(MEM, key));
+#ifdef USE_KHASHL
+    backup_destroy(MEM);
+#else
     kh_destroy(Backup, MEM);
+#endif
 }
 #endif
 
@@ -153,8 +176,12 @@ void GC_INIT(void)
 #ifdef FREE_ON_EXIT
     atexit(mem_exit);
 #endif
+#ifdef USE_KHASHL
+    MEM = backup_init();
+#else
     MEM = kh_init(Backup);
-    max_items = MIN_ITEMS;
+#endif
+    max_items = MAX_ITEMS;
 }
 
 /*
@@ -162,22 +189,26 @@ void GC_INIT(void)
  */
 static void mark_ptr(char *ptr)
 {
-    khiter_t key;
+    khint_t key;
     size_t i, size;
     uint64_t value;
 
     value = (uint64_t)ptr;
     if (value < lower || value >= upper)
 	return;
+#ifdef USE_KHASHL
+    if ((key = backup_get(MEM, value)) != kh_end(MEM)) {
+#else
     if ((key = kh_get(Backup, MEM, value)) != kh_end(MEM)) {
-	if (kh_value(MEM, key).flags & GC_MARK)
+#endif
+	if (kh_val(MEM, key).flags & GC_MARK)
 	    return;
-	kh_value(MEM, key).flags |= GC_MARK;
-	if (kh_value(MEM, key).flags & GC_LEAF)
+	kh_val(MEM, key).flags |= GC_MARK;
+	if (kh_val(MEM, key).flags & GC_LEAF)
 	    return;
-	size = kh_value(MEM, key).size / sizeof(char *);
+	size = kh_val(MEM, key).size / sizeof(char *);
 	for (i = 0; i < size; i++)
-	    mark_ptr(((char **)value)[i]);
+	    mark_ptr(((char **)value)[i]);	/* recursion is suspicious */
     }
 }
 
@@ -213,22 +244,26 @@ static void mark_bss(void)
 #endif
 
 /*
- * Walk registered blocks and free those that have not been marked, unless
- * they are marked as uncollectable.
+ * Walk registered blocks and free those that have not been marked.
  */
 static void scan(void)
 {
-    khiter_t key;
+    khint_t key;
 
-    for (key = kh_begin(MEM); key != kh_end(MEM); key++)
+    for (key = 0; key != kh_end(MEM); key++) {
 	if (kh_exist(MEM, key)) {
-	    if (kh_value(MEM, key).flags & GC_MARK)
-		kh_value(MEM, key).flags &= ~GC_MARK;
+	    if (kh_val(MEM, key).flags & GC_MARK)
+		kh_val(MEM, key).flags &= ~GC_MARK;
 	    else {
 		free((void *)kh_key(MEM, key));
+#ifdef USE_KHASHL
+		backup_del(MEM, key--);	/* delete in kh_foreach is suspicious */
+#else
 		kh_del(Backup, MEM, key);
+#endif
 	    }
 	}
+    }
 }
 
 /*
@@ -257,13 +292,13 @@ void GC_gcollect(void)
 }
 
 /*
- * Register an allocated memory block and garbage collect if there are too
- * many blocks already.
+ * Register an allocated memory block and garbage collect if there are too many
+ * blocks already.
  */
 static void remind(char *ptr, size_t size, int flags)
 {
     int rv;
-    khiter_t key;
+    khint_t key;
     uint64_t value;
 
     value = (uint64_t)ptr;
@@ -271,26 +306,36 @@ static void remind(char *ptr, size_t size, int flags)
 	lower = value;
     if (upper < value + size)
 	upper = value + size;
+#ifdef USE_KHASHL
+    key = backup_put(MEM, value, &rv);
+#else
     key = kh_put(Backup, MEM, value, &rv);
-    kh_value(MEM, key).flags = flags;
-    kh_value(MEM, key).size = size;
+#endif
+    kh_val(MEM, key).flags = flags;
+    kh_val(MEM, key).size = size;
+/*
+ * See if there are already too many items allocated. If yes, trigger the
+ * garbage collector. As the number of items that need to be remembered is
+ * unknown, it is set to twice the number of items that are currently being
+ * used. This allows a 100% growth in the number of items allocated.
+ */
     if (max_items < kh_size(MEM)) {
 	GC_gcollect();
-	max_items = kh_size(MEM) * MAX_ITEMS;
+	max_items = kh_size(MEM) * GROW_FACTOR;
     }
 }
 
 /*
  * Register an allocated memory block. The block is cleared with zeroes.
  */
-static void *mem_block(size_t size, int f)
+static void *mem_block(size_t size, int leaf)
 {
     void *ptr = 0;
 
     if ((ptr = malloc(size)) == 0)
 	fatal("memory exhausted");
     memset(ptr, 0, size);
-    remind(ptr, size, f);
+    remind(ptr, size, leaf);
     return ptr;
 }
 
@@ -320,12 +365,20 @@ void *GC_malloc(size_t size)
  */
 static unsigned char forget(void *ptr)
 {
-    khiter_t key;
+    khint_t key;
     unsigned char flags = 0;
 
+#ifdef USE_KHASHL
+    if ((key = backup_get(MEM, (uint64_t)ptr)) != kh_end(MEM)) {
+#else
     if ((key = kh_get(Backup, MEM, (uint64_t)ptr)) != kh_end(MEM)) {
-	flags = kh_value(MEM, key).flags;
+#endif
+	flags = kh_val(MEM, key).flags;
+#ifdef USE_KHASHL
+	backup_del(MEM, key);
+#else
 	kh_del(Backup, MEM, key);
+#endif
     }
     return flags;
 }
@@ -333,15 +386,14 @@ static unsigned char forget(void *ptr)
 /*
  * Enlarge an already allocated memory block.
  */
-void *GC_realloc(void *old, size_t size)
+void *GC_realloc(void *ptr, size_t size)
 {
-    void *ptr;
     unsigned char flags;
 
-    if (!old)
+    if (!ptr)
 	return GC_malloc(size);
-    flags = forget(old);
-    if ((ptr = realloc(old, size)) == 0)
+    flags = forget(ptr);
+    if ((ptr = realloc(ptr, size)) == 0)
 	fatal("memory exhausted");
     remind(ptr, size, flags);
     return ptr;
@@ -361,24 +413,6 @@ char *GC_strdup(const char *str)
     if ((ptr = GC_malloc_atomic(leng + 1)) != 0)
 	strcpy(ptr, str);
     return ptr;
-}
-#endif
-
-#ifdef USE_GC_GET_HEAP_SIZE
-/*
- * Return the number of bytes that have been freed.
- */
-size_t GC_get_free_bytes(void)
-{
-    return 0;
-}
-
-/*
- * Return the number of bytes allocated.
- */
-size_t GC_get_memory_use(void)
-{
-    return upper - lower;
 }
 #endif
 

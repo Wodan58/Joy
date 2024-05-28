@@ -1,7 +1,7 @@
 /*
     module  : module.c
-    version : 1.12
-    date    : 03/21/24
+    version : 1.13
+    date    : 05/27/24
 */
 #include "globals.h"
 
@@ -160,14 +160,14 @@ char *classify(pEnv env, char *name)
  * is different. If there is a private section active, then the name needs to
  * be searched there and if a module is active then the name needs to be
  * searched there as well. The return value is the result of lookup, or the
- * full name in case the lookup was unsuccesful.
+ * full name in case the lookup was unsuccessful.
  *
  * qualify is used when reading a name, as part of a definition.
  */
 int qualify(pEnv env, char *name)
 {
+    khint_t key;
     size_t leng;
-    khiter_t key;
     int index, limit;
     char temp[MAXNUM], *buf, *str;
 
@@ -177,8 +177,8 @@ int qualify(pEnv env, char *name)
      * name. If the name is not found, there is an error and a 0 is returned.
      */
     if (strchr(name, '.')) {
-	if ((key = kh_get(Symtab, env->hash, name)) != kh_end(env->hash))
-	    return kh_value(env->hash, key);
+	if ((key = symtab_get(env->hash, name)) != kh_end(env->hash))
+	    return kh_val(env->hash, key);
 	else
 	    return 0;
     }
@@ -198,8 +198,8 @@ int qualify(pEnv env, char *name)
 	    leng = strlen(temp) + strlen(name) + 2;
 	    str = GC_malloc_atomic(leng);
 	    sprintf(str, "%s.%s", temp, name);
-	    if ((key = kh_get(Symtab, env->hash, str)) != kh_end(env->hash))
-		return kh_value(env->hash, key);
+	    if ((key = symtab_get(env->hash, str)) != kh_end(env->hash))
+		return kh_val(env->hash, key);
 	}
     }
     /*
@@ -211,15 +211,15 @@ int qualify(pEnv env, char *name)
 	leng = strlen(buf) + strlen(name) + 2;
 	str = GC_malloc_atomic(leng);
 	sprintf(str, "%s.%s", buf, name);
-	if ((key = kh_get(Symtab, env->hash, str)) != kh_end(env->hash))
-	    return kh_value(env->hash, key);
+	if ((key = symtab_get(env->hash, str)) != kh_end(env->hash))
+	    return kh_val(env->hash, key);
     }
     /*
      * if the name is not fully classified, cannot be found in the local tables
      * and also not in the module, it needs to be searched as is. If not found,
      * it is not an error, but simply an undefined name.
      */
-    if ((key = kh_get(Symtab, env->hash, name)) != kh_end(env->hash))
-	return kh_value(env->hash, key);
+    if ((key = symtab_get(env->hash, name)) != kh_end(env->hash))
+	return kh_val(env->hash, key);
     return 0;
 }

@@ -1,7 +1,7 @@
 /*
  *  module  : undefs.c
- *  version : 1.3
- *  date    : 04/12/24
+ *  version : 1.4
+ *  date    : 05/27/24
  */
 #include "globals.h"
 
@@ -10,7 +10,7 @@ void hide_inner_modules(pEnv env, int flag)
     Node node;
     Entry ent;
     char *name;
-    khiter_t key;
+    khint_t key;
     int i, leng, last = 0;
 
     /*
@@ -59,10 +59,8 @@ void hide_inner_modules(pEnv env, int flag)
 	    continue;
 	if (strchr(ent.name, '.') == 0)		/* ent.name is not a module */
 	    continue;
-	if (strncmp(name, ent.name, leng)) {	/* an inner module was found */
-	    if ((key = kh_get(Symtab, env->hash, ent.name)) !=
-			    kh_end(env->hash))
-		kh_del(Symtab, env->hash, key);
-	}
+	if (strncmp(name, ent.name, leng))	/* an inner module was found */
+	    if ((key = symtab_get(env->hash, ent.name)) != kh_end(env->hash))
+		symtab_del(env->hash, key);
     }
 }

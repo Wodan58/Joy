@@ -1,7 +1,7 @@
 /*
     module  : finclude.c
-    version : 1.12
-    date    : 05/02/24
+    version : 1.13
+    date    : 05/27/24
 */
 #ifndef FINCLUDE_C
 #define FINCLUDE_C
@@ -18,7 +18,8 @@ void finclude_(pEnv env)
     STRING("finclude");
     str = nodevalue(env->stck).str;	/* read file name */
     POP(env->stck);			/* remove file name from stack */
-    include(env, str);			/* include new file */
+    if (include(env, str))		/* include new file */
+	return;
     env->finclude_busy = 1;		/* tell scanner about finclude */
     if (setjmp(env->finclude))
 	env->finclude_busy = 0;		/* done with finclude */
