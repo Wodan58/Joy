@@ -1,7 +1,7 @@
 (*
     module  : tut.joy
     version : 1.2
-    date    : 03/11/24
+    date    : 06/11/24
 *)
 111 222 +.
 1 2 + 3 4 + *.
@@ -40,15 +40,13 @@ DEFINE	sum == 0 [+] fold;
 
 DEFINE	putsp == put space putch;
 	newline == '\n putch;
-	putln == put newline.
+	putln == put newline;
+	length == 0 [pop 1 +] fold.
 
 [11 22 33 44 55] uncons uncons putsp putsp putsp newline.
 
 ['a 'b] ['d 'e 'f] concat dup.
 uncons uncons 'c swap cons cons cons dup.
-
-DEFINE	length == 0 [pop 1 +] fold.
-
 dup length.
 reverse length.
 
@@ -85,12 +83,10 @@ DEFINE	square == dup *.
 [1 2 3] 0 [dup * +] fold.
 
 DEFINE	unit == [] cons;
-	construct2 == [[nullary] cons i] map.
+	construct2 == [[nullary] cons i] map;
+	unpair == uncons uncons pop.
 
 11 12 [[+] [*] [pop unit] [dup pair]] construct2.
-
-DEFINE	unpair == uncons uncons pop.
-
 [[pair [square] map unpair +] [pop] []] construct2.
 [] unstack.
 11111.

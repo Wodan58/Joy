@@ -1,21 +1,28 @@
 /*
     module  : casting.c
-    version : 1.4
-    date    : 02/01/24
+    version : 1.2
+    date    : 06/20/24
 */
 #ifndef CASTING_C
 #define CASTING_C
 
 /**
-OK 3140  casting  :  X Y  ->  Z
+OK 3150  casting  :  X Y  ->  Z
 [EXT] Z takes the value from X and uses the value from Y as its type.
 */
 void casting_(pEnv env)
 {
-    Operator op;
+    Node node;
 
     TWOPARAMS("casting");
-    op = nodevalue(env->stck).num;
-    GBINARY(op, nodevalue(nextnode1(env->stck)));
+    node.op = nodevalue(env->stck).num;
+    POP(env->stck);
+    if (node.op == STRING_ || node.op == BIGNUM_)
+	node.u.str = strdup((char *)&nodevalue(env->stck));
+    else
+	node.u = nodevalue(env->stck);
+    env->stck = newnode(env, node.op, node.u, nextnode1(env->stck));
+    if (node.op == STRING_ || node.op == BIGNUM_)
+	free(node.u.str);
 }
 #endif

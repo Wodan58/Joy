@@ -1,7 +1,7 @@
 /*
     module  : strftime.c
-    version : 1.5
-    date    : 03/21/24
+    version : 1.6
+    date    : 06/21/24
 */
 #ifndef STRFTIME_C
 #define STRFTIME_C
@@ -21,13 +21,24 @@ void strftime_(pEnv env)
 
     TWOPARAMS("strftime");
     STRING("strftime");
+#ifdef NOBDW
+    fmt = (char *)&nodevalue(env->stck);
+#else
     fmt = nodevalue(env->stck).str;
+#endif
     POP(env->stck);
     LIST("strftime");
     decode_time(env, &t);
     leng = BUFFERMAX;
+#ifdef NOBDW
+    result = malloc(leng + 1);
+#else
     result = GC_malloc_atomic(leng + 1);
+#endif
     strftime(result, leng, fmt, &t);
     UNARY(STRING_NEWNODE, result);
+#ifdef NOBDW
+    free(result);
+#endif
 }
 #endif

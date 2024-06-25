@@ -1,7 +1,7 @@
 /*
     module  : rollup.c
-    version : 1.3
-    date    : 03/21/24
+    version : 1.4
+    date    : 06/21/24
 */
 #ifndef ROLLUP_C
 #define ROLLUP_C
@@ -14,9 +14,9 @@ void rollup_(pEnv env)
 {
     THREEPARAMS("rollup");
     SAVESTACK;
-    GTERNARY(nodetype(SAVED1), nodevalue(SAVED1));
-    GNULLARY(nodetype(SAVED3), nodevalue(SAVED3));
-    GNULLARY(nodetype(SAVED2), nodevalue(SAVED2));
+    GTERNARY(SAVED1);
+    GNULLARY(SAVED3);
+    GNULLARY(SAVED2);
     POP(env->dump);
 }
 #endif

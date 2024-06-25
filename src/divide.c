@@ -1,7 +1,7 @@
 /*
     module  : divide.c
-    version : 1.5
-    date    : 03/21/24
+    version : 1.6
+    date    : 06/21/24
 */
 #ifndef DIVIDE_C
 #define DIVIDE_C
@@ -16,7 +16,7 @@ void divide_(pEnv env)
     CHECKDIVISOR("divide");
     FLOAT_I(/);
     INTEGERS2("divide");
-    BINARY(INTEGER_NEWNODE,
-        nodevalue(nextnode1(env->stck)).num / nodevalue(env->stck).num);
+    BINARY(INTEGER_NEWNODE, nodevalue(nextnode1(env->stck)).num /
+		    nodevalue(env->stck).num);
 }
 #endif

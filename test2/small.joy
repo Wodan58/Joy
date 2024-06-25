@@ -1,7 +1,7 @@
 (*
     module  : small.joy
-    version : 1.4
-    date    : 03/21/24
+    version : 1.5
+    date    : 06/21/24
 *)
 [] small.
 [1] small.
@@ -17,3 +17,9 @@
 2 small false =.
 
 [pop] first small =.
+
+# 0.0 small =.
+# 1.0 small =.
+
+# stdin small =.
+# stdout small =.

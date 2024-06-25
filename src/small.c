@@ -1,7 +1,7 @@
 /*
     module  : small.c
-    version : 1.7
-    date    : 03/21/24
+    version : 1.8
+    date    : 06/21/24
 */
 #ifndef SMALL_C
 #define SMALL_C
@@ -19,27 +19,30 @@ void small_(pEnv env)
     case BOOLEAN_:
     case CHAR_:
     case INTEGER_:
-        small = nodevalue(env->stck).num < 2;
-        break;
+	small = nodevalue(env->stck).num < 2;
+	break;
     case SET_:
-        if (nodevalue(env->stck).set == 0)
-            small = 1;
-        else {
-            while (!(nodevalue(env->stck).set & ((int64_t)1 << i)))
-                i++;
-            small = (nodevalue(env->stck).set & ~((int64_t)1 << i)) == 0;
-        }
-        break;
+	if (nodevalue(env->stck).set == 0)
+	    small = 1;
+	else {
+	    while (!(nodevalue(env->stck).set & ((int64_t)1 << i)))
+		i++;
+	    small = (nodevalue(env->stck).set & ~((int64_t)1 << i)) == 0;
+	}
+	break;
     case STRING_:
-        small = nodevalue(env->stck).str[0] == '\0'
-		|| nodevalue(env->stck).str[1] == '\0';
-        break;
+#ifdef NOBDW
+	small = nodeleng(env->stck) < 2;
+#else
+	small = !*nodevalue(env->stck).str || !nodevalue(env->stck).str[1];
+#endif
+	break;
     case LIST_:
-        small = !nodevalue(env->stck).lis ||
+	small = !nodevalue(env->stck).lis ||
 		!nextnode1(nodevalue(env->stck).lis);
-        break;
+	break;
     default:
-        BADDATA("small");
+	BADDATA("small");
     }
     UNARY(BOOLEAN_NEWNODE, small);
 }

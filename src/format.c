@@ -1,7 +1,7 @@
 /*
     module  : format.c
-    version : 1.6
-    date    : 04/11/24
+    version : 1.7
+    date    : 06/21/24
 */
 #ifndef FORMAT_C
 #define FORMAT_C
@@ -32,8 +32,15 @@ void format_(pEnv env)
     format[6] = spec;
     NUMERICTYPE("format");
     leng = snprintf(0, 0, format, width, prec, nodevalue(env->stck).num) + 1;
+#ifdef NOBDW
+    result = malloc(leng + 1);
+#else
     result = GC_malloc_atomic(leng + 1);
+#endif
     snprintf(result, leng, format, width, prec, nodevalue(env->stck).num);
     UNARY(STRING_NEWNODE, result);
+#ifdef NOBDW
+    free(result);
+#endif
 }
 #endif

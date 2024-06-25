@@ -1,7 +1,7 @@
 /*
     module  : fwrite.c
-    version : 1.7
-    date    : 03/21/24
+    version : 1.8
+    date    : 06/21/24
 */
 #ifndef FWRITE_C
 #define FWRITE_C
@@ -13,20 +13,28 @@ stream S.
 */
 void fwrite_(pEnv env)
 {
-    int length, i;
-    unsigned char *buff;
+    int i;
     Index n;
+    unsigned char *buf;
 
     TWOPARAMS("fwrite");
     LIST("fwrite");
-    for (n = nodevalue(env->stck).lis, length = 0; n;
-         n = nextnode1(n), length++)
-        CHECKNUMERIC(n, "fwrite");
-    buff = GC_malloc_atomic(length);
+    /* check that each member of the list is numeric; also count the length */
     for (n = nodevalue(env->stck).lis, i = 0; n; n = nextnode1(n), i++)
-        buff[i] = (char)nodevalue(n).num;
+	CHECKNUMERIC(n, "fwrite");
+#ifdef NOBDW
+    buf = malloc(i);
+#else
+    buf = GC_malloc_atomic(i);
+#endif
+    /* copy the list of integers to the character array; truncating integers */
+    for (n = nodevalue(env->stck).lis, i = 0; n; n = nextnode1(n), i++)
+	buf[i] = (unsigned char)nodevalue(n).num;
     POP(env->stck);
     FILE("fwrite");
-    fwrite(buff, (size_t)length, (size_t)1, nodevalue(env->stck).fil);
+    fwrite(buf, i, 1, nodevalue(env->stck).fil);
+#ifdef NOBDW
+    free(buf);
+#endif
 }
 #endif

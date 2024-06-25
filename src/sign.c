@@ -1,7 +1,7 @@
 /*
     module  : sign.c
-    version : 1.4
-    date    : 03/21/24
+    version : 1.5
+    date    : 06/21/24
 */
 #ifndef SIGN_C
 #define SIGN_C
@@ -19,9 +19,9 @@ void sign_(pEnv env)
     /* start new */
     FLOAT("sign");
     if (nodetype(env->stck) == INTEGER_) {
-        if (nodevalue(env->stck).num != 0 && nodevalue(env->stck).num != 1)
-            UNARY(INTEGER_NEWNODE, nodevalue(env->stck).num > 0 ? 1 : -1);
-        return;
+	if (nodevalue(env->stck).num != 0 && nodevalue(env->stck).num != 1)
+	    UNARY(INTEGER_NEWNODE, nodevalue(env->stck).num > 0 ? 1 : -1);
+	return;
     }
     /* end new */
     if (FLOATABLE) {
@@ -32,7 +32,7 @@ void sign_(pEnv env)
 	    dbl = -1.0;
 	else
 	    dbl = 0.0;
-        UNARY(FLOAT_NEWNODE, dbl);
+	UNARY(FLOAT_NEWNODE, dbl);
     }
 }
 #endif

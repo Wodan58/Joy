@@ -1,8 +1,8 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.96
- *  date    : 04/19/24
+ *  version : 1.97
+ *  date    : 06/21/24
  */
 
 /*
@@ -145,12 +145,14 @@ void abortexecution_(int num)
 /*
  * fatal terminates the application with an error message.
  */
+#ifdef NOBDW
 void fatal(char *str)
 {
     fflush(stdout);
     fprintf(stderr, "fatal error: %s\n", str);
     abortexecution_(ABORT_QUIT);
 }
+#endif
 
 /*
  * options - print help on startup options and exit: options are those that
@@ -181,7 +183,6 @@ static void options(void)
     printf("  -h : print this help text and exit\n");
     printf("  -i : ignore impure imperative functions\n");
     printf("  -l : do not read usrlib.joy at startup\n");
-    printf("  -n : number nodes at maximum allocation\n");
     printf("  -p : print debug list of tokens\n");
     printf("  -s : dump symbol table after execution\n");
     printf("  -t : print a trace of program execution\n");
@@ -263,10 +264,6 @@ static int my_main(int argc, char **argv)
 		case 'h' : helping = 1; break;
 		case 'i' : env.ignore = 1; break;
 		case 'l' : mustinclude = 0; break;
-		case 'n' : ptr = &argv[i][j + 1];
-			   env.maxnodes = strtod(ptr, &tmp);
-			   j += tmp - ptr;
-			   break;
 		case 'p' : env.printing = 1; break;
 		case 's' : psdump = 1; break;
 		case 't' : env.debugging = 2; break;
@@ -378,9 +375,9 @@ static int my_main(int argc, char **argv)
 	} else {
 	    ch = readterm(&env, ch);
 #ifdef NOBDW
-	    if (env.stck && vec_at(env.memory, env.stck).op == LIST_) {
-		env.prog = vec_at(env.memory, env.stck).u.lis;
-		env.stck = vec_at(env.memory, env.stck).next;
+	    if (env.stck && env.memory[env.stck].op == LIST_) {
+		env.prog = env.memory[env.stck].u.lis;
+		env.stck = env.memory[env.stck].next;
 		env.conts = 0;
 #else
 	    if (env.stck && nodetype(env.stck) == LIST_) {
@@ -408,7 +405,7 @@ static int my_main(int argc, char **argv)
 		else if (env.autoput == 1) {
 		    writefactor(&env, env.stck, stdout);
 #ifdef NOBDW
-		    env.stck = vec_at(env.memory, env.stck).next;
+		    env.stck = env.memory[env.stck].next;
 #else
 		    env.stck = nextnode1(env.stck);
 #endif

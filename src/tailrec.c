@@ -1,7 +1,7 @@
 /*
     module  : tailrec.c
-    version : 1.5
-    date    : 03/21/24
+    version : 1.6
+    date    : 06/21/24
 */
 #ifndef TAILREC_C
 #define TAILREC_C
@@ -22,10 +22,10 @@ tailrec:
     env->stck = DMP1;
     POP(env->dump1);
     if (result)
-        exeterm(env, nodevalue(SAVED2).lis);
+	exeterm(env, nodevalue(SAVED2).lis);
     else {
-        exeterm(env, nodevalue(SAVED1).lis);
-        goto tailrec;
+	exeterm(env, nodevalue(SAVED1).lis);
+	goto tailrec;
     }
 }
 

@@ -1,27 +1,9 @@
 /*
  *  module  : optable.c
- *  version : 1.5
- *  date    : 05/27/24
+ *  version : 1.7
+ *  date    : 06/24/24
  */
 #include "globals.h"
-
-#define NEWNODE(o, u, r)						\
-    (env->bucket.lis = newnode(env, o, u, r), env->bucket.lis)
-#define USR_NEWNODE(u, r) (env->bucket.ent = u, NEWNODE(USR_, env->bucket, r))
-#define ANON_FUNCT_NEWNODE(u, r)					\
-    (env->bucket.proc = u, NEWNODE(ANON_FUNCT_, env->bucket, r))
-#define BOOLEAN_NEWNODE(u, r)						\
-    (env->bucket.num = u, NEWNODE(BOOLEAN_, env->bucket, r))
-#define CHAR_NEWNODE(u, r) (env->bucket.num = u, NEWNODE(CHAR_, env->bucket, r))
-#define INTEGER_NEWNODE(u, r)						\
-    (env->bucket.num = u, NEWNODE(INTEGER_, env->bucket, r))
-#define SET_NEWNODE(u, r) (env->bucket.num = u, NEWNODE(SET_, env->bucket, r))
-#define STRING_NEWNODE(u, r)						\
-    (env->bucket.str = u, NEWNODE(STRING_, env->bucket, r))
-#define LIST_NEWNODE(u, r) (env->bucket.lis = u, NEWNODE(LIST_, env->bucket, r))
-#define FLOAT_NEWNODE(u, r)						\
-    (env->bucket.dbl = u, NEWNODE(FLOAT_, env->bucket, r))
-#define FILE_NEWNODE(u, r) (env->bucket.fil = u, NEWNODE(FILE_, env->bucket, r))
 
 #define FLOATABLE							\
     (nodetype(env->stck) == INTEGER_ || nodetype(env->stck) == FLOAT_)
@@ -250,20 +232,14 @@
 #define SAVED5 nextnode4(DMP)
 #define SAVED6 nextnode5(DMP)
 
-#define POP(X) X = nextnode1(X)
-
-#define NULLARY(CONSTRUCTOR, VALUE) env->stck = CONSTRUCTOR(VALUE, env->stck)
-#define UNARY(CONSTRUCTOR, VALUE)					\
-    env->stck = CONSTRUCTOR(VALUE, nextnode1(env->stck))
-#define BINARY(CONSTRUCTOR, VALUE)					\
-    env->stck = CONSTRUCTOR(VALUE, nextnode2(env->stck))
-#define GNULLARY(TYPE, VALUE) env->stck = newnode(env, TYPE, (VALUE), env->stck)
-#define GUNARY(TYPE, VALUE)						\
-    env->stck = newnode(env, TYPE, (VALUE), nextnode1(env->stck))
-#define GBINARY(TYPE, VALUE)						\
-    env->stck = newnode(env, TYPE, (VALUE), nextnode2(env->stck))
-#define GTERNARY(TYPE, VALUE)						\
-    env->stck = newnode(env, TYPE, (VALUE), nextnode3(env->stck))
+#define GNULLARY(NODE)							\
+    env->stck = newnode2(env, NODE, env->stck)
+#define GUNARY(NODE)							\
+    env->stck = newnode2(env, NODE, nextnode1(env->stck))
+#define GBINARY(NODE)							\
+    env->stck = newnode2(env, NODE, nextnode2(env->stck))
+#define GTERNARY(NODE)							\
+    env->stck = newnode2(env, NODE, nextnode3(env->stck))
 
 #include "src/andorxor.h"
 #include "src/bfloat.h"

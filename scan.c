@@ -1,7 +1,7 @@
 /*
     module  : scan.c
-    version : 1.69
-    date    : 05/27/24
+    version : 1.71
+    date    : 06/22/24
 */
 #include "globals.h"
 
@@ -32,7 +32,8 @@ static struct {
     int line;
     char name[FILENAMEMAX + 1];		/* filename in error messages */
 } infile[INPSTACKMAX];
-static int ilevel, startpos;		/* index in infile-structure */
+static int ilevel;			/* index in infile-structure */
+static int startnum, startpos, endpos;	/* y, x, and len of tokens */
 
 /*
  * inilinebuffer - initialise the stack of input files. The filename parameter
@@ -42,8 +43,7 @@ void inilinebuffer(FILE *fp, char *str)
 {
     infile[0].fp = srcfile = fp;
     infile[0].line = linenum = 1;
-    strncpy(infile[0].name, str, FILENAMEMAX);
-    filenam = infile[0].name;
+    strncpy(filenam = infile[0].name, str, FILENAMEMAX);
 }
 
 /*
@@ -75,7 +75,7 @@ again:
 	if (!env->ignore)
 	    if ((ch = system(&vec_at(env->string, 0))) != 0) {
 		fflush(stdout);
-		fprintf(stderr, "system: %d\n", ch);
+		fprintf(stderr, "system: %u\n", ch & 0xFF);
 	    }
 	vec_setsize(env->string, 0);
 	goto again;
@@ -89,10 +89,9 @@ again:
 	    printf("%.*s\n", linepos, linebuf);	/* echo line */
 	linenum++;
 	linepos = 0;
-    } else if (linepos < INPLINEMAX) {
+    } else if (linepos < INPLINEMAX)
 	linebuf[linepos++] = ch;
-	linebuf[linepos] = 0;
-    }
+    linebuf[linepos] = 0;
     return ch;
 }
 
@@ -102,7 +101,7 @@ again:
 void ungetch(int ch)
 {
     if (ch == '\n')
-	ch = ' ';
+	linenum--;		/* about to unread newline */
     ungetc(ch, srcfile);
     linepos--;			/* read too far, push back */
 }
@@ -141,20 +140,28 @@ void execerror(char *message, char *op)
     fprintf(stderr, "%s:run time error: %s needed for %.*s\n", filenam, message,
 	    leng, ptr);
     abortexecution_(ABORT_RETRY);
-}
+}	/* LCOV_EXCL_LINE */
 
 /*
- * redirect - read from another file descriptor.
+ * redirect - register another file descriptor to read from.
  */
-static void redirect(FILE *fp, char *name)
+static int redirect(pEnv env, char *name, FILE *fp, char *str)
 {
+    /*
+     * If there is a new pathname, replace the old one.
+     */
+    if (strrchr(str, '/')) {
+	env->pathname = GC_strdup(str);
+	str = strrchr(env->pathname, '/');
+	*str = 0;
+    }
     infile[ilevel].line = linenum;		/* save last line number */
     if (ilevel + 1 == INPSTACKMAX)		/* increase include level */
 	execerror("fewer include files", "include");
     infile[++ilevel].fp = srcfile = fp;		/* use new file pointer */
     infile[ilevel].line = linenum = 1;		/* start with line 1 */
-    strncpy(infile[ilevel].name, name, FILENAMEMAX);
-    filenam = infile[ilevel].name;		/* switch to new file */
+    strncpy(filenam = infile[ilevel].name, name, FILENAMEMAX);
+    return 0;
 }
 
 /*
@@ -163,7 +170,7 @@ static void redirect(FILE *fp, char *name)
  * Files are read in the current directory or if that fails from the previous
  * location. Generating an error is left to the call site.
  *
- * Return code is 1 if the file could not be opened.
+ * Return code is 1 if the file could not be opened for reading.
  */
 int include(pEnv env, char *name)
 {
@@ -171,65 +178,38 @@ int include(pEnv env, char *name)
     char *path = 0, *str = name;
 
     /*
-     * usrlib.joy is tried first in the current directory, then in the home
-     * directory and then in the directory where the joy binary is located.
-     *
-     * If all of that fails, no harm done.
+     * A file is tried first in the current directory.
+     */
+    if ((fp = fopen(str, "r")) != 0)
+	return redirect(env, name, fp, str);
+    /*
+     * usrlib.joy is also tried in the home directory.
      */
     if (!strcmp(name, "usrlib.joy")) {			/* check usrlib.joy */
-	if ((fp = fopen(name, "r")) != 0)		/* current dir */
-	    goto normal;
 	if ((path = getenv("HOME")) != 0) {		/* unix/cygwin */
 	    str = GC_malloc_atomic(strlen(path) + strlen(name) + 2);
 	    sprintf(str, "%s/%s", path, name);
 	    if ((fp = fopen(str, "r")) != 0)
-		goto normal;
+		return redirect(env, name, fp, str);
 	}
 	if ((path = getenv("USERPROFILE")) != 0) {	/* windows */
 	    str = GC_malloc_atomic(strlen(path) + strlen(name) + 2);
 	    sprintf(str, "%s/%s", path, name);
 	    if ((fp = fopen(str, "r")) != 0)
-		goto normal;
+		return redirect(env, name, fp, str);
 	}
-	path = env->pathname;				/* joy binary */
-	if (strcmp(path, ".")) {
-	    str = GC_malloc_atomic(strlen(path) + strlen(name) + 2);
-	    sprintf(str, "%s/%s", path, name);
-	    if ((fp = fopen(str, "r")) != 0)
-		goto normal;
-	}
-	/*
-	 * Failure to open usrlib.joy need not be reported.
-	 */
-	return 1;
     }
-    /*
-     * A file other than usrlib.joy is tried first in the current directory.
-     */
-    if ((fp = fopen(name, "r")) != 0)
-	goto normal;
     /*
      * If that fails, the pathname is prepended and the file is tried again.
      */
-    path = env->pathname;
+    path = env->pathname;				/* joy binary */
     if (strcmp(path, ".")) {
 	str = GC_malloc_atomic(strlen(path) + strlen(name) + 2);
 	sprintf(str, "%s/%s", path, name);
 	if ((fp = fopen(str, "r")) != 0)
-	    goto normal;
-	return 1;
+	    return redirect(env, name, fp, str);
     }
-normal:
-    /*
-     * If there is a new pathname, replace the old one.
-     */
-    if (strrchr(str, '/')) {
-	env->pathname = GC_strdup(str);
-	path = strrchr(env->pathname, '/');
-	*path = 0;
-    }
-    redirect(fp, name);
-    return 0;
+    return 1;	/* file cannot be opened for reading */
 }
 
 /*
@@ -289,9 +269,10 @@ static int my_getsym(pEnv env, int ch)
 
     vec_setsize(env->string, 0);
 start:
-    startpos = linepos;		/* start position of a token */
     while (ch <= ' ')
 	ch = getch(env);
+    startnum = linenum;		/* line of a token */
+    startpos = linepos;		/* start position of a token */
     switch (ch) {
     case '(':
 	ch = getch(env);
@@ -322,6 +303,7 @@ start:
     case '.':
     case ';':
 	env->sym = ch;
+	endpos = linepos;
 	return getch(env);	/* read past ch */
 
     case '\'':
@@ -330,6 +312,7 @@ start:
 	    ch = special(env);
 	env->num = ch;
 	env->sym = CHAR_;
+	endpos = linepos;
 	return getch(env);	/* read past ch */
 
     case '"':
@@ -343,6 +326,7 @@ start:
 	vec_push(env->string, 0);
 	env->str = GC_strdup(&vec_at(env->string, 0));
 	env->sym = STRING_;
+	endpos = linepos;
 	return getch(env);	/* read past " */
 
     default:
@@ -354,26 +338,29 @@ start:
 	    vec_push(env->string, ch);
 	    ch = getch(env);
 	}
-	if (ch != '.')
-	    goto done;
-	ch = getch(env);
-	if (type) {
-	    if (!isdigit(ch))	/* test float */
-		goto undo;
-	    type = 2;		/* floating point */
-	} else if (!isalnum(ch) && !strchr(include, ch))	/* member */
-	    goto undo;
-	vec_push(env->string, '.');
-	while (ch > ' ' && !strchr(exclude, ch)) {
-	    vec_push(env->string, ch);
+	if (ch == '.') {
 	    ch = getch(env);
+	    if (type) {
+		if (!isdigit(ch)) {	/* test float */
+		    ungetch(ch);	/* read too far, push back */
+		    ch = '.';		/* restore full stop */
+		    goto einde;
+		}
+		type = 2;		/* floating point */
+	    } else if (!isalnum(ch) && !strchr(include, ch)) {	/* member */
+		ungetch(ch);		/* read too far, push back */
+		ch = '.';		/* restore full stop */
+		goto einde;
+	    }
+	    vec_push(env->string, '.');
+	    while (ch > ' ' && !strchr(exclude, ch)) {
+		vec_push(env->string, ch);
+		ch = getch(env);
+	    }
 	}
-	goto done;
-undo:
-	ungetch(ch);		/* read too far, push back */
-	ch = '.';		/* restore full stop */
-done:
-	vec_push(env->string, 0);
+einde:	vec_push(env->string, 0);
+	ptr = &vec_at(env->string, 0);
+	endpos = startpos + strlen(ptr) - 1;
 	if (type) {
 	    if (type == 2) {
 		env->dbl = strtod(&vec_at(env->string, 0), &ptr);
@@ -393,6 +380,7 @@ done:
 		}
 	    }
 	    if (*ptr) {
+		endpos -= strlen(ptr);
 		vec_push(env->pushback, ch);
 		for (i = strlen(ptr) - 1; i >= 0; i--)
 		    vec_push(env->pushback, ptr[i]);
@@ -400,34 +388,34 @@ done:
 	    }
 	    return ch;
 	}
-	type = vec_at(env->string, 1);
+	type = ptr[1];
 	if (isupper(type) || type == '=') {
 	    type = sizeof(keywords) / sizeof(keywords[0]);
 	    for (sign = 0; sign < type; sign++)
-		if (!strcmp(&vec_at(env->string, 0), keywords[sign].name)) {
+		if (!strcmp(ptr, keywords[sign].name)) {
 		    env->sym = keywords[sign].sym;
 		    return ch;
 		}
 	}
-	env->str = GC_strdup(&vec_at(env->string, 0));
+	env->str = GC_strdup(ptr);
 	env->sym = USR_;
 	return ch;
     }
 }
 
-static void dumptok(pEnv env)
+static void dumptok(pEnv env, int y, int x, int pos)
 {
-    printf("(%d,%d) ", linenum, startpos);
+    printf("(%d,%d:%d) ", y, x, pos);
     switch (env->sym) {
+    case USR_     : printf("%s", env->str);
+		    break;
     case CHAR_    : printf("%d", (int)env->num);
+		    break;
+    case INTEGER_ : printf("%" PRId64, env->num);
 		    break;
     case STRING_  : printf("\"%s\"", env->str);
 		    break;
     case FLOAT_   : printf("%g", env->dbl);
-		    break;
-    case INTEGER_ : printf("%" PRId64, env->num);
-		    break;
-    case USR_     : printf("%s", env->str);
 		    break;
     case '['      : printf("LBRACK");
 		    break;
@@ -470,7 +458,7 @@ static void dumptok(pEnv env)
  */
 static void push_sym(pEnv env)
 {
-    Node node;
+    Token node;
 
     node.op = env->sym;
     switch (node.op) {
@@ -481,11 +469,14 @@ static void push_sym(pEnv env)
     case FLOAT_:
 	node.u.dbl = env->dbl;
 	break;
-    case STRING_:
     case USR_:
+    case STRING_:
 	node.u.str = env->str;
 	break;
     }
+    node.y = startnum;
+    node.x = startpos;
+    node.pos = endpos;
     vec_push(env->tokens, node);
 }
 
@@ -499,15 +490,14 @@ static void push_sym(pEnv env)
  */
 int getsym(pEnv env, int ch)
 {
-    Node node;
+    Token node;
     int module = 0, private = 0, hide = 0, modl = 0, hcnt = 0;
 
 /*
  * If there is a tokenlist, extract tokens from there.
  */
     if (vec_size(env->tokens)) {
-begin:
-	node = vec_pop(env->tokens);
+begin:	node = vec_pop(env->tokens);
 	env->sym = node.op;
 	switch (node.op) {
 	case CHAR_:
@@ -523,7 +513,7 @@ begin:
 	    break;
 	}
 	if (env->printing)
-	    dumptok(env);	/* tokens from the tokenlist */
+	    dumptok(env, node.y, node.x, node.pos); /* tokens from tokenlist */
 	return ch;
     }
 /*
@@ -593,6 +583,6 @@ einde:	undomod(hide, modl, hcnt);
     if (vec_size(env->tokens))
 	goto begin;
     if (env->printing)
-	dumptok(env);		/* tokens read directly */
+	dumptok(env, startnum, startpos, endpos); /* tokens read directly */
     return ch;
 }

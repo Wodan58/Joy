@@ -1,7 +1,7 @@
 /*
     module  : strtol.c
-    version : 1.5
-    date    : 03/21/24
+    version : 1.6
+    date    : 06/21/24
 */
 #ifndef STRTOL_C
 #define STRTOL_C
@@ -15,12 +15,18 @@ but leading "0" means base 8 and leading "0x" means base 16.
 void strtol_(pEnv env)
 {
     int base;
+    char *str;
 
     TWOPARAMS("strtol");
     INTEGER("strtol");
     base = nodevalue(env->stck).num;
     POP(env->stck);
     STRING("strtol");
-    UNARY(INTEGER_NEWNODE, strtoll(nodevalue(env->stck).str, 0, base));
+#ifdef NOBDW
+    str = (char *)&nodevalue(env->stck);
+#else
+    str = nodevalue(env->stck).str;
+#endif
+    UNARY(INTEGER_NEWNODE, strtoll(str, 0, base));
 }
 #endif

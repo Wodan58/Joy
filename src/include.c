@@ -1,7 +1,7 @@
 /*
     module  : include.c
-    version : 1.11
-    date    : 05/28/24
+    version : 1.12
+    date    : 06/21/24
 */
 #ifndef INCLUDE_C
 #define INCLUDE_C
@@ -13,9 +13,16 @@ On end-of-file returns to previous input file.
 */
 void include_(pEnv env)
 {
+    char *str;
+
     ONEPARAM("include");
     STRING("include");
-    if (include(env, nodevalue(env->stck).str))
+#ifdef NOBDW
+    str = (char *)&nodevalue(env->stck);
+#else
+    str = nodevalue(env->stck).str;
+#endif
+    if (include(env, str))
 	execerror("valid file name", "include");
     POP(env->stck);
 } 

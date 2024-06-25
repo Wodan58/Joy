@@ -1,7 +1,7 @@
 /*
     module  : binrec.c
-    version : 1.4
-    date    : 03/21/24
+    version : 1.5
+    date    : 06/20/24
 */
 #ifndef BINREC_C
 #define BINREC_C
@@ -15,24 +15,24 @@ then executes R2 to combine their results.
 void binrecaux(pEnv env)
 {
     int result;
+
     env->dump1 = LIST_NEWNODE(env->stck, env->dump1);
     exeterm(env, nodevalue(SAVED4).lis);
     result = nodevalue(env->stck).num;
     env->stck = DMP1;
     POP(env->dump1);
     if (result)
-        exeterm(env, nodevalue(SAVED3).lis);
+	exeterm(env, nodevalue(SAVED3).lis);
     else {
-        exeterm(env, nodevalue(SAVED2).lis); /* split */
-        env->dump2 = newnode(
-            env, nodetype(env->stck), nodevalue(env->stck), env->dump2);
-        POP(env->stck);
-        binrecaux(env); /* first */
-        GNULLARY(nodetype(env->dump2), nodevalue(env->dump2));
-        POP(env->dump2);
-        binrecaux(env); /* second */
-        exeterm(env, nodevalue(SAVED1).lis);
-    } /* combine */
+	exeterm(env, nodevalue(SAVED2).lis);	/* split */
+	env->dump2 = newnode2(env, env->stck, env->dump2);
+	POP(env->stck);
+	binrecaux(env);	/* first */
+	GNULLARY(env->dump2);
+	POP(env->dump2);
+	binrecaux(env);	/* second */
+	exeterm(env, nodevalue(SAVED1).lis);
+    }	/* combine */
 }
 
 void binrec_(pEnv env)

@@ -1,7 +1,7 @@
 /*
     module  : getenv.c
-    version : 1.4
-    date    : 03/21/24
+    version : 1.6
+    date    : 06/21/24
 */
 #ifndef GETENV_C
 #define GETENV_C
@@ -16,8 +16,13 @@ void getenv_(pEnv env)
 
     ONEPARAM("getenv");
     STRING("getenv");
-    if ((str = getenv(nodevalue(env->stck).str)) == 0)
-        str = "";
+#ifdef NOBDW
+    str = (char *)&nodevalue(env->stck);
+#else
+    str = nodevalue(env->stck).str;
+#endif
+    if ((str = getenv(str)) == 0)
+	str = "";
     UNARY(STRING_NEWNODE, str);
 }
 #endif

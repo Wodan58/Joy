@@ -1,7 +1,7 @@
 /*
     module  : branch.c
-    version : 1.4
-    date    : 03/21/24
+    version : 1.5
+    date    : 06/20/24
 */
 #ifndef BRANCH_C
 #define BRANCH_C
@@ -16,8 +16,8 @@ void branch_(pEnv env)
     TWOQUOTES("branch");
     SAVESTACK;
     env->stck = SAVED4;
-    exeterm(env,
-        nodevalue(SAVED3).num ? nodevalue(SAVED2).lis : nodevalue(SAVED1).lis);
+    exeterm(env, nodevalue(SAVED3).num ? nodevalue(SAVED2).lis :
+		    nodevalue(SAVED1).lis);
     POP(env->dump);
 }
 #endif

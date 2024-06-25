@@ -1,7 +1,7 @@
 /*
     module  : abs.c
-    version : 1.3
-    date    : 03/21/24
+    version : 1.4
+    date    : 06/21/24
 */
 #ifndef ABS_C
 #define ABS_C
@@ -17,9 +17,9 @@ void abs_(pEnv env)
     /* start new */
     FLOAT("abs");
     if (nodetype(env->stck) == INTEGER_) {
-        if (nodevalue(env->stck).num < 0)
-            UNARY(INTEGER_NEWNODE, -nodevalue(env->stck).num);
-        return;
+	if (nodevalue(env->stck).num < 0)
+	    UNARY(INTEGER_NEWNODE, -nodevalue(env->stck).num);
+	return;
     }
     /* end new */
     FLOAT_U(fabs);

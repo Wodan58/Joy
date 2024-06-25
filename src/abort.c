@@ -1,7 +1,7 @@
 /*
     module  : abort.c
-    version : 1.5
-    date    : 03/21/24
+    version : 1.6
+    date    : 06/21/24
 */
 #ifndef ABORT_C
 #define ABORT_C
@@ -13,5 +13,5 @@ IGNORE_OK  3120  abort  :  ->
 void abort_(pEnv env)
 {
     abortexecution_(ABORT_RETRY);
-}
+}	/* LCOV_EXCL_LINE */
 #endif

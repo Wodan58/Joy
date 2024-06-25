@@ -1,7 +1,7 @@
 /*
     module  : dup.c
-    version : 1.3
-    date    : 03/21/24
+    version : 1.4
+    date    : 06/21/24
 */
 #ifndef DUP_C
 #define DUP_C
@@ -13,6 +13,6 @@ Pushes an extra copy of X onto stack.
 void dup_(pEnv env)
 {
     ONEPARAM("dup");
-    GNULLARY(nodetype(env->stck), nodevalue(env->stck));
+    GNULLARY(env->stck);
 }
 #endif

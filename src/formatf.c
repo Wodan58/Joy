@@ -1,7 +1,7 @@
 /*
     module  : formatf.c
-    version : 1.8
-    date    : 04/11/24
+    version : 1.9
+    date    : 06/21/24
 */
 #ifndef FORMATF_C
 #define FORMATF_C
@@ -32,8 +32,15 @@ void formatf_(pEnv env)
     format[4] = spec;
     FLOAT("formatf");
     leng = snprintf(0, 0, format, width, prec, nodevalue(env->stck).dbl) + 1;
+#ifdef NOBDW
+    result = malloc(leng + 1);
+#else
     result = GC_malloc_atomic(leng + 1);
+#endif
     snprintf(result, leng, format, width, prec, nodevalue(env->stck).dbl);
     UNARY(STRING_NEWNODE, result);
+#ifdef NOBDW
+    free(result);
+#endif
 }
 #endif

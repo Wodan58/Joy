@@ -1,14 +1,14 @@
 /*
  *  module  : undefs.c
- *  version : 1.4
- *  date    : 05/27/24
+ *  version : 1.5
+ *  date    : 06/21/24
  */
 #include "globals.h"
 
 void hide_inner_modules(pEnv env, int flag)
 {
-    Node node;
     Entry ent;
+    Token node;
     char *name;
     khint_t key;
     int i, leng, last = 0;

@@ -1,7 +1,7 @@
 /*
     module  : dipped.h
-    version : 1.3
-    date    : 03/21/24
+    version : 1.4
+    date    : 06/21/24
 */
 #ifndef DIPPED_H
 #define DIPPED_H
@@ -13,7 +13,7 @@
 	SAVESTACK;							\
 	POP(env->stck);							\
 	ARGUMENT(env);							\
-	GNULLARY(nodetype(SAVED1), nodevalue(SAVED1));			\
+	GNULLARY(SAVED1);						\
 	POP(env->dump);							\
     }
 #endif

@@ -1,8 +1,8 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.98
- *  date    : 05/28/24
+ *  version : 1.100
+ *  date    : 06/24/24
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -40,14 +40,45 @@
 #include "kvec.h"
 #include "khashl.h"
 
+#define POP(X) X = nextnode1(X)
+
+#define USR_NEWNODE(u, r)						\
+    (env->bucket.ent = u, newnode(env, USR_, env->bucket, r))
+#define ANON_FUNCT_NEWNODE(u, r)					\
+    (env->bucket.proc = u, newnode(env, ANON_FUNCT_, env->bucket, r))
+#define BOOLEAN_NEWNODE(u, r)						\
+    (env->bucket.num = u, newnode(env, BOOLEAN_, env->bucket, r))
+#define CHAR_NEWNODE(u, r)						\
+    (env->bucket.num = u, newnode(env, CHAR_, env->bucket, r))
+#define INTEGER_NEWNODE(u, r)						\
+    (env->bucket.num = u, newnode(env, INTEGER_, env->bucket, r))
+#define SET_NEWNODE(u, r)						\
+    (env->bucket.num = u, newnode(env, SET_, env->bucket, r))
+#define STRING_NEWNODE(u, r)						\
+    (env->bucket.str = u, newnode(env, STRING_, env->bucket, r))
+#define LIST_NEWNODE(u, r)						\
+    (env->bucket.lis = u, newnode(env, LIST_, env->bucket, r))
+#define FLOAT_NEWNODE(u, r)						\
+    (env->bucket.dbl = u, newnode(env, FLOAT_, env->bucket, r))
+#define FILE_NEWNODE(u, r)						\
+    (env->bucket.fil = u, newnode(env, FILE_, env->bucket, r))
+
+#define NULLARY(CONSTRUCTOR, VALUE)					\
+    env->stck = CONSTRUCTOR(VALUE, env->stck)
+#define UNARY(CONSTRUCTOR, VALUE)					\
+    env->stck = CONSTRUCTOR(VALUE, nextnode1(env->stck))
+#define BINARY(CONSTRUCTOR, VALUE)					\
+    env->stck = CONSTRUCTOR(VALUE, nextnode2(env->stck))
+
 #ifdef NOBDW
-#define nodetype(n)  vec_at(env->memory, n).op
-#define nodevalue(n) vec_at(env->memory, n).u
-#define nextnode1(n) vec_at(env->memory, n).next
-#define nextnode2(n) vec_at(env->memory, nextnode1(n)).next
-#define nextnode3(n) vec_at(env->memory, nextnode2(n)).next
-#define nextnode4(n) vec_at(env->memory, nextnode3(n)).next
-#define nextnode5(n) vec_at(env->memory, nextnode4(n)).next
+#define nodetype(n)  env->memory[n].op
+#define nodeleng(n)  env->memory[n].len
+#define nodevalue(n) env->memory[n].u
+#define nextnode1(n) env->memory[n].next
+#define nextnode2(n) env->memory[nextnode1(n)].next
+#define nextnode3(n) env->memory[nextnode2(n)].next
+#define nextnode4(n) env->memory[nextnode3(n)].next
+#define nextnode5(n) env->memory[nextnode4(n)].next
 #else
 #define nodetype(p)  (p)->op
 #define nodevalue(p) (p)->u
@@ -67,7 +98,7 @@
 #define INPLINEMAX	255
 #define BUFFERMAX	80	/* smaller buffer */
 #define HELPLINEMAX	72
-#define MAXNUM		32	/* even smaller buffer */
+#define MAXNUM		40	/* even smaller buffer */
 #define FILENAMEMAX	14
 #define DISPLAYMAX	10	/* nesting in HIDE & MODULE */
 #define INIECHOFLAG	0
@@ -145,14 +176,29 @@ typedef union {
     int ent;		/* SYMBOL */
 } Types;
 
+#ifdef NOBDW
 typedef struct Node {
+    unsigned op :  4,
+	    len : 28;	/* length of string */
+    Index next;
     Types u;
+} Node;
+#else
+typedef struct Node {
     Operator op;
     Index next;
+    Types u;
 } Node;
+#endif
+
+typedef struct Token {
+    Operator op;
+    int x, y, pos;
+    Types u;
+} Token;
 
 typedef struct Entry {
-    char *name, is_user, flags, is_ok;
+    char *name, is_user, flags, is_ok, is_root;
     union {
 	Index body;
 	proc_t proc;
@@ -166,7 +212,6 @@ KHASHL_MAP_INIT(KH_LOCAL, funtab_t, funtab, uint64_t, int, kh_hash_uint64,
 
 typedef struct Env {
     jmp_buf finclude;		/* return point in finclude */
-    double maxnodes;
     double nodes;		/* statistics */
     double avail;
     double collect;
@@ -181,14 +226,14 @@ typedef struct Env {
     char *mod_name;		/* name of module */
     vector(char) *string;	/* value */
     vector(char) *pushback;	/* push back buffer */
-    vector(Node) *tokens;	/* read ahead table */
+    vector(Token) *tokens;	/* read ahead table */
     vector(Entry) *symtab;	/* symbol table */
     symtab_t *hash;		/* hash tables that index the symbol table */
     funtab_t *prim;
     Types bucket;		/* used by NEWNODE defines */
 #ifdef NOBDW
     clock_t gc_clock;
-    vector(Node) *memory;	/* dynamic memory */
+    Node *memory;		/* dynamic memory */
     Index conts, dump, dump1, dump2, dump3, dump4, dump5;
 #endif
     Index prog, stck;
@@ -211,6 +256,7 @@ typedef struct Env {
     unsigned char overwrite;
     unsigned char printing;
     unsigned char finclude_busy;
+    unsigned char flibrary_busy;
 } Env;
 
 /* GOOD REFS:
@@ -243,6 +289,7 @@ int include(pEnv env, char *name);
 int getsym(pEnv env, int ch);
 /* utils.c */
 Index newnode(pEnv env, Operator o, Types u, Index r);
+Index newnode2(pEnv env, Index n, Index r);
 void my_memoryindex(pEnv env);
 void my_memorymax(pEnv env);
 #ifdef NOBDW

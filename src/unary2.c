@@ -1,7 +1,7 @@
 /*
     module  : unary2.c
-    version : 1.4
-    date    : 03/21/24
+    version : 1.5
+    date    : 06/21/24
 */
 #ifndef UNARY2_C
 #define UNARY2_C
@@ -16,15 +16,12 @@ void unary2_(pEnv env)
     THREEPARAMS("unary2");
     ONEQUOTE("unary2");
     SAVESTACK;
-    env->stck = nextnode1(SAVED2); /* just Y on top */
-    exeterm(env, nodevalue(SAVED1).lis); /* execute P */
-    env->dump1 = newnode(env, nodetype(env->stck), nodevalue(env->stck),
-        env->dump1); /* save P(Y) */
-    env->stck = newnode(env, nodetype(SAVED2), nodevalue(SAVED2),
-        nextnode1(SAVED3)); /* just Z on top */
-    exeterm(env, nodevalue(SAVED1).lis); /* execute P */
-    env->dump1 = newnode(env, nodetype(env->stck), nodevalue(env->stck),
-        env->dump1); /* save P(Z) */
+    env->stck = nextnode1(SAVED2);	/* just Y on top */
+    exeterm(env, nodevalue(SAVED1).lis);	/* execute P */
+    env->dump1 = newnode2(env, env->stck, env->dump1);	/* save P(Y) */
+    env->stck = newnode2(env, SAVED2, nextnode1(SAVED3)); /* just Z on top */
+    exeterm(env, nodevalue(SAVED1).lis);	/* execute P */
+    env->dump1 = newnode2(env, env->stck, env->dump1);	/* save P(Z) */
     env->stck = env->dump1;
     env->dump1 = nextnode2(env->dump1);
     nextnode2(env->stck) = SAVED4;

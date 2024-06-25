@@ -1,7 +1,7 @@
 /*
     module  : rotate.c
-    version : 1.3
-    date    : 03/21/24
+    version : 1.4
+    date    : 06/21/24
 */
 #ifndef ROTATE_C
 #define ROTATE_C
@@ -14,9 +14,9 @@ void rotate_(pEnv env)
 {
     THREEPARAMS("rotate");
     SAVESTACK;
-    GTERNARY(nodetype(SAVED1), nodevalue(SAVED1));
-    GNULLARY(nodetype(SAVED2), nodevalue(SAVED2));
-    GNULLARY(nodetype(SAVED3), nodevalue(SAVED3));
+    GTERNARY(SAVED1);
+    GNULLARY(SAVED2);
+    GNULLARY(SAVED3);
     POP(env->dump);
 }
 #endif

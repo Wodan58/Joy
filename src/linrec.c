@@ -1,7 +1,7 @@
 /*
     module  : linrec.c
-    version : 1.5
-    date    : 03/21/24
+    version : 1.6
+    date    : 06/21/24
 */
 #ifndef LINREC_C
 #define LINREC_C
@@ -21,11 +21,11 @@ void linrecaux(pEnv env)
     env->stck = DMP1;
     POP(env->dump1);
     if (result)
-        exeterm(env, nodevalue(SAVED3).lis);
+	exeterm(env, nodevalue(SAVED3).lis);
     else {
-        exeterm(env, nodevalue(SAVED2).lis);
-        linrecaux(env);
-        exeterm(env, nodevalue(SAVED1).lis);
+	exeterm(env, nodevalue(SAVED2).lis);
+	linrecaux(env);
+	exeterm(env, nodevalue(SAVED1).lis);
     }
 }
 

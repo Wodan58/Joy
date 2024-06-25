@@ -1,9 +1,13 @@
 /* FILE: interp.c */
 /*
  *  module  : interp.c
- *  version : 1.81
- *  date    : 03/21/24
+ *  version : 1.83
+ *  date    : 06/24/24
  */
+
+#if 0
+#define TRACEGC
+#endif
 
 /*
 07-May-03 condnestrec
@@ -34,8 +38,6 @@
 */
 #include "globals.h"
 
-#define POP(X) X = nextnode1(X)
-
 static void writestack(pEnv env, Index n)
 {
     if (n) {
@@ -47,25 +49,21 @@ static void writestack(pEnv env, Index n)
 }
 
 /*
- * exeterm starts with n. If during execution n comes up again, the function
- * is directly recursive. That is allowed, except when the very first factor
- * is n. In that case there is recursion without an end condition.
- * It is possible to discover that specific case.
+ * exeterm evaluates a sequence of factors. There is no protection against
+ * recursion without end condition: it will overflow the call stack.
  */
 void exeterm(pEnv env, Index n)
 {
+    Index p;
+    int index;
     Entry ent;
-    int type, index;
-    Index stepper, root = 0;
 
 start:
     env->calls++;
-    if (root == n)
-	return;
-    root = n;
+    if (!n)
+	return;				/* skip empty program */
 #ifdef NOBDW
-    env->bucket.lis = n;
-    env->conts = newnode(env, LIST_, env->bucket, env->conts);
+    env->conts = LIST_NEWNODE(n, env->conts);	/* root for garbage collector */
     while (nodevalue(env->conts).lis) {
 #else
     while (n) {
@@ -73,61 +71,58 @@ start:
 #ifdef TRACEGC
 	if (env->tracegc > 5) {
 	    printf("exeterm1: ");
-	    printnode(env, nodevalue(env->conts).lis);
+	    printnode(env, n);
 	}
 #endif
 #ifdef NOBDW
-	stepper = nodevalue(env->conts).lis;
-	nodevalue(env->conts).lis = nextnode1(nodevalue(env->conts).lis);
+	p = nodevalue(env->conts).lis;
+	POP(nodevalue(env->conts).lis);
 #else
-	stepper = n;
+	p = n;
 #endif
 	env->opers++;
 	if (env->debugging) {
 	    writestack(env, env->stck);
 	    if (env->debugging == 2) {
 		printf(" : ");
-		writeterm(env, stepper, stdout);
+		writeterm(env, p, stdout);
 	    }
 	    putchar('\n');
+	    fflush(stdout);
 	}
-	type = nodetype(stepper);
-	switch (type) {
+	switch (nodetype(p)) {
 	case ILLEGAL_:
 	case COPIED_:
 	    fflush(stdout);
 	    fprintf(stderr, "exeterm: attempting to execute bad node\n");
 #ifdef TRACEGC
-	    printnode(env, stepper);
+	    printnode(env, p);
 #endif
 	    return;
 	case USR_:
-	    index = nodevalue(stepper).ent;
+	    index = nodevalue(p).ent;
 	    ent = vec_at(env->symtab, index);
 	    if (!ent.u.body) {
 		if (env->undeferror)
 		    execerror("definition", ent.name);
 #ifdef NOBDW
-		continue;
+		continue;	/* skip empty body */
 #else
 		break;
 #endif
 	    }
-	    if (!nextnode1(stepper)) {
+	    if (!nextnode1(p)) {
 #ifdef NOBDW
 		POP(env->conts);
 #endif
 		n = ent.u.body;
-		goto start;
+		goto start;		/* tail call optimization */
 	    }
-	    if (ent.u.body != root)
-		exeterm(env, ent.u.body);
+	    exeterm(env, ent.u.body);	/* subroutine call */
 	    break;
-
 	case ANON_FUNCT_:
-	    (*nodevalue(stepper).proc)(env);
+	    (*nodevalue(p).proc)(env);
 	    break;
-
 	case BOOLEAN_:
 	case CHAR_:
 	case INTEGER_:
@@ -136,9 +131,8 @@ start:
 	case LIST_:
 	case FLOAT_:
 	case FILE_:
-	    env->stck = newnode(env, type, nodevalue(stepper), env->stck);
+	    env->stck = newnode2(env, p, env->stck);
 	    break;
-
 	default:
 	    execerror("valid factor", "exeterm");
 	    break;
@@ -146,11 +140,11 @@ start:
 #ifdef TRACEGC
 	if (env->tracegc > 5) {
 	    printf("exeterm2: ");
-	    printnode(env, stepper);
+	    printnode(env, p);
 	}
 #endif
 #ifndef NOBDW
-	n = n->next;
+	POP(n);
 #endif
     }
 #ifdef NOBDW

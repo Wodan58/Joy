@@ -1,7 +1,7 @@
 #
 #   module  : CMakeLists.txt
-#   version : 1.2
-#   date    : 04/12/24
+#   version : 1.3
+#   date    : 06/21/24
 #
 macro(exe9 src)
 add_custom_target(${src}.out ALL
@@ -51,9 +51,9 @@ add_custom_target(${src}.out ALL
 endmacro(exe4)
 
 exe4(exist)
-exe7(empty)
-exe6(minim)
 exe5(tut)
+exe6(minim)
+exe7(empty)
 exe8(scan)
 exe9(parm)
 exe9(const)

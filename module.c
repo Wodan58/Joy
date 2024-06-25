@@ -1,7 +1,7 @@
 /*
     module  : module.c
-    version : 1.13
-    date    : 05/27/24
+    version : 1.14
+    date    : 06/21/24
 */
 #include "globals.h"
 
@@ -41,11 +41,9 @@ void undomod(int hide, int modl, int hcnt)
  */
 void initmod(pEnv env, char *name)
 {
-    if (++module_index >= DISPLAYMAX) {
-	module_index = -1;
+    if (module_index + 1 == DISPLAYMAX)
 	execerror("index", "display");
-    }
-    env->module_stack[module_index].name = name;
+    env->module_stack[++module_index].name = name;
     env->module_stack[module_index].hide = hide_index;
 }
 
@@ -60,11 +58,9 @@ void initmod(pEnv env, char *name)
  */
 void initpriv(pEnv env)
 {
-    if (++hide_index >= DISPLAYMAX) {
-	hide_index = -1;
+    if (hide_index + 1 == DISPLAYMAX)
 	execerror("index", "display");
-    }
-    env->hide_stack[hide_index] = ++hide_count;
+    env->hide_stack[++hide_index] = ++hide_count;
     inside_hide = 1;
 }
 

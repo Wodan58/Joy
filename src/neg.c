@@ -1,7 +1,7 @@
 /*
     module  : neg.c
-    version : 1.3
-    date    : 03/21/24
+    version : 1.4
+    date    : 06/21/24
 */
 #ifndef NEG_C
 #define NEG_C
@@ -16,9 +16,9 @@ void neg_(pEnv env)
     /* start new */
     FLOAT("neg");
     if (nodetype(env->stck) == INTEGER_) {
-        if (nodevalue(env->stck).num)
-            UNARY(INTEGER_NEWNODE, -nodevalue(env->stck).num);
-        return;
+	if (nodevalue(env->stck).num)
+	    UNARY(INTEGER_NEWNODE, -nodevalue(env->stck).num);
+	return;
     }
     /* end new */
     FLOAT_U(-);

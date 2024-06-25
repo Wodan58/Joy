@@ -1,7 +1,7 @@
 /*
     module  : n_ary.h
-    version : 1.4
-    date    : 03/21/24
+    version : 1.5
+    date    : 06/20/24
 */
 #ifndef N_ARY_H
 #define N_ARY_H
@@ -15,8 +15,7 @@
 	POP(env->stck);							\
 	exeterm(env, nodevalue(SAVED1).lis);				\
 	CHECKVALUE(NAME);						\
-	env->stck = newnode(env, nodetype(env->stck),			\
-			    nodevalue(env->stck), TOP);			\
+	env->stck = newnode2(env, env->stck, TOP);			\
 	POP(env->dump);							\
     }
 #endif

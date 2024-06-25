@@ -1,7 +1,7 @@
 #
 #   module  : CMakeLists.txt
-#   version : 1.13
-#   date    : 05/02/24
+#   version : 1.14
+#   date    : 06/21/24
 #
 macro(exe9 src)
 add_custom_target(${src}.out ALL
@@ -34,6 +34,7 @@ exe9(app4)
 exe9(argc)
 exe9(argv)
 exe9(asin)
+exe9(assign)
 exe9(at)
 exe9(atan)
 exe9(atan2)
@@ -82,6 +83,7 @@ exe9(fgets)
 exe9(file)
 exe9(filetime)
 exe9(filter)
+exe9(finclude)
 exe9(first)
 exe9(float)
 exe9(floor)
@@ -223,6 +225,7 @@ exe9(unary)
 exe9(unary2)
 exe9(unary3)
 exe9(unary4)
+exe9(unassign)
 exe9(uncons)
 exe9(undeferror)
 exe9(undefs)

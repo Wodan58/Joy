@@ -1,7 +1,7 @@
 /*
     module  : strtod.c
-    version : 1.4
-    date    : 03/21/24
+    version : 1.5
+    date    : 06/21/24
 */
 #ifndef STRTOD_C
 #define STRTOD_C
@@ -12,8 +12,15 @@ String S is converted to the float R.
 */
 void strtod_(pEnv env)
 {
+    char *str;
+
     ONEPARAM("strtod");
     STRING("strtod");
-    UNARY(FLOAT_NEWNODE, strtod(nodevalue(env->stck).str, 0));
+#ifdef NOBDW
+    str = (char *)&nodevalue(env->stck);
+#else
+    str = nodevalue(env->stck).str;
+#endif
+    UNARY(FLOAT_NEWNODE, strtod(str, 0));
 }
 #endif

@@ -1,7 +1,7 @@
 (*
     module  : compare.joy
-    version : 1.8
-    date    : 04/15/24
+    version : 1.9
+    date    : 06/21/24
 *)
 [1 2 3] [1 2 3] compare 1 =.	(* 1 means unequal in case of lists *)
 [1 2 3] [1 2 3 4] compare 1 =.
@@ -31,3 +31,18 @@ false true compare -1 =.
 1.1 1.0 compare 1 =.
 stdin stdin compare 0 =.
 stdin stdout compare -1 =.
+
+true 1.0 compare 0 =.
+false 0.0 compare 0 =.
+1.0 true compare 0 =.
+0.0 false compare 0 =.
+
+{} "empty" compare -1 =.
+{0} "empty" compare -1 =.
+false "false" compare 1 =.
+
+"empty" {} compare 1 =.
+"empty" {0} compare 1 =.
+"false" false compare 1 =.
+
+{-1}.

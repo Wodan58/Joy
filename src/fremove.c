@@ -1,7 +1,7 @@
 /*
     module  : fremove.c
-    version : 1.5
-    date    : 03/21/24
+    version : 1.6
+    date    : 06/21/24
 */
 #ifndef FREMOVE_C
 #define FREMOVE_C
@@ -13,8 +13,15 @@ system. B is a boolean indicating success or failure.
 */
 void fremove_(pEnv env)
 {
+    char *str;
+
     ONEPARAM("fremove");
     STRING("fremove");
-    UNARY(BOOLEAN_NEWNODE, !remove(nodevalue(env->stck).str));
+#ifdef NOBDW
+    str = (char *)&nodevalue(env->stck);
+#else
+    str = nodevalue(env->stck).str;
+#endif
+    UNARY(BOOLEAN_NEWNODE, !remove(str));
 }
 #endif

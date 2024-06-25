@@ -1,7 +1,7 @@
 /*
     module  : condnestrec.c
-    version : 1.5
-    date    : 03/21/24
+    version : 1.6
+    date    : 06/20/24
 */
 #ifndef CONDNESTREC_C
 #define CONDNESTREC_C
@@ -17,23 +17,23 @@ consecutive [Ri] (n > 3 would be exceptional.)
 void condnestrecaux(pEnv env)
 {
     int result = 0;
-    env->dump1 = newnode(env, LIST_, nodevalue(SAVED1), env->dump1);
+
+    env->dump1 = LIST_NEWNODE(nodevalue(SAVED1).lis, env->dump1);
     env->dump2 = LIST_NEWNODE(env->stck, env->dump2);
-    while (!result && DMP1 && nextnode1(DMP1)) {
-        env->stck = DMP2;
-        exeterm(env, nodevalue(nodevalue(DMP1).lis).lis);
-        result = nodevalue(env->stck).num;
-        if (!result)
-            DMP1 = nextnode1(DMP1);
+    for (; DMP1 && nextnode1(DMP1); DMP1 = nextnode1(DMP1)) {
+	env->stck = DMP2;
+	exeterm(env, nodevalue(nodevalue(DMP1).lis).lis);
+	if ((result = nodevalue(env->stck).num) != 0)
+	    break;
     }
     env->stck = DMP2;
     env->dump3 = LIST_NEWNODE(
-        (result ? nextnode1(nodevalue(DMP1).lis) : nodevalue(DMP1).lis),
-        env->dump3);
+	(result ? nextnode1(nodevalue(DMP1).lis) : nodevalue(DMP1).lis),
+	env->dump3);
     exeterm(env, nodevalue(DMP3).lis);
     for (DMP3 = nextnode1(DMP3); DMP3; DMP3 = nextnode1(DMP3)) {
-        condnestrecaux(env);
-        exeterm(env, nodevalue(DMP3).lis);
+	condnestrecaux(env);
+	exeterm(env, nodevalue(DMP3).lis);
     }
     POP(env->dump3);
     POP(env->dump2);

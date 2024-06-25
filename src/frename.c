@@ -1,7 +1,7 @@
 /*
     module  : frename.c
-    version : 1.5
-    date    : 03/21/24
+    version : 1.6
+    date    : 06/21/24
 */
 #ifndef FRENAME_C
 #define FRENAME_C
@@ -13,10 +13,18 @@ B is a boolean indicating success or failure.
 */
 void frename_(pEnv env)
 {
+    char *p1, *p2;
+
     TWOPARAMS("frename");
     STRING("frename");
     STRING2("frename");
-    BINARY(BOOLEAN_NEWNODE,
-        !rename(nodevalue(nextnode1(env->stck)).str, nodevalue(env->stck).str));
+#ifdef NOBDW
+    p1 = (char *)&nodevalue(nextnode1(env->stck));
+    p2 = (char *)&nodevalue(env->stck);
+#else
+    p1 = nodevalue(nextnode1(env->stck)).str;
+    p2 = nodevalue(env->stck).str;
+#endif
+    BINARY(BOOLEAN_NEWNODE, !rename(p1, p2));
 }
 #endif

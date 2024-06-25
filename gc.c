@@ -1,7 +1,7 @@
 /*
     module  : gc.c
-    version : 1.48
-    date    : 05/27/24
+    version : 1.49
+    date    : 06/22/24
 */
 #include <stdio.h>
 #include <string.h>
@@ -20,6 +20,7 @@
 
 #ifdef _MSC_VER
 #pragma warning(disable: 4267)
+#define kh_packed		/* forget about __attribute__ ((packed)) */
 #endif
 
 #ifdef __linux__
@@ -53,7 +54,7 @@
 
 #define GROW_FACTOR	2
 #define BSS_ALIGN	4
-#define MAX_ITEMS	10
+#define MIN_ITEMS	10
 
 /*
  * When pointers are aligned at 16 bytes, the lower 4 bits are always zero.
@@ -181,7 +182,7 @@ void GC_INIT(void)
 #else
     MEM = kh_init(Backup);
 #endif
-    max_items = MAX_ITEMS;
+    max_items = MIN_ITEMS;
 }
 
 /*
@@ -322,6 +323,8 @@ static void remind(char *ptr, size_t size, int flags)
     if (max_items < kh_size(MEM)) {
 	GC_gcollect();
 	max_items = kh_size(MEM) * GROW_FACTOR;
+	if (max_items < MIN_ITEMS)
+	    max_items = MIN_ITEMS;
     }
 }
 

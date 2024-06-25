@@ -1,7 +1,7 @@
 /*
     module  : treestep.c
-    version : 1.5
-    date    : 03/21/24
+    version : 1.6
+    date    : 06/21/24
 */
 #ifndef TREESTEP_C
 #define TREESTEP_C
@@ -13,15 +13,13 @@ Recursively traverses leaves of tree T, executes P for each leaf.
 void treestepaux(pEnv env, Index item)
 {
     if (nodetype(item) != LIST_) {
-        GNULLARY(nodetype(item), nodevalue(item));
-        exeterm(env, nodevalue(SAVED1).lis);
+	GNULLARY(item);
+	exeterm(env, nodevalue(SAVED1).lis);
     } else {
-        env->dump1 = newnode(env, LIST_, nodevalue(item), env->dump1);
-        while (DMP1) {
-            treestepaux(env, DMP1);
-            DMP1 = nextnode1(DMP1);
-        }
-        POP(env->dump1);
+	env->dump1 = LIST_NEWNODE(nodevalue(item).lis, env->dump1);
+	for (; DMP1; DMP1 = nextnode1(DMP1))
+	    treestepaux(env, DMP1);
+	POP(env->dump1);
     }
 }
 

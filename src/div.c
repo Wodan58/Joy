@@ -1,7 +1,7 @@
 /*
     module  : div.c
-    version : 1.4
-    date    : 03/21/24
+    version : 1.5
+    date    : 06/21/24
 */
 #ifndef DIV_C
 #define DIV_C
@@ -17,8 +17,8 @@ void div_(pEnv env)
     TWOPARAMS("div");
     INTEGERS2("div");
     CHECKZERO("div");
-    result
-        = lldiv(nodevalue(nextnode1(env->stck)).num, nodevalue(env->stck).num);
+    result = lldiv(nodevalue(nextnode1(env->stck)).num,
+		    nodevalue(env->stck).num);
     BINARY(INTEGER_NEWNODE, result.quot);
     NULLARY(INTEGER_NEWNODE, result.rem);
 }

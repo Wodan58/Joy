@@ -1,7 +1,7 @@
 /*
     module  : swap.c
-    version : 1.3
-    date    : 03/21/24
+    version : 1.4
+    date    : 06/21/24
 */
 #ifndef SWAP_C
 #define SWAP_C
@@ -14,8 +14,8 @@ void swap_(pEnv env)
 {
     TWOPARAMS("swap");
     SAVESTACK;
-    GBINARY(nodetype(SAVED1), nodevalue(SAVED1));
-    GNULLARY(nodetype(SAVED2), nodevalue(SAVED2));
+    GBINARY(SAVED1);
+    GNULLARY(SAVED2);
     POP(env->dump);
 }
 #endif

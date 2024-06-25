@@ -1,7 +1,7 @@
 /*
     module  : step.c
-    version : 1.7
-    date    : 03/21/24
+    version : 1.8
+    date    : 06/21/24
 */
 #ifndef STEP_C
 #define STEP_C
@@ -13,7 +13,7 @@ executes P for each member of A.
 */
 void step_(pEnv env)
 {
-    int i;
+    int i = 0;
     char *str;
 
     TWOPARAMS("step");
@@ -22,29 +22,29 @@ void step_(pEnv env)
     env->stck = nextnode2(env->stck);
     switch (nodetype(SAVED2)) {
     case LIST_:
-        env->dump1 = newnode(env, LIST_, nodevalue(SAVED2), env->dump1);
-        while (DMP1) {
-            GNULLARY(nodetype(DMP1), nodevalue(DMP1));
-            exeterm(env, nodevalue(SAVED1).lis);
-            DMP1 = nextnode1(DMP1);
-        }
-        POP(env->dump1);
-        break;
+	env->dump1 = LIST_NEWNODE(nodevalue(SAVED2).lis, env->dump1);
+	for (; DMP1; DMP1 = nextnode1(DMP1)) {
+	    GNULLARY(DMP1);
+	    exeterm(env, nodevalue(SAVED1).lis);
+	}
+	POP(env->dump1);
+	break;
     case STRING_:
-        for (str = nodevalue(SAVED2).str; *str != '\0'; str++) {
-            env->stck = CHAR_NEWNODE(*str, env->stck);
-            exeterm(env, nodevalue(SAVED1).lis);
-        }
-        break;
+	for (str = strdup((char *)&nodevalue(SAVED2)); str[i]; i++) {
+	    NULLARY(CHAR_NEWNODE, str[i]);
+	    exeterm(env, nodevalue(SAVED1).lis);
+	}
+	free(str);
+	break;
     case SET_:
-        for (i = 0; i < SETSIZE; i++)
-            if (nodevalue(SAVED2).set & ((int64_t)1 << i)) {
-                env->stck = INTEGER_NEWNODE(i, env->stck);
-                exeterm(env, nodevalue(SAVED1).lis);
-            }
-        break;
+	for (; i < SETSIZE; i++)
+	    if (nodevalue(SAVED2).set & ((int64_t)1 << i)) {
+		NULLARY(INTEGER_NEWNODE, i);
+		exeterm(env, nodevalue(SAVED1).lis);
+	    }
+	break;
     default:
-        BADAGGREGATE("step");
+	BADAGGREGATE("step");
     }
     POP(env->dump);
 }

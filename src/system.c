@@ -1,7 +1,7 @@
 /*
     module  : system.c
-    version : 1.7
-    date    : 03/21/24
+    version : 1.8
+    date    : 06/21/24
 */
 #ifndef SYSTEM_C
 #define SYSTEM_C
@@ -15,12 +15,18 @@ When that has finished, the process returns to Joy.
 void system_(pEnv env)
 {
     int rv;
+    char *str;
 
     ONEPARAM("system");
     STRING("system");
-    if ((rv = system(nodevalue(env->stck).str)) != 0) {
+#ifdef NOBWD
+    str = (char *)&nodevalue(env->stck);
+#else
+    str = nodevalue(env->stck).str;
+#endif
+    if ((rv = system(str)) != 0) {
 	fflush(stdout);
-	fprintf(stderr, "system: %d\n", rv);
+	fprintf(stderr, "system: %u\n", rv & 0xFF);
     }
     POP(env->stck);
 }

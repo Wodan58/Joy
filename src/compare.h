@@ -1,7 +1,7 @@
 /*
     module  : compare.h
-    version : 1.18
-    date    : 04/11/24
+    version : 1.20
+    date    : 06/20/24
 */
 #ifndef COMPARE_H
 #define COMPARE_H
@@ -10,23 +10,26 @@ int is_null(pEnv env, Index node)
 {
     switch (nodetype(node)) {
     case USR_:
-        return !nodevalue(node).ent;
     case ANON_FUNCT_:
-        return !nodevalue(node).proc;
+	break;
     case BOOLEAN_:
     case CHAR_:
     case INTEGER_:
-        return !nodevalue(node).num;
+	return !nodevalue(node).num;
     case SET_:
-        return !nodevalue(node).set;
+	return !nodevalue(node).set;
     case STRING_:
-        return !*nodevalue(node).str;
+#ifdef NOBDW
+	return !nodeleng(node);
+#else
+	return !*nodevalue(node).str;
+#endif
     case LIST_:
-        return !nodevalue(node).lis;
+	return !nodevalue(node).lis;
     case FLOAT_:
-        return !nodevalue(node).dbl;
+	return !nodevalue(node).dbl;
     case FILE_:
-        return !nodevalue(node).fil;
+	return !nodevalue(node).fil;
     }
     return 0;
 }
@@ -53,16 +56,12 @@ int Compare(pEnv env, Index first, Index second)
 	case ANON_FUNCT_:
 	    name2 = nickname(operindex(env, nodevalue(second).proc));
 	    goto cmpstr;
-	case BOOLEAN_:
-	case CHAR_:
-	case INTEGER_:
-	case SET_:
-	case LIST_:
-	case FLOAT_:
-	case FILE_:
-	    return 1; /* unequal */
 	case STRING_:
+#ifdef NOBDW
+	    name2 = (char *)&nodevalue(second);
+#else
 	    name2 = nodevalue(second).str;
+#endif
 	    goto cmpstr;
 	}
 	break;
@@ -75,16 +74,12 @@ int Compare(pEnv env, Index first, Index second)
 	case ANON_FUNCT_:
 	    name2 = nickname(operindex(env, nodevalue(second).proc));
 	    goto cmpstr;
-	case BOOLEAN_:
-	case CHAR_:
-	case INTEGER_:
-	case SET_:
-	case LIST_:
-	case FLOAT_:
-	case FILE_:
-	    return 1; /* unequal */
 	case STRING_:
+#ifdef NOBDW
+	    name2 = (char *)&nodevalue(second);
+#else
 	    name2 = nodevalue(second).str;
+#endif
 	    goto cmpstr;
 	}
 	break;
@@ -101,8 +96,6 @@ int Compare(pEnv env, Index first, Index second)
 	    dbl1 = num1;
 	    dbl2 = nodevalue(second).dbl;
 	    goto cmpdbl;
-	default:
-	    return 1; /* unequal */
 	}
 	break;
     case CHAR_:
@@ -118,8 +111,6 @@ int Compare(pEnv env, Index first, Index second)
 	    dbl1 = num1;
 	    dbl2 = nodevalue(second).dbl;
 	    goto cmpdbl;
-	default:
-	    return 1; /* unequal */
 	}
 	break;
     case INTEGER_:
@@ -135,8 +126,6 @@ int Compare(pEnv env, Index first, Index second)
 	    dbl1 = num1;
 	    dbl2 = nodevalue(second).dbl;
 	    goto cmpdbl;
-	default:
-	    return 1; /* unequal */
 	}
 	break;
     case SET_:
@@ -149,12 +138,16 @@ int Compare(pEnv env, Index first, Index second)
 	case FLOAT_:
 	    num2 = nodevalue(second).num;
 	    goto cmpnum;
-	default:
-	    return 1; /* unequal */
 	}
+	/* continue */
+    case LIST_:
 	break;
     case STRING_:
+#ifdef NOBDW
+	name1 = (char *)&nodevalue(first);
+#else
 	name1 = nodevalue(first).str;
+#endif
 	switch (type2) {
 	case USR_:
 	    name2 = vec_at(env->symtab, nodevalue(second).ent).name;
@@ -162,21 +155,15 @@ int Compare(pEnv env, Index first, Index second)
 	case ANON_FUNCT_:
 	    name2 = nickname(operindex(env, nodevalue(second).proc));
 	    goto cmpstr;
-	case BOOLEAN_:
-	case CHAR_:
-	case INTEGER_:
-	case SET_:
-	case LIST_:
-	case FLOAT_:
-	case FILE_:
-	    return 1; /* unequal */
 	case STRING_:
+#ifdef NOBDW
+	    name2 = (char *)&nodevalue(second);
+#else
 	    name2 = nodevalue(second).str;
+#endif
 	    goto cmpstr;
 	}
 	break;
-    case LIST_:
-	return 1; /* unequal */
     case FLOAT_:
 	dbl1 = nodevalue(first).dbl;
 	switch (type2) {
@@ -192,8 +179,6 @@ int Compare(pEnv env, Index first, Index second)
 	case FLOAT_:
 	    dbl2 = nodevalue(second).dbl;
 	    goto cmpdbl;
-	default:
-	    return 1; /* unequal */
 	}
 	break;
     case FILE_:
@@ -202,11 +187,10 @@ int Compare(pEnv env, Index first, Index second)
 	case FILE_:
 	    fp2 = nodevalue(second).fil;
 	    return fp1 < fp2 ? -1 : fp1 > fp2;
-	default:
-	    return 1; /* unequal */
 	}
 	break;
     }
+    return 1;	/* unequal */
 cmpnum:
     return num1 < num2 ? -1 : num1 > num2;
 cmpdbl:

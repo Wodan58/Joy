@@ -1,7 +1,7 @@
 /*
     module  : rem.c
-    version : 1.3
-    date    : 03/21/24
+    version : 1.4
+    date    : 06/21/24
 */
 #ifndef REM_C
 #define REM_C
@@ -16,7 +16,7 @@ void rem_(pEnv env)
     FLOAT_P(fmod);
     INTEGERS2("rem");
     CHECKZERO("rem");
-    BINARY(INTEGER_NEWNODE,
-        nodevalue(nextnode1(env->stck)).num % nodevalue(env->stck).num);
+    BINARY(INTEGER_NEWNODE, nodevalue(nextnode1(env->stck)).num %
+		    nodevalue(env->stck).num);
 }
 #endif

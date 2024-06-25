@@ -1,7 +1,7 @@
 /*
     module  : __settracegc.c
-    version : 1.9
-    date    : 03/21/24
+    version : 1.10
+    date    : 06/21/24
 */
 #ifndef __SETTRACEGC_C
 #define __SETTRACEGC_C
@@ -14,10 +14,7 @@ void __settracegc_(pEnv env)
 {
     ONEPARAM("settracegc");
     NUMERICTYPE("settracegc");
-    if (!env->ignore)
-	env->tracegc = nodevalue(env->stck).num;
-    else if (!nodevalue(env->stck).num)
-	env->ignore = 0;
+    env->tracegc = nodevalue(env->stck).num;
     POP(env->stck);
 }
 #endif

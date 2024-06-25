@@ -1,7 +1,7 @@
 /*
     module  : condlinrec.c
-    version : 1.5
-    date    : 03/21/24
+    version : 1.6
+    date    : 06/20/24
 */
 #ifndef CONDLINREC_C
 #define CONDLINREC_C
@@ -18,28 +18,28 @@ For the latter executes R1, recurses, executes R2.
 void condlinrecaux(pEnv env)
 {
     int result = 0;
-    env->dump1 = newnode(env, LIST_, nodevalue(SAVED1), env->dump1);
+
+    env->dump1 = LIST_NEWNODE(nodevalue(SAVED1).lis, env->dump1);
     env->dump2 = LIST_NEWNODE(env->stck, env->dump2);
-    while (!result && DMP1 && nextnode1(DMP1)) {
-        env->stck = DMP2;
-        exeterm(env, nodevalue(nodevalue(DMP1).lis).lis);
-        result = nodevalue(env->stck).num;
-        if (!result)
-            DMP1 = nextnode1(DMP1);
+    for (; DMP1 && nextnode1(DMP1); DMP1 = nextnode1(DMP1)) {
+	env->stck = DMP2;
+	exeterm(env, nodevalue(nodevalue(DMP1).lis).lis);
+	if ((result = nodevalue(env->stck).num) != 0)
+	    break;
     }
     env->stck = DMP2;
     if (result) {
-        exeterm(env, nodevalue(nextnode1(nodevalue(DMP1).lis)).lis);
-        if (nextnode2(nodevalue(DMP1).lis)) {
-            condlinrecaux(env);
-            exeterm(env, nodevalue(nextnode2(nodevalue(DMP1).lis)).lis);
-        }
+	exeterm(env, nodevalue(nextnode1(nodevalue(DMP1).lis)).lis);
+	if (nextnode2(nodevalue(DMP1).lis)) {
+	    condlinrecaux(env);
+	    exeterm(env, nodevalue(nextnode2(nodevalue(DMP1).lis)).lis);
+	}
     } else {
-        exeterm(env, nodevalue(nodevalue(DMP1).lis).lis);
-        if (nextnode1(nodevalue(DMP1).lis)) {
-            condlinrecaux(env);
-            exeterm(env, nodevalue(nextnode1(nodevalue(DMP1).lis)).lis);
-        }
+	exeterm(env, nodevalue(nodevalue(DMP1).lis).lis);
+	if (nextnode1(nodevalue(DMP1).lis)) {
+	    condlinrecaux(env);
+	    exeterm(env, nodevalue(nextnode1(nodevalue(DMP1).lis)).lis);
+	}
     }
     POP(env->dump2);
     POP(env->dump1);

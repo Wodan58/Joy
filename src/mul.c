@@ -1,7 +1,7 @@
 /*
     module  : mul.c
-    version : 1.4
-    date    : 03/21/24
+    version : 1.5
+    date    : 06/21/24
 */
 #ifndef MUL_C
 #define MUL_C
@@ -15,7 +15,7 @@ void mul_(pEnv env)
     TWOPARAMS("*");
     FLOAT_I(*);
     INTEGERS2("*");
-    BINARY(INTEGER_NEWNODE,
-        nodevalue(nextnode1(env->stck)).num * nodevalue(env->stck).num);
+    BINARY(INTEGER_NEWNODE, nodevalue(nextnode1(env->stck)).num *
+		    nodevalue(env->stck).num);
 }
 #endif
