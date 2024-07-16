@@ -1,7 +1,7 @@
 /*
  *  module  : undefs.c
- *  version : 1.5
- *  date    : 06/21/24
+ *  version : 1.7
+ *  date    : 07/02/24
  */
 #include "globals.h"
 
@@ -51,13 +51,11 @@ void hide_inner_modules(pEnv env, int flag)
      * table. The module is still present in the symbol table, but cannot be
      * found. Exactly what is needed.
      */
-    for (++i; i < last; i++) {
+    for (; i < last; i++) {
 	ent = vec_at(env->symtab, i);
-	if (ent.is_ok)				/* previous modules are ok */
+	if (ent.is_ok || !strchr(ent.name, '.'))/* previous modules are ok */
 	    continue;
 	if (isdigit((int)ent.name[0]))		/* hidden names are ok */
-	    continue;
-	if (strchr(ent.name, '.') == 0)		/* ent.name is not a module */
 	    continue;
 	if (strncmp(name, ent.name, leng))	/* an inner module was found */
 	    if ((key = symtab_get(env->hash, ent.name)) != kh_end(env->hash))

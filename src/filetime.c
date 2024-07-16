@@ -1,7 +1,7 @@
 /*
     module  : filetime.c
-    version : 1.6
-    date    : 06/21/24
+    version : 1.7
+    date    : 07/12/24
 */
 #ifndef FILETIME_C
 #define FILETIME_C
@@ -14,16 +14,24 @@ OK 3160  filetime  :  F  ->  T
 */
 void filetime_(pEnv env)
 {
-    int rv;
+    FILE *fp;
+    char *str;
+    time_t mtime;	/* modification time */
     struct stat buf;
 
     ONEPARAM("filetime");
     STRING("filetime");
 #ifdef NOBDW
-    rv = stat((char *)&nodevalue(env->stck), &buf);
+    str = (char *)&nodevalue(env->stck);
 #else
-    rv = stat(nodevalue(env->stck).str, &buf);
+    str = nodevalue(env->stck).str;
 #endif
-    UNARY(INTEGER_NEWNODE, rv < 0 ? 0 : buf.st_mtime);
+    mtime = 0;
+    if ((fp = fopen(str, "r")) != 0) {
+	if (fstat(fileno(fp), &buf) >= 0)
+	    mtime = buf.st_mtime;
+	fclose(fp);
+    }
+    UNARY(INTEGER_NEWNODE, mtime);
 }
 #endif

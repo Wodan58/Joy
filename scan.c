@@ -1,7 +1,7 @@
 /*
     module  : scan.c
-    version : 1.71
-    date    : 06/22/24
+    version : 1.77
+    date    : 07/12/24
 */
 #include "globals.h"
 
@@ -174,42 +174,31 @@ static int redirect(pEnv env, char *name, FILE *fp, char *str)
  */
 int include(pEnv env, char *name)
 {
+    int i;
     FILE *fp;
-    char *path = 0, *str = name;
+    char *path = 0, *str = name;			/* str = path/name */
 
     /*
-     * A file is tried first in the current directory.
+     * A file is tried first in the current directory, then in the home
+     * directory and if that also fails in the pathname directory.
      */
-    if ((fp = fopen(str, "r")) != 0)
-	return redirect(env, name, fp, str);
-    /*
-     * usrlib.joy is also tried in the home directory.
-     */
-    if (!strcmp(name, "usrlib.joy")) {			/* check usrlib.joy */
-	if ((path = getenv("HOME")) != 0) {		/* unix/cygwin */
+    if (!env->homedir) {				/* should be present */
+	env->homedir = getenv("HOME");			/* unix/cygwin */
+#ifdef _MSC_VER
+	if (!env->homedir)
+	    env->homedir = getenv("HOMEPATH");		/* windows */
+#endif
+    }
+    for (i = 0; i < 3; i++) {
+	if (i) {					/* add pathname */
+	    path = i == 1 ? env->homedir : env->pathname;
 	    str = GC_malloc_atomic(strlen(path) + strlen(name) + 2);
 	    sprintf(str, "%s/%s", path, name);
-	    if ((fp = fopen(str, "r")) != 0)
-		return redirect(env, name, fp, str);
 	}
-	if ((path = getenv("USERPROFILE")) != 0) {	/* windows */
-	    str = GC_malloc_atomic(strlen(path) + strlen(name) + 2);
-	    sprintf(str, "%s/%s", path, name);
-	    if ((fp = fopen(str, "r")) != 0)
-		return redirect(env, name, fp, str);
-	}
+	if ((fp = fopen(str, "r")) != 0)		/* try to read */
+	    return redirect(env, name, fp, str);	/* stop trying */
     }
-    /*
-     * If that fails, the pathname is prepended and the file is tried again.
-     */
-    path = env->pathname;				/* joy binary */
-    if (strcmp(path, ".")) {
-	str = GC_malloc_atomic(strlen(path) + strlen(name) + 2);
-	sprintf(str, "%s/%s", path, name);
-	if ((fp = fopen(str, "r")) != 0)
-	    return redirect(env, name, fp, str);
-    }
-    return 1;	/* file cannot be opened for reading */
+    return 1;				/* file cannot be opened for reading */
 }
 
 /*
@@ -263,7 +252,7 @@ static int special(pEnv env)
  */
 static int my_getsym(pEnv env, int ch)
 {
-    static char exclude[] = "\"#'().;[]{}", include[] = "-=_";
+    static char *exclude = "\"#'().;[]{}", *include = "-=_";
     char *ptr;
     int i, sign, type;
 
@@ -460,8 +449,7 @@ static void push_sym(pEnv env)
 {
     Token node;
 
-    node.op = env->sym;
-    switch (node.op) {
+    switch (node.op = env->sym) {
     case CHAR_:
     case INTEGER_:
 	node.u.num = env->num;
@@ -498,8 +486,7 @@ int getsym(pEnv env, int ch)
  */
     if (vec_size(env->tokens)) {
 begin:	node = vec_pop(env->tokens);
-	env->sym = node.op;
-	switch (node.op) {
+	switch (env->sym = node.op) {
 	case CHAR_:
 	case INTEGER_:
 	    env->num = node.u.num;
@@ -507,8 +494,8 @@ begin:	node = vec_pop(env->tokens);
 	case FLOAT_:
 	    env->dbl = node.u.dbl;
 	    break;
-	case STRING_:
 	case USR_:
+	case STRING_:
 	    env->str = node.u.str;
 	    break;
 	}

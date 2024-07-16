@@ -1,8 +1,8 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.100
- *  date    : 06/24/24
+ *  version : 1.103
+ *  date    : 07/01/24
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -198,7 +198,8 @@ typedef struct Token {
 } Token;
 
 typedef struct Entry {
-    char *name, is_user, flags, is_ok, is_root;
+    char *name;
+    unsigned char is_user, flags, is_ok, is_root, is_last;
     union {
 	Index body;
 	proc_t proc;
@@ -222,7 +223,8 @@ typedef struct Env {
     char *str;			/* string */
     clock_t startclock;		/* main */
     char **g_argv;		/* command line */
-    char *pathname;
+    char *homedir;		/* HOME or USERPROFILE */
+    char *pathname;		/* pathname of joy binary */
     char *mod_name;		/* name of module */
     vector(char) *string;	/* value */
     vector(char) *pushback;	/* push back buffer */
@@ -257,6 +259,7 @@ typedef struct Env {
     unsigned char printing;
     unsigned char finclude_busy;
     unsigned char flibrary_busy;
+    unsigned char variable_busy;
 } Env;
 
 /* GOOD REFS:
@@ -298,6 +301,9 @@ void inimem1(pEnv env, int status);
 void inimem2(pEnv env);
 void printnode(pEnv env, Index p);
 void my_gc(pEnv env);
+void *check_malloc(size_t leng);
+void *check_realloc(void *ptr, size_t leng);
+void *check_strdup(char *ptr);
 #endif
 /* factor.c */
 int readfactor(pEnv env, int ch, int *rv);	/* read a JOY factor */

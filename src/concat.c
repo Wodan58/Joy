@@ -1,7 +1,7 @@
 /*
     module  : concat.c
-    version : 1.7
-    date    : 06/20/24
+    version : 1.8
+    date    : 07/01/24
 */
 #ifndef CONCAT_C
 #define CONCAT_C
@@ -23,7 +23,8 @@ void concat_(pEnv env)
 			nodevalue(env->stck).set);
 	break;
     case STRING_:
-	str = malloc(nodeleng(nextnode1(env->stck)) + nodeleng(env->stck) + 1);
+	str = check_malloc(nodeleng(nextnode1(env->stck)) +
+			nodeleng(env->stck) + 1);
 	sprintf(str, "%s%s", (char *)&nodevalue(nextnode1(env->stck)),
 			(char *)&nodevalue(env->stck));
 	BINARY(STRING_NEWNODE, str);
@@ -35,7 +36,7 @@ void concat_(pEnv env)
 	    return;
 	}
 	env->dump1 = LIST_NEWNODE(nodevalue(nextnode1(env->stck)).lis,
-			env->dump1);	/* old */
+			env->dump1);			/* old */
 	env->dump2 = LIST_NEWNODE(0, env->dump2);	/* head */
 	env->dump3 = LIST_NEWNODE(0, env->dump3);	/* last */
 	for (; DMP1; DMP1 = nextnode1(DMP1)) {

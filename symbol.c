@@ -1,7 +1,7 @@
 /*
  *  module  : symbol.c
- *  version : 1.5
- *  date    : 06/24/24
+ *  version : 1.6
+ *  date    : 06/27/24
  */
 #include "globals.h"
 
@@ -15,13 +15,14 @@ static int enterglobal(pEnv env, char *name)
     int rv, index;
 
     index = vec_size(env->symtab);
-    memset(&ent, 0, sizeof(ent));
-    ent.name = strdup(name);	/* move to permanent memory */
+    memset(&ent, 0, sizeof(ent));	/* make sure that all fields are 0 */
+    ent.name = strdup(name);		/* move to permanent memory */
     ent.is_user = 1;
     ent.flags = env->inlining ? IMMEDIATE : OK;
     ent.is_ok = 0;
     ent.is_root = 0;
-    ent.u.body = 0;	/* may be assigned in definition */
+    ent.is_last = 0;
+    ent.u.body = 0;			/* may be assigned in definition */
     key = symtab_put(env->hash, ent.name, &rv);
     kh_val(env->hash, key) = index;
     vec_push(env->symtab, ent);

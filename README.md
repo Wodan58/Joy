@@ -20,7 +20,7 @@ downloaded from the archived [original](http://web.archive.org/web/2003060219040
 comments at the start of main.c and of interp.c.
 [Manfred von Thun](http://fogus.me/important/von-thun/) really wanted those
 comments in main.c, but the newsgroup did not allow attachments, so it was
-never published.
+never published as such.
 As for the comments in interp.c, I added them because I like some version
 history. It proves that the language and the implementation was not done over
 night.
@@ -51,11 +51,11 @@ Build with MSVC
     cmake --build . --config Release
     copy Release\joy.exe
 
-    copy ..\lib\usrlib.joy %USERPROFILE%
-    mkdir %USERPROFILE%\usrlib
-    copy ..\lib\*.* %USERPROFILE%\usrlib
+    copy ..\lib\usrlib.joy %HOMEPATH%
+    mkdir %HOMEPATH%\usrlib
+    copy ..\lib\*.* %HOMEPATH%\usrlib
 
-Then manually change the path to inilib.joy in %USERPROFILE%\usrlib.joy
+Then manually change the path to inilib.joy in %HOMEPATH%\usrlib.joy
 from "../lib" to "usrlib".
 
 Running

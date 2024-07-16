@@ -1,7 +1,7 @@
 /*
     module  : rest.c
-    version : 1.8
-    date    : 06/21/24
+    version : 1.9
+    date    : 07/01/24
 */
 #ifndef REST_C
 #define REST_C
@@ -25,7 +25,7 @@ void rest_(pEnv env)
 	break;
     case STRING_:
 #ifdef NOBDW
-	str = strdup((char *)&nodevalue(env->stck));
+	str = check_strdup((char *)&nodevalue(env->stck));
 #else
 	str = nodevalue(env->stck).str;
 #endif

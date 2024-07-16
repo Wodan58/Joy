@@ -1,7 +1,7 @@
 /*
     module  : split.c
-    version : 1.9
-    date    : 06/21/24
+    version : 1.10
+    date    : 07/01/24
 */
 #ifndef SPLIT_C
 #define SPLIT_C
@@ -38,7 +38,7 @@ void split_(pEnv env)
     case STRING_:
 	yesstring = malloc(nodeleng(SAVED2) + 1);
 	nostring = malloc(nodeleng(SAVED2) + 1);
-	for (str = strdup((char *)&nodevalue(SAVED2)); str[i]; i++) {
+	for (str = check_strdup((char *)&nodevalue(SAVED2)); str[i]; i++) {
 	    env->stck = CHAR_NEWNODE(str[i], SAVED3);
 	    exeterm(env, nodevalue(SAVED1).lis);
 	    CHECKSTACK("split");

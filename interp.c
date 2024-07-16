@@ -1,8 +1,8 @@
 /* FILE: interp.c */
 /*
  *  module  : interp.c
- *  version : 1.83
- *  date    : 06/24/24
+ *  version : 1.84
+ *  date    : 07/12/24
  */
 
 #if 0
@@ -61,7 +61,7 @@ void exeterm(pEnv env, Index n)
 start:
     env->calls++;
     if (!n)
-	return;				/* skip empty program */
+	return;					/* skip empty program */
 #ifdef NOBDW
     env->conts = LIST_NEWNODE(n, env->conts);	/* root for garbage collector */
     while (nodevalue(env->conts).lis) {
@@ -106,7 +106,7 @@ start:
 		if (env->undeferror)
 		    execerror("definition", ent.name);
 #ifdef NOBDW
-		continue;	/* skip empty body */
+		continue;		/* skip empty body */
 #else
 		break;
 #endif

@@ -1,7 +1,7 @@
 /*
     module  : drop.c
-    version : 1.10
-    date    : 06/21/24
+    version : 1.11
+    date    : 07/01/24
 */
 #ifndef DROP_C
 #define DROP_C
@@ -34,7 +34,7 @@ void drop_(pEnv env)
 	break;
     case STRING_:
 #ifdef NOBDW
-	str = strdup((char *)&nodevalue(env->stck));
+	str = check_strdup((char *)&nodevalue(env->stck));
 #else
 	str = nodevalue(env->stck).str;
 #endif

@@ -1,7 +1,7 @@
 /*
     module  : module.c
-    version : 1.14
-    date    : 06/21/24
+    version : 1.15
+    date    : 07/12/24
 */
 #include "globals.h"
 
@@ -9,14 +9,14 @@
  * hide stack of private sections. The sections are numbered, while keeping the
  * string presentation instead of the number itself.
  */
-static int hide_index = -1, hide_count;
+static int hide_index, hide_count;
 static unsigned char inside_hide, been_inside;
 
 /*
  * stack of module names. Only one module needs to be considered active for the
  * purpose of prefixing the module to the symbol name.
  */
-static int module_index = -1;
+static int module_index;
 
 /*
  * savemod saves the global variables, to be restored later with undomod.
@@ -41,10 +41,10 @@ void undomod(int hide, int modl, int hcnt)
  */
 void initmod(pEnv env, char *name)
 {
-    if (module_index + 1 == DISPLAYMAX)
+    if (module_index == DISPLAYMAX)
 	execerror("index", "display");
-    env->module_stack[++module_index].name = name;
-    env->module_stack[module_index].hide = hide_index;
+    env->module_stack[module_index].name = name;
+    env->module_stack[module_index++].hide = hide_index;
 }
 
 /*
@@ -58,9 +58,9 @@ void initmod(pEnv env, char *name)
  */
 void initpriv(pEnv env)
 {
-    if (hide_index + 1 == DISPLAYMAX)
+    if (hide_index == DISPLAYMAX)
 	execerror("index", "display");
-    env->hide_stack[++hide_index] = ++hide_count;
+    env->hide_stack[hide_index++] = ++hide_count;
     inside_hide = 1;
 }
 
@@ -82,7 +82,7 @@ void exitpriv(void)
     if (!been_inside)
 	return;
     been_inside = 0;
-    if (hide_index >= 0)
+    if (hide_index)
 	hide_index--;
 }
 
@@ -91,9 +91,9 @@ void exitpriv(void)
  */
 void exitmod(void)
 {
-    if (module_index >= 0)
+    if (module_index)
 	module_index--;
-    if (module_index < 0)
+    if (!module_index)
 	exitpriv();
 }
 
@@ -123,7 +123,7 @@ char *classify(pEnv env, char *name)
      * table should get the hide number as a prefix.
      */
     if (inside_hide) {
-	sprintf(temp, "%d", env->hide_stack[hide_index]);
+	sprintf(temp, "%d", env->hide_stack[hide_index - 1]);
 	buf = temp;
     }
     /*
@@ -131,8 +131,8 @@ char *classify(pEnv env, char *name)
      * should get the module name as a prefix. That is also the name used when
      * accessing the symbol.
      */
-    else if (module_index >= 0)
-	buf = env->module_stack[module_index].name;
+    else if (module_index)
+	buf = env->module_stack[module_index - 1].name;
     /*
      * buf, when filled, contains either a module identifier, or a number
      * string.
@@ -184,12 +184,12 @@ int qualify(pEnv env, char *name)
      * hide stack that is active at module creation is searched, leaving out
      * the search through the hide stack of enclosing modules.
      */
-    if (hide_index >= 0) {
-	if (module_index >= 0)
-	    limit = env->module_stack[module_index].hide;
+    if (hide_index) {
+	if (module_index)
+	    limit = env->module_stack[module_index - 1].hide;
 	else
 	    limit = -1;
-	for (index = hide_index; index > limit; index--) {
+	for (index = hide_index - 1; index > limit; index--) {
 	    sprintf(temp, "%d", env->hide_stack[index]);
 	    leng = strlen(temp) + strlen(name) + 2;
 	    str = GC_malloc_atomic(leng);
@@ -202,8 +202,8 @@ int qualify(pEnv env, char *name)
      * if the name can not be found in the local tables, it should be searched
      * in the currently active module, if there is one.
      */
-    if (module_index >= 0) {
-	buf = env->module_stack[module_index].name;
+    if (module_index) {
+	buf = env->module_stack[module_index - 1].name;
 	leng = strlen(buf) + strlen(name) + 2;
 	str = GC_malloc_atomic(leng);
 	sprintf(str, "%s.%s", buf, name);

@@ -1,7 +1,7 @@
 /*
     module  : take.c
-    version : 1.11
-    date    : 06/22/24
+    version : 1.12
+    date    : 07/01/24
 */
 #ifndef TAKE_C
 #define TAKE_C
@@ -33,7 +33,7 @@ void take_(pEnv env)
     case STRING_:
 	if (n >= (int)nodeleng(env->stck))
 	    return;	/* the old string unchanged */
-	str = strdup((char *)&nodevalue(env->stck));
+	str = check_strdup((char *)&nodevalue(env->stck));
 	str[n] = 0;	/* end the string */
 	UNARY(STRING_NEWNODE, str);
 	free(str);

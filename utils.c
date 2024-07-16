@@ -1,7 +1,7 @@
 /*
  *  module  : utils.c
- *  version : 1.34
- *  date    : 06/25/24
+ *  version : 1.38
+ *  date    : 07/12/24
  */
 #include "globals.h"
 
@@ -13,7 +13,7 @@
  * MEM_LOW should allow reading usrlib.joy, inilib.joy, and agglib.joy without
  * reallocation and without garbage collection.
  */
-#define MEM_LOW		1100		/* minimum number of nodes */
+#define MEM_LOW		1100		/* initial number of nodes */
 
 static Node *old_memory;
 static Index mem_low, memoryindex, memorymax;
@@ -33,7 +33,11 @@ void inimem1(pEnv env, int status)
 {
     if (!mem_low) {
 	memoryindex = mem_low = 1;
-	env->memory = calloc(memorymax = MEM_LOW, sizeof(Node)); /* ignore */
+	env->memory = calloc(memorymax = MEM_LOW, sizeof(Node));
+#ifdef _MSC_VER
+	if (!env->memory)
+	    fatal("memory exhausted");
+#endif
     } else if (status) {
 	memoryindex = mem_low;	/* retain only definitions */
 	env->stck = 0;		/* also clear the stack */
@@ -110,11 +114,11 @@ static Index copy(pEnv env, Index n)
 /*
  * Copy the node from the original to the new location. What gets copied is:
  * op, len, next, u.
- */	    
+ */
     env->memory[temp = memoryindex++] = old_memory[n];
 /*
  * If the node contains a string, then some more copying is needed.
- */	
+ */
     if (op == STRING_ || op == BIGNUM_) {
 	strcpy((char *)&env->memory[temp].u, (char *)&old_memory[n].u);
 	memoryindex += (old_memory[n].len + sizeof(Types)) / sizeof(Node);
@@ -144,7 +148,7 @@ static Index copy(pEnv env, Index n)
 
 /*
  * Scan the symbol table for roots. Variables are not allocated in the space
- * that definitions occupy and therefore need to be take care of separately.
+ * that definitions occupy and therefore need to be taken care of separately.
  */
 static void scan_roots(pEnv env)
 {
@@ -163,6 +167,8 @@ static void scan_roots(pEnv env)
 	    ent.u.body = copy(env, ent.u.body);
 	    vec_at(env->symtab, i) = ent;
 	}
+	if (ent.is_last)		/* stop at the last variable */
+	    break;
     }
 }
 
@@ -190,7 +196,11 @@ static void gc1(pEnv env)
 #endif
     old_memory = env->memory;		/* backup original memory */
     /* allocate new memory with at least the same capacity as the original */
-    env->memory = calloc(memorymax, sizeof(Node));	/* ignore return code */
+    env->memory = calloc(memorymax, sizeof(Node));
+#ifdef _MSC_VER
+    if (!env->memory)
+	fatal("memory exhausted");
+#endif
     /* copy all nodes that are used in definitions */
     memcpy(env->memory, old_memory, (memoryindex = mem_low) * sizeof(Node));
 #ifdef TRACEGC
@@ -214,7 +224,8 @@ static void gc1(pEnv env)
     COP2(env->dump4, "dump4");
     COP2(env->dump5, "dump5");
 
-    scan_roots(env);	/* also copy variables, if there are any */
+    if (env->variable_busy)	/* also copy variables, if there are any */
+	scan_roots(env);
 }
 
 static void gc2(pEnv env)
@@ -228,10 +239,15 @@ static void gc2(pEnv env)
  */
     if (memoryindex * 100.0 / memorymax < 10)	/* check decrease */
 	memorymax *= 0.9;
-    else if (memoryindex * 100.0 / memorymax > 90)	/* check increase */
+    else if (memoryindex * 100.0 / memorymax > 90) {	/* check increase */
 	env->memory = realloc(env->memory, (memorymax *= 2) * sizeof(Node));
+#ifdef _MSC_VER
+	if (!env->memory)
+	    fatal("memory exhausted");
+#endif
+    }
     this_gc_clock = clock() - start_gc_clock;	/* statistics */
-    env->gc_clock += this_gc_clock;	
+    env->gc_clock += this_gc_clock;
     env->collect++;
 #ifdef TRACEGC
     if (env->tracegc > 0)
@@ -265,6 +281,10 @@ Index newnode(pEnv env, Operator o, Types u, Index r)
 	    while (memoryindex + num >= memorymax)
 		memorymax *= 2;
 	    env->memory = realloc(env->memory, memorymax * sizeof(Node));
+#ifdef _MSC_VER
+	    if (!env->memory)
+		fatal("memory exhausted");
+#endif
 	} else {
 	    gc1(env);		/* copy roots */
 	    if (o == LIST_)	/* copy parameters */
@@ -273,8 +293,8 @@ Index newnode(pEnv env, Operator o, Types u, Index r)
 	    gc2(env);		/* finish copying */
 	}
     }
-    p = memoryindex;		/* new index of new node */
-    memoryindex += num;		/* space for new node */
+    p = memoryindex;		/* new index of new node(s) */
+    memoryindex += num;		/* space for new node(s) */
     env->nodes += num;		/* statistics */
 /*
  * Fill newly created node(s) with data from parameters. Some special handling
@@ -301,9 +321,13 @@ Index newnode2(pEnv env, Index p, Index r)
     Types u;
     Operator o;
 
-    if ((o = env->memory[p].op) == STRING_ || o == BIGNUM_)
+    if ((o = env->memory[p].op) == STRING_ || o == BIGNUM_) {
 	u.str = strdup((char *)&env->memory[p].u);
-    else
+#ifdef _MSC_VER
+	if (!u.str)
+	    fatal("memory exhausted");
+#endif
+    } else
 	u = env->memory[p].u;
     p = newnode(env, o, u, r);
     if (o == STRING_ || o == BIGNUM_)
@@ -325,4 +349,36 @@ void my_memoryindex(pEnv env)
 void my_memorymax(pEnv env)
 {
     NULLARY(INTEGER_NEWNODE, memorymax);
+}
+
+void *check_malloc(size_t leng)
+{
+    void *ptr;
+
+    ptr = malloc(leng);
+#ifdef _MSC_VER
+    if (!ptr)
+	fatal("memory exhausted");
+#endif
+    return ptr;
+}
+
+void *check_realloc(void *ptr, size_t leng)
+{
+    ptr = realloc(ptr, leng);
+#ifdef _MSC_VER
+    if (!ptr)
+	fatal("memory exhausted");
+#endif
+    return ptr;
+}
+
+void *check_strdup(char *ptr)
+{
+    ptr = strdup(ptr);
+#ifdef _MSC_VER
+    if (!ptr)
+	fatal("memory exhausted");
+#endif
+    return ptr;
 }

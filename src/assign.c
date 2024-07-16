@@ -1,7 +1,7 @@
 /*
     module  : assign.c
-    version : 1.3
-    date    : 06/24/24
+    version : 1.4
+    date    : 06/28/24
 */
 #ifndef ASSIGN_C
 #define ASSIGN_C
@@ -27,6 +27,8 @@ void assign_(pEnv env)
     node = newnode2(env, lis, 0);
     POP(env->stck);			/* bump stack again */
     ent.is_root = ent.is_user = 1;	/* ensure user defined and root */
+    if (!env->variable_busy)		/* test whether this is the first */
+	env->variable_busy = ent.is_last = 1;
     ent.u.body = node;			/* insert value in body */
     vec_at(env->symtab, index) = ent;	/* update symbol table */
 }

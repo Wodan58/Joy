@@ -1,7 +1,7 @@
 /*
     module  : fwrite.c
-    version : 1.8
-    date    : 06/21/24
+    version : 1.9
+    date    : 07/01/24
 */
 #ifndef FWRITE_C
 #define FWRITE_C
@@ -23,7 +23,7 @@ void fwrite_(pEnv env)
     for (n = nodevalue(env->stck).lis, i = 0; n; n = nextnode1(n), i++)
 	CHECKNUMERIC(n, "fwrite");
 #ifdef NOBDW
-    buf = malloc(i);
+    buf = check_malloc(i);
 #else
     buf = GC_malloc_atomic(i);
 #endif

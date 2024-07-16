@@ -1,7 +1,7 @@
 /*
     module  : manual.h
-    version : 1.7
-    date    : 03/21/24
+    version : 1.8
+    date    : 07/02/24
 */
 #ifndef MANUAL_H
 #define MANUAL_H
@@ -40,7 +40,7 @@ void make_manual(int style)	/* 0=plain, 1=HTML, 2=Latex */
 	HEADER(n, "null", "predicate") else
 	HEADER(n, "i", "combinator") else
 	HEADER(n, "help", "miscellaneous commands") else
-	HEADER(n, "casting", "additional commands") else
+	HEADER(n, "assign", "additional commands") else
 	HEADER(n, "#genrec", "runtime commands")
 #if 0
 	if (n[0] != '_') {

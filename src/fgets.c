@@ -1,7 +1,7 @@
 /*
     module  : fgets.c
-    version : 1.6
-    date    : 06/21/24
+    version : 1.7
+    date    : 07/01/24
 */
 #ifndef FGETS_C
 #define FGETS_C
@@ -18,7 +18,7 @@ void fgets_(pEnv env)
     ONEPARAM("fgets");
     FILE("fgets");
 #ifdef NOBDW
-    buf = malloc(size);
+    buf = check_malloc(size);
 #else
     buf = GC_malloc_atomic(size);
 #endif
@@ -27,7 +27,7 @@ void fgets_(pEnv env)
 	if ((leng = strlen(buf)) > 0 && buf[leng - 1] == '\n')
 	    break;
 #ifdef NOBDW
-	buf = realloc(buf, size <<= 1);
+	buf = check_realloc(buf, size <<= 1);
 #else
 	buf = GC_realloc(buf, size <<= 1);
 #endif

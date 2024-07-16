@@ -1,7 +1,7 @@
 /*
     module  : div.c
-    version : 1.5
-    date    : 06/21/24
+    version : 1.6
+    date    : 07/12/24
 */
 #ifndef DIV_C
 #define DIV_C
@@ -12,14 +12,14 @@ Integers K and L are the quotient and remainder of dividing I by J.
 */
 void div_(pEnv env)
 {
-    lldiv_t result;
+    lldiv_t rv;
 
     TWOPARAMS("div");
     INTEGERS2("div");
     CHECKZERO("div");
-    result = lldiv(nodevalue(nextnode1(env->stck)).num,
-		    nodevalue(env->stck).num);
-    BINARY(INTEGER_NEWNODE, result.quot);
-    NULLARY(INTEGER_NEWNODE, result.rem);
+    rv.quot = nodevalue(nextnode1(env->stck)).num / nodevalue(env->stck).num;
+    rv.rem = nodevalue(nextnode1(env->stck)).num % nodevalue(env->stck).num;
+    BINARY(INTEGER_NEWNODE, rv.quot);
+    NULLARY(INTEGER_NEWNODE, rv.rem);
 }
 #endif

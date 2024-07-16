@@ -1,8 +1,8 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.97
- *  date    : 06/21/24
+ *  version : 1.98
+ *  date    : 07/01/24
  */
 
 /*
@@ -146,12 +146,14 @@ void abortexecution_(int num)
  * fatal terminates the application with an error message.
  */
 #ifdef NOBDW
+#ifdef _MSC_VER
 void fatal(char *str)
 {
     fflush(stdout);
     fprintf(stderr, "fatal error: %s\n", str);
     abortexecution_(ABORT_QUIT);
 }
+#endif
 #endif
 
 /*
@@ -203,10 +205,10 @@ static void opt_unknown(char *exe, int ch)
 static int my_main(int argc, char **argv)
 {
     static unsigned char psdump = 0, pstats = 0;
-    Env env;				/* global variables */
+    Env env;			/* global variables */
     FILE *srcfile;
     int i, j, ch, flag;
-    char *filenam, *ptr, *tmp, *exe;	/* exe: name of joy binary */
+    char *filenam, *ptr, *tmp;
     unsigned char mustinclude = 1, helping = 0, unknown = 0;
 
     memset(&env, 0, sizeof(env));
@@ -222,14 +224,17 @@ static int my_main(int argc, char **argv)
     /*
      * establish pathname, to be used when loading libraries, and basename.
      */
-    if ((ptr = strrchr(argv[0], '/')) != 0 ||
-	(ptr = strrchr(argv[0], '\\')) != 0) {
+    env.pathname = ".";
+    ptr = strrchr(argv[0], '/');
+#ifdef _MSC_VER
+    if (!ptr)
+	ptr = strrchr(argv[0], '\\');
+#endif
+    if (ptr) {
+	env.pathname = argv[0];		/* split argv[0] in pathname */
 	*ptr++ = 0;
-	env.pathname = argv[0];
-	argv[0] = ptr;
-    } else
-	env.pathname = ".";
-    exe = argv[0];
+	argv[0] = ptr;			/* and basename */
+    }
     /*
      * These flags are initialized here, allowing them to be overruled by the
      * command line. When set on the command line, they can not be overruled
@@ -331,7 +336,7 @@ static int my_main(int argc, char **argv)
      * handle options, might print symbol table.
      */
     if (helping || unknown) {
-	helping ? options() : opt_unknown(exe, unknown);
+	helping ? options() : opt_unknown(argv[0], unknown);
 	goto einde;
     }
     /*

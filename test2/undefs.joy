@@ -1,8 +1,8 @@
 (*
     module  : undefs.joy
-    version : 1.6
-    date    : 03/21/24
+    version : 1.7
+    date    : 07/02/24
 *)
-undefs.
 "undefined" intern [undefined] first =.
 [undefined] ["undefined"] equal.
+undefs.

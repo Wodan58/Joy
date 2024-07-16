@@ -1,7 +1,7 @@
 /*
     module  : system.c
-    version : 1.8
-    date    : 06/21/24
+    version : 1.9
+    date    : 07/10/24
 */
 #ifndef SYSTEM_C
 #define SYSTEM_C
@@ -19,7 +19,7 @@ void system_(pEnv env)
 
     ONEPARAM("system");
     STRING("system");
-#ifdef NOBWD
+#ifdef NOBDW
     str = (char *)&nodevalue(env->stck);
 #else
     str = nodevalue(env->stck).str;

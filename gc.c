@@ -1,7 +1,7 @@
 /*
     module  : gc.c
-    version : 1.49
-    date    : 06/22/24
+    version : 1.51
+    date    : 07/01/24
 */
 #include <stdio.h>
 #include <string.h>
@@ -54,7 +54,7 @@
 
 #define GROW_FACTOR	2
 #define BSS_ALIGN	4
-#define MIN_ITEMS	10
+#define MIN_ITEMS	170	/* initial number of items */
 
 /*
  * When pointers are aligned at 16 bytes, the lower 4 bits are always zero.
@@ -100,7 +100,9 @@ static uint64_t start_of_text,
  * fatal - Report a fatal error and end the program. The message is taken from
  *	   yacc. The function should be present in main.c
  */
+#ifdef _MSC_VER
 void fatal(char *str);
+#endif
 
 /*
  * Determine sections of memory. This is highly system dependent and not tested
@@ -323,8 +325,6 @@ static void remind(char *ptr, size_t size, int flags)
     if (max_items < kh_size(MEM)) {
 	GC_gcollect();
 	max_items = kh_size(MEM) * GROW_FACTOR;
-	if (max_items < MIN_ITEMS)
-	    max_items = MIN_ITEMS;
     }
 }
 
@@ -335,8 +335,11 @@ static void *mem_block(size_t size, int leaf)
 {
     void *ptr = 0;
 
-    if ((ptr = malloc(size)) == 0)
+    ptr = malloc(size);
+#ifdef _MSC_VER
+    if (!ptr)
 	fatal("memory exhausted");
+#endif
     memset(ptr, 0, size);
     remind(ptr, size, leaf);
     return ptr;
@@ -396,8 +399,11 @@ void *GC_realloc(void *ptr, size_t size)
     if (!ptr)
 	return GC_malloc(size);
     flags = forget(ptr);
-    if ((ptr = realloc(ptr, size)) == 0)
+    ptr = realloc(ptr, size);
+#ifdef _MSC_VER
+    if (!ptr)
 	fatal("memory exhausted");
+#endif
     remind(ptr, size, flags);
     return ptr;
 }

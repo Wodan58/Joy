@@ -1,7 +1,7 @@
 /*
     module  : strftime.c
-    version : 1.6
-    date    : 06/21/24
+    version : 1.7
+    date    : 07/01/24
 */
 #ifndef STRFTIME_C
 #define STRFTIME_C
@@ -31,7 +31,7 @@ void strftime_(pEnv env)
     decode_time(env, &t);
     leng = BUFFERMAX;
 #ifdef NOBDW
-    result = malloc(leng + 1);
+    result = check_malloc(leng + 1);
 #else
     result = GC_malloc_atomic(leng + 1);
 #endif
