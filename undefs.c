@@ -1,7 +1,7 @@
 /*
  *  module  : undefs.c
- *  version : 1.7
- *  date    : 07/02/24
+ *  version : 1.8
+ *  date    : 08/12/24
  */
 #include "globals.h"
 
@@ -58,7 +58,13 @@ void hide_inner_modules(pEnv env, int flag)
 	if (isdigit((int)ent.name[0]))		/* hidden names are ok */
 	    continue;
 	if (strncmp(name, ent.name, leng))	/* an inner module was found */
+#ifdef USE_KHASHL
 	    if ((key = symtab_get(env->hash, ent.name)) != kh_end(env->hash))
 		symtab_del(env->hash, key);
+#else
+	    if ((key = kh_get(Symtab, env->hash, ent.name))
+			    != kh_end(env->hash))
+		kh_del(Symtab, env->hash, key);
+#endif
     }
 }

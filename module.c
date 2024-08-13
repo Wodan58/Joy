@@ -1,7 +1,7 @@
 /*
     module  : module.c
-    version : 1.15
-    date    : 07/12/24
+    version : 1.16
+    date    : 08/12/24
 */
 #include "globals.h"
 
@@ -173,10 +173,13 @@ int qualify(pEnv env, char *name)
      * name. If the name is not found, there is an error and a 0 is returned.
      */
     if (strchr(name, '.')) {
+#ifdef USE_KHASHL
 	if ((key = symtab_get(env->hash, name)) != kh_end(env->hash))
-	    return kh_val(env->hash, key);
-	else
-	    return 0;
+#else
+        if ((key = kh_get(Symtab, env->hash, name)) != kh_end(env->hash))
+#endif
+            return kh_val(env->hash, key);
+	return 0;
     }
     /*
      * the hide stack is searched, trying each of the hidden sections. The
@@ -185,16 +188,17 @@ int qualify(pEnv env, char *name)
      * the search through the hide stack of enclosing modules.
      */
     if (hide_index) {
-	if (module_index)
-	    limit = env->module_stack[module_index - 1].hide;
-	else
-	    limit = -1;
+	limit = module_index ? env->module_stack[module_index - 1].hide : -1;
 	for (index = hide_index - 1; index > limit; index--) {
 	    sprintf(temp, "%d", env->hide_stack[index]);
 	    leng = strlen(temp) + strlen(name) + 2;
 	    str = GC_malloc_atomic(leng);
 	    sprintf(str, "%s.%s", temp, name);
+#ifdef USE_KHASHL
 	    if ((key = symtab_get(env->hash, str)) != kh_end(env->hash))
+#else
+	    if ((key = kh_get(Symtab, env->hash, str)) != kh_end(env->hash))
+#endif
 		return kh_val(env->hash, key);
 	}
     }
@@ -207,7 +211,11 @@ int qualify(pEnv env, char *name)
 	leng = strlen(buf) + strlen(name) + 2;
 	str = GC_malloc_atomic(leng);
 	sprintf(str, "%s.%s", buf, name);
+#ifdef USE_KHASHL
 	if ((key = symtab_get(env->hash, str)) != kh_end(env->hash))
+#else
+        if ((key = kh_get(Symtab, env->hash, str)) != kh_end(env->hash))
+#endif
 	    return kh_val(env->hash, key);
     }
     /*
@@ -215,7 +223,11 @@ int qualify(pEnv env, char *name)
      * and also not in the module, it needs to be searched as is. If not found,
      * it is not an error, but simply an undefined name.
      */
+#ifdef USE_KHASHL
     if ((key = symtab_get(env->hash, name)) != kh_end(env->hash))
+#else
+    if ((key = kh_get(Symtab, env->hash, name)) != kh_end(env->hash))
+#endif
 	return kh_val(env->hash, key);
     return 0;
 }

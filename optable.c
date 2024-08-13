@@ -1,7 +1,7 @@
 /*
  *  module  : optable.c
- *  version : 1.7
- *  date    : 06/24/24
+ *  version : 1.8
+ *  date    : 08/12/24
  */
 #include "globals.h"
 
@@ -353,9 +353,26 @@ int operindex(pEnv env, proc_t proc)
 {
     khint_t key;
 
+#ifdef USE_KHASHL
     if ((key = funtab_get(env->prim, (uint64_t)proc)) != kh_end(env->prim))
+#else
+    if ((key = kh_get(Funtab, env->prim, (uint64_t)proc)) != kh_end(env->prim))
+#endif
 	return kh_val(env->prim, key);
     return ANON_FUNCT_;	/* if not found, return the index of ANON_FUNCT_ */
+}
+
+void addsymbol(pEnv env, Entry ent, int index)
+{
+    int rv;
+    khint_t key;
+
+#ifdef USE_KHASHL
+    key = symtab_put(env->hash, ent.name, &rv);
+#else
+    key = kh_put(Symtab, env->hash, ent.name, &rv);
+#endif
+    kh_val(env->hash, key) = index;
 }
 
 /*
@@ -368,8 +385,13 @@ void inisymboltable(pEnv env) /* initialise */
     khint_t key;
     int i, j, rv;
 
+#ifdef USE_KHASHL
     env->hash = symtab_init();
     env->prim = funtab_init();
+#else
+    env->hash = kh_init(Symtab);
+    env->prim = kh_init(Funtab);
+#endif
     j = sizeof(optable) / sizeof(optable[0]);
     for (i = 0; i < j; i++) {
 	ent.name = optable[i].name;
@@ -389,10 +411,14 @@ void inisymboltable(pEnv env) /* initialise */
 		ent.u.proc = __dump_;
 		break;
 	    }
-	key = symtab_put(env->hash, ent.name, &rv);
-	kh_val(env->hash, key) = i;
+	addsymbol(env, ent, i);
+#ifdef USE_KHASHL
 	key = funtab_put(env->prim, (uint64_t)ent.u.proc, &rv);
+#else
+	key = kh_put(Funtab, env->prim, (uint64_t)ent.u.proc, &rv);
+#endif
 	kh_val(env->prim, key) = i;
 	vec_push(env->symtab, ent);
     }
 }
+

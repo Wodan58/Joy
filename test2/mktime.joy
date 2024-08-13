@@ -1,6 +1,12 @@
 (*
     module  : mktime.joy
-    version : 1.4
-    date    : 03/21/24
+    version : 1.5
+    date    : 07/14/24
 *)
-time dup localtime mktime =.
+time dup
+dup putln
+gmtime
+dup putln
+mktime
+dup putln
+=.

@@ -1,6 +1,42 @@
 (*
     module  : strftime.joy
-    version : 1.5
-    date    : 03/21/24
+    version : 1.6
+    date    : 07/14/24
 *)
-time localtime "%c\n" strftime putchars.
+time localtime dup dup
+putln dup
+"%%%t%c%n" strftime putchars dup
+"%Y\n" strftime putchars dup
+"%y\n" strftime putchars dup
+"%C\n" strftime putchars dup
+"%G\n" strftime putchars dup
+"%g\n" strftime putchars dup
+"%b\n" strftime putchars dup
+"%B\n" strftime putchars dup
+"%m\n" strftime putchars dup
+"%U\n" strftime putchars dup
+"%W\n" strftime putchars dup
+"%V\n" strftime putchars dup
+"%j\n" strftime putchars dup
+"%d\n" strftime putchars dup
+"%e\n" strftime putchars dup
+"%a\n" strftime putchars dup
+"%A\n" strftime putchars dup
+"%w\n" strftime putchars dup
+"%u\n" strftime putchars dup
+"%H\n" strftime putchars dup
+"%I\n" strftime putchars dup
+"%M\n" strftime putchars dup
+"%S\n" strftime putchars dup
+"%x\n" strftime putchars dup
+"%F\n" strftime putchars dup
+"%X\n" strftime putchars dup
+"%R\n" strftime putchars dup
+"%T\n" strftime putchars dup
+"%p\n" strftime putchars dup
+"%z\n" strftime putchars dup
+"%Z\n" strftime putchars dup
+
+"%h\n" strftime putchars dup
+"%D\n" strftime putchars dup
+"%r\n" strftime putchars.

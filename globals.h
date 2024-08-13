@@ -1,11 +1,13 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.103
- *  date    : 07/01/24
+ *  version : 1.105
+ *  date    : 08/12/24
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
+
+/* #define USE_KHASHL */
 
 #include <stdio.h>
 #include <string.h>
@@ -38,7 +40,11 @@
 #include "gc.h"
 #endif
 #include "kvec.h"
+#ifdef USE_KHASHL
 #include "khashl.h"
+#else
+#include "khash.h"
+#endif
 
 #define POP(X) X = nextnode1(X)
 
@@ -206,10 +212,15 @@ typedef struct Entry {
     } u;
 } Entry;
 
+#ifdef USE_KHASHL
 KHASHL_MAP_INIT(KH_LOCAL, symtab_t, symtab, const char *, int, kh_hash_str,
 		kh_eq_str)
 KHASHL_MAP_INIT(KH_LOCAL, funtab_t, funtab, uint64_t, int, kh_hash_uint64,
 		kh_eq_generic)
+#else
+KHASH_MAP_INIT_STR(Symtab, int)
+KHASH_MAP_INIT_INT64(Funtab, int)
+#endif
 
 typedef struct Env {
     jmp_buf finclude;		/* return point in finclude */
@@ -230,8 +241,13 @@ typedef struct Env {
     vector(char) *pushback;	/* push back buffer */
     vector(Token) *tokens;	/* read ahead table */
     vector(Entry) *symtab;	/* symbol table */
+#ifdef USE_KHASHL
     symtab_t *hash;		/* hash tables that index the symbol table */
     funtab_t *prim;
+#else
+    khash_t(Symtab) *hash;
+    khash_t(Funtab) *prim;
+#endif
     Types bucket;		/* used by NEWNODE defines */
 #ifdef NOBDW
     clock_t gc_clock;
@@ -295,15 +311,15 @@ Index newnode(pEnv env, Operator o, Types u, Index r);
 Index newnode2(pEnv env, Index n, Index r);
 void my_memoryindex(pEnv env);
 void my_memorymax(pEnv env);
+void *check_malloc(size_t leng);
+void *check_strdup(char *ptr);
 #ifdef NOBDW
 void writedump(pEnv env, Index n, FILE *fp);
 void inimem1(pEnv env, int status);
 void inimem2(pEnv env);
 void printnode(pEnv env, Index p);
 void my_gc(pEnv env);
-void *check_malloc(size_t leng);
 void *check_realloc(void *ptr, size_t leng);
-void *check_strdup(char *ptr);
 #endif
 /* factor.c */
 int readfactor(pEnv env, int ch, int *rv);	/* read a JOY factor */
@@ -326,6 +342,7 @@ char *nickname(int ch);
 char *opername(int o);
 int operindex(pEnv env, proc_t proc);
 void inisymboltable(pEnv env);			/* initialise */
+void addsymbol(pEnv env, Entry ent, int index);
 /* symbol.c */
 int lookup(pEnv env, char *name);
 int enteratom(pEnv env, char *name);

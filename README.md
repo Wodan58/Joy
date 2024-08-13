@@ -93,3 +93,4 @@ Documentation|
 -------------|
 [Legacy Docs](https://wodan58.github.io)
 [User Manual](https://wodan58.github.io/j09imp.html)
+[Comparison (PDF)](https://github.com/Wodan58/HET/blob/master/doc/FIB.pdf)

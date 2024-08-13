@@ -1,7 +1,7 @@
 /*
  *  module  : utils.c
- *  version : 1.38
- *  date    : 07/12/24
+ *  version : 1.39
+ *  date    : 08/12/24
  */
 #include "globals.h"
 
@@ -322,7 +322,7 @@ Index newnode2(pEnv env, Index p, Index r)
     Operator o;
 
     if ((o = env->memory[p].op) == STRING_ || o == BIGNUM_) {
-	u.str = strdup((char *)&env->memory[p].u);
+	u.str = check_strdup((char *)&env->memory[p].u);
 #ifdef _MSC_VER
 	if (!u.str)
 	    fatal("memory exhausted");

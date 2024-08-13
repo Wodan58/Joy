@@ -1,7 +1,7 @@
 /*
  *  module  : symbol.c
- *  version : 1.6
- *  date    : 06/27/24
+ *  version : 1.7
+ *  date    : 08/12/24
  */
 #include "globals.h"
 
@@ -11,20 +11,15 @@
 static int enterglobal(pEnv env, char *name)
 {
     Entry ent;
-    khint_t key;
-    int rv, index;
+    int index;
 
     index = vec_size(env->symtab);
     memset(&ent, 0, sizeof(ent));	/* make sure that all fields are 0 */
-    ent.name = strdup(name);		/* move to permanent memory */
+    ent.name = check_strdup(name);	/* copy to permanent memory */
     ent.is_user = 1;
     ent.flags = env->inlining ? IMMEDIATE : OK;
-    ent.is_ok = 0;
-    ent.is_root = 0;
-    ent.is_last = 0;
     ent.u.body = 0;			/* may be assigned in definition */
-    key = symtab_put(env->hash, ent.name, &rv);
-    kh_val(env->hash, key) = index;
+    addsymbol(env, ent, index);		/* add symbol entry to hash table */
     vec_push(env->symtab, ent);
     return index;
 }
@@ -48,7 +43,7 @@ int lookup(pEnv env, char *name)
      * added during the first time read of private sections.
      */
     if ((index = qualify(env, name)) == 0)
-	/* not found, enter in global, unless it is a module-member  */
+	/* not found, enter in global, unless it is a module-member */
 	if (strchr(name, '.') == 0)
 	    index = enterglobal(env, name);
     return index;

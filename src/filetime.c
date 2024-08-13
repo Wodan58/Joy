@@ -1,7 +1,7 @@
 /*
     module  : filetime.c
-    version : 1.7
-    date    : 07/12/24
+    version : 1.8
+    date    : 08/12/24
 */
 #ifndef FILETIME_C
 #define FILETIME_C
@@ -17,7 +17,7 @@ void filetime_(pEnv env)
     FILE *fp;
     char *str;
     time_t mtime;	/* modification time */
-    struct stat buf;
+    struct stat *buf;	/* struct stat is big */
 
     ONEPARAM("filetime");
     STRING("filetime");
@@ -28,8 +28,10 @@ void filetime_(pEnv env)
 #endif
     mtime = 0;
     if ((fp = fopen(str, "r")) != 0) {
-	if (fstat(fileno(fp), &buf) >= 0)
-	    mtime = buf.st_mtime;
+	buf = check_malloc(sizeof(struct stat));
+	if (fstat(fileno(fp), buf) >= 0)
+	    mtime = buf->st_mtime;
+	free(buf);
 	fclose(fp);
     }
     UNARY(INTEGER_NEWNODE, mtime);
