@@ -1,0 +1,15 @@
+(*
+    module  : interp.joy
+    version : 1.1
+    date    : 08/29/24
+*)
+
+# exeterm: attempting to execute bad node
+"hello" 0 casting call.
+
+# skip empty body
+0 setundeferror.
+vms.
+
+# valid factor
+"hello" 12 casting call.

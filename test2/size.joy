@@ -1,7 +1,7 @@
 (*
     module  : size.joy
-    version : 1.4
-    date    : 03/21/24
+    version : 1.5
+    date    : 08/29/24
 *)
 [1 2 3] size 3 =.
 "test" size 4 =.
@@ -10,4 +10,5 @@
 "" size null.
 {} size null.
 
-10 size.
+(* error *)
+# 10 size.

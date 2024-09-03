@@ -1,7 +1,7 @@
 #
 #   module  : prims.sh
-#   version : 1.6
-#   date    : 05/01/24
+#   version : 1.7
+#   date    : 08/31/24
 #
 #   Generate builtin.c and builtin.h
 #   The directory needs to be given as parameter.
@@ -26,8 +26,7 @@ else
 fi
 if [ $todo -eq 1 ]
 then
-  rm -f $1/builtin.c $1/builtin.h
+  rm -f $1/builtin.c $1/builtin.h $1/table.c
   mv prims.tmp $1/builtin.c
   sed 's/.*\//void /;s/\..*/_(pEnv env);/' <$1/builtin.c >$1/builtin.h
-  touch $1/optable.c
 fi

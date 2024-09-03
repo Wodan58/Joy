@@ -1,26 +1,26 @@
 (*
     module  : putchars.joy
-    version : 1.9
-    date    : 07/02/24
+    version : 1.10
+    date    : 08/29/24
 *)
 "test" putchars newline.
 
 (* cast to bignum, that is printed without enclosing quotes, as desired *)
-"Hello, World" 12 casting.
+# "Hello, World" 12 casting.
 
 (*
     1 is not allowed in a string constant;
     it is allowed in a character constant
 *)
-'\001 1 =.
+# '\001 1 =.
 
 (*
     Bignum type exists, but is only supported when printing, not during eval.
 *)
-"Hello" 12 casting call.
+# "Hello" 12 casting call.
 
 (*
     The ILLEGAL_ type also exists, but is not supported anywhere.
 *)
-"Hello" 0 casting.
-"Hello" 0 casting "World" 0 casting pairlist i.
+# "Hello" 0 casting.
+# "Hello" 0 casting "World" 0 casting pairlist i.

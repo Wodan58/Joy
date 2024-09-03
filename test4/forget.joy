@@ -1,7 +1,7 @@
 (*
-    module  : m23.joy
+    module  : forget.joy
     version : 1.1
-    date    : 03/21/24
+    date    : 08/29/24
 *)
 MODULE m2
 PRIVATE
@@ -17,8 +17,16 @@ PUBLIC
     PUBLIC
       ab == a b concat;
       ba == b a concat;
-    PRIVATE; (* should be END *)
-  test == ab ba concat;
+  END;
+  test1 == m1.ab m1.ba concat;
+  test2 == ab ba concat;
 END
 
-m2.test.
+(* should print "abba" *)
+m2.test1.
+
+(* should print "ABBA" *)
+m2.test2.
+
+(* should print an error *)
+m1.ab.

@@ -1,8 +1,8 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.99
- *  date    : 08/12/24
+ *  version : 1.103
+ *  date    : 08/29/24
  */
 
 /*
@@ -130,8 +130,7 @@ static jmp_buf begin;		/* restart with empty program */
 
 char *bottom_of_stack;		/* needed in gc.c */
 
-static void stats(pEnv env);
-static void dump(pEnv env);
+static void stats(pEnv env), dump(pEnv env);
 
 /*
  * abort execution and restart reading from srcfile; the stack is not cleared.
@@ -145,15 +144,13 @@ void abortexecution_(int num)
 /*
  * fatal terminates the application with an error message.
  */
-#ifdef NOBDW
-#ifdef _MSC_VER
+#if defined(NOBDW) && defined(_MSC_VER)
 void fatal(char *str)
 {
     fflush(stdout);
     fprintf(stderr, "fatal error: %s\n", str);
     abortexecution_(ABORT_QUIT);
 }
-#endif
 #endif
 
 /*
@@ -184,6 +181,7 @@ static void options(void)
     printf("  -g : set the __tracegc flag (0-6)\n");
     printf("  -h : print this help text and exit\n");
     printf("  -i : ignore impure imperative functions\n");
+    printf("  -k : allow keyboard input in raw mode\n");
     printf("  -l : do not read usrlib.joy at startup\n");
     printf("  -p : print debug list of tokens\n");
     printf("  -s : dump symbol table after execution\n");
@@ -206,10 +204,10 @@ static int my_main(int argc, char **argv)
 {
     static unsigned char psdump = 0, pstats = 0;
     Env env;			/* global variables */
-    FILE *srcfile;
-    int i, j, ch, flag;
-    char *filenam, *ptr, *tmp, *exe;
-    unsigned char mustinclude = 1, helping = 0, unknown = 0;
+    int i, j, ch;
+    char *ptr, *tmp, *exe;
+    unsigned char mustinclude = 1, helping = 0, unknown = 0, raw = 0,
+		  flag, has_filename = 0;
 
     memset(&env, 0, sizeof(env));
     /*
@@ -217,24 +215,22 @@ static int my_main(int argc, char **argv)
      */
     env.startclock = clock();
     /*
-     * determine srcfile and filenam; they are stored in inilinebuffer.
+     * store the directory where the Joy binary is located in the list of
+     * pathnames to be used when including files. argv[0] is modified such
+     * that it contains only the basename.
      */
-    srcfile = stdin;
-    filenam = "stdin";
-    /*
-     * establish pathname, to be used when loading libraries, and basename.
-     */
-    env.pathname = ".";
-    ptr = strrchr(exe = argv[0], '/');
-#ifdef _MSC_VER
+    vec_init(env.pathnames);
+    ptr = strrchr(argv[0], '/');
+#ifdef WINDOWS
     if (!ptr)
 	ptr = strrchr(argv[0], '\\');
 #endif
     if (ptr) {
-	env.pathname = argv[0];		/* split argv[0] in pathname */
-	*ptr++ = 0;
-	argv[0] = exe = ptr;		/* and basename */
+	vec_push(env.pathnames, argv[0]);
+	*ptr++ = 0;	/* split in directory */
+	argv[0] = ptr;	/* and basename */
     }
+    exe = argv[0];	/* Joy binary */
     /*
      * These flags are initialized here, allowing them to be overruled by the
      * command line. When set on the command line, they can not be overruled
@@ -268,6 +264,7 @@ static int my_main(int argc, char **argv)
 			   break;
 		case 'h' : helping = 1; break;
 		case 'i' : env.ignore = 1; break;
+		case 'k' : raw = 1; break;		/* terminal raw mode */
 		case 'l' : mustinclude = 0; break;
 		case 'p' : env.printing = 1; break;
 		case 's' : psdump = 1; break;
@@ -298,24 +295,29 @@ static int my_main(int argc, char **argv)
     for (i = 1; i < argc; i++) {
 	ch = argv[i][0];
 	if (!isdigit(ch)) {
-	    if ((srcfile = fopen(filenam = argv[i], "r")) == 0) {
-		fprintf(stderr, "failed to open the file '%s'.\n", filenam);
+	    /*
+	     * The first file should also benefit from include logic.
+	     */
+	    if (include(&env, argv[i])) {
+		fprintf(stderr, "failed to open the file '%s'.\n", argv[i]);
 		return 0;
 	    }
+	    has_filename = 1;
 	    /*
 	     *  Overwrite argv[0] with the filename and shift subsequent
 	     *  parameters.
 	     */
-	    if ((ptr = strrchr(argv[0] = filenam, '/')) != 0) {
+	    if ((ptr = strrchr(argv[0] = argv[i], '/')) != 0) {
 		*ptr++ = 0;
-		argv[0] = filenam = ptr;	/* basename */
+		argv[0] = ptr;		/* Joy program basename */
 	    }
 	    for (--argc; i < argc; i++)
 		argv[i] = argv[i + 1];
-	    break;				/* only one filename */
+	    goto start;			/* only one filename; replaces stdin */
 	} /* end if */
     } /* end for */
-    inilinebuffer(srcfile, filenam);
+    inilinebuffer(&env);		/* initialize with stdin */
+start:    
     /*
      * determine argc and argv.
      */
@@ -333,6 +335,31 @@ static int my_main(int argc, char **argv)
      */
     inisymboltable(&env);
     /*
+     * initialize stack before SetRaw.
+     */
+#ifdef NOBDW
+    inimem1(&env, 0);		/* does not clear the stack */
+    inimem2(&env);
+#endif
+    /*
+     * initialize standard output.
+     */
+    if (raw && has_filename) {	/* raw requires a filename */
+	env.autoput = 0;	/* disable autoput in usrlib.joy */
+	env.autoput_set = 1;	/* prevent enabling autoput */
+	SetRaw(&env);		/* keep output buffered */
+#ifdef NOBDW
+	env.inits = env.stck;	/* remember initial stack */
+	inimem2(&env);		/* store initial stack in definition space */
+#endif
+    } else
+	setbuf(stdout, 0);	/* disable output buffering (pipe) */
+    /*
+     * read initial library.
+     */
+    if (mustinclude)
+	include(&env, "usrlib.joy");
+    /*
      * handle options, might print symbol table.
      */
     if (helping || unknown) {
@@ -340,23 +367,10 @@ static int my_main(int argc, char **argv)
 	goto einde;
     }
     /*
-     * initialize standard output.
-     */
-    setbuf(stdout, 0);		/* necessary when writing to a pipe */
-    /*
-     * read initial library.
-     */
-    if (mustinclude)
-	include(&env, "usrlib.joy");
-    /*
      * setup return address of error, abort, or quit.
      */
     if (setjmp(begin) == ABORT_QUIT)
 	goto einde;		/* return here after error or abort */
-#ifdef NOBDW
-    inimem1(&env, 0);		/* does not clear the stack */
-    inimem2(&env);
-#endif
     /*
      * (re)initialize code.
      */
@@ -367,7 +381,7 @@ static int my_main(int argc, char **argv)
 	if (env.sym == LIBRA || env.sym == HIDE || env.sym == MODULE_ ||
 	    env.sym == CONST_) {
 #ifdef NOBDW
-	    inimem1(&env, 1);	/* also clears the stack */
+	    inimem1(&env, 1);	/* also resets the stack to initial */
 #endif
 	    if ((flag = env.sym == MODULE_) != 0)
 		hide_inner_modules(&env, 1);
@@ -415,8 +429,10 @@ static int my_main(int argc, char **argv)
 		    env.stck = nextnode1(env.stck);
 #endif
 		}
-		if (env.autoput)
+		if (env.autoput) {
 		    putchar('\n');
+		    fflush(stdout);
+		}
 	    }
 	}
     }

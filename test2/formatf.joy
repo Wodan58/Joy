@@ -1,9 +1,8 @@
 (*
     module  : formatf.joy
-    version : 1.7
-    date    : 07/15/24
+    version : 1.8
+    date    : 08/27/24
 *)
-
 
 (* total width, number of decimals *)
 
@@ -18,8 +17,8 @@
 12345.6789 'g  12 4 formatf "   1.235e+04" =.
 12345.6789 'g -12 4 formatf "1.235e+04   " =.
 
-1.93456789 'g  12 0 formatf "           2" =.
-1.93456789 'g -12 0 formatf "2           " =.
+1.93456789 'g  12 1 formatf "           2" =.
+1.93456789 'g -12 1 formatf "2           " =.
 
 1234.56    'g  12 3 formatf "    1.23e+03" =.
 1234.56    'g -12 3 formatf "1.23e+03    " =.

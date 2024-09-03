@@ -1,7 +1,7 @@
 (*
     module  : unswons.joy
-    version : 1.6
-    date    : 04/11/24
+    version : 1.7
+    date    : 08/29/24
 *)
 [1 2 3] unswons
 1 =.
@@ -16,4 +16,4 @@
 [1] unswons 1 =.
 
 (* error *)
-'A unswons.
+# 'A unswons.

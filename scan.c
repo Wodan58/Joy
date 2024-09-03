@@ -1,7 +1,7 @@
 /*
     module  : scan.c
-    version : 1.77
-    date    : 07/12/24
+    version : 1.81
+    date    : 08/30/24
 */
 #include "globals.h"
 
@@ -32,19 +32,8 @@ static struct {
     int line;
     char name[FILENAMEMAX + 1];		/* filename in error messages */
 } infile[INPSTACKMAX];
-static int ilevel;			/* index in infile-structure */
+static int ilevel = -1;			/* index in infile-structure */
 static int startnum, startpos, endpos;	/* y, x, and len of tokens */
-
-/*
- * inilinebuffer - initialise the stack of input files. The filename parameter
- *		   is used in error messages.
- */
-void inilinebuffer(FILE *fp, char *str)
-{
-    infile[0].fp = srcfile = fp;
-    infile[0].line = linenum = 1;
-    strncpy(filenam = infile[0].name, str, FILENAMEMAX);
-}
 
 /*
  * getch reads the next character from srcfile.
@@ -145,29 +134,49 @@ void execerror(char *message, char *op)
 /*
  * redirect - register another file descriptor to read from.
  */
-static int redirect(pEnv env, char *name, FILE *fp, char *str)
+static void redirect(pEnv env, char *str, FILE *fp)
 {
+    int i;
+    char *new_path, *old_path;
+
     /*
-     * If there is a new pathname, replace the old one.
+     * If a filename is given with a pathname, then that pathname will be used
+     * for additional attempts.
      */
     if (strrchr(str, '/')) {
-	env->pathname = GC_strdup(str);
-	str = strrchr(env->pathname, '/');
-	*str = 0;
+	new_path = GC_strdup(str);
+	str = strrchr(new_path, '/');
+	*str++ = 0;
+	for (i = vec_size(env->pathnames) - 1; i >= 0; i--) {
+	    old_path = vec_at(env->pathnames, i);
+	    if (!strcmp(new_path, old_path))
+		break;
+	}
+	if (i < 0)
+	    vec_push(env->pathnames, new_path);
     }
-    infile[ilevel].line = linenum;		/* save last line number */
+    if (ilevel >= 0)
+	infile[ilevel].line = linenum;		/* save last line number */
     if (ilevel + 1 == INPSTACKMAX)		/* increase include level */
 	execerror("fewer include files", "include");
     infile[++ilevel].fp = srcfile = fp;		/* use new file pointer */
     infile[ilevel].line = linenum = 1;		/* start with line 1 */
-    strncpy(filenam = infile[ilevel].name, name, FILENAMEMAX);
-    return 0;
+    strncpy(filenam = infile[ilevel].name, str, FILENAMEMAX);
+}
+
+/*
+ * inilinebuffer - initialise the stack of input files. The filename parameter
+ *		   is used in error messages.
+ */
+void inilinebuffer(pEnv env)
+{
+    redirect(env, "stdin", stdin);
 }
 
 /*
  * include - insert the contents of a file in the input.
  *
- * Files are read in the current directory or if that fails from the previous
+ * Files are read in the current directory or if that fails from a previous
  * location. Generating an error is left to the call site.
  *
  * Return code is 1 if the file could not be opened for reading.
@@ -176,29 +185,36 @@ int include(pEnv env, char *name)
 {
     int i;
     FILE *fp;
-    char *path = 0, *str = name;			/* str = path/name */
+    char *path, *str = name;			/* str = path/name */
 
     /*
-     * A file is tried first in the current directory, then in the home
-     * directory and if that also fails in the pathname directory.
+     * The home directory is added to the list of directories to be searched.
      */
-    if (!env->homedir) {				/* should be present */
-	env->homedir = getenv("HOME");			/* unix/cygwin */
-#ifdef _MSC_VER
+    if (!env->homedir) {			/* should be present */
+	env->homedir = getenv("HOME");		/* unix/cygwin */
+#ifdef WINDOWS
 	if (!env->homedir)
-	    env->homedir = getenv("HOMEPATH");		/* windows */
+	    env->homedir = getenv("HOMEPATH");	/* windows */
 #endif
+	if (env->homedir)
+	    vec_push(env->pathnames, env->homedir);
     }
-    for (i = 0; i < 3; i++) {
-	if (i) {					/* add pathname */
-	    path = i == 1 ? env->homedir : env->pathname;
+    /*
+     * The current directory is tried first.
+     * Then all saved directories are tried until there is one that succeeds.
+     */
+    for (i = vec_size(env->pathnames); i >= 0; i--) {
+	if (i != vec_size(env->pathnames)) {
+	    path = vec_at(env->pathnames, i);
 	    str = GC_malloc_atomic(strlen(path) + strlen(name) + 2);
 	    sprintf(str, "%s/%s", path, name);
 	}
-	if ((fp = fopen(str, "r")) != 0)		/* try to read */
-	    return redirect(env, name, fp, str);	/* stop trying */
+	if ((fp = fopen(str, "r")) != 0) {	/* try to read */
+	    redirect(env, str, fp);		/* stop trying */
+	    return 0;
+	}
     }
-    return 1;				/* file cannot be opened for reading */
+    return 1;		/* file cannot be opened for reading */
 }
 
 /*

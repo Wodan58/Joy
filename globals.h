@@ -1,8 +1,8 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.105
- *  date    : 08/12/24
+ *  version : 1.109
+ *  date    : 08/29/24
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -23,11 +23,17 @@
 #include <inttypes.h>
 
 #ifdef _MSC_VER
+#define WINDOWS
+#endif
+
+#ifdef WINDOWS
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>		/* pollute name space as much as possible */
 #include <io.h>			/* also import deprecated POSIX names */
+#ifdef _MSC_VER
 #pragma warning(disable: 4244 4267 4996)
 #define kh_packed		/* forget about __attribute__ ((packed)) */
+#endif
 #else
 #include <unistd.h>
 #include <termios.h>
@@ -234,9 +240,9 @@ typedef struct Env {
     char *str;			/* string */
     clock_t startclock;		/* main */
     char **g_argv;		/* command line */
-    char *homedir;		/* HOME or USERPROFILE */
-    char *pathname;		/* pathname of joy binary */
+    char *homedir;		/* HOME or HOMEPATH */
     char *mod_name;		/* name of module */
+    vector(char *) *pathnames;	/* pathnames to be searched when including */
     vector(char) *string;	/* value */
     vector(char) *pushback;	/* push back buffer */
     vector(Token) *tokens;	/* read ahead table */
@@ -252,7 +258,7 @@ typedef struct Env {
 #ifdef NOBDW
     clock_t gc_clock;
     Node *memory;		/* dynamic memory */
-    Index conts, dump, dump1, dump2, dump3, dump4, dump5;
+    Index conts, dump, dump1, dump2, dump3, dump4, dump5, inits;
 #endif
     Index prog, stck;
     int g_argc;			/* command line */
@@ -299,7 +305,7 @@ void fatal(char *str);
 /* interp.c */
 void exeterm(pEnv env, Index n);
 /* scan.c */
-void inilinebuffer(FILE *fp, char *str);
+void inilinebuffer(pEnv env);
 int getch(pEnv env);
 void ungetch(int ch);
 void error(char *str);
@@ -349,4 +355,6 @@ int enteratom(pEnv env, char *name);
 int compound_def(pEnv env, int ch);
 /* undefs.c */
 void hide_inner_modules(pEnv env, int flag);
+/* setraw.c */
+void SetRaw(pEnv env);
 #endif

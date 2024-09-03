@@ -1,7 +1,7 @@
 /*
  *  module  : utils.c
- *  version : 1.39
- *  date    : 08/12/24
+ *  version : 1.43
+ *  date    : 09/01/24
  */
 #include "globals.h"
 
@@ -13,12 +13,12 @@
  * MEM_LOW should allow reading usrlib.joy, inilib.joy, and agglib.joy without
  * reallocation and without garbage collection.
  */
-#define MEM_LOW		1100		/* initial number of nodes */
+#define MEM_LOW		1100	/* initial number of nodes */
 
 static Node *old_memory;
 static Index mem_low, memoryindex, memorymax;
 
-static clock_t start_gc_clock;		/* statistics */
+static clock_t start_gc_clock;	/* statistics */
 #ifdef TRACEGC
 static int nodesinspected, nodescopied;
 #endif
@@ -31,6 +31,9 @@ static int nodesinspected, nodescopied;
  */
 void inimem1(pEnv env, int status)
 {
+#ifdef TRACEGC
+    env->tracegc = 6;		/* set to maximum */
+#endif    
     if (!mem_low) {
 	memoryindex = mem_low = 1;
 	env->memory = calloc(memorymax = MEM_LOW, sizeof(Node));
@@ -39,8 +42,8 @@ void inimem1(pEnv env, int status)
 	    fatal("memory exhausted");
 #endif
     } else if (status) {
+	env->stck = env->inits;	/* reset the stack to initial */
 	memoryindex = mem_low;	/* retain only definitions */
-	env->stck = 0;		/* also clear the stack */
     }
     env->conts = env->dump = 0;
     env->dump1 = env->dump2 = env->dump3 = env->dump4 = env->dump5 = 0;
@@ -91,6 +94,7 @@ void printnode(pEnv env, Index p)
  */
 static Index copy(pEnv env, Index n)
 {
+    int leng;
     Index temp;
     Operator op;
 
@@ -120,7 +124,8 @@ static Index copy(pEnv env, Index n)
  * If the node contains a string, then some more copying is needed.
  */
     if (op == STRING_ || op == BIGNUM_) {
-	strcpy((char *)&env->memory[temp].u, (char *)&old_memory[n].u);
+	leng = strlen((char *)&old_memory[n].u) + 1;
+	memcpy(&env->memory[temp].u, &old_memory[n].u, leng);
 	memoryindex += (old_memory[n].len + sizeof(Types)) / sizeof(Node);
     }
 /*
@@ -232,7 +237,7 @@ static void gc2(pEnv env)
 {
     clock_t this_gc_clock;
 
-    free(old_memory);				/* release old memory */
+    free(old_memory);		/* release old memory */
 /*
  * If memory is mostly occupied, it should be increased. If only a small amount
  * is occupied, it should be decreased.
@@ -272,10 +277,12 @@ void my_gc(pEnv env)
 Index newnode(pEnv env, Operator o, Types u, Index r)
 {
     Index p;
-    int num = 1;		/* allocate at least one node */
+    int leng = 0, num = 1;	/* allocate at least one node */
 
-    if (o == STRING_ || o == BIGNUM_)
-	num += (strlen(u.str) + sizeof(Types)) / sizeof(Node);
+    if (o == STRING_ || o == BIGNUM_) {
+	leng = strlen(u.str) + 1;
+	num += (leng + sizeof(Types)) / sizeof(Node);	/* round up */
+    }
     if (memoryindex + num >= memorymax) {	/* space for new node */
 	if (env->flibrary_busy) {
 	    while (memoryindex + num >= memorymax)
@@ -304,8 +311,8 @@ Index newnode(pEnv env, Operator o, Types u, Index r)
     env->memory[p].op = o;
     env->memory[p].next = r;
     if (o == STRING_ || o == BIGNUM_) {
-	strcpy((char *)&env->memory[p].u, u.str);
-	env->memory[p].len = strlen(u.str);
+	memcpy(&env->memory[p].u, u.str, leng);
+	env->memory[p].len = leng - 1;
     }
     return p;
 }

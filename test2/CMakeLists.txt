@@ -1,7 +1,7 @@
 #
 #   module  : CMakeLists.txt
-#   version : 1.14
-#   date    : 06/21/24
+#   version : 1.15
+#   date    : 08/29/24
 #
 macro(exe9 src)
 add_custom_target(${src}.out ALL
@@ -102,7 +102,7 @@ exe9(frexp)
 exe9(fseek)
 exe9(ftell)
 exe9(fwrite)
-exe9(gc2)
+exe9(gc)
 exe9(genrec)
 exe9(geql)
 exe9(get)
@@ -207,7 +207,7 @@ exe9(succ)
 exe9(swap)
 exe9(swapd)
 exe9(swons)
-exe9(system2)
+exe9(system)
 exe9(tailrec)
 exe9(take)
 exe9(tan)

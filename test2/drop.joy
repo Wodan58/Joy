@@ -1,7 +1,7 @@
 (*
     module  : drop.joy
-    version : 1.7
-    date    : 04/11/24
+    version : 1.8
+    date    : 08/29/24
 *)
 [1 2 3] 1 drop [2 3] equal.
 "test" 1 drop "est" =.
@@ -12,4 +12,4 @@
 {1 2 3} 5 drop {} =.
 
 (* error *)
-'A 10 drop.
+# 'A 10 drop.

@@ -1,0 +1,15 @@
+(*
+    module  : finclude.joy
+    version : 1.1
+    date    : 06/21/24
+*)
+"test" "w" fopen
+1 fput '\n fputch
+2 fput '\n fputch
+3 fput '\n fputch
+fclose
+"test" finclude
+stack [3 2 1] equal.
+"test" fremove.
+
+"exist" finclude.

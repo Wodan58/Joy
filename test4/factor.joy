@@ -1,0 +1,63 @@
+(*
+    module  : factor.joy
+    version : 1.1
+    date    : 08/29/24
+*)
+
+# small numeric expected in set
+{ -1 }.
+
+# numeric expected in set
+{ true }.
+
+CONST
+Ctrl-Q == 17;
+Ctrl-S == 19.
+
+# execute immediate functions at compile time
+[Ctrl-Q Ctrl-S].
+
+# '}' expected
+{ 1 .
+
+# ']' expected
+[ 1 .
+
+# ( not implemented
+( .
+
+# a factor cannot begin with this symbol
+) .
+
+# control code - Ctrl-Q
+'\017 .
+
+# string escapes
+"\"\t\017" . # " correct syntax coloring
+
+# add decimal point.
+1.0e10 .
+
+# NULL file pointer.
+"nonexist" "r" fopen.
+
+# stdin
+stdin.
+
+# stdout
+stdout.
+
+# stderr
+stderr.
+
+# valid file pointer
+"factor.joy" "r" fopen.
+
+# cast to bignum and display w/o quotes
+"hello, world\n" 12 casting.
+
+# dump is not empty
+2 [3 [4 abort] dip] dip...
+
+# a factor cannot begin with this symbol
+"hello" 13 casting [] cons.

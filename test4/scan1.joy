@@ -1,12 +1,14 @@
 (*
-    module  : scan.joy
-    version : 1.1
-    date    : 03/21/24
+    module  : scan1.joy
+    version : 1.2
+    date    : 08/29/24
 *)
-(* echo lines *)
-1 setundeferror.
-2 setautoput.
 3 setecho.
+
+(* unassign w/o parameter *)
+unassign.
+
+0 setecho.
 
 (* shell escape *)
 $ TECO
@@ -76,7 +78,7 @@ PRIVATE
 PUBLIC
 END
 
-(* module name *)
+(* atom expected as name of module *)
 MODULE 10.
 
 (* == expected in definition *)
@@ -116,3 +118,4 @@ undefined
 (* read keyword? *)
 get.
 LIBRA
+

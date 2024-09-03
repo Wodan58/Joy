@@ -1,0 +1,8 @@
+(*
+    module  : gcno.joy
+    version : 1.2
+    date    : 08/29/24
+*)
+
+# count collections
+10 [1 10000 from-to-list pop gc] times.

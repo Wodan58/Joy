@@ -1,7 +1,7 @@
 /*
  *  module  : undefs.c
- *  version : 1.8
- *  date    : 08/12/24
+ *  version : 1.9
+ *  date    : 08/29/24
  */
 #include "globals.h"
 
@@ -15,12 +15,16 @@ void hide_inner_modules(pEnv env, int flag)
 
     /*
      * There are two calls to this function. In the first call, the name of
-     * the module is read and stored in name. In the second call, the name
+     * the module is read and stored in mod_name. In the second call, mod_name
      * is used when searching the symbol table.
      */
     if (flag) {
 	node = vec_back(env->tokens);
-	env->mod_name = node.u.str;
+	if (node.op == USR_) {
+	    env->mod_name = GC_malloc_atomic(strlen(node.u.str) + 2);
+	    sprintf(env->mod_name, "%s.", node.u.str);
+	} else
+	    env->mod_name = ".";	/* empty module name */
 	return;
     }
     /*
@@ -28,7 +32,7 @@ void hide_inner_modules(pEnv env, int flag)
      * the member functions and can be inspected right now.
      */
     name = env->mod_name;	/* name of module */
-    leng = strlen(name);	/* length of name */
+    leng = strlen(name);	/* length of name, including separator */
     /*
      * Look in the symbol table for the last mention of this name. The first
      * may not be present, because private symbols are not stored with the
@@ -57,7 +61,7 @@ void hide_inner_modules(pEnv env, int flag)
 	    continue;
 	if (isdigit((int)ent.name[0]))		/* hidden names are ok */
 	    continue;
-	if (strncmp(name, ent.name, leng))	/* an inner module was found */
+	if (strncmp(name, ent.name, leng)) {	/* an inner module was found */
 #ifdef USE_KHASHL
 	    if ((key = symtab_get(env->hash, ent.name)) != kh_end(env->hash))
 		symtab_del(env->hash, key);
@@ -66,5 +70,6 @@ void hide_inner_modules(pEnv env, int flag)
 			    != kh_end(env->hash))
 		kh_del(Symtab, env->hash, key);
 #endif
+	}
     }
 }

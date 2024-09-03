@@ -1,0 +1,50 @@
+(*
+    module  : errors.joy
+    version : 1.1
+    date    : 08/29/24
+*)
+
+(* error *)
+10 10 concat.
+
+(* error *)
+'A 10 drop.
+
+(* error *)
+'A [] filter.
+
+(* error *)
+10 first.
+
+(* error *)
+'A [] map.
+
+(* error *)
+10.0 not.
+
+(* error *)
+'A [] [] primrec.
+
+(* error *)
+'A rest.
+
+(* error *)
+10 size.
+
+(* error *)
+[pop] first small =.
+
+(* error *)
+'A [] split.
+
+(* error *)
+10 [] step.
+
+(* error *)
+10 10 take.
+
+(* error *)
+'A uncons.
+
+(* error *)
+'A unswons.

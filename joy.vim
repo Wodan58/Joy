@@ -37,7 +37,6 @@ syntax match joySpecial /%INCLUDE/
 syntax match joySpecial /%PUT/
 syntax match joySpecial /%LISTING/
 syntax match joySpecial /%TRACE/
-syntax match joySpecial /%COMPILE/
 
 if version >= 508 || !exists("did_joy_syntax_inits")
   if version < 508

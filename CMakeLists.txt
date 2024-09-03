@@ -1,7 +1,7 @@
 #
 #   module  : CMakeLists.txt
-#   version : 1.26
-#   date    : 06/21/24
+#   version : 1.29
+#   date    : 08/31/24
 #
 cmake_minimum_required(VERSION 3.5)
 project(Joy VERSION 1.0)
@@ -13,7 +13,7 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
 else()
   option(RUN_TESTS "Run standard tests" OFF)
 endif()
-add_executable(joy main.c interp.c scan.c utils.c factor.c module.c optable.c symbol.c undefs.c gc.c)
+add_executable(joy main.c interp.c scan.c utils.c factor.c module.c optable.c symbol.c undefs.c setraw.c gc.c)
 add_definitions(-DLINK="\\"${CMAKE_EXE_LINKER_FLAGS}\\"")
 add_definitions(-DVERS="NOBDW ${CMAKE_BUILD_TYPE} ${CMAKE_PROJECT_VERSION}")
 #
@@ -27,8 +27,8 @@ else()
   add_dependencies(joy always)
   add_custom_target(always
 		    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-		    COMMAND sh table.sh .
-		    COMMAND sh prims.sh .)
+		    COMMAND sh prims.sh .
+		    COMMAND sh table.sh .)
   set(CF "-DNOBDW -Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter")
   if("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
     set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${CF}")
@@ -41,8 +41,8 @@ else()
   endif()
   target_link_libraries(joy m)
   if(RUN_TESTS)
-    add_subdirectory(test1)
-    add_subdirectory(test2)
     add_subdirectory(lib)
+    add_subdirectory(test2)
+    add_subdirectory(test4)
   endif()
 endif()

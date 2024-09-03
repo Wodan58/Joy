@@ -1,7 +1,7 @@
 (*
     module  : concat.joy
-    version : 1.6
-    date    : 03/21/24
+    version : 1.7
+    date    : 08/29/24
 *)
 [1 2 3] [4 5 6] concat [1 2 3 4 5 6] equal.
 "test" "uftu" concat "testuftu" =.
@@ -12,4 +12,5 @@
 [1 2 3] dup [4 5 6] concat swap [7 8 9] concat stack
 [[1 2 3 7 8 9] [1 2 3 4 5 6]] equal.
 
-10 10 concat.
+(* error *)
+# 10 10 concat.

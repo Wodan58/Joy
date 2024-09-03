@@ -1,10 +1,11 @@
 (*
     module  : first.joy
-    version : 1.4
-    date    : 03/21/24
+    version : 1.5
+    date    : 08/29/24
 *)
 [1 2 3] first 1 =.
 "test" first 't =.
 {1 2 3} first 1 =.
 
-10 first.
+(* error *)
+# 10 first.

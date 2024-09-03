@@ -1,0 +1,8 @@
+(*
+    module  : scan2.joy
+    version : 1.1
+    date    : 08/29/24
+*)
+"scan2.joy" finclude.
+
+"scan2.joy" include.
