@@ -1,6 +1,10 @@
 (*
     module  : atan.joy
-    version : 1.4
-    date    : 03/21/24
+    version : 1.5
+    date    : 09/19/24
 *)
 0.1 atan 'g 0 6 formatf strtod 0.0996687 =.
+
+0.1		# x
+1.0		# 1
+atan2.

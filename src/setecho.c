@@ -1,13 +1,13 @@
 /*
     module  : setecho.c
-    version : 1.9
-    date    : 04/11/24
+    version : 1.10
+    date    : 09/17/24
 */
 #ifndef SETECHO_C
 #define SETECHO_C
 
 /**
-IGNORE_POP  3000  setecho  :  I  ->
+Q0  IGNORE_POP  3000  setecho  :  I  ->
 [IMPURE] Sets value of echo flag for listing.
 I = 0: no echo, 1: echo, 2: with tab, 3: and linenumber.
 */

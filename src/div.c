@@ -1,25 +1,25 @@
 /*
     module  : div.c
-    version : 1.6
-    date    : 07/12/24
+    version : 1.7
+    date    : 09/17/24
 */
 #ifndef DIV_C
 #define DIV_C
 
 /**
-OK 1430  div  :  I J  ->  K L
+Q0  OK  1430  div  :  I J  ->  K L
 Integers K and L are the quotient and remainder of dividing I by J.
 */
 void div_(pEnv env)
 {
-    lldiv_t rv;
+    int64_t quotient, remainder;
 
     TWOPARAMS("div");
     INTEGERS2("div");
     CHECKZERO("div");
-    rv.quot = nodevalue(nextnode1(env->stck)).num / nodevalue(env->stck).num;
-    rv.rem = nodevalue(nextnode1(env->stck)).num % nodevalue(env->stck).num;
-    BINARY(INTEGER_NEWNODE, rv.quot);
-    NULLARY(INTEGER_NEWNODE, rv.rem);
+    quotient = nodevalue(nextnode1(env->stck)).num / nodevalue(env->stck).num;
+    remainder = nodevalue(nextnode1(env->stck)).num % nodevalue(env->stck).num;
+    BINARY(INTEGER_NEWNODE, quotient);
+    NULLARY(INTEGER_NEWNODE, remainder);
 }
 #endif

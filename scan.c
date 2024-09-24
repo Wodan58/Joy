@@ -1,8 +1,9 @@
+/* FILE : scan.c */
 /*
-    module  : scan.c
-    version : 1.81
-    date    : 08/30/24
-*/
+ *  module  : scan.c
+ *  version : 1.84
+ *  date    : 09/23/24
+ */
 #include "globals.h"
 
 static struct keys {
@@ -61,11 +62,10 @@ again:
 	while ((ch = fgetc(srcfile)) != '\n' && ch != EOF)
 	    vec_push(env->string, ch);
 	vec_push(env->string, 0);
+#ifndef WINDOWS_S
 	if (!env->ignore)
-	    if ((ch = system(&vec_at(env->string, 0))) != 0) {
-		fflush(stdout);
-		fprintf(stderr, "system: %u\n", ch & 0xFF);
-	    }
+	    (void)system(&vec_at(env->string, 0));
+#endif
 	vec_setsize(env->string, 0);
 	goto again;
     }
@@ -108,28 +108,6 @@ void error(char *str)
     fprintf(stderr, "\n%*s^", --leng, "");		/* caret corrected */
     fprintf(stderr, "\n%*s%s\n", leng, "", str);	/* message */
 }
-
-/*
- * print a runtime error to stderr and abort execution of the current program.
- */
-void execerror(char *message, char *op)
-{
-    int leng = 0;
-    char *ptr, *str;
-
-    if ((ptr = strrchr(op, '/')) != 0)
-	ptr++;
-    else
-	ptr = op;
-    if ((str = strrchr(ptr, '.')) != 0 && str[1] == 'c')
-	leng = str - ptr;
-    else
-	leng = strlen(ptr);
-    fflush(stdout);
-    fprintf(stderr, "%s:run time error: %s needed for %.*s\n", filenam, message,
-	    leng, ptr);
-    abortexecution_(ABORT_RETRY);
-}	/* LCOV_EXCL_LINE */
 
 /*
  * redirect - register another file descriptor to read from.
@@ -185,6 +163,7 @@ int include(pEnv env, char *name)
 {
     int i;
     FILE *fp;
+    size_t leng;
     char *path, *str = name;			/* str = path/name */
 
     /*
@@ -206,8 +185,9 @@ int include(pEnv env, char *name)
     for (i = vec_size(env->pathnames); i >= 0; i--) {
 	if (i != vec_size(env->pathnames)) {
 	    path = vec_at(env->pathnames, i);
-	    str = GC_malloc_atomic(strlen(path) + strlen(name) + 2);
-	    sprintf(str, "%s/%s", path, name);
+	    leng = strlen(path) + strlen(name) + 2;
+	    str = GC_malloc_atomic(leng);
+	    snprintf(str, leng, "%s/%s", path, name);
 	}
 	if ((fp = fopen(str, "r")) != 0) {	/* try to read */
 	    redirect(env, str, fp);		/* stop trying */
@@ -404,8 +384,8 @@ einde:	vec_push(env->string, 0);
 	}
 	env->str = GC_strdup(ptr);
 	env->sym = USR_;
-	return ch;
     }
+    return ch;
 }
 
 static void dumptok(pEnv env, int y, int x, int pos)

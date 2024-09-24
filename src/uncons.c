@@ -1,13 +1,13 @@
 /*
     module  : uncons.c
-    version : 1.9
-    date    : 07/01/24
+    version : 1.10
+    date    : 09/17/24
 */
 #ifndef UNCONS_C
 #define UNCONS_C
 
 /**
-OK 2110  uncons  :  A  ->  F R
+Q0  OK  2110  uncons  :  A  ->  F R
 F and R are the first and the rest of non-empty aggregate A.
 */
 void uncons_(pEnv env)
@@ -27,7 +27,7 @@ void uncons_(pEnv env)
 	NULLARY(SET_NEWNODE, set & ~((int64_t)1 << i));
 	break;
     case STRING_:
-	str = check_strdup((char *)&nodevalue(env->stck));
+	str = strdup((char *)&nodevalue(env->stck));
 	CHECKEMPTYSTRING(str, "uncons");
 	UNARY(CHAR_NEWNODE, *str);
 	NULLARY(STRING_NEWNODE, str + 1);

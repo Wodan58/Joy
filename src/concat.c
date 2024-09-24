@@ -1,19 +1,20 @@
 /*
     module  : concat.c
-    version : 1.8
-    date    : 07/01/24
+    version : 1.9
+    date    : 09/17/24
 */
 #ifndef CONCAT_C
 #define CONCAT_C
 
 /**
-OK 2150  concat  :  S T  ->  U
+Q0  OK  2150  concat  :  S T  ->  U
 Sequence U is the concatenation of sequences S and T.
 */
 void concat_(pEnv env)
 {
     char *str;
     Index temp;
+    size_t leng;
 
     TWOPARAMS("concat");
     SAME2TYPES("concat");
@@ -23,9 +24,9 @@ void concat_(pEnv env)
 			nodevalue(env->stck).set);
 	break;
     case STRING_:
-	str = check_malloc(nodeleng(nextnode1(env->stck)) +
-			nodeleng(env->stck) + 1);
-	sprintf(str, "%s%s", (char *)&nodevalue(nextnode1(env->stck)),
+	leng = nodeleng(nextnode1(env->stck)) + nodeleng(env->stck) + 1;
+	str = malloc(leng);
+	snprintf(str, leng, "%s%s", (char *)&nodevalue(nextnode1(env->stck)),
 			(char *)&nodevalue(env->stck));
 	BINARY(STRING_NEWNODE, str);
 	free(str);
@@ -41,10 +42,13 @@ void concat_(pEnv env)
 	env->dump3 = LIST_NEWNODE(0, env->dump3);	/* last */
 	for (; DMP1; DMP1 = nextnode1(DMP1)) {
 	    temp = newnode2(env, DMP1, 0);
-	    if (!DMP2)	/* first */
-		DMP3 = DMP2 = temp;
-	    else	/* further */
-		DMP3 = nextnode1(DMP3) = temp;
+	    if (!DMP2) {	/* first */
+		DMP2 = temp;
+		DMP3 = DMP2;
+	    } else {		/* further */
+		nextnode1(DMP3) = temp;
+		DMP3 = nextnode1(DMP3);
+	    }
 	}
 	nextnode1(DMP3) = nodevalue(env->stck).lis;
 	BINARY(LIST_NEWNODE, DMP2);

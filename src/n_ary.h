@@ -1,7 +1,7 @@
 /*
     module  : n_ary.h
-    version : 1.5
-    date    : 06/20/24
+    version : 1.6
+    date    : 09/17/24
 */
 #ifndef N_ARY_H
 #define N_ARY_H

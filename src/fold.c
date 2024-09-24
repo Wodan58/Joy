@@ -1,13 +1,13 @@
 /*
     module  : fold.c
-    version : 1.4
-    date    : 03/21/24
+    version : 1.5
+    date    : 09/17/24
 */
 #ifndef FOLD_C
 #define FOLD_C
 
 /**
-OK 2780  fold  :  A V0 [P]  ->  V
+Q1  OK  2780  fold  :  A V0 [P]  ->  V
 Starting with value V0, sequentially pushes members of aggregate A
 and combines with binary operator P to produce value V.
 */

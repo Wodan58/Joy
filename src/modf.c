@@ -1,13 +1,13 @@
 /*
     module  : modf.c
-    version : 1.3
-    date    : 03/21/24
+    version : 1.4
+    date    : 09/17/24
 */
 #ifndef MODF_C
 #define MODF_C
 
 /**
-OK 1620  modf  :  F  ->  G H
+Q0  OK  1620  modf  :  F  ->  G H
 G is the fractional part and H is the integer part
 (but expressed as a float) of F.
 */

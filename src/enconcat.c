@@ -1,13 +1,13 @@
 /*
     module  : enconcat.c
-    version : 1.4
-    date    : 03/21/24
+    version : 1.5
+    date    : 09/17/24
 */
 #ifndef ENCONCAT_C
 #define ENCONCAT_C
 
 /**
-OK 2160  enconcat  :  X S T  ->  U
+Q0  OK  2160  enconcat  :  X S T  ->  U
 Sequence U is the concatenation of sequences S and T
 with X inserted between S and T (== swapd cons concat).
 */

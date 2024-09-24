@@ -1,13 +1,13 @@
 /*
     module  : filter.c
-    version : 1.9
-    date    : 06/21/24
+    version : 1.10
+    date    : 09/17/24
 */
 #ifndef FILTER_C
 #define FILTER_C
 
 /**
-OK 2830  filter  :  A [B]  ->  A1
+Q1  OK  2830  filter  :  A [B]  ->  A1
 Uses test B to filter aggregate A producing sametype aggregate A1.
 */
 void filter_(pEnv env)
@@ -54,10 +54,13 @@ void filter_(pEnv env)
 	    CHECKSTACK("filter");
 	    if (nodevalue(env->stck).num) {	/* test */
 		temp = newnode2(env, DMP1, 0);
-		if (!DMP2)	/* first */
-		    DMP3 = DMP2 = temp;
-		else	/* further */
-		    DMP3 = nextnode1(DMP3) = temp;
+		if (!DMP2) {			/* first */
+		    DMP2 = temp;
+		    DMP3 = DMP2;
+		} else {			/* further */
+		    nextnode1(DMP3) = temp;
+		    DMP3 = nextnode1(DMP3);
+		}
 	    }
 	}
 	env->stck = LIST_NEWNODE(DMP2, SAVED3);

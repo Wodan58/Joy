@@ -1,13 +1,13 @@
 /*
     module  : undefs.c
-    version : 1.6
-    date    : 06/10/24
+    version : 1.7
+    date    : 09/17/24
 */
 #ifndef UNDEFS_C
 #define UNDEFS_C
 
 /**
-OK 1110  undefs  :  ->  [..]
+Q0  OK  1110  undefs  :  ->  [..]
 Push a list of all undefined symbols in the current symbol table.
 */
 void undefs_(pEnv env)

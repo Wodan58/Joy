@@ -1,13 +1,13 @@
 /*
     module  : treerecaux.c
-    version : 1.6
-    date    : 06/21/24
+    version : 1.7
+    date    : 09/17/24
 */
 #ifndef TREERECAUX_C
 #define TREERECAUX_C
 
 /**
-OK 3260  #treerec  :  T [[O] C]  ->  ...
+Q1  OK  3260  #treerec  :  T [[O] C]  ->  ...
 T is a tree. If T is a leaf, executes O. Else executes [[[O] C] treerec] C.
 */
 void treerecaux_(pEnv env)

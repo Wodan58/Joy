@@ -1,13 +1,13 @@
 /*
     module  : genrecaux.c
-    version : 1.6
-    date    : 06/21/24
+    version : 1.7
+    date    : 09/17/24
 */
 #ifndef GENRECAUX_C
 #define GENRECAUX_C
 
 /**
-OK 3240  #genrec  :  [[B] [T] [R1] R2]  ->  ...
+Q1  OK  3240  #genrec  :  [[B] [T] [R1] R2]  ->  ...
 Executes B, if that yields true, executes T.
 Else executes R1 and then [[[B] [T] [R1] R2] genrec] R2.
 */

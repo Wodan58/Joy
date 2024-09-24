@@ -1,7 +1,7 @@
 #
 #   module  : makefile
-#   version : 1.14.1.1
-#   date    : 08/30/24
+#   version : 1.14.1.2
+#   date    : 09/18/24
 #
 .POSIX:
 .SUFFIXES:
@@ -12,7 +12,7 @@ LF = -lm
 CFLAGS = $(CF) -DCOMP="\"$(CF)\"" -DLINK="\"$(LF)\"" -DVERS="\"NOBDW Release 1.0\""
 HDRS = globals.h
 OBJS = main.o interp.o scan.o utils.o factor.o module.o optable.o symbol.o \
-       undefs.o setraw.o gc.o
+       undefs.o setraw.o repl.o write.o error.o print.o gc.o
 
 joy:	prep $(OBJS)
 	$(CC) -o$@ $(OBJS) $(LF)

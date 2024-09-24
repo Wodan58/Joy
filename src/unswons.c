@@ -1,13 +1,13 @@
 /*
     module  : unswons.c
-    version : 1.9
-    date    : 07/01/24
+    version : 1.10
+    date    : 09/17/24
 */
 #ifndef UNSWONS_C
 #define UNSWONS_C
 
 /**
-OK 2120  unswons  :  A  ->  R F
+Q0  OK  2120  unswons  :  A  ->  R F
 R and F are the rest and the first of non-empty aggregate A.
 */
 void unswons_(pEnv env)
@@ -27,7 +27,7 @@ void unswons_(pEnv env)
 	NULLARY(INTEGER_NEWNODE, i);
 	break;
     case STRING_:
-	str = check_strdup((char *)&nodevalue(env->stck));
+	str = strdup((char *)&nodevalue(env->stck));
 	CHECKEMPTYSTRING(str, "unswons");
 	UNARY(STRING_NEWNODE, str + 1);
 	NULLARY(CHAR_NEWNODE, *str);

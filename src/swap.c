@@ -1,13 +1,13 @@
 /*
     module  : swap.c
-    version : 1.4
-    date    : 06/21/24
+    version : 1.5
+    date    : 09/17/24
 */
 #ifndef SWAP_C
 #define SWAP_C
 
 /**
-OK 1220  swap  :  X Y  ->  Y X
+Q0  OK  1220  swap  :  X Y  ->  Y X
 Interchanges X and Y on top of the stack.
 */
 void swap_(pEnv env)

@@ -1,13 +1,13 @@
 /*
     module  : rest.c
-    version : 1.9
-    date    : 07/01/24
+    version : 1.10
+    date    : 09/17/24
 */
 #ifndef REST_C
 #define REST_C
 
 /**
-OK 2040  rest  :  A  ->  R
+Q0  OK  2040  rest  :  A  ->  R
 R is the non-empty aggregate A with its first member removed.
 */
 void rest_(pEnv env)
@@ -25,7 +25,7 @@ void rest_(pEnv env)
 	break;
     case STRING_:
 #ifdef NOBDW
-	str = check_strdup((char *)&nodevalue(env->stck));
+	str = strdup((char *)&nodevalue(env->stck));
 #else
 	str = nodevalue(env->stck).str;
 #endif

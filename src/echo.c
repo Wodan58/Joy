@@ -1,13 +1,13 @@
 /*
     module  : echo.c
-    version : 1.3
-    date    : 08/13/23
+    version : 1.4
+    date    : 09/17/24
 */
 #ifndef ECHO_C
 #define ECHO_C
 
 /**
-OK 1120  echo  :  ->  I
+Q0  OK  1120  echo  :  ->  I
 Pushes value of echo flag, I = 0..3.
 */
 PUSH(echo_, INTEGER_NEWNODE, env->echoflag)

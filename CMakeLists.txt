@@ -1,7 +1,7 @@
 #
 #   module  : CMakeLists.txt
-#   version : 1.29
-#   date    : 08/31/24
+#   version : 1.31
+#   date    : 09/24/24
 #
 cmake_minimum_required(VERSION 3.5)
 project(Joy VERSION 1.0)
@@ -13,7 +13,8 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
 else()
   option(RUN_TESTS "Run standard tests" OFF)
 endif()
-add_executable(joy main.c interp.c scan.c utils.c factor.c module.c optable.c symbol.c undefs.c setraw.c gc.c)
+add_executable(joy main.c interp.c scan.c utils.c factor.c module.c optable.c
+	       symbol.c undefs.c setraw.c repl.c write.c error.c print.c gc.c)
 add_definitions(-DLINK="\\"${CMAKE_EXE_LINKER_FLAGS}\\"")
 add_definitions(-DVERS="NOBDW ${CMAKE_BUILD_TYPE} ${CMAKE_PROJECT_VERSION}")
 #
@@ -29,7 +30,7 @@ else()
 		    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 		    COMMAND sh prims.sh .
 		    COMMAND sh table.sh .)
-  set(CF "-DNOBDW -Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter")
+  set(CF "-DNOBDW -Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter -Wno-unused-result")
   if("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
     set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${CF}")
     add_definitions(-DCOMP="\\"${CMAKE_C_FLAGS_RELEASE}\\"")

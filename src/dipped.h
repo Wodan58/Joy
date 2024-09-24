@@ -1,7 +1,7 @@
 /*
     module  : dipped.h
-    version : 1.4
-    date    : 06/21/24
+    version : 1.5
+    date    : 09/17/24
 */
 #ifndef DIPPED_H
 #define DIPPED_H

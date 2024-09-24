@@ -1,6 +1,17 @@
 (*
     module  : acos.joy
-    version : 1.4
-    date    : 03/21/24
+    version : 1.5
+    date    : 09/19/24
 *)
 0.1 acos 'g 0 6 formatf strtod 1.47063 =.
+
+0.1		# x
+dup		#
+dup		#
+*		# x^2
+1.0
+swap
+-		# 1-x^2
+sqrt
+swap
+atan2.

@@ -1,7 +1,7 @@
 /*
     module  : strftime.c
-    version : 1.7
-    date    : 07/01/24
+    version : 1.8
+    date    : 09/17/24
 */
 #ifndef STRFTIME_C
 #define STRFTIME_C
@@ -9,7 +9,7 @@
 #include "decode.h"
 
 /**
-OK 1730  strftime  :  T S1  ->  S2
+Q0  OK  1730  strftime  :  T S1  ->  S2
 Formats a list T in the format of localtime or gmtime
 using string S1 and pushes the result S2.
 */
@@ -31,7 +31,7 @@ void strftime_(pEnv env)
     decode_time(env, &t);
     leng = BUFFERMAX;
 #ifdef NOBDW
-    result = check_malloc(leng + 1);
+    result = malloc(leng + 1);
 #else
     result = GC_malloc_atomic(leng + 1);
 #endif

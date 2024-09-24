@@ -1,13 +1,13 @@
 /*
     module  : times.c
-    version : 1.5
-    date    : 06/21/24
+    version : 1.7
+    date    : 09/19/24
 */
 #ifndef TIMES_C
 #define TIMES_C
 
 /**
-OK 2800  times  :  N [P]  ->  ...
+Q1  OK  2800  times  :  N [P]  ->  ...
 N times executes P.
 */
 void times_(pEnv env)
@@ -20,7 +20,7 @@ void times_(pEnv env)
     SAVESTACK;
     env->stck = nextnode2(env->stck);
     n = nodevalue(SAVED2).num;
-    for (i = 1; i <= n; i++)
+    for (i = 0; i < n; i++)
 	exeterm(env, nodevalue(SAVED1).lis);
     POP(env->dump);
 }

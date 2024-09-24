@@ -1,13 +1,13 @@
 (*
     module  : null.joy
-    version : 1.5
-    date    : 04/19/24
+    version : 1.6
+    date    : 09/19/24
 *)
 [pop] first null false =.
 [sum] first null false =.
 false null.
 true null false =.
-'\000 null.
+'\002 null not.
 'A null false =.
 0 null.
 10 null false =.

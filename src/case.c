@@ -1,7 +1,7 @@
 /*
     module  : case.c
-    version : 1.7
-    date    : 06/21/24
+    version : 1.8
+    date    : 09/17/24
 */
 #ifndef CASE_C
 #define CASE_C
@@ -9,7 +9,7 @@
 #include "compare.h"
 
 /**
-OK 2100  case  :  X [..[X Y]..]  ->  Y i
+Q1  OK  2100  case  :  X [..[X Y]..]  ->  Y i
 Indexing on the value of X, execute the matching Y.
 */
 void case_(pEnv env)

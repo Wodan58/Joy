@@ -1,7 +1,7 @@
 /*
     module  : equal.c
-    version : 1.9
-    date    : 06/21/24
+    version : 1.10
+    date    : 09/17/24
 */
 #ifndef EQUAL_C
 #define EQUAL_C
@@ -9,12 +9,12 @@
 #include "compare.h"
 
 /**
-OK 2280  equal  :  T U  ->  B
+Q0  OK  2280  equal  :  T U  ->  B
 (Recursively) tests whether trees T and U are identical.
 */
-int equal_aux(pEnv env, Index n1, Index n2); /* forward */
+static int equal_aux(pEnv env, Index n1, Index n2); /* forward */
 
-int equal_list_aux(pEnv env, Index n1, Index n2)
+static int equal_list_aux(pEnv env, Index n1, Index n2)
 {
     if (!n1 && !n2)
 	return 1;
@@ -26,7 +26,7 @@ int equal_list_aux(pEnv env, Index n1, Index n2)
 	return 0;
 }
 
-int equal_aux(pEnv env, Index n1, Index n2)
+static int equal_aux(pEnv env, Index n1, Index n2)
 {
     if (nodetype(n1) == LIST_ && nodetype(n2) == LIST_)
 	return equal_list_aux(env, nodevalue(n1).lis, nodevalue(n2).lis);

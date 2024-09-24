@@ -1,7 +1,7 @@
 /*
     module  : filetime.c
-    version : 1.8
-    date    : 08/12/24
+    version : 1.9
+    date    : 09/17/24
 */
 #ifndef FILETIME_C
 #define FILETIME_C
@@ -9,7 +9,7 @@
 #include <sys/stat.h>
 
 /**
-OK 3160  filetime  :  F  ->  T
+Q0  OK  3160  filetime  :  F  ->  T
 [FOREIGN] T is the modification time of file F.
 */
 void filetime_(pEnv env)
@@ -28,7 +28,7 @@ void filetime_(pEnv env)
 #endif
     mtime = 0;
     if ((fp = fopen(str, "r")) != 0) {
-	buf = check_malloc(sizeof(struct stat));
+	buf = malloc(sizeof(struct stat));
 	if (fstat(fileno(fp), buf) >= 0)
 	    mtime = buf->st_mtime;
 	free(buf);

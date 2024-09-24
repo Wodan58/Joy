@@ -1,12 +1,12 @@
 /*
     module  : compare.h
-    version : 1.20
-    date    : 06/20/24
+    version : 1.21
+    date    : 09/17/24
 */
 #ifndef COMPARE_H
 #define COMPARE_H
 
-int is_null(pEnv env, Index node)
+static int is_null(pEnv env, Index node)
 {
     switch (nodetype(node)) {
     case USR_:
@@ -19,6 +19,7 @@ int is_null(pEnv env, Index node)
     case SET_:
 	return !nodevalue(node).set;
     case STRING_:
+    case BIGNUM_:
 #ifdef NOBDW
 	return !nodeleng(node);
 #else
@@ -38,11 +39,11 @@ int Compare(pEnv env, Index first, Index second)
 {
     FILE *fp1, *fp2;
     int type1, type2;
-    char *name1, *name2;
     double dbl1 = 0, dbl2 = 0;
     int64_t num1 = 0, num2 = 0;
+    char *name1 = "", *name2 = "";
 
-    if (is_null(env, first) && is_null(env, second))	/* nothing is unique */
+    if (is_null(env, first) && is_null(env, second))	/* only one nothing */
 	return 0;
     type1 = nodetype(first);
     type2 = nodetype(second);
@@ -57,6 +58,7 @@ int Compare(pEnv env, Index first, Index second)
 	    name2 = nickname(operindex(env, nodevalue(second).proc));
 	    goto cmpstr;
 	case STRING_:
+	case BIGNUM_:
 #ifdef NOBDW
 	    name2 = (char *)&nodevalue(second);
 #else
@@ -75,6 +77,7 @@ int Compare(pEnv env, Index first, Index second)
 	    name2 = nickname(operindex(env, nodevalue(second).proc));
 	    goto cmpstr;
 	case STRING_:
+	case BIGNUM_:
 #ifdef NOBDW
 	    name2 = (char *)&nodevalue(second);
 #else
@@ -139,10 +142,11 @@ int Compare(pEnv env, Index first, Index second)
 	    num2 = nodevalue(second).num;
 	    goto cmpnum;
 	}
-	/* continue */
+	break;
     case LIST_:
 	break;
     case STRING_:
+    case BIGNUM_:
 #ifdef NOBDW
 	name1 = (char *)&nodevalue(first);
 #else
@@ -156,6 +160,7 @@ int Compare(pEnv env, Index first, Index second)
 	    name2 = nickname(operindex(env, nodevalue(second).proc));
 	    goto cmpstr;
 	case STRING_:
+	case BIGNUM_:
 #ifdef NOBDW
 	    name2 = (char *)&nodevalue(second);
 #else

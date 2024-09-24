@@ -1,8 +1,8 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.109
- *  date    : 08/29/24
+ *  version : 1.113
+ *  date    : 09/23/24
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -22,14 +22,21 @@
 #include <time.h>
 #include <inttypes.h>
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) || defined(__MINGW64_VERSION_MAJOR) || defined(__TINYC__)
 #define WINDOWS
+#endif
+
+#ifdef _MSC_VER
+#define WINDOWS_S
 #endif
 
 #ifdef WINDOWS
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>		/* pollute name space as much as possible */
 #include <io.h>			/* also import deprecated POSIX names */
+#ifdef __TINYC__
+#define strtoll _strtoi64	/* tcc 0.9.27 lacks strtoll */
+#endif
 #ifdef _MSC_VER
 #pragma warning(disable: 4244 4267 4996)
 #define kh_packed		/* forget about __attribute__ ((packed)) */
@@ -41,7 +48,11 @@
 #endif
 
 #ifndef NOBDW
+#ifdef _MSC_VER
+#include "gc-8.2.8/include/gc.h"
+#else
 #include <gc.h>
+#endif
 #else
 #include "gc.h"
 #endif
@@ -65,7 +76,7 @@
 #define INTEGER_NEWNODE(u, r)						\
     (env->bucket.num = u, newnode(env, INTEGER_, env->bucket, r))
 #define SET_NEWNODE(u, r)						\
-    (env->bucket.num = u, newnode(env, SET_, env->bucket, r))
+    (env->bucket.set = u, newnode(env, SET_, env->bucket, r))
 #define STRING_NEWNODE(u, r)						\
     (env->bucket.str = u, newnode(env, STRING_, env->bucket, r))
 #define LIST_NEWNODE(u, r)						\
@@ -74,6 +85,8 @@
     (env->bucket.dbl = u, newnode(env, FLOAT_, env->bucket, r))
 #define FILE_NEWNODE(u, r)						\
     (env->bucket.fil = u, newnode(env, FILE_, env->bucket, r))
+#define BIGNUM_NEWNODE(u, r)						\
+    (env->bucket.str = u, newnode(env, BIGNUM_, env->bucket, r))
 
 #define NULLARY(CONSTRUCTOR, VALUE)					\
     env->stck = CONSTRUCTOR(VALUE, env->stck)
@@ -167,15 +180,15 @@ typedef enum {
 /* types			*/
 typedef unsigned char Operator;	/* opcode / datatype */
 
+typedef struct Env *pEnv;
+
+typedef void (*proc_t)(pEnv);	/* procedure */
+
 #ifdef NOBDW
 typedef unsigned Index;
 #else
 typedef struct Node *Index;
 #endif
-
-typedef struct Env *pEnv;
-
-typedef void (*proc_t)(pEnv);	/* procedure */
 
 typedef union {
     int64_t num;	/* USR, BOOLEAN, CHAR, INTEGER */
@@ -240,6 +253,7 @@ typedef struct Env {
     char *str;			/* string */
     clock_t startclock;		/* main */
     char **g_argv;		/* command line */
+    char *filename;		/* first include file */
     char *homedir;		/* HOME or HOMEPATH */
     char *mod_name;		/* name of module */
     vector(char *) *pathnames;	/* pathnames to be searched when including */
@@ -275,6 +289,8 @@ typedef struct Env {
     unsigned char tracegc;
     unsigned char undeferror;
     unsigned char undeferror_set;
+    unsigned char bytecoding;	/* BDW only */
+    unsigned char compiling;	/* BDW only */
     unsigned char debugging;
     unsigned char ignore;
     unsigned char overwrite;
@@ -283,6 +299,11 @@ typedef struct Env {
     unsigned char flibrary_busy;
     unsigned char variable_busy;
 } Env;
+
+typedef struct table_t {
+    proc_t proc;
+    char *name;
+} table_t;
 
 /* GOOD REFS:
 	005.133l H4732		A LISP interpreter in C
@@ -309,7 +330,6 @@ void inilinebuffer(pEnv env);
 int getch(pEnv env);
 void ungetch(int ch);
 void error(char *str);
-void execerror(char *message, char *op);
 int include(pEnv env, char *name);
 int getsym(pEnv env, int ch);
 /* utils.c */
@@ -317,22 +337,17 @@ Index newnode(pEnv env, Operator o, Types u, Index r);
 Index newnode2(pEnv env, Index n, Index r);
 void my_memoryindex(pEnv env);
 void my_memorymax(pEnv env);
-void *check_malloc(size_t leng);
-void *check_strdup(char *ptr);
 #ifdef NOBDW
-void writedump(pEnv env, Index n, FILE *fp);
 void inimem1(pEnv env, int status);
 void inimem2(pEnv env);
 void printnode(pEnv env, Index p);
 void my_gc(pEnv env);
-void *check_realloc(void *ptr, size_t leng);
 #endif
+/* error.c */
+void execerror(char *message, char *op);
 /* factor.c */
 int readfactor(pEnv env, int ch, int *rv);	/* read a JOY factor */
 int readterm(pEnv env, int ch);
-void writefactor(pEnv env, Index n, FILE *fp);
-void writeterm(pEnv env, Index n, FILE *fp);
-void writedump(pEnv env, Index n, FILE *fp);
 /* module.c */
 void savemod(int *hide, int *modl, int *hcnt);
 void undomod(int hide, int modl, int hcnt);
@@ -344,17 +359,45 @@ void exitmod(void);
 char *classify(pEnv env, char *name);
 int qualify(pEnv env, char *name);
 /* optable.c */
+#ifdef BYTECODE
+int tablesize(void);
+int operqcode(int index);
+#endif
 char *nickname(int ch);
 char *opername(int o);
 int operindex(pEnv env, proc_t proc);
 void inisymboltable(pEnv env);			/* initialise */
 void addsymbol(pEnv env, Entry ent, int index);
+/* print.c */
+void print(pEnv env);
+/* repl.c */
+void repl(pEnv env);
+/* setraw.c */
+void SetRaw(pEnv env);
 /* symbol.c */
 int lookup(pEnv env, char *name);
 int enteratom(pEnv env, char *name);
 int compound_def(pEnv env, int ch);
 /* undefs.c */
 void hide_inner_modules(pEnv env, int flag);
-/* setraw.c */
-void SetRaw(pEnv env);
+/* write.c */
+void writefactor(pEnv env, Index n, FILE *fp);
+void writeterm(pEnv env, Index n, FILE *fp);
+#ifdef BYTECODE
+/* bytecode.c */
+void bytecode(pEnv env, Node *list);
+void initbytes(pEnv env);
+void exitbytes(pEnv env);
+/* compile.c */
+int compile(pEnv env, Node *node);
+void initcompile(pEnv env);
+void exitcompile(pEnv env);
+/* dumpbyte.c */
+void dumpbyte(pEnv env, FILE *fp);
+/* readbyte.c */
+void readbyte(pEnv env, FILE *fp, int flag);
+unsigned char *readfile(FILE *fp);
+/* optimize.c */
+void optimize(pEnv env, FILE *fp);
+#endif
 #endif

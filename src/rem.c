@@ -1,13 +1,13 @@
 /*
     module  : rem.c
-    version : 1.4
-    date    : 06/21/24
+    version : 1.5
+    date    : 09/17/24
 */
 #ifndef REM_C
 #define REM_C
 
 /**
-OK 1420  rem  :  I J  ->  K
+Q0  OK  1420  rem  :  I J  ->  K
 Integer K is the remainder of dividing I by J.  Also supports float.
 */
 void rem_(pEnv env)

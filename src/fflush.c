@@ -1,19 +1,19 @@
 /*
     module  : fflush.c
-    version : 1.4
-    date    : 03/21/24
+    version : 1.5
+    date    : 09/17/24
 */
 #ifndef FFLUSH_C
 #define FFLUSH_C
 
 /**
-OK 1860  fflush  :  S  ->  S
+Q0  OK  1860  fflush  :  S  ->  S
 [FOREIGN] Flush stream S, forcing all buffered output to be written.
 */
 void fflush_(pEnv env)
 {
     ONEPARAM("fflush");
-    FILE("fflush");
+    ISFILE("fflush");
     fflush(nodevalue(env->stck).fil);
 }
 #endif

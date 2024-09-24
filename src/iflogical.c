@@ -1,13 +1,13 @@
 /*
     module  : iflogical.c
-    version : 1.3
-    date    : 09/04/23
+    version : 1.4
+    date    : 09/17/24
 */
 #ifndef IFLOGICAL_C
 #define IFLOGICAL_C
 
 /**
-OK 2630  iflogical  :  X [T] [E]  ->  ...
+Q2  OK  2630  iflogical  :  X [T] [E]  ->  ...
 If X is a logical or truth value, executes T else executes E.
 */
 IF_TYPE(iflogical_, "iflogical", BOOLEAN_)

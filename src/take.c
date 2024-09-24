@@ -1,13 +1,13 @@
 /*
     module  : take.c
-    version : 1.12
-    date    : 07/01/24
+    version : 1.13
+    date    : 09/17/24
 */
 #ifndef TAKE_C
 #define TAKE_C
 
 /**
-OK 2140  take  :  A N  ->  B
+Q0  OK  2140  take  :  A N  ->  B
 Aggregate B is the result of retaining just the first N elements of A.
 */
 void take_(pEnv env)
@@ -33,7 +33,7 @@ void take_(pEnv env)
     case STRING_:
 	if (n >= (int)nodeleng(env->stck))
 	    return;	/* the old string unchanged */
-	str = check_strdup((char *)&nodevalue(env->stck));
+	str = strdup((char *)&nodevalue(env->stck));
 	str[n] = 0;	/* end the string */
 	UNARY(STRING_NEWNODE, str);
 	free(str);
@@ -44,10 +44,13 @@ void take_(pEnv env)
 	env->dump3 = LIST_NEWNODE(0, env->dump3);	/* last */
 	for (; DMP1 && n; DMP1 = nextnode1(DMP1), n--) {
 	    temp = newnode2(env, DMP1, 0);
-	    if (!DMP2)	/* first */
-		DMP3 = DMP2 = temp;
-	    else	/* further */
-		DMP3 = nextnode1(DMP3) = temp;
+	    if (!DMP2) {				/* first */
+		DMP2 = temp;
+		DMP3 = DMP2;
+	    } else {					/* further */
+		nextnode1(DMP3) = temp;
+		DMP3 = nextnode1(DMP3);
+	    }
 	}
 	UNARY(LIST_NEWNODE, DMP2);
 	POP(env->dump1);

@@ -1,8 +1,8 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.103
- *  date    : 08/29/24
+ *  version : 1.105
+ *  date    : 09/21/24
  */
 
 /*
@@ -116,16 +116,6 @@ Manfred von Thun, 2006
 */
 #include "globals.h"
 
-/*
- * DUMP_CHECK - check that the dumps are not empty.
- */
-#define DUMP_CHECK(D, NAME)						\
-    if (D) {								\
-	printf("->  %s is not empty:\n", NAME);				\
-	writedump(&env, D, stdout);					\
-	putchar('\n');							\
-    }
-
 static jmp_buf begin;		/* restart with empty program */
 
 char *bottom_of_stack;		/* needed in gc.c */
@@ -154,16 +144,28 @@ void fatal(char *str)
 #endif
 
 /*
- * options - print help on startup options and exit: options are those that
- *	     cannot be set from within the language itself.
+ * banner - print the banner that was present in joy0; the banner is only
+ *	    printed with the -v option.
  */
-static void options(void)
+static void banner(void)
 {
     printf("JOY  -  compiled at %s on %s", __TIME__, __DATE__);
 #ifdef VERS
     printf(" (%s)", VERS);
 #endif
-    printf("\nCopyright 2001 by Manfred von Thun\n");
+    putchar('\n');
+    fflush(stdout);
+}
+
+/*
+ * options - print help on startup options and exit: options are those that
+ *	     cannot be set from within the language itself.
+ */
+static void options(int verbose)
+{
+    if (!verbose)
+	banner();
+    printf("Copyright 2001 by Manfred von Thun\n");
     printf("Usage: joy (options | filenames | parameters)*\n");
     printf("options, filenames, parameters can be given in any order\n");
     printf("options start with '-' and parameters start with a digit\n");
@@ -176,38 +178,56 @@ static void options(void)
 #endif
     printf("Options:\n");
     printf("  -a : set the autoput flag (0-2)\n");
+#ifdef BYTECODE
+    printf("  -b : compile a joy program to bytecode\n");
+    printf("  -c : compile joy source into C source\n");
+#endif
     printf("  -d : print a trace of stack development\n");
     printf("  -e : set the echoflag (0-3)\n");
+#ifdef BYTECODE
+    printf("  -f : display a byte code file and exit\n");
+#endif
     printf("  -g : set the __tracegc flag (0-6)\n");
     printf("  -h : print this help text and exit\n");
     printf("  -i : ignore impure imperative functions\n");
+#ifdef BYTECODE
+    printf("  -j : filename parameter is binary\n");
+#endif
     printf("  -k : allow keyboard input in raw mode\n");
     printf("  -l : do not read usrlib.joy at startup\n");
     printf("  -p : print debug list of tokens\n");
     printf("  -s : dump symbol table after execution\n");
     printf("  -t : print a trace of program execution\n");
     printf("  -u : set the undeferror flag (0,1)\n");
+    printf("  -v : print a small banner at startup\n");
     printf("  -w : no warnings: overwriting, arities\n");
     printf("  -x : print statistics at end of program\n");
 }
 
 /*
- * opt_unknown - report unknown option and point out -h option.
+ * unknown_opt - report unknown option and point out -h option.
  */
-static void opt_unknown(char *exe, int ch)
+static void unknown_opt(char *exe, int ch)
 {
     printf("Unknown option argument: \"-%c\"\n", ch);
     printf("More info with: \"%s -h\"\n", exe);
 }
 
-static int my_main(int argc, char **argv)
+static void my_main(int argc, char **argv)
 {
     static unsigned char psdump = 0, pstats = 0;
-    Env env;			/* global variables */
+#ifdef BYTECODE
+    static unsigned char joy = 1;	/* assume joy source code */
+#endif
+    Env env;				/* global variables */
     int i, j, ch;
     char *ptr, *tmp, *exe;
-    unsigned char mustinclude = 1, helping = 0, unknown = 0, raw = 0,
-		  flag, has_filename = 0;
+    unsigned char helping = 0, unknown = 0, mustinclude = 1, verbose = 0,
+		  raw = 0;
+#ifdef BYTECODE
+    FILE *fp = 0;
+    unsigned char listing = 0;
+#endif
 
     memset(&env, 0, sizeof(env));
     /*
@@ -249,31 +269,42 @@ static int my_main(int argc, char **argv)
 	    for (j = 1; argv[i][j]; j++) {
 		switch (argv[i][j]) {
 		case 'a' : ptr = &argv[i][j + 1];
-			   env.autoput = strtoll(ptr, &tmp, 0);
+			   env.autoput = strtol(ptr, &tmp, 0);
 			   j += tmp - ptr;
 			   env.autoput_set = 1;		/* disable usrlib.joy */
 			   break;
+#ifdef BYTECODE
+		case 'b' : env.bytecoding = 2; break;	/* prepare & suspend */
+		case 'c' : env.compiling = 2; break;	/* prepare & suspend */
+#endif
 		case 'd' : env.debugging = 1; break;
 		case 'e' : ptr = &argv[i][j + 1];
-			   env.echoflag = strtoll(ptr, &tmp, 0);
+			   env.echoflag = strtol(ptr, &tmp, 0);
 			   j += tmp - ptr;
 			   break;
+#ifdef BYTECODE
+		case 'f' : listing = 1; joy = 0; break;
+#endif
 		case 'g' : ptr = &argv[i][j + 1];
-			   env.tracegc = strtoll(ptr, &tmp, 0);
+			   env.tracegc = strtol(ptr, &tmp, 0);
 			   j += tmp - ptr;
 			   break;
 		case 'h' : helping = 1; break;
 		case 'i' : env.ignore = 1; break;
+#ifdef BYTECODE
+		case 'j' : joy = 0; break;		/* assume binary file */
+#endif
 		case 'k' : raw = 1; break;		/* terminal raw mode */
 		case 'l' : mustinclude = 0; break;
 		case 'p' : env.printing = 1; break;
 		case 's' : psdump = 1; break;
 		case 't' : env.debugging = 2; break;
 		case 'u' : ptr = &argv[i][j + 1];
-			   env.undeferror = strtoll(ptr, &tmp, 0);
+			   env.undeferror = strtol(ptr, &tmp, 0);
 			   j += tmp - ptr;
 			   env.undeferror_set = 1;	/* disable usrlib.joy */
 			   break;
+		case 'v' : verbose = 1; break;
 		case 'w' : env.overwrite = 0; break;
 		case 'x' : pstats = 1; break;
 		default  : unknown = argv[i][j]; break;
@@ -289,6 +320,11 @@ static int my_main(int argc, char **argv)
 	} /* end if */
     } /* end for */
     /*
+     * Handle the banner now, before a possible error message is generated.
+     */
+    if (verbose)
+	banner();
+    /*
      * Look for a possible filename parameter. Filenames cannot start with -
      * and cannot start with a digit, unless preceded by a path: e.g. './'.
      */
@@ -298,11 +334,18 @@ static int my_main(int argc, char **argv)
 	    /*
 	     * The first file should also benefit from include logic.
 	     */
-	    if (include(&env, argv[i])) {
+#ifdef BYTECODE		
+	    if (!joy) {
+		if ((fp = fopen(env.filename = argv[i], "rb")) == 0) {
+		    fprintf(stderr, "failed to open the file '%s'.\n", argv[i]);
+		    return;
+		}
+	    } else
+#endif
+	    if (include(&env, env.filename = argv[i])) {
 		fprintf(stderr, "failed to open the file '%s'.\n", argv[i]);
-		return 0;
+		return;
 	    }
-	    has_filename = 1;
 	    /*
 	     *  Overwrite argv[0] with the filename and shift subsequent
 	     *  parameters.
@@ -344,7 +387,7 @@ start:
     /*
      * initialize standard output.
      */
-    if (raw && has_filename) {	/* raw requires a filename */
+    if (raw && env.filename) {	/* raw requires a filename */
 	env.autoput = 0;	/* disable autoput in usrlib.joy */
 	env.autoput_set = 1;	/* prevent enabling autoput */
 	SetRaw(&env);		/* keep output buffered */
@@ -359,11 +402,27 @@ start:
      */
     if (mustinclude)
 	include(&env, "usrlib.joy");
+#ifdef BYTECODE
+    if (listing) {
+	dumpbyte(&env, fp);	/* display .bic or .bjc file */
+	goto einde;
+    }
+    if (env.bytecoding) {
+	if (joy)
+	    initbytes(&env);	/* create .bic file */
+	else {
+	    optimize(&env, fp);	/* create .bjc file */
+	    goto einde;
+	}
+    }
+    if (env.compiling)
+	initcompile(&env);	/* create .c file */
+#endif
     /*
      * handle options, might print symbol table.
      */
     if (helping || unknown) {
-	helping ? options() : opt_unknown(exe, unknown);
+	helping ? options(verbose) : unknown_opt(exe, unknown);
 	goto einde;
     }
     /*
@@ -375,82 +434,35 @@ start:
      * (re)initialize code.
      */
     env.prog = 0;		/* clear program, just to be sure */
-    ch = getch(&env);
-    while (1) {
-	ch = getsym(&env, ch);
-	if (env.sym == LIBRA || env.sym == HIDE || env.sym == MODULE_ ||
-	    env.sym == CONST_) {
-#ifdef NOBDW
-	    inimem1(&env, 1);	/* also resets the stack to initial */
+#ifdef BYTECODE
+    if (!joy) {			/* interprete or compile bytecode */
+	readbyte(&env, fp, env.compiling ? 0 : 1);
+	if (!env.compiling)
+	    print(&env);
+    } else
 #endif
-	    if ((flag = env.sym == MODULE_) != 0)
-		hide_inner_modules(&env, 1);
-	    ch = compound_def(&env, ch);
-	    if (flag)
-		hide_inner_modules(&env, 0);
-#ifdef NOBDW
-	    inimem2(&env);	/* enlarge definition space */
-#endif
-	} else {
-	    ch = readterm(&env, ch);
-#ifdef NOBDW
-	    if (env.stck && env.memory[env.stck].op == LIST_) {
-		env.prog = env.memory[env.stck].u.lis;
-		env.stck = env.memory[env.stck].next;
-		env.conts = 0;
-#else
-	    if (env.stck && nodetype(env.stck) == LIST_) {
-		env.prog = nodevalue(env.stck).lis;
-		env.stck = nextnode1(env.stck);
-#endif
-		exeterm(&env, env.prog);
-	    }
-#ifdef NOBDW
-	    if (env.conts || env.dump || env.dump1 || env.dump2 || env.dump3
-		|| env.dump4 || env.dump5) {
-		printf("the dumps are not empty\n");
-		DUMP_CHECK(env.conts, "conts");
-		DUMP_CHECK(env.dump, "dump");
-		DUMP_CHECK(env.dump1, "dump1");
-		DUMP_CHECK(env.dump2, "dump2");
-		DUMP_CHECK(env.dump3, "dump3");
-		DUMP_CHECK(env.dump4, "dump4");
-		DUMP_CHECK(env.dump5, "dump5");
-	    }
-#endif
-	    if (env.stck) {
-		if (env.autoput == 2)
-		    writeterm(&env, env.stck, stdout);
-		else if (env.autoput == 1) {
-		    writefactor(&env, env.stck, stdout);
-#ifdef NOBDW
-		    env.stck = env.memory[env.stck].next;
-#else
-		    env.stck = nextnode1(env.stck);
-#endif
-		}
-		if (env.autoput) {
-		    putchar('\n');
-		    fflush(stdout);
-		}
-	    }
-	}
-    }
+    repl(&env);			/* read-eval-print loop */
 einde:
+#ifdef BYTECODE
+    if (env.bytecoding)
+	exitbytes(&env);
+    if (env.compiling)
+	exitcompile(&env);
+#endif
     if (pstats)
 	stats(&env);
     if (psdump)
 	dump(&env);
-    return 0;
 }
 
 int main(int argc, char **argv)
 {
-    int (*volatile m)(int, char **) = my_main;
+    void (*volatile m)(int, char **) = my_main;
 
     bottom_of_stack = (char *)&argc;
     GC_INIT();
-    return (*m)(argc, argv);
+    (*m)(argc, argv);
+    return 0;
 }
 
 /*

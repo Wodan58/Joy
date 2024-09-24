@@ -1,13 +1,13 @@
 /*
     module  : map.c
-    version : 1.9
-    date    : 06/21/24
+    version : 1.10
+    date    : 09/17/24
 */
 #ifndef MAP_C
 #define MAP_C
 
 /**
-OK 2790  map  :  A [P]  ->  B
+Q1  OK  2790  map  :  A [P]  ->  B
 Executes P on each member of aggregate A,
 collects results in sametype aggregate B.
 */
@@ -31,10 +31,13 @@ void map_(pEnv env)
 	    exeterm(env, nodevalue(SAVED1).lis);
 	    CHECKSTACK("map");
 	    temp = newnode2(env, env->stck, 0);
-	    if (!DMP2)	/* first */
-		DMP3 = DMP2 = temp;
-	    else	/* further */
-		DMP3 = nextnode1(DMP3) = temp;
+	    if (!DMP2) {	/* first */
+		DMP2 = temp;
+		DMP3 = DMP2;
+	    } else {		/* further */
+		nextnode1(DMP3) = temp;
+		DMP3 = nextnode1(DMP3);
+	    }
 	}
 	env->stck = LIST_NEWNODE(DMP2, SAVED3);
 	POP(env->dump3);

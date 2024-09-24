@@ -1,13 +1,13 @@
 /*
     module  : drop.c
-    version : 1.11
-    date    : 07/01/24
+    version : 1.12
+    date    : 09/17/24
 */
 #ifndef DROP_C
 #define DROP_C
 
 /**
-OK 2130  drop  :  A N  ->  B
+Q0  OK  2130  drop  :  A N  ->  B
 Aggregate B is the result of deleting the first N elements of A.
 */
 void drop_(pEnv env)
@@ -34,7 +34,7 @@ void drop_(pEnv env)
 	break;
     case STRING_:
 #ifdef NOBDW
-	str = check_strdup((char *)&nodevalue(env->stck));
+	str = strdup((char *)&nodevalue(env->stck));
 #else
 	str = nodevalue(env->stck).str;
 #endif

@@ -1,13 +1,13 @@
 /*
     module  : setundeferror.c
-    version : 1.8
-    date    : 03/21/24
+    version : 1.9
+    date    : 09/17/24
 */
 #ifndef SETUNDEFERROR_C
 #define SETUNDEFERROR_C
 
 /**
-IGNORE_POP  2990  setundeferror  :  I  ->
+Q0  IGNORE_POP  2990  setundeferror  :  I  ->
 [IMPURE] Sets flag that controls behavior of undefined functions
 (0 = no error, 1 = error).
 */

@@ -1,7 +1,7 @@
 /*
     module  : fileget.h
-    version : 1.3
-    date    : 03/21/24
+    version : 1.4
+    date    : 09/17/24
 */
 #ifndef FILEGET_H
 #define FILEGET_H
@@ -10,7 +10,7 @@
     void PROCEDURE(pEnv env)						\
     {									\
 	ONEPARAM(NAME);							\
-	FILE(NAME);							\
+	ISFILE(NAME);							\
 	NULLARY(CONSTRUCTOR, EXPR);					\
     }
 #endif

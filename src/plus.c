@@ -1,13 +1,13 @@
 /*
     module  : plus.c
-    version : 1.3
-    date    : 08/13/23
+    version : 1.4
+    date    : 09/17/24
 */
 #ifndef PLUS_C
 #define PLUS_C
 
 /**
-OK 1380  +\0plus  :  M I  ->  N
+Q0  OK  1380  +\0plus  :  M I  ->  N
 Numeric N is the result of adding integer I to numeric M.
 Also supports float.
 */

@@ -12,9 +12,6 @@ the BDW version, also apply here.
 Changes
 =======
 
-Symbol table, memory area, tokenlist, symbols, and include directories can grow
-when needed.
-
 This repository is referred to from the wikipedia page about Joy. That page
 contains this text: "Its library routines mirror those of ISO C, though the
 current implementation is not easily extensible with functions written in C."

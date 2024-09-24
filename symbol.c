@@ -1,7 +1,7 @@
 /*
  *  module  : symbol.c
- *  version : 1.7
- *  date    : 08/12/24
+ *  version : 1.8
+ *  date    : 09/16/24
  */
 #include "globals.h"
 
@@ -15,7 +15,7 @@ static int enterglobal(pEnv env, char *name)
 
     index = vec_size(env->symtab);
     memset(&ent, 0, sizeof(ent));	/* make sure that all fields are 0 */
-    ent.name = check_strdup(name);	/* copy to permanent memory */
+    ent.name = strdup(name);		/* copy to permanent memory */
     ent.is_user = 1;
     ent.flags = env->inlining ? IMMEDIATE : OK;
     ent.u.body = 0;			/* may be assigned in definition */
@@ -25,8 +25,8 @@ static int enterglobal(pEnv env, char *name)
 }
 
 /*
- * Lookup first searches ident in the local symbol tables, if not found in the
- * global symbol table, if still not found enters ident in the global table.
+ * Lookup first searches name in the local symbol tables, if not found in the
+ * global symbol table, if still not found enters name in the global table.
  */
 int lookup(pEnv env, char *name)
 {
@@ -143,19 +143,19 @@ int compound_def(pEnv env, int ch)
 	ch = getsym(env, ch);
 	if (env->sym != USR_)
 	    abortexecution_(ABORT_RETRY);
-	initmod(env, env->str);		/* initmod adds name to the module */
+	initmod(env, env->str);	/* initmod adds name to the module */
 	ch = getsym(env, ch);
 	ch = compound_def(env, ch);
-	exitmod();			/* exitmod deregisters a module */
+	exitmod();		/* exitmod deregisters a module */
 	break;
 
     case PRIVATE:
     case HIDE:
-	initpriv(env);			/* initpriv increases the hide number */
+	initpriv(env);		/* initpriv increases the hide number */
 	ch = defsequence(env, ch);
-	stoppriv();			/* stoppriv changes private to public */
+	stoppriv();		/* stoppriv changes private to public */
 	ch = compound_def(env, ch);
-	exitpriv();			/* exitpriv lowers the hide stack */
+	exitpriv();		/* exitpriv lowers the hide stack */
 	break;
 
     case PUBLIC:

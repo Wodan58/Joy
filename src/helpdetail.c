@@ -1,13 +1,13 @@
 /*
     module  : helpdetail.c
-    version : 1.16
-    date    : 04/11/24
+    version : 1.17
+    date    : 09/17/24
 */
 #ifndef HELPDETAIL_C
 #define HELPDETAIL_C
 
 /**
-IGNORE_POP  2920  helpdetail  :  [ S1 S2 .. ]  ->
+Q0  IGNORE_POP  2920  helpdetail  :  [ S1 S2 .. ]  ->
 [IMPURE] Gives brief help on each symbol S in the list.
 */
 void helpdetail_(pEnv env)

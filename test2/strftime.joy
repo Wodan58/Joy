@@ -1,7 +1,7 @@
 (*
     module  : strftime.joy
-    version : 1.6
-    date    : 07/14/24
+    version : 1.7
+    date    : 09/19/24
 *)
 time localtime dup dup
 putln dup
@@ -34,8 +34,8 @@ putln dup
 "%R\n" strftime putchars dup
 "%T\n" strftime putchars dup
 "%p\n" strftime putchars dup
-"%z\n" strftime putchars dup
-"%Z\n" strftime putchars dup
+# "%z\n" strftime putchars dup
+# "%Z\n" strftime putchars dup
 
 "%h\n" strftime putchars dup
 "%D\n" strftime putchars dup

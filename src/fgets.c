@@ -1,24 +1,27 @@
 /*
     module  : fgets.c
-    version : 1.7
-    date    : 07/01/24
+    version : 1.9
+    date    : 09/20/24
 */
 #ifndef FGETS_C
 #define FGETS_C
 
 /**
-OK 1880  fgets  :  S  ->  S L
+Q0  OK  1880  fgets  :  S  ->  S L
 [FOREIGN] L is the next available line (as a string) from stream S.
 */
 void fgets_(pEnv env)
 {
     char *buf;
+#ifdef NOBDW
+    char *tmp;
+#endif
     size_t leng, size = INPLINEMAX;
 
     ONEPARAM("fgets");
-    FILE("fgets");
+    ISFILE("fgets");
 #ifdef NOBDW
-    buf = check_malloc(size);
+    buf = malloc(size);
 #else
     buf = GC_malloc_atomic(size);
 #endif
@@ -27,7 +30,8 @@ void fgets_(pEnv env)
 	if ((leng = strlen(buf)) > 0 && buf[leng - 1] == '\n')
 	    break;
 #ifdef NOBDW
-	buf = check_realloc(buf, size <<= 1);
+	if ((tmp = realloc(buf, size <<= 1)) != 0)
+	    buf = tmp;
 #else
 	buf = GC_realloc(buf, size <<= 1);
 #endif

@@ -1,7 +1,7 @@
 /*
     module  : inhas.h
-    version : 1.8
-    date    : 06/21/24
+    version : 1.9
+    date    : 09/17/24
 */
 #ifndef INHAS_H
 #define INHAS_H

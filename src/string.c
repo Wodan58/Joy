@@ -1,13 +1,13 @@
 /*
     module  : string.c
-    version : 1.3
-    date    : 09/04/23
+    version : 1.4
+    date    : 09/17/24
 */
 #ifndef STRING_C
 #define STRING_C
 
 /**
-OK 2350  string  :  X  ->  B
+Q0  OK  2350  string  :  X  ->  B
 Tests whether X is a string.
 */
 TYPE(string_, "string", ==, STRING_)

@@ -1,11 +1,11 @@
 (*
     module  : eql2.joy
-    version : 1.1
-    date    : 04/11/24
+    version : 1.2
+    date    : 09/19/24
 *)
 "" "" =.
 "" "exist" "r" fopen =.
-"" '\000 =.
+"" '\002 = not.
 "" 0 =.
 "" 0.0 =.
 "" [] =.
@@ -13,23 +13,23 @@
 "" {} =.
 "exist" "r" fopen "" =.
 "exist" "r" fopen "exist" "r" fopen =.
-"exist" "r" fopen '\000 =.
+"exist" "r" fopen '\002 = not.
 "exist" "r" fopen 0 =.
 "exist" "r" fopen 0.0 =.
 "exist" "r" fopen [] =.
 "exist" "r" fopen false =.
 "exist" "r" fopen {} =.
-'\000 "" =.
-'\000 "exist" "r" fopen =.
-'\000 '\000 =.
-'\000 0 =.
-'\000 0.0 =.
-'\000 [] =.
-'\000 false =.
-'\000 {} =.
+'\002 "" = not.
+'\002 "exist" "r" fopen = not.
+'\002 '\002 =.
+'\002 2 =.
+'\002 2.0 =.
+'\002 [] = not.
+'\002 false = not.
+'\002 {} = not.
 0 "" =.
 0 "exist" "r" fopen =.
-0 '\000 =.
+2 '\002 =.
 0 0 =.
 0 0.0 =.
 0 [] =.
@@ -37,7 +37,7 @@
 0 {} =.
 0.0 "" =.
 0.0 "exist" "r" fopen =.
-0.0 '\000 =.
+2.0 '\002 =.
 0.0 0 =.
 0.0 0.0 =.
 0.0 [] =.
@@ -45,7 +45,7 @@
 0.0 {} =.
 [] "" =.
 [] "exist" "r" fopen =.
-[] '\000 =.
+[] '\002 = not.
 [] 0 =.
 [] 0.0 =.
 [] [] =.
@@ -53,7 +53,7 @@
 [] {} =.
 false "" =.
 false "exist" "r" fopen =.
-false '\000 =.
+false '\002 = not.
 false 0 =.
 false 0.0 =.
 false [] =.
@@ -61,7 +61,7 @@ false false =.
 false {} =.
 {} "" =.
 {} "exist" "r" fopen =.
-{} '\000 =.
+{} '\002 = not.
 {} 0 =.
 {} 0.0 =.
 {} [] =.

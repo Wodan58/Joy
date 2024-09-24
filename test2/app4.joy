@@ -1,6 +1,6 @@
 (*
-    module  : app4.joy
-    version : 1.4
-    date    : 03/21/24
+    module  : %M%
+    version : %I%
+    date    : %G%
 *)
-2 3 4 5 [succ] app4 stack [6 5 4 3] equal.
+2 3 4 5 [succ] app4 stack (* [6 5 4 3] equal *).

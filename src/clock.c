@@ -1,13 +1,13 @@
 /*
     module  : clock.c
-    version : 1.8
-    date    : 03/21/24
+    version : 1.9
+    date    : 09/17/24
 */
 #ifndef CLOCK_C
 #define CLOCK_C
 
 /**
-IGNORE_PUSH  1130  clock  :  ->  I
+Q0  IGNORE_PUSH  1130  clock  :  ->  I
 [IMPURE] Pushes the integer value of current CPU usage in milliseconds.
 */
 PUSH(clock_, INTEGER_NEWNODE,

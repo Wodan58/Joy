@@ -1,13 +1,13 @@
 /*
     module  : split.c
-    version : 1.10
-    date    : 07/01/24
+    version : 1.11
+    date    : 09/17/24
 */
 #ifndef SPLIT_C
 #define SPLIT_C
 
 /**
-OK 2840  split  :  A [B]  ->  A1 A2
+Q1  OK  2840  split  :  A [B]  ->  A1 A2
 Uses test B to split aggregate A into sametype aggregates A1 and A2.
 */
 void split_(pEnv env)
@@ -38,7 +38,7 @@ void split_(pEnv env)
     case STRING_:
 	yesstring = malloc(nodeleng(SAVED2) + 1);
 	nostring = malloc(nodeleng(SAVED2) + 1);
-	for (str = check_strdup((char *)&nodevalue(SAVED2)); str[i]; i++) {
+	for (str = strdup((char *)&nodevalue(SAVED2)); str[i]; i++) {
 	    env->stck = CHAR_NEWNODE(str[i], SAVED3);
 	    exeterm(env, nodevalue(SAVED1).lis);
 	    CHECKSTACK("split");
@@ -67,15 +67,21 @@ void split_(pEnv env)
 	    CHECKSTACK("split");
 	    temp = newnode2(env, DMP1, 0);
 	    if (nodevalue(env->stck).num) {	/* pass */
-		if (!DMP2)	/* first */
-		    DMP3 = DMP2 = temp;
-		else	/* further */
-		    DMP3 = nextnode1(DMP3) = temp;
-	    } else {	/* fail */
-		if (!DMP4)	/* first */
-		    DMP5 = DMP4 = temp;
-		else	/* further */
-		    DMP5 = nextnode1(DMP5) = temp;
+		if (!DMP2) {			/* first */
+		    DMP2 = temp;
+		    DMP3 = DMP2;
+		} else {			/* further */
+		    nextnode1(DMP3) = temp;
+		    DMP3 = nextnode1(DMP3);
+		}
+	    } else {				/* fail */
+		if (!DMP4) {			/* first */
+		    DMP4 = temp;
+		    DMP5 = DMP4;
+		} else {			/* further */
+		    nextnode1(DMP5) = temp;
+		    DMP5 = nextnode1(DMP5);
+		}
 	    }
 	}
 	env->stck = LIST_NEWNODE(DMP2, SAVED3);

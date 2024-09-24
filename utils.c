@@ -1,7 +1,7 @@
 /*
  *  module  : utils.c
- *  version : 1.43
- *  date    : 09/01/24
+ *  version : 1.44
+ *  date    : 09/16/24
  */
 #include "globals.h"
 
@@ -16,7 +16,8 @@
 #define MEM_LOW		1100	/* initial number of nodes */
 
 static Node *old_memory;
-static Index mem_low, memoryindex, memorymax;
+static size_t memorymax;
+static Index mem_low, memoryindex;
 
 static clock_t start_gc_clock;	/* statistics */
 #ifdef TRACEGC
@@ -94,9 +95,9 @@ void printnode(pEnv env, Index p)
  */
 static Index copy(pEnv env, Index n)
 {
-    int leng;
     Index temp;
     Operator op;
+    size_t leng;
 
 #ifdef TRACEGC
     nodesinspected++;
@@ -329,7 +330,7 @@ Index newnode2(pEnv env, Index p, Index r)
     Operator o;
 
     if ((o = env->memory[p].op) == STRING_ || o == BIGNUM_) {
-	u.str = check_strdup((char *)&env->memory[p].u);
+	u.str = strdup((char *)&env->memory[p].u);
 #ifdef _MSC_VER
 	if (!u.str)
 	    fatal("memory exhausted");
@@ -356,36 +357,4 @@ void my_memoryindex(pEnv env)
 void my_memorymax(pEnv env)
 {
     NULLARY(INTEGER_NEWNODE, memorymax);
-}
-
-void *check_malloc(size_t leng)
-{
-    void *ptr;
-
-    ptr = malloc(leng);
-#ifdef _MSC_VER
-    if (!ptr)
-	fatal("memory exhausted");
-#endif
-    return ptr;
-}
-
-void *check_realloc(void *ptr, size_t leng)
-{
-    ptr = realloc(ptr, leng);
-#ifdef _MSC_VER
-    if (!ptr)
-	fatal("memory exhausted");
-#endif
-    return ptr;
-}
-
-void *check_strdup(char *ptr)
-{
-    ptr = strdup(ptr);
-#ifdef _MSC_VER
-    if (!ptr)
-	fatal("memory exhausted");
-#endif
-    return ptr;
 }

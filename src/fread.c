@@ -1,13 +1,13 @@
 /*
     module  : fread.c
-    version : 1.9
-    date    : 07/01/24
+    version : 1.10
+    date    : 09/17/24
 */
 #ifndef FREAD_C
 #define FREAD_C
 
 /**
-OK 1900  fread  :  S I  ->  S L
+Q0  OK  1900  fread  :  S I  ->  S L
 [FOREIGN] I bytes are read from the current position of stream S
 and returned as a list of I integers.
 */
@@ -20,8 +20,8 @@ void fread_(pEnv env)
     INTEGER("fread");
     count = nodevalue(env->stck).num;
     POP(env->stck);
-    FILE("fread");
-    buf = check_malloc(count);
+    ISFILE("fread");
+    buf = malloc(count);
     env->dump1 = LIST_NEWNODE(0, env->dump1);
     for (count = fread(buf, 1, count, nodevalue(env->stck).fil) - 1;
 	 count >= 0; count--)

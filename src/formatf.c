@@ -1,13 +1,13 @@
 /*
     module  : formatf.c
-    version : 1.10
-    date    : 07/01/24
+    version : 1.11
+    date    : 09/17/24
 */
 #ifndef FORMATF_C
 #define FORMATF_C
 
 /**
-OK 1770  formatf  :  F C I J  ->  S
+Q0  OK  1770  formatf  :  F C I J  ->  S
 S is the formatted version of F in mode C
 ('e or 'E = exponential, 'f = fractional,
 'g or G = general with lower or upper case letters)
@@ -15,7 +15,8 @@ with maximum width I and precision J.
 */
 void formatf_(pEnv env)
 {
-    int width, prec, leng;
+    size_t leng;
+    int width, prec;
     char spec, format[MAXNUM], *result;
 
     FOURPARAMS("formatf");
@@ -33,9 +34,9 @@ void formatf_(pEnv env)
     FLOAT("formatf");
     leng = snprintf(0, 0, format, width, prec, nodevalue(env->stck).dbl) + 1;
 #ifdef NOBDW
-    result = check_malloc(leng + 1);
+    result = malloc(leng);
 #else
-    result = GC_malloc_atomic(leng + 1);
+    result = GC_malloc_atomic(leng);
 #endif
     snprintf(result, leng, format, width, prec, nodevalue(env->stck).dbl);
     UNARY(STRING_NEWNODE, result);

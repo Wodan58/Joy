@@ -1,13 +1,13 @@
 /*
     module  : unassign.c
-    version : 1.3
-    date    : 06/24/24
+    version : 1.4
+    date    : 09/17/24
 */
 #ifndef UNASSIGN_C
 #define UNASSIGN_C
 
 /**
-IGNORE_POP  3230  unassign  :  [N]  ->
+Q0  IGNORE_POP  3230  unassign  :  [N]  ->
 [IMPURE] Sets the body of the name N to uninitialized.
 */
 void unassign_(pEnv env)

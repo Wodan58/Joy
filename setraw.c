@@ -1,8 +1,8 @@
 /*
-    module  : setraw.c
-    version : 1.3
-    date    : 08/29/24
-*/
+ *  module  : setraw.c
+ *  version : 1.5
+ *  date    : 09/18/24
+ */
 #include "globals.h"
 
 /* #define EXPECT_ERROR */
@@ -95,29 +95,41 @@ static void SetNormal(void)
 /*
  * Set the terminal in raw mode.
  *
-#define ENABLE_PROCESSED_INPUT 0x1
-#define ENABLE_LINE_INPUT 0x2
-#define ENABLE_ECHO_INPUT 0x4
-#define ENABLE_WINDOW_INPUT 0x8
-#define ENABLE_MOUSE_INPUT 0x10
-#define ENABLE_INSERT_MODE 0x20
-#define ENABLE_QUICK_EDIT_MODE 0x40
-#define ENABLE_EXTENDED_FLAGS 0x80
-#define ENABLE_AUTO_POSITION 0x100
-#define ENABLE_VIRTUAL_TERMINAL_INPUT 0x200
- *
-#define ENABLE_PROCESSED_OUTPUT 0x1
-#define ENABLE_WRAP_AT_EOL_OUTPUT 0x2
-#define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x4
-#define DISABLE_NEWLINE_AUTO_RETURN 0x8
-#define ENABLE_LVB_GRID_WORLDWIDE 0x10
+#define ENABLE_PROCESSED_INPUT	0x1
+#define ENABLE_LINE_INPUT	0x2
+#define ENABLE_ECHO_INPUT	0x4
+#define ENABLE_WINDOW_INPUT	0x8
+#define ENABLE_MOUSE_INPUT	0x10
+#define ENABLE_INSERT_MODE	0x20
+#define ENABLE_QUICK_EDIT_MODE	0x40
+#define ENABLE_EXTENDED_FLAGS	0x80
+#define ENABLE_AUTO_POSITION	0x100
  */
+#ifndef ENABLE_VIRTUAL_TERMINAL_INPUT
+#define ENABLE_VIRTUAL_TERMINAL_INPUT	0x200
+#endif
+
+/*
+#define ENABLE_PROCESSED_OUTPUT		0x1
+#define ENABLE_WRAP_AT_EOL_OUTPUT	0x2
+#define DISABLE_NEWLINE_AUTO_RETURN	0x8
+#define ENABLE_LVB_GRID_WORLDWIDE	0x10
+ */
+#ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
+#define ENABLE_VIRTUAL_TERMINAL_PROCESSING	0x4
+#endif
+
 void SetRaw(pEnv env)
 {
 #ifdef WINDOWS
+    HWND hwnd;
     DWORD mode;
     HANDLE input, output;
     CONSOLE_SCREEN_BUFFER_INFO info;
+
+    hwnd = GetConsoleWindow();
+    SetWindowLong(hwnd, GWL_STYLE,
+		    GetWindowLong(hwnd, GWL_STYLE) & ~WS_MAXIMIZEBOX);
 
     input = GetStdHandle(STD_INPUT_HANDLE);
     GetConsoleMode(input, &input_mode);

@@ -1,13 +1,13 @@
 /*
     module  : sinh.c
-    version : 1.2
-    date    : 08/13/23
+    version : 1.3
+    date    : 09/17/24
 */
 #ifndef SINH_C
 #define SINH_C
 
 /**
-OK 1650  sinh  :  F  ->  G
+Q0  OK  1650  sinh  :  F  ->  G
 G is the hyperbolic sine of F.
 */
 UFLOAT(sinh_, "sinh", sinh)

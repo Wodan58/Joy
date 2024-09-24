@@ -1,13 +1,13 @@
 /*
     module  : strtol.c
-    version : 1.6
-    date    : 06/21/24
+    version : 1.7
+    date    : 09/17/24
 */
 #ifndef STRTOL_C
 #define STRTOL_C
 
 /**
-OK 1740  strtol  :  S I  ->  J
+Q0  OK  1740  strtol  :  S I  ->  J
 String S is converted to the integer J using base I.
 If I = 0, assumes base 10,
 but leading "0" means base 8 and leading "0x" means base 16.

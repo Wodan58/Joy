@@ -1,13 +1,13 @@
 /*
     module  : format.c
-    version : 1.8
-    date    : 07/01/24
+    version : 1.9
+    date    : 09/17/24
 */
 #ifndef FORMAT_C
 #define FORMAT_C
 
 /**
-OK 1760  format  :  N C I J  ->  S
+Q0  OK  1760  format  :  N C I J  ->  S
 S is the formatted version of N in mode C
 ('d or 'i = decimal, 'o = octal, 'x or
 'X = hex with lower or upper case letters)
@@ -15,7 +15,8 @@ with maximum width I and minimum width J.
 */
 void format_(pEnv env)
 {
-    int width, prec, leng;
+    size_t leng;
+    int width, prec;
     char spec, format[MAXNUM], *result;
 
     FOURPARAMS("format");
@@ -33,9 +34,9 @@ void format_(pEnv env)
     NUMERICTYPE("format");
     leng = snprintf(0, 0, format, width, prec, nodevalue(env->stck).num) + 1;
 #ifdef NOBDW
-    result = check_malloc(leng + 1);
+    result = malloc(leng);
 #else
-    result = GC_malloc_atomic(leng + 1);
+    result = GC_malloc_atomic(leng);
 #endif
     snprintf(result, leng, format, width, prec, nodevalue(env->stck).num);
     UNARY(STRING_NEWNODE, result);

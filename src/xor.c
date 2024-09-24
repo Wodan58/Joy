@@ -1,13 +1,13 @@
 /*
     module  : xor.c
-    version : 1.2
-    date    : 08/13/23
+    version : 1.3
+    date    : 09/17/24
 */
 #ifndef XOR_C
 #define XOR_C
 
 /**
-OK 1350  xor  :  X Y  ->  Z
+Q0  OK  1350  xor  :  X Y  ->  Z
 Z is the symmetric difference of sets X and Y,
 logical exclusive disjunction for truth values.
 */

@@ -1,13 +1,13 @@
 /*
     module  : swapd.c
-    version : 1.2
-    date    : 08/13/23
+    version : 1.3
+    date    : 09/17/24
 */
 #ifndef SWAPD_C
 #define SWAPD_C
 
 /**
-OK 1280  swapd  :  X Y Z  ->  Y X Z
+Q0  OK  1280  swapd  :  X Y Z  ->  Y X Z
 As if defined by:   swapd  ==  [swap] dip
 */
 DIPPED(swapd_, "swapd", THREEPARAMS, swap_)

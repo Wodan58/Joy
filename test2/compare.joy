@@ -1,7 +1,7 @@
 (*
     module  : compare.joy
-    version : 1.10
-    date    : 08/29/24
+    version : 1.11
+    date    : 09/19/24
 *)
 [1 2 3] [1 2 3] compare 1 =.	(* 1 means unequal in case of lists *)
 [1 2 3] [1 2 3 4] compare 1 =.
@@ -37,8 +37,8 @@ false 0.0 compare 0 =.
 1.0 true compare 0 =.
 0.0 false compare 0 =.
 
-{} "empty" compare -1 =.
-{0} "empty" compare -1 =.
+{} "empty" compare 1 =.
+{0} "empty" compare 1 =.
 false "false" compare 1 =.
 
 "empty" {} compare 1 =.

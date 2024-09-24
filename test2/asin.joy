@@ -1,6 +1,16 @@
 (*
     module  : asin.joy
-    version : 1.4
-    date    : 03/21/24
+    version : 1.5
+    date    : 09/19/24
 *)
 0.1 asin 'g 0 6 formatf strtod 0.100167 =.
+
+0.1		# x
+dup		#
+dup
+*		# x^2
+1.0		# 1
+swap
+-		# 1-x^2
+sqrt
+atan2.

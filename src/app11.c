@@ -1,13 +1,13 @@
 /*
     module  : app11.c
-    version : 1.6
-    date    : 03/21/24
+    version : 1.7
+    date    : 09/17/24
 */
 #ifndef APP11_C
 #define APP11_C
 
 /**
-OK 2440  app11  :  X Y [P]  ->  R
+Q1  OK  2440  app11  :  X Y [P]  ->  R
 Executes P, pushes result R on stack.
 */
 void app11_(pEnv env)

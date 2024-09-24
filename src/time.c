@@ -1,13 +1,13 @@
 /*
     module  : time.c
-    version : 1.8
-    date    : 03/21/24
+    version : 1.9
+    date    : 09/17/24
 */
 #ifndef TIME_C
 #define TIME_C
 
 /**
-IGNORE_PUSH  1140  time  :  ->  I
+Q0  IGNORE_PUSH  1140  time  :  ->  I
 [IMPURE] Pushes the current time (in seconds since the Epoch).
 */
 PUSH(time_, INTEGER_NEWNODE, (int64_t)time(0))

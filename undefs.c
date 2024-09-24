@@ -1,7 +1,7 @@
 /*
  *  module  : undefs.c
- *  version : 1.9
- *  date    : 08/29/24
+ *  version : 1.10
+ *  date    : 09/16/24
  */
 #include "globals.h"
 
@@ -11,7 +11,8 @@ void hide_inner_modules(pEnv env, int flag)
     Token node;
     char *name;
     khint_t key;
-    int i, leng, last = 0;
+    size_t leng;
+    int i, last = 0;
 
     /*
      * There are two calls to this function. In the first call, the name of
@@ -21,8 +22,9 @@ void hide_inner_modules(pEnv env, int flag)
     if (flag) {
 	node = vec_back(env->tokens);
 	if (node.op == USR_) {
-	    env->mod_name = GC_malloc_atomic(strlen(node.u.str) + 2);
-	    sprintf(env->mod_name, "%s.", node.u.str);
+	    leng = strlen(node.u.str) + 2;
+	    env->mod_name = GC_malloc_atomic(leng);
+	    snprintf(env->mod_name, leng, "%s.", node.u.str);
 	} else
 	    env->mod_name = ".";	/* empty module name */
 	return;
