@@ -1,10 +1,12 @@
 /*
     module  : rotated.c
-    version : 1.4
-    date    : 09/17/24
+    version : 1.5
+    date    : 10/11/24
 */
 #ifndef ROTATED_C
 #define ROTATED_C
+
+#include "rotate.c"
 
 /**
 Q0  OK  1310  rotated  :  X Y Z W  ->  Z Y X W

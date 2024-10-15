@@ -1,7 +1,12 @@
 (*
     module  : ldexp.joy
-    version : 1.4
-    date    : 03/21/24
+    version : 1.6
+    date    : 10/13/24
 *)
+"prelib" libload.
+
 1.5 2 ldexp 6 =.
 2.5 4 ldexp 40 =.
+
+(* Rosettacode.org *)
+1 1024 ldexp dup neg stack [-inf inf] equal.

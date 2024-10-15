@@ -45,9 +45,6 @@ from "../lib" to "usrlib".
 Build with MSVC
 ---------------
 
-    mkdir build
-    cd build
-    cmake ..
     cmake --build . --config Release
     copy Release\joy.exe
 

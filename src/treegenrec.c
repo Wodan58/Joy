@@ -1,10 +1,13 @@
 /*
     module  : treegenrec.c
-    version : 1.11
-    date    : 09/17/24
+    version : 1.12
+    date    : 10/11/24
 */
 #ifndef TREEGENREC_C
 #define TREEGENREC_C
+
+#include "cons.c"
+#include "treegenrecaux.c"
 
 /**
 Q3  OK  2890  treegenrec  :  T [O1] [O2] [C]  ->  ...

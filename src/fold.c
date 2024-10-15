@@ -1,10 +1,13 @@
 /*
     module  : fold.c
-    version : 1.5
-    date    : 09/17/24
+    version : 1.6
+    date    : 10/11/24
 */
 #ifndef FOLD_C
 #define FOLD_C
+
+#include "swapd.c"
+#include "step.c"
 
 /**
 Q1  OK  2780  fold  :  A V0 [P]  ->  V

@@ -1,11 +1,17 @@
 /*
  *  module  : optable.c
- *  version : 1.10
- *  date    : 09/20/24
+ *  version : 1.13
+ *  date    : 10/14/24
  */
 #include "globals.h"
 #include "runtime.h"
 #include "builtin.h"	/* declarations of functions */
+
+#ifdef _MSC_VER
+#define NOINLINE
+#else
+#define NOINLINE	__attribute__((__noinline__))
+#endif
 
 /*
  * Specify number of quotations that a combinator consumes.
@@ -71,24 +77,14 @@ static struct {
 
 #include "builtin.c"	/* the primitive functions themselves */
 
-#ifdef BYTECODE
 /*
  * tablesize - return the size of the table, to be used when searching from the
  *	       end of the table to the start.
  */
-int tablesize(void)
+NOINLINE int tablesize(void)
 {
     return sizeof(optable) / sizeof(optable[0]);
 }
-
-/*
- *  qcode - return the qcode value of an operator or combinator.
- */
-int operqcode(int index)
-{
-    return optable[index].qcode;
-}
-#endif
 
 /*
  * nickname - return the name of an operator. If the operator starts with a
@@ -99,23 +95,25 @@ char *nickname(int ch)
 {
     char *str;
 
+    if (ch < 0 || ch >= tablesize())
+	ch = 0;
     str = optable[ch].name;
     if ((ch = *str) == '_' || isalpha(ch))
 	return str;
-    while (*str)
-	str++;
+    if (ch != '#')
+	while (*str)
+	    str++;
     return str + 1;
 }
 
 /*
- * opername - return the name of an operator, or 0 at end of optable.
+ * opername - return the name of an operator.
  */
-char *opername(int o)
+char *opername(int ch)
 {
-    int size;
-
-    size = sizeof(optable) / sizeof(optable[0]);
-    return o >= 0 && o < size ? optable[o].name : 0;
+    if (ch < 0 || ch >= tablesize())
+	ch = 0;
+    return optable[ch].name;
 }
 
 /*
@@ -154,7 +152,7 @@ void addsymbol(pEnv env, Entry ent, int index)
  * Initialise the symbol table with builtins. There is no need to classify
  * builtins. The hash table contains an index into the symbol table.
  */
-void inisymboltable(pEnv env) /* initialise */
+void inisymboltable(pEnv env)	/* initialise */
 {
     Entry ent;
     khint_t key;
@@ -167,12 +165,23 @@ void inisymboltable(pEnv env) /* initialise */
     env->hash = kh_init(Symtab);
     env->prim = kh_init(Funtab);
 #endif
-    memset(&ent, 0, sizeof(ent));
-    j = sizeof(optable) / sizeof(optable[0]);
-    for (i = 0; i < j; i++) {
+    for (i = 0, j = tablesize(); i < j; i++) {
+	memset(&ent, 0, sizeof(ent));
 	ent.name = optable[i].name;
 	ent.flags = optable[i].flags;
 	ent.u.proc = optable[i].proc;
+	/*
+	 * The qcode is copied to the symbol table, telling how many quotations
+	 * are consumed by a combinator. The symbols Q0 .. Q4 are translated to
+	 * numeric values.
+	 */
+	ent.qcode = optable[i].qcode;
+	/*
+	 * If a builtin has received an annotation, then no compile time
+	 * evaluation is possible; the builtin should be passed as such
+	 * to the compiled program.
+	 */
+	ent.nofun = *optable[i].messg2 == '[';
 	if (env->ignore)
 	    switch (ent.flags) {
 	    case IGNORE_OK:

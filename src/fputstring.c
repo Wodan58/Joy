@@ -1,10 +1,12 @@
 /*
     module  : fputstring.c
-    version : 1.6
-    date    : 09/17/24
+    version : 1.7
+    date    : 10/11/24
 */
 #ifndef FPUTSTRING_C
 #define FPUTSTRING_C
+
+#include "fputchars.c"
 
 /**
 Q0  OK  1970  fputstring  :  S "abc.."  ->  S

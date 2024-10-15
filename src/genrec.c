@@ -1,10 +1,13 @@
 /*
     module  : genrec.c
-    version : 1.10
-    date    : 09/17/24
+    version : 1.11
+    date    : 10/11/24
 */
 #ifndef GENREC_C
 #define GENREC_C
+
+#include "cons.c"
+#include "genrecaux.c"
 
 /**
 Q4  OK  2740  genrec  :  [B] [T] [R1] [R2]  ->  ...

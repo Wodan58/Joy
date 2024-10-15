@@ -1,8 +1,8 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.105
- *  date    : 09/21/24
+ *  version : 1.107
+ *  date    : 10/11/24
  */
 
 /*
@@ -122,6 +122,8 @@ char *bottom_of_stack;		/* needed in gc.c */
 
 static void stats(pEnv env), dump(pEnv env);
 
+void printcandidates(pEnv env);
+
 /*
  * abort execution and restart reading from srcfile; the stack is not cleared.
  */
@@ -180,6 +182,8 @@ static void options(int verbose)
     printf("  -a : set the autoput flag (0-2)\n");
 #ifdef BYTECODE
     printf("  -b : compile a joy program to bytecode\n");
+#endif
+#ifdef COMPILER
     printf("  -c : compile joy source into C source\n");
 #endif
     printf("  -d : print a trace of stack development\n");
@@ -195,7 +199,17 @@ static void options(int verbose)
 #endif
     printf("  -k : allow keyboard input in raw mode\n");
     printf("  -l : do not read usrlib.joy at startup\n");
+#ifdef COMPILER
+    printf("  -m : compile joy source into Roy format\n");
+    printf("  -n : compile joy source into Soy format\n");
+#endif
+#ifdef BYTECODE
+    printf("  -o : optimize bytecode with inlining\n");
+#endif
     printf("  -p : print debug list of tokens\n");
+#ifdef BYTECODE
+    printf("  -q : quick const folding of bytecodes\n");
+#endif
     printf("  -s : dump symbol table after execution\n");
     printf("  -t : print a trace of program execution\n");
     printf("  -u : set the undeferror flag (0,1)\n");
@@ -226,7 +240,7 @@ static void my_main(int argc, char **argv)
 		  raw = 0;
 #ifdef BYTECODE
     FILE *fp = 0;
-    unsigned char listing = 0;
+    unsigned char listing = 0, lining = 0, quick = 0;
 #endif
 
     memset(&env, 0, sizeof(env));
@@ -274,8 +288,10 @@ static void my_main(int argc, char **argv)
 			   env.autoput_set = 1;		/* disable usrlib.joy */
 			   break;
 #ifdef BYTECODE
-		case 'b' : env.bytecoding = 2; break;	/* prepare & suspend */
-		case 'c' : env.compiling = 2; break;	/* prepare & suspend */
+		case 'b' : env.bytecoding = -1; break;	/* prepare & suspend */
+#endif
+#ifdef COMPILER
+		case 'c' : env.compiling = -1; break;	/* compile for joy1 */
 #endif
 		case 'd' : env.debugging = 1; break;
 		case 'e' : ptr = &argv[i][j + 1];
@@ -296,7 +312,17 @@ static void my_main(int argc, char **argv)
 #endif
 		case 'k' : raw = 1; break;		/* terminal raw mode */
 		case 'l' : mustinclude = 0; break;
+#ifdef COMPILER
+		case 'm' : env.compiling = -2; break;	/* compile for Roy */
+		case 'n' : env.compiling = -3; break;	/* compile for Soy */
+#endif
+#ifdef BYTECODE
+		case 'o' : lining = 1; joy = 0; break;	/* inlining */
+#endif
 		case 'p' : env.printing = 1; break;
+#ifdef BYTECODE
+		case 'q' : quick = 1; joy = 0; break;	/* const folding */
+#endif
 		case 's' : psdump = 1; break;
 		case 't' : env.debugging = 2; break;
 		case 'u' : ptr = &argv[i][j + 1];
@@ -334,7 +360,7 @@ static void my_main(int argc, char **argv)
 	    /*
 	     * The first file should also benefit from include logic.
 	     */
-#ifdef BYTECODE		
+#ifdef BYTECODE
 	    if (!joy) {
 		if ((fp = fopen(env.filename = argv[i], "rb")) == 0) {
 		    fprintf(stderr, "failed to open the file '%s'.\n", argv[i]);
@@ -403,18 +429,22 @@ start:
     if (mustinclude)
 	include(&env, "usrlib.joy");
 #ifdef BYTECODE
-    if (listing) {
-	dumpbyte(&env, fp);	/* display .bic or .bjc file */
+    if (quick) {
+	compeval(&env, fp);	/* create .buc file, const folding */
 	goto einde;
     }
-    if (env.bytecoding) {
-	if (joy)
-	    initbytes(&env);	/* create .bic file */
-	else {
-	    optimize(&env, fp);	/* create .bjc file */
-	    goto einde;
-	}
+    if (lining) {
+	optimize(&env, fp);	/* create .boc file, inlining */
+	goto einde;
     }
+    if (listing) {
+	dumpbyte(&env, fp);	/* display .bic, .boc, or .buc file */
+	goto einde;
+    }
+    if (env.bytecoding && joy)
+	initbytes(&env);	/* create .bic file from joy source */
+#endif
+#ifdef COMPILER
     if (env.compiling)
 	initcompile(&env);	/* create .c file */
 #endif
@@ -436,9 +466,18 @@ start:
     env.prog = 0;		/* clear program, just to be sure */
 #ifdef BYTECODE
     if (!joy) {			/* interprete or compile bytecode */
-	readbyte(&env, fp, env.compiling ? 0 : 1);
-	if (!env.compiling)
-	    print(&env);
+	readbyte(&env, fp);
+#ifdef COMPILER
+	if (env.compiling) {	/* compile one program */
+	    env.compiling = -env.compiling;
+	    compile(&env, env.prog);	/* compile to C code */
+	} else {
+#endif
+	    exeterm(&env, env.prog);	/* execute main program */
+	    print(&env);	/* print result */
+#ifdef COMPILER
+	}
+#endif
     } else
 #endif
     repl(&env);			/* read-eval-print loop */
@@ -446,6 +485,8 @@ einde:
 #ifdef BYTECODE
     if (env.bytecoding)
 	exitbytes(&env);
+#endif
+#ifdef COMPILER
     if (env.compiling)
 	exitcompile(&env);
 #endif

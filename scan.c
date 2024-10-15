@@ -1,8 +1,8 @@
 /* FILE : scan.c */
 /*
  *  module  : scan.c
- *  version : 1.84
- *  date    : 09/23/24
+ *  version : 1.86
+ *  date    : 10/11/24
  */
 #include "globals.h"
 
@@ -112,7 +112,7 @@ void error(char *str)
 /*
  * redirect - register another file descriptor to read from.
  */
-static void redirect(pEnv env, char *str, FILE *fp)
+static void redirect(pEnv env, char *str, int j, FILE *fp)
 {
     int i;
     char *new_path, *old_path;
@@ -125,18 +125,18 @@ static void redirect(pEnv env, char *str, FILE *fp)
 	new_path = GC_strdup(str);
 	str = strrchr(new_path, '/');
 	*str++ = 0;
-	for (i = vec_size(env->pathnames) - 1; i >= 0; i--) {
+	for (i = 0; i < j; i++) {
 	    old_path = vec_at(env->pathnames, i);
 	    if (!strcmp(new_path, old_path))
 		break;
 	}
-	if (i < 0)
+	if (i == j)
 	    vec_push(env->pathnames, new_path);
     }
     if (ilevel >= 0)
 	infile[ilevel].line = linenum;		/* save last line number */
     if (ilevel + 1 == INPSTACKMAX)		/* increase include level */
-	execerror("fewer include files", "include");
+	execerror(env, "fewer include files", "include");
     infile[++ilevel].fp = srcfile = fp;		/* use new file pointer */
     infile[ilevel].line = linenum = 1;		/* start with line 1 */
     strncpy(filenam = infile[ilevel].name, str, FILENAMEMAX);
@@ -148,7 +148,7 @@ static void redirect(pEnv env, char *str, FILE *fp)
  */
 void inilinebuffer(pEnv env)
 {
-    redirect(env, "stdin", stdin);
+    redirect(env, "stdin", 0, stdin);
 }
 
 /*
@@ -161,7 +161,7 @@ void inilinebuffer(pEnv env)
  */
 int include(pEnv env, char *name)
 {
-    int i;
+    int i, j;
     FILE *fp;
     size_t leng;
     char *path, *str = name;			/* str = path/name */
@@ -182,7 +182,7 @@ int include(pEnv env, char *name)
      * The current directory is tried first.
      * Then all saved directories are tried until there is one that succeeds.
      */
-    for (i = vec_size(env->pathnames); i >= 0; i--) {
+    for (j = i = vec_size(env->pathnames); i >= 0; i--) {
 	if (i != vec_size(env->pathnames)) {
 	    path = vec_at(env->pathnames, i);
 	    leng = strlen(path) + strlen(name) + 2;
@@ -190,7 +190,7 @@ int include(pEnv env, char *name)
 	    snprintf(str, leng, "%s/%s", path, name);
 	}
 	if ((fp = fopen(str, "r")) != 0) {	/* try to read */
-	    redirect(env, str, fp);		/* stop trying */
+	    redirect(env, str, j, fp);		/* stop trying */
 	    return 0;
 	}
     }

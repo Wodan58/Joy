@@ -1,7 +1,7 @@
 /*
  *  module  : setraw.c
- *  version : 1.5
- *  date    : 09/18/24
+ *  version : 1.9
+ *  date    : 10/11/24
  */
 #include "globals.h"
 
@@ -127,10 +127,12 @@ void SetRaw(pEnv env)
     HANDLE input, output;
     CONSOLE_SCREEN_BUFFER_INFO info;
 
+#ifndef __TINYC__ 
     hwnd = GetConsoleWindow();
-    SetWindowLong(hwnd, GWL_STYLE,
-		    GetWindowLong(hwnd, GWL_STYLE) & ~WS_MAXIMIZEBOX);
-
+    SetWindowLongA(hwnd, GWL_STYLE,
+		   GetWindowLongA(hwnd, GWL_STYLE) & ~WS_MAXIMIZEBOX);
+    SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_UNAWARE);
+#endif
     input = GetStdHandle(STD_INPUT_HANDLE);
     GetConsoleMode(input, &input_mode);
     mode = ENABLE_VIRTUAL_TERMINAL_INPUT;
@@ -170,7 +172,7 @@ void SetRaw(pEnv env)
      * no signal chars (^Z,^C)
      */
     raw.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
-#if  0
+#if 0
     /* output modes: disable post processing */
     raw.c_oflag &= ~OPOST;
 #endif

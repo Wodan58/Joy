@@ -1,13 +1,9 @@
 /* FILE: interp.c */
 /*
  *  module  : interp.c
- *  version : 1.84
- *  date    : 07/12/24
+ *  version : 1.85
+ *  date    : 10/11/24
  */
-
-#if 0
-#define TRACEGC
-#endif
 
 /*
 07-May-03 condnestrec
@@ -48,6 +44,31 @@ static void writestack(pEnv env, Index n)
     }
 }
 
+#ifdef COMPILER
+int count_quot(pEnv env)
+{
+    Node *node;
+    int count = 0;
+
+    for (node = env->stck; node; node = node->next)
+	if (node->op == LIST_)
+	    count++;
+	else
+	    break;
+    return count;
+}
+
+int is_valid_C_identifier(char *str)
+{
+    if (*str != '_' && !isalpha((int)*str))
+	return 0;
+    for (str++; *str; str++)
+	if (*str != '_' && !isalnum((int)*str))
+	    return 0;
+    return 1;
+}
+#endif
+
 /*
  * exeterm evaluates a sequence of factors. There is no protection against
  * recursion without end condition: it will overflow the call stack.
@@ -57,6 +78,10 @@ void exeterm(pEnv env, Index n)
     Index p;
     int index;
     Entry ent;
+#ifdef COMPILER
+    const char *ptr;
+    int leng, nofun;
+#endif
 
 start:
     env->calls++;
@@ -104,13 +129,53 @@ start:
 	    ent = vec_at(env->symtab, index);
 	    if (!ent.u.body) {
 		if (env->undeferror)
-		    execerror("definition", ent.name);
+		    execerror(env, "definition", ent.name);
 #ifdef NOBDW
 		continue;		/* skip empty body */
 #else
 		break;
 #endif
 	    }
+#ifdef COMPILER
+	    if (env->compiling > 0) {
+		/*
+		 * Functions are inlined unless they are called recursively.
+		 */
+		if ((ent.cflags & IS_ACTIVE) == 0) {
+		    /*
+		     * The ACTIVE flag prevents endless recursion.
+		     */
+		    ent.cflags |= IS_ACTIVE;
+		    vec_at(env->symtab, index) = ent;
+		    exeterm(env, ent.u.body);
+		    /*
+		     * Update symbol table, but first reread the entry.
+		     */
+		    ent = vec_at(env->symtab, index);
+		    ent.cflags &= ~IS_ACTIVE;
+		    vec_at(env->symtab, index) = ent;
+		    break;
+		}
+		/*
+		 * A recursive function can be printed as is, if the name is
+		 * a valid C identifier and otherwise it is made into one.
+		 */
+		if (!is_valid_C_identifier(ent.name)) {
+		    ptr = identifier(ent.name);
+		    leng = strlen(ptr) + 4;
+		    ent.name = GC_malloc_atomic(leng);
+		    snprintf(ent.name, leng, "do_%s", ptr);
+		}
+		/*
+		 * The USED flag causes the function to be printed.
+		 */
+		ent.cflags |= IS_USED;
+		vec_at(env->symtab, index) = ent;
+		printstack(env);
+		fprintf(env->outfp, "%s(env);\n", ent.name);
+		break;
+	    }
+#endif	    
 	    if (!nextnode1(p)) {
 #ifdef NOBDW
 		POP(env->conts);
@@ -121,6 +186,40 @@ start:
 	    exeterm(env, ent.u.body);	/* subroutine call */
 	    break;
 	case ANON_FUNCT_:
+#ifdef COMPILER
+	    if (env->compiling > 0) {
+		index = operindex(env, nodevalue(p).proc);
+		ent = vec_at(env->symtab, index);
+		/*
+		 * Functions that have a template are filled with the
+		 * quotations they need. When compiling for Soy, the templates
+		 * are not used. The nofun flag is also set when the template
+		 * file was not found.
+		 */
+		nofun = env->compiling == 3;
+		if (!nofun && ent.qcode && ent.qcode <= count_quot(env)) {
+		    if (instance(env, ent.name, ent.qcode))
+			break;
+		    nofun = 1;
+		}
+		/*
+		 * Functions are flagged as used, even when they are
+		 * evaluated at compile time.
+		 */
+		ent = vec_at(env->symtab, index);
+		ent.cflags |= IS_USED;
+		vec_at(env->symtab, index) = ent;
+		/*
+		 * Functions that cannot be evaluated at compile time
+		 * are sent to output. There is no need for a nickname.
+		 */
+		if (nofun || ent.nofun) {
+		    printstack(env);
+		    fprintf(env->outfp, "%s_(env);\n", ent.name);
+		    break;
+		}
+	    }
+#endif	    
 	    (*nodevalue(p).proc)(env);
 	    break;
 	case BOOLEAN_:
@@ -131,10 +230,10 @@ start:
 	case LIST_:
 	case FLOAT_:
 	case FILE_:
-	    env->stck = newnode2(env, p, env->stck);
+	    GNULLARY(p);
 	    break;
 	default:
-	    execerror("valid factor", "exeterm");
+	    execerror(env, "valid factor", "exeterm");
 	    break;
 	}
 #ifdef TRACEGC

@@ -1,10 +1,12 @@
 /*
     module  : app4.c
-    version : 1.6
-    date    : 09/20/24
+    version : 1.7
+    date    : 10/11/24
 */
 #ifndef APP4_C
 #define APP4_C
+
+#include "unary4.c"
 
 /**
 Q1  OK  2550  app4  :  X1 X2 X3 X4 [P]  ->  R1 R2 R3 R4

@@ -1,7 +1,7 @@
 /*
  *  module  : utils.c
- *  version : 1.44
- *  date    : 09/16/24
+ *  version : 1.45
+ *  date    : 10/09/24
  */
 #include "globals.h"
 
@@ -10,8 +10,8 @@
 #endif
 
 /*
- * MEM_LOW should allow reading usrlib.joy, inilib.joy, and agglib.joy without
- * reallocation and without garbage collection.
+ * MEM_LOW should allow reading usrlib.joy, inilib.joy, prelib.joy and
+ * agglib.joy without reallocation and without garbage collection.
  */
 #define MEM_LOW		1100	/* initial number of nodes */
 

@@ -1,10 +1,12 @@
 /*
     module  : finclude.c
-    version : 1.15
-    date    : 09/17/24
+    version : 1.16
+    date    : 10/11/24
 */
 #ifndef FINCLUDE_C
 #define FINCLUDE_C
+
+#include "get.c"
 
 /**
 Q0  OK  3170  finclude  :  S  ->  F ...

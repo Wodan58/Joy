@@ -1,8 +1,8 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.113
- *  date    : 09/23/24
+ *  version : 1.116
+ *  date    : 10/11/24
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -22,11 +22,21 @@
 #include <time.h>
 #include <inttypes.h>
 
+/*
+ * Certain compilers are likely to compile for the Windows platform and that
+ * means that WINDOWS can be set. Other compilers need to set this explicitly,
+ * if so desired.
+ */
 #if defined(_MSC_VER) || defined(__MINGW64_VERSION_MAJOR) || defined(__TINYC__)
 #define WINDOWS
 #endif
 
-#ifdef _MSC_VER
+/*
+ * The system call doesn't work when Windows is run in S-mode, so it might just
+ * as well be disabled, regardless of the compiler that is used. It is a bit of
+ * a security leak anyways.
+ */
+#ifdef WINDOWS
 #define WINDOWS_S
 #endif
 
@@ -63,37 +73,7 @@
 #include "khash.h"
 #endif
 
-#define POP(X) X = nextnode1(X)
-
-#define USR_NEWNODE(u, r)						\
-    (env->bucket.ent = u, newnode(env, USR_, env->bucket, r))
-#define ANON_FUNCT_NEWNODE(u, r)					\
-    (env->bucket.proc = u, newnode(env, ANON_FUNCT_, env->bucket, r))
-#define BOOLEAN_NEWNODE(u, r)						\
-    (env->bucket.num = u, newnode(env, BOOLEAN_, env->bucket, r))
-#define CHAR_NEWNODE(u, r)						\
-    (env->bucket.num = u, newnode(env, CHAR_, env->bucket, r))
-#define INTEGER_NEWNODE(u, r)						\
-    (env->bucket.num = u, newnode(env, INTEGER_, env->bucket, r))
-#define SET_NEWNODE(u, r)						\
-    (env->bucket.set = u, newnode(env, SET_, env->bucket, r))
-#define STRING_NEWNODE(u, r)						\
-    (env->bucket.str = u, newnode(env, STRING_, env->bucket, r))
-#define LIST_NEWNODE(u, r)						\
-    (env->bucket.lis = u, newnode(env, LIST_, env->bucket, r))
-#define FLOAT_NEWNODE(u, r)						\
-    (env->bucket.dbl = u, newnode(env, FLOAT_, env->bucket, r))
-#define FILE_NEWNODE(u, r)						\
-    (env->bucket.fil = u, newnode(env, FILE_, env->bucket, r))
-#define BIGNUM_NEWNODE(u, r)						\
-    (env->bucket.str = u, newnode(env, BIGNUM_, env->bucket, r))
-
-#define NULLARY(CONSTRUCTOR, VALUE)					\
-    env->stck = CONSTRUCTOR(VALUE, env->stck)
-#define UNARY(CONSTRUCTOR, VALUE)					\
-    env->stck = CONSTRUCTOR(VALUE, nextnode1(env->stck))
-#define BINARY(CONSTRUCTOR, VALUE)					\
-    env->stck = CONSTRUCTOR(VALUE, nextnode2(env->stck))
+#include "macros.h"
 
 #ifdef NOBDW
 #define nodetype(n)  env->memory[n].op
@@ -116,6 +96,11 @@
 #undef TRACEGC
 #endif
 #endif
+
+/* settings for cflags */
+#define IS_ACTIVE	1	/* prevent recursion */
+#define IS_USED		2	/* multiple inlining */
+#define IS_PRINTED	4	/* print of contents */
 
 /* configure			*/
 #define SHELLESCAPE	'$'
@@ -151,6 +136,8 @@ enum {
     FLOAT_,
     FILE_,
     BIGNUM_,
+
+    LIST_PRIME_,
 
     LIBRA,
     EQDEF,
@@ -224,7 +211,7 @@ typedef struct Token {
 
 typedef struct Entry {
     char *name;
-    unsigned char is_user, flags, is_ok, is_root, is_last;
+    unsigned char is_user, flags, is_ok, is_root, is_last, qcode, nofun, cflags;
     union {
 	Index body;
 	proc_t proc;
@@ -275,6 +262,9 @@ typedef struct Env {
     Index conts, dump, dump1, dump2, dump3, dump4, dump5, inits;
 #endif
     Index prog, stck;
+#ifdef COMPILER
+    FILE *declfp, *outfp;
+#endif
     int g_argc;			/* command line */
     int hide_stack[DISPLAYMAX];
     struct {
@@ -289,8 +279,6 @@ typedef struct Env {
     unsigned char tracegc;
     unsigned char undeferror;
     unsigned char undeferror_set;
-    unsigned char bytecoding;	/* BDW only */
-    unsigned char compiling;	/* BDW only */
     unsigned char debugging;
     unsigned char ignore;
     unsigned char overwrite;
@@ -298,6 +286,8 @@ typedef struct Env {
     unsigned char finclude_busy;
     unsigned char flibrary_busy;
     unsigned char variable_busy;
+    signed char bytecoding;	/* BDW only */
+    signed char compiling;	/* BDW only */
 } Env;
 
 typedef struct table_t {
@@ -344,7 +334,7 @@ void printnode(pEnv env, Index p);
 void my_gc(pEnv env);
 #endif
 /* error.c */
-void execerror(char *message, char *op);
+void execerror(pEnv env, char *message, char *op);
 /* factor.c */
 int readfactor(pEnv env, int ch, int *rv);	/* read a JOY factor */
 int readterm(pEnv env, int ch);
@@ -359,10 +349,7 @@ void exitmod(void);
 char *classify(pEnv env, char *name);
 int qualify(pEnv env, char *name);
 /* optable.c */
-#ifdef BYTECODE
 int tablesize(void);
-int operqcode(int index);
-#endif
 char *nickname(int ch);
 char *opername(int o);
 int operindex(pEnv env, proc_t proc);
@@ -388,16 +375,42 @@ void writeterm(pEnv env, Index n, FILE *fp);
 void bytecode(pEnv env, Node *list);
 void initbytes(pEnv env);
 void exitbytes(pEnv env);
-/* compile.c */
-int compile(pEnv env, Node *node);
-void initcompile(pEnv env);
-void exitcompile(pEnv env);
+/* compeval.c */
+void compeval(pEnv env, FILE *fp);
+/* computil.c */
+Node *reverse(Node *cur);
+char *outputfile(char *inputfile, char *suffix);
 /* dumpbyte.c */
 void dumpbyte(pEnv env, FILE *fp);
-/* readbyte.c */
-void readbyte(pEnv env, FILE *fp, int flag);
-unsigned char *readfile(FILE *fp);
 /* optimize.c */
 void optimize(pEnv env, FILE *fp);
+/* readbyte.c */
+void readbyte(pEnv env, FILE *fp);
+unsigned char *readfile(FILE *fp);
+#endif
+#ifdef COMPILER
+/* compiler.c */
+void printnode(pEnv env, Node *node);
+void printstack(pEnv env);
+void compile(pEnv env, Node *node);
+void initcompile(pEnv env);
+void exitcompile(pEnv env);
+/* computil.c */
+Node *reverse(Node *cur);
+char *outputfile(char *inputfile, char *suffix);
+/* identify.c */
+const char *identifier(const char *str);
+const char *unidentify(const char *str);
+/* instance.c */
+int instance(pEnv env, char *name, int qcode);
+/* outfiles.c */
+void initout(void);
+FILE *nextfile(void);
+void closefile(FILE *fp);
+void printout(FILE *fp);
+void closeout(void);
+/* readtemp.c */
+int testtemp(char *file);
+void readtemp(pEnv env, char *file, Node *nodes[], int found, int seqnr);
 #endif
 #endif

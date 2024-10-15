@@ -1,14 +1,14 @@
 /*
     module  : getenv.c
-    version : 1.7
-    date    : 09/17/24
+    version : 1.8
+    date    : 09/26/24
 */
 #ifndef GETENV_C
 #define GETENV_C
 
 /**
 Q0  OK  3030  getenv  :  "variable"  ->  "value"
-Retrieves the value of the environment variable "variable".
+[RUNTIME] Retrieves the value of the environment variable "variable".
 */
 void getenv_(pEnv env)
 {

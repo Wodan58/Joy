@@ -1,7 +1,7 @@
 /*
  *  module  : write.c
- *  version : 1.1
- *  date    : 09/16/24
+ *  version : 1.2
+ *  date    : 10/11/24
  */
 #include "globals.h"
 
@@ -21,7 +21,7 @@ void writefactor(pEnv env, Index n, FILE *fp)
  * only serves as a reminder for future customers.
  */
     if (!n)
-	execerror("non-empty stack", "writefactor");
+	execerror(env, "non-empty stack", "writefactor");
 #endif
     switch (nodetype(n)) {
     case USR_:
@@ -94,7 +94,7 @@ void writefactor(pEnv env, Index n, FILE *fp)
 		    strcat(buf, ".0");		/* add decimal point and 0 */
 	    } else {
 		strcpy(tmp, ptr);		/* save exponent */
-		strcat(buf, ".0");		/* add decimal point and 0 */
+		strcpy(ptr, ".0");		/* add decimal point and 0 */
 		strcat(buf, tmp);		/* restore exponent */
 	    }
 	}

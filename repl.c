@@ -1,7 +1,7 @@
 /*
  *  module  : repl.c
- *  version : 1.1
- *  date    : 09/16/24
+ *  version : 1.2
+ *  date    : 10/11/24
  */
 #include "globals.h"
 
@@ -64,12 +64,8 @@ void repl(pEnv env)
 		env->conts = 0;
 #endif
 #ifdef BYTECODE
-		if (env->bytecoding == 1) {
+		if (env->bytecoding > 0) {
 		    bytecode(env, env->prog);
-		    return;
-		}
-		if (env->compiling == 1) {
-		    compile(env, env->prog);	/* this compiles source code */
 		    return;
 		}
 #endif
@@ -77,7 +73,7 @@ void repl(pEnv env)
 	    }
 #ifdef NOBDW
 	    if (env->conts || env->dump || env->dump1 || env->dump2 ||
-			    env->dump3 || env->dump4 || env->dump5) {
+			      env->dump3 || env->dump4 || env->dump5) {
 		printf("the dumps are not empty\n");
 		DUMP_CHECK(env->conts, "conts");
 		DUMP_CHECK(env->dump, "dump");

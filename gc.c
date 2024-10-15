@@ -1,7 +1,7 @@
 /*
     module  : gc.c
-    version : 1.51
-    date    : 07/01/24
+    version : 1.52
+    date    : 09/26/24
 */
 #include <stdio.h>
 #include <string.h>
@@ -11,16 +11,8 @@
 #include <setjmp.h>
 #include <signal.h>
 
-/*
- * khashl.h is not officially supported.
- */
-#if 0
-#define USE_KHASHL
-#endif
-
 #ifdef _MSC_VER
 #pragma warning(disable: 4267)
-#define kh_packed		/* forget about __attribute__ ((packed)) */
 #endif
 
 #ifdef __linux__
@@ -31,11 +23,7 @@
 #include <mach-o/getsect.h>
 #endif
 
-#ifdef USE_KHASHL
-#include "khashl.h"
-#else
 #include "khash.h"
-#endif
 #include "gc.h"
 
 #ifdef _MSC_VER
@@ -69,16 +57,9 @@ typedef struct mem_info {
 /*
  * The map contains a pointer as key and mem_info as value.
  */
-#ifdef USE_KHASHL
-KHASHL_MAP_INIT(KH_LOCAL, backup_t, backup, uint64_t, mem_info, HASH_FUNCTION,
-		kh_eq_generic)
-
-static backup_t *MEM;		/* backup of pointers */
-#else
 KHASH_INIT(Backup, uint64_t, mem_info, 1, HASH_FUNCTION, kh_int64_hash_equal)
 
 static khash_t(Backup) *MEM;	/* backup of pointers */
-#endif
 
 static khint_t max_items;	/* max. items before gc */
 static uint64_t lower, upper;	/* heap bounds */
@@ -160,11 +141,7 @@ static void mem_exit(void)
     for (key = 0; key != kh_end(MEM); key++)
 	if (kh_exist(MEM, key))
 	    free((void *)kh_key(MEM, key));
-#ifdef USE_KHASHL
-    backup_destroy(MEM);
-#else
     kh_destroy(Backup, MEM);
-#endif
 }
 #endif
 
@@ -179,11 +156,7 @@ void GC_INIT(void)
 #ifdef FREE_ON_EXIT
     atexit(mem_exit);
 #endif
-#ifdef USE_KHASHL
-    MEM = backup_init();
-#else
     MEM = kh_init(Backup);
-#endif
     max_items = MIN_ITEMS;
 }
 
@@ -199,11 +172,7 @@ static void mark_ptr(char *ptr)
     value = (uint64_t)ptr;
     if (value < lower || value >= upper)
 	return;
-#ifdef USE_KHASHL
-    if ((key = backup_get(MEM, value)) != kh_end(MEM)) {
-#else
     if ((key = kh_get(Backup, MEM, value)) != kh_end(MEM)) {
-#endif
 	if (kh_val(MEM, key).flags & GC_MARK)
 	    return;
 	kh_val(MEM, key).flags |= GC_MARK;
@@ -259,11 +228,7 @@ static void scan(void)
 		kh_val(MEM, key).flags &= ~GC_MARK;
 	    else {
 		free((void *)kh_key(MEM, key));
-#ifdef USE_KHASHL
-		backup_del(MEM, key--);	/* delete in kh_foreach is suspicious */
-#else
 		kh_del(Backup, MEM, key);
-#endif
 	    }
 	}
     }
@@ -309,11 +274,7 @@ static void remind(char *ptr, size_t size, int flags)
 	lower = value;
     if (upper < value + size)
 	upper = value + size;
-#ifdef USE_KHASHL
-    key = backup_put(MEM, value, &rv);
-#else
     key = kh_put(Backup, MEM, value, &rv);
-#endif
     kh_val(MEM, key).flags = flags;
     kh_val(MEM, key).size = size;
 /*
@@ -374,17 +335,9 @@ static unsigned char forget(void *ptr)
     khint_t key;
     unsigned char flags = 0;
 
-#ifdef USE_KHASHL
-    if ((key = backup_get(MEM, (uint64_t)ptr)) != kh_end(MEM)) {
-#else
     if ((key = kh_get(Backup, MEM, (uint64_t)ptr)) != kh_end(MEM)) {
-#endif
 	flags = kh_val(MEM, key).flags;
-#ifdef USE_KHASHL
-	backup_del(MEM, key);
-#else
 	kh_del(Backup, MEM, key);
-#endif
     }
     return flags;
 }

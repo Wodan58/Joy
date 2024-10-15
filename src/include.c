@@ -1,14 +1,14 @@
 /*
     module  : include.c
-    version : 1.13
-    date    : 09/17/24
+    version : 1.15
+    date    : 10/11/24
 */
 #ifndef INCLUDE_C
 #define INCLUDE_C
 
 /**
 Q0  OK  3110  include  :  "filnam.ext"  ->
-Transfers input to file whose name is "filnam.ext".
+[SYMBOLS] Transfers input to file whose name is "filnam.ext".
 On end-of-file returns to previous input file.
 */
 void include_(pEnv env)
@@ -23,7 +23,7 @@ void include_(pEnv env)
     str = nodevalue(env->stck).str;
 #endif
     if (include(env, str))
-	execerror("valid file name", "include");
+	execerror(env, "valid file name", "include");
     POP(env->stck);
 } 
 #endif

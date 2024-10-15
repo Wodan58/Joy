@@ -1,0 +1,29 @@
+(*
+    module  : prelib.joy
+    version : 1.1
+    date    : 10/11/24
+*)
+
+(*
+    Some obsolescent functions are stored here,
+    as well as some builtins that consist only
+    of calls to other builtins.
+*)
+LIBRA
+_prelib == true;
+
+app1 == i;
+app2 == unary2;
+app3 == unary3;
+app4 == unary4;
+app11 == i popd;
+app12 == unary2 rolldown pop;
+fputstring == fputchars;
+fold == swapd step;
+enconcat == swapd cons concat.
+
+CONST
+inf == 1 1024 ldexp;
+-inf == inf neg.
+
+"prelib  is loaded\n" putchars.

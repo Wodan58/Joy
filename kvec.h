@@ -24,7 +24,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 #if 1
 #include <gc.h>
 #else
@@ -52,8 +51,8 @@ int main()
 
 /*
     module  : kvec.h
-    version : 1.14
-    date    : 09/20/24
+    version : 1.16
+    date    : 10/11/24
 
  1. Change type of n, m from size_t to unsigned. Reason: takes less memory.
  2. Remove (type*) casts. Reason: not needed for C.
@@ -95,6 +94,7 @@ int main()
 34. vec_shallow_copy and vec_shallow_copy_take_ownership added: faster.
 35. reverse-bit recycled as recurse-bit. Some comments have been added.
 36. vec_copy_all added. This is nicer than always using vec_copy_count.
+37. vec_reduce added. This makes it easier to pop a number of items.
 
   2008-09-22 (0.1.0):
 	* The initial version.
@@ -141,11 +141,12 @@ typedef enum owner_t {
 #define vec_back(v)		((v)->c[(v)->n - 1])
 #define vec_max(v)		((v) ? (v)->m : 0)
 #define vec_size(v)		((v) ? (v)->n : 0)
+#define vec_reduce(v, s)	((v)->n -= (s))
 #define vec_setsize(v, s)	((v)->n = (s))
 #define vec_getarity(v)		((v)->a + (v)->e)
 #define vec_setarity(v, s)      do { (v)->a = 1; (v)->e = (s) - 1; } while (0)
-#define vec_getrecur(v)		((v)->r)
-#define vec_setrecur(v, s)      ((v)->r = (s))
+#define vec_getreserve(v)	((v)->r)
+#define vec_setreserve(v, s)    ((v)->r = (s))
 #define vec_grow(v, s)		do { (v)->m = (s); (v)->c = GC_realloc((v)->c,\
 				sizeof(*(v)->c) * (s)); } while (0)
 #define vec_shrink(v)		do { if ((v)->n) { (v)->m = (v)->n; (v)->c =  \
@@ -157,9 +158,9 @@ typedef enum owner_t {
 /* vec_push assumes that v has been initialized before it being called */
 #define vec_push(v, x) 							\
 	do {								\
-	    if ((v)->n == (v)->m) { (v)->m = (v)->m ? round((v)->m *	\
-	    1.618) : 2; (v)->c = GC_realloc((v)->c, sizeof(*(v)->c) *	\
-	    (v)->m); } (v)->c[(v)->n++] = (x);				\
+	    if ((v)->n == (v)->m) { (v)->m = (v)->m ? (v)->m * 2 : 2;	\
+	    (v)->c = GC_realloc((v)->c, sizeof(*(v)->c) * (v)->m); }	\
+	    (v)->c[(v)->n++] = (x);					\
 	} while (0)
 
 /* vec_add adds an element at index, even when the index did not exist */

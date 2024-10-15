@@ -1,14 +1,14 @@
 /*
     module  : pick.c
-    version : 1.7
-    date    : 09/17/24
+    version : 1.8
+    date    : 09/26/24
 */
 #ifndef PICK_C
 #define PICK_C
 
 /**
 Q0  OK  3190  pick  :  X Y Z 2  ->  X Y Z X
-[EXT] Pushes an extra copy of nth (e.g. 2) item X on top of the stack.
+Pushes an extra copy of nth (e.g. 2) item X on top of the stack.
 */
 void pick_(pEnv env)
 {
