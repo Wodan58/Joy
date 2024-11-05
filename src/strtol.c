@@ -1,7 +1,7 @@
 /*
     module  : strtol.c
-    version : 1.7
-    date    : 09/17/24
+    version : 1.8
+    date    : 10/18/24
 */
 #ifndef STRTOL_C
 #define STRTOL_C
@@ -22,11 +22,7 @@ void strtol_(pEnv env)
     base = nodevalue(env->stck).num;
     POP(env->stck);
     STRING("strtol");
-#ifdef NOBDW
-    str = (char *)&nodevalue(env->stck);
-#else
-    str = nodevalue(env->stck).str;
-#endif
+    str = GETSTRING(env->stck);
     UNARY(INTEGER_NEWNODE, strtoll(str, 0, base));
 }
 #endif

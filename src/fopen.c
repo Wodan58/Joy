@@ -1,7 +1,7 @@
 /*
     module  : fopen.c
-    version : 1.7
-    date    : 09/17/24
+    version : 1.9
+    date    : 10/18/24
 */
 #ifndef FOPEN_C
 #define FOPEN_C
@@ -14,15 +14,13 @@ is pushed.
 */
 void fopen_(pEnv env)
 {
+    char *path, *mode;
+
     TWOPARAMS("fopen");
     STRING("fopen");
     STRING2("fopen");
-#ifdef NOBDW
-    BINARY(FILE_NEWNODE, fopen((char *)&nodevalue(nextnode1(env->stck)),
-			    (char *)&nodevalue(env->stck)));
-#else
-    BINARY(FILE_NEWNODE, fopen(nodevalue(nextnode1(env->stck)).str,
-			    nodevalue(env->stck).str));
-#endif
+    path = GETSTRING(nextnode1(env->stck));
+    mode = GETSTRING(env->stck);
+    BINARY(FILE_NEWNODE, fopen(path, mode));
 }
 #endif

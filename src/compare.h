@@ -1,7 +1,7 @@
 /*
     module  : compare.h
-    version : 1.21
-    date    : 09/17/24
+    version : 1.22
+    date    : 10/18/24
 */
 #ifndef COMPARE_H
 #define COMPARE_H
@@ -59,11 +59,7 @@ int Compare(pEnv env, Index first, Index second)
 	    goto cmpstr;
 	case STRING_:
 	case BIGNUM_:
-#ifdef NOBDW
-	    name2 = (char *)&nodevalue(second);
-#else
-	    name2 = nodevalue(second).str;
-#endif
+	    name2 = GETSTRING(second);
 	    goto cmpstr;
 	}
 	break;
@@ -78,11 +74,7 @@ int Compare(pEnv env, Index first, Index second)
 	    goto cmpstr;
 	case STRING_:
 	case BIGNUM_:
-#ifdef NOBDW
-	    name2 = (char *)&nodevalue(second);
-#else
-	    name2 = nodevalue(second).str;
-#endif
+	    name2 = GETSTRING(second);
 	    goto cmpstr;
 	}
 	break;
@@ -147,11 +139,7 @@ int Compare(pEnv env, Index first, Index second)
 	break;
     case STRING_:
     case BIGNUM_:
-#ifdef NOBDW
-	name1 = (char *)&nodevalue(first);
-#else
-	name1 = nodevalue(first).str;
-#endif
+	name1 = GETSTRING(first);
 	switch (type2) {
 	case USR_:
 	    name2 = vec_at(env->symtab, nodevalue(second).ent).name;
@@ -161,11 +149,7 @@ int Compare(pEnv env, Index first, Index second)
 	    goto cmpstr;
 	case STRING_:
 	case BIGNUM_:
-#ifdef NOBDW
-	    name2 = (char *)&nodevalue(second);
-#else
-	    name2 = nodevalue(second).str;
-#endif
+	    name2 = GETSTRING(second);
 	    goto cmpstr;
 	}
 	break;

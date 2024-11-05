@@ -1,8 +1,12 @@
 /*
     module  : gc.c
-    version : 1.52
-    date    : 09/26/24
+    version : 1.53
+    date    : 10/28/24
 */
+#ifdef MALLOC_DEBUG
+#include "rmalloc.h"
+#endif
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -154,6 +158,7 @@ void GC_INIT(void)
     init_heap();
 #endif
 #ifdef FREE_ON_EXIT
+    free(malloc(1));
     atexit(mem_exit);
 #endif
     MEM = kh_init(Backup);

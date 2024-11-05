@@ -1,7 +1,7 @@
 /*
     module  : fputchars.c
-    version : 1.8
-    date    : 09/17/24
+    version : 1.9
+    date    : 10/18/24
 */
 #ifndef FPUTCHARS_C
 #define FPUTCHARS_C
@@ -18,11 +18,7 @@ void fputchars_(pEnv env)	/* suggested by Heiko Kuhrt, as "fputstring_" */
 
     TWOPARAMS("fputchars");
     STRING("fputchars");
-#ifdef NOBDW
-    str = (char *)&nodevalue(env->stck);
-#else
-    str = nodevalue(env->stck).str;
-#endif
+    str = GETSTRING(env->stck);
     POP(env->stck);
     ISFILE("fputchars");
     fp = nodevalue(env->stck).fil;

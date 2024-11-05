@@ -1,7 +1,7 @@
 /*
     module  : finclude.c
-    version : 1.16
-    date    : 10/11/24
+    version : 1.17
+    date    : 10/18/24
 */
 #ifndef FINCLUDE_C
 #define FINCLUDE_C
@@ -18,11 +18,7 @@ void finclude_(pEnv env)
 
     ONEPARAM("finclude");
     STRING("finclude");
-#ifdef NOBDW
-    str = (char *)&nodevalue(env->stck);/* read file name */
-#else
-    str = nodevalue(env->stck).str;	/* read file name */
-#endif
+    str = GETSTRING(env->stck);		/* read file name */
     POP(env->stck);			/* remove file name from stack */
     if (include(env, str))		/* include new file */
 	return;

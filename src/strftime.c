@@ -1,7 +1,7 @@
 /*
     module  : strftime.c
-    version : 1.8
-    date    : 09/17/24
+    version : 1.9
+    date    : 10/18/24
 */
 #ifndef STRFTIME_C
 #define STRFTIME_C
@@ -21,11 +21,7 @@ void strftime_(pEnv env)
 
     TWOPARAMS("strftime");
     STRING("strftime");
-#ifdef NOBDW
-    fmt = (char *)&nodevalue(env->stck);
-#else
-    fmt = nodevalue(env->stck).str;
-#endif
+    fmt = GETSTRING(env->stck);
     POP(env->stck);
     LIST("strftime");
     decode_time(env, &t);

@@ -1,7 +1,7 @@
 /*
     module  : intern.c
-    version : 1.13
-    date    : 09/26/24
+    version : 1.14
+    date    : 10/18/24
 */
 #ifndef INTERN_C
 #define INTERN_C
@@ -18,11 +18,7 @@ void intern_(pEnv env)
 
     ONEPARAM("intern");
     STRING("intern");
-#ifdef NOBDW
-    ptr = str = (char *)&nodevalue(env->stck);
-#else
-    ptr = str = nodevalue(env->stck).str;
-#endif
+    ptr = str = GETSTRING(env->stck);
     if (!strchr("\"#'().0123456789;[]{}", *ptr)) {
 	if (*ptr == '-' && isdigit((int)ptr[1]))
 	    ;

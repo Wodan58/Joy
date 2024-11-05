@@ -1,7 +1,7 @@
 /*
     module  : strtod.c
-    version : 1.6
-    date    : 09/17/24
+    version : 1.7
+    date    : 10/18/24
 */
 #ifndef STRTOD_C
 #define STRTOD_C
@@ -16,11 +16,7 @@ void strtod_(pEnv env)
 
     ONEPARAM("strtod");
     STRING("strtod");
-#ifdef NOBDW
-    str = (char *)&nodevalue(env->stck);
-#else
-    str = nodevalue(env->stck).str;
-#endif
+    str = GETSTRING(env->stck);
     UNARY(FLOAT_NEWNODE, strtod(str, 0));
 }
 #endif

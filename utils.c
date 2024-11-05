@@ -1,7 +1,7 @@
 /*
  *  module  : utils.c
- *  version : 1.45
- *  date    : 10/09/24
+ *  version : 1.46
+ *  date    : 10/21/24
  */
 #include "globals.h"
 
@@ -125,9 +125,9 @@ static Index copy(pEnv env, Index n)
  * If the node contains a string, then some more copying is needed.
  */
     if (op == STRING_ || op == BIGNUM_) {
-	leng = strlen((char *)&old_memory[n].u) + 1;
+	leng = old_memory[n].len + 1;
 	memcpy(&env->memory[temp].u, &old_memory[n].u, leng);
-	memoryindex += (old_memory[n].len + sizeof(Types)) / sizeof(Node);
+	memoryindex += (leng + sizeof(Types)) / sizeof(Node);
     }
 /*
  * If the node contains a list, then the list needs to be copied. This requires

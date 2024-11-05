@@ -1,18 +1,21 @@
 /*
     module  : gc.h
-    version : 1.21
-    date    : 05/11/24
+    version : 1.22
+    date    : 10/27/24
 */
 #ifndef GC_H
 #define GC_H
 
-/* these definitions should be present in the calling source file */
+/* These definitions should be present in the main function */
 extern char *bottom_of_stack;
 void fatal(char *str);
 
 /* #define SCAN_BSS_MEMORY */
-/* #define FREE_ON_EXIT */
 /* #define STACK_GROWS_UPWARD */
+
+#ifdef MALLOC_DEBUG
+#define FREE_ON_EXIT
+#endif
 #define USE_GC_MALLOC_ATOMIC
 #define USE_GC_MALLOC
 #define USE_GC_REALLOC

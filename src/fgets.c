@@ -1,7 +1,7 @@
 /*
     module  : fgets.c
-    version : 1.9
-    date    : 09/20/24
+    version : 1.10
+    date    : 10/28/24
 */
 #ifndef FGETS_C
 #define FGETS_C
@@ -30,8 +30,9 @@ void fgets_(pEnv env)
 	if ((leng = strlen(buf)) > 0 && buf[leng - 1] == '\n')
 	    break;
 #ifdef NOBDW
-	if ((tmp = realloc(buf, size <<= 1)) != 0)
-	    buf = tmp;
+	if ((tmp = realloc(buf, size <<= 1)) == 0)
+	    break;	/* LCOV_EXCLUDE_LINE */
+	buf = tmp;
 #else
 	buf = GC_realloc(buf, size <<= 1);
 #endif

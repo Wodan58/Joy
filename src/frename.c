@@ -1,7 +1,7 @@
 /*
     module  : frename.c
-    version : 1.7
-    date    : 09/17/24
+    version : 1.8
+    date    : 10/18/24
 */
 #ifndef FRENAME_C
 #define FRENAME_C
@@ -18,13 +18,8 @@ void frename_(pEnv env)
     TWOPARAMS("frename");
     STRING("frename");
     STRING2("frename");
-#ifdef NOBDW
-    p1 = (char *)&nodevalue(nextnode1(env->stck));
-    p2 = (char *)&nodevalue(env->stck);
-#else
-    p1 = nodevalue(nextnode1(env->stck)).str;
-    p2 = nodevalue(env->stck).str;
-#endif
+    p1 = GETSTRING(nextnode1(env->stck));
+    p2 = GETSTRING(env->stck);
     BINARY(BOOLEAN_NEWNODE, !rename(p1, p2));
 }
 #endif

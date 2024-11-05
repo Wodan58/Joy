@@ -1,7 +1,7 @@
 /*
     module  : include.c
-    version : 1.15
-    date    : 10/11/24
+    version : 1.16
+    date    : 10/18/24
 */
 #ifndef INCLUDE_C
 #define INCLUDE_C
@@ -17,11 +17,7 @@ void include_(pEnv env)
 
     ONEPARAM("include");
     STRING("include");
-#ifdef NOBDW
-    str = (char *)&nodevalue(env->stck);
-#else
-    str = nodevalue(env->stck).str;
-#endif
+    str = GETSTRING(env->stck);
     if (include(env, str))
 	execerror(env, "valid file name", "include");
     POP(env->stck);

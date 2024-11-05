@@ -203,7 +203,7 @@
 /* 3020 */ { Q0, IGNORE_POP, "system", system_, "\"command\"  ->", "[IMPURE] Escapes to shell, executes string \"command\".\nThe string may cause execution of another program.\nWhen that has finished, the process returns to Joy.\n" },
 /* 3030 */ { Q0, OK, "getenv", getenv_, "\"variable\"  ->  \"value\"", "[RUNTIME] Retrieves the value of the environment variable \"variable\".\n" },
 /* 3040 */ { Q0, OK, "argv", argv_, "->  A", "Creates an aggregate A containing the interpreter's command line arguments.\n" },
-/* 3050 */ { Q0, OK, "argc", argc_, "->  I", "[RUNTIME] Pushes the number of command line arguments.\nThis is quivalent to 'argv size'.\n" },
+/* 3050 */ { Q0, OK, "argc", argc_, "->  I", "[RUNTIME] Pushes the number of command line arguments.\nThis is equivalent to 'argv size'.\n" },
 /* 3060 */ { Q0, IGNORE_PUSH, "__memoryindex", __memoryindex_, "->  I", "[IMPURE] Pushes current value of memory.\n" },
 /* 3070 */ { Q0, POSTPONE, "get", get_, "->  F", "[IMPURE] Reads a factor from input and pushes it onto stack.\n" },
 /* 3080 */ { Q0, IGNORE_POP, "put", put_, "X  ->", "[IMPURE] Writes X to output, pops X off stack.\n" },

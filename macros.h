@@ -1,7 +1,7 @@
 /*
  *  module  : macros.h
- *  version : 1.1
- *  date    : 10/11/24
+ *  version : 1.2
+ *  date    : 10/18/24
  */
 #define POP(X) X = nextnode1(X)
 
@@ -43,3 +43,13 @@
     env->stck = newnode2(env, NODE, nextnode2(env->stck))
 #define GTERNARY(NODE)							\
     env->stck = newnode2(env, NODE, nextnode3(env->stck))
+
+/*
+ * Strings are stored in consecutive nodes in the NOBDW version; the BDW
+ * version stores them somewhere else.
+ */
+#ifdef NOBDW
+#define GETSTRING(NODE)		(char *)&nodevalue(NODE)
+#else
+#define GETSTRING(NODE)		nodevalue(NODE).str
+#endif

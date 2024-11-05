@@ -1,8 +1,8 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.107
- *  date    : 10/11/24
+ *  version : 1.108
+ *  date    : 10/28/24
  */
 
 /*
@@ -121,6 +121,9 @@ static jmp_buf begin;		/* restart with empty program */
 char *bottom_of_stack;		/* needed in gc.c */
 
 static void stats(pEnv env), dump(pEnv env);
+#ifdef MALLOC_DEBUG
+static void mem_free(pEnv env);
+#endif
 
 void printcandidates(pEnv env);
 
@@ -494,6 +497,9 @@ einde:
 	stats(&env);
     if (psdump)
 	dump(&env);
+#ifdef MALLOC_DEBUG
+    mem_free(&env);
+#endif
 }
 
 int main(int argc, char **argv)
@@ -556,3 +562,25 @@ static void dump(pEnv env)
 	}
     }
 }
+
+#ifdef MALLOC_DEBUG
+static void mem_free(pEnv env)
+{
+    int i, j;
+    Entry ent;
+
+    /*
+     * The strings in the symbol table have been moved to permanent memory.
+     * They need to be released explicitly.
+     */
+    for (i = tablesize(), j = vec_size(env->symtab); i < j; i++) {
+	ent = vec_at(env->symtab, i);
+	free(ent.name);
+    }
+#ifdef NOBDW
+    free(env->memory);
+#endif
+    kh_destroy(Symtab, env->hash);
+    kh_destroy(Funtab, env->prim);
+}
+#endif

@@ -1,11 +1,15 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.116
- *  date    : 10/11/24
+ *  version : 1.117
+ *  date    : 10/28/24
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
+
+#ifdef MALLOC_DEBUG
+#include "rmalloc.h"
+#endif
 
 /* #define USE_KHASHL */
 

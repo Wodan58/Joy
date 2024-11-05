@@ -1,7 +1,7 @@
 /*
     module  : drop.c
-    version : 1.12
-    date    : 09/17/24
+    version : 1.15
+    date    : 10/28/24
 */
 #ifndef DROP_C
 #define DROP_C
@@ -33,15 +33,12 @@ void drop_(pEnv env)
 	UNARY(SET_NEWNODE, set);
 	break;
     case STRING_:
-#ifdef NOBDW
-	str = strdup((char *)&nodevalue(env->stck));
-#else
-	str = nodevalue(env->stck).str;
-#endif
+	str = GETSTRING(env->stck);
 	while (n-- > 0 && str[i])
 	    i++;
 #ifdef NOBDW
-	UNARY(STRING_NEWNODE, str + i);
+	str = strdup(str + i);
+	UNARY(STRING_NEWNODE, str);
 	free(str);
 #else
 	UNARY(STRING_NEWNODE, GC_strdup(str + i));

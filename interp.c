@@ -1,8 +1,8 @@
 /* FILE: interp.c */
 /*
  *  module  : interp.c
- *  version : 1.85
- *  date    : 10/11/24
+ *  version : 1.86
+ *  date    : 10/18/24
  */
 
 /*
@@ -33,6 +33,7 @@
 	 fputstring (== fputchars for Heiko Kuhrt's program)
 */
 #include "globals.h"
+#include "builtin.h"
 
 static void writestack(pEnv env, Index n)
 {
@@ -209,6 +210,13 @@ start:
 		ent = vec_at(env->symtab, index);
 		ent.cflags |= IS_USED;
 		vec_at(env->symtab, index) = ent;
+		/*
+		 * An exception needs to be made for dup_ in case the stack
+		 * contains a list.
+		 */
+		if (env->stck && nodetype(env->stck) == LIST_ &&
+				ent.u.proc == dup_)
+		    nofun = 1;
 		/*
 		 * Functions that cannot be evaluated at compile time
 		 * are sent to output. There is no need for a nickname.

@@ -1,7 +1,7 @@
 /*
     module  : fremove.c
-    version : 1.7
-    date    : 09/17/24
+    version : 1.8
+    date    : 10/18/24
 */
 #ifndef FREMOVE_C
 #define FREMOVE_C
@@ -17,11 +17,7 @@ void fremove_(pEnv env)
 
     ONEPARAM("fremove");
     STRING("fremove");
-#ifdef NOBDW
-    str = (char *)&nodevalue(env->stck);
-#else
-    str = nodevalue(env->stck).str;
-#endif
+    str = GETSTRING(env->stck);
     UNARY(BOOLEAN_NEWNODE, !remove(str));
 }
 #endif

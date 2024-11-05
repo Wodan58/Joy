@@ -1,7 +1,7 @@
 /*
     module  : first.c
-    version : 1.9
-    date    : 09/17/24
+    version : 1.10
+    date    : 10/18/24
 */
 #ifndef FIRST_C
 #define FIRST_C
@@ -22,11 +22,7 @@ void first_(pEnv env)
 	GUNARY(nodevalue(env->stck).lis);
 	break;
     case STRING_:
-#ifdef NOBDW
-	str = (char *)&nodevalue(env->stck);
-#else
-	str = nodevalue(env->stck).str;
-#endif
+	str = GETSTRING(env->stck);
 	CHECKEMPTYSTRING(str, "first");
 	UNARY(CHAR_NEWNODE, *str);
 	break;

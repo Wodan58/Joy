@@ -1,7 +1,7 @@
 /*
     module  : rest.c
-    version : 1.10
-    date    : 09/17/24
+    version : 1.13
+    date    : 10/28/24
 */
 #ifndef REST_C
 #define REST_C
@@ -24,14 +24,11 @@ void rest_(pEnv env)
 	UNARY(SET_NEWNODE, nodevalue(env->stck).set & ~((int64_t)1 << i));
 	break;
     case STRING_:
-#ifdef NOBDW
-	str = strdup((char *)&nodevalue(env->stck));
-#else
-	str = nodevalue(env->stck).str;
-#endif
+	str = GETSTRING(env->stck);
 	CHECKEMPTYSTRING(str, "rest");
 #ifdef NOBDW
-	UNARY(STRING_NEWNODE, str + 1);
+	str = strdup(str + 1);
+	UNARY(STRING_NEWNODE, str);
 	free(str);
 #else
 	UNARY(STRING_NEWNODE, GC_strdup(str + 1));
