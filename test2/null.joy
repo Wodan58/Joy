@@ -1,7 +1,7 @@
 (*
     module  : null.joy
-    version : 1.6
-    date    : 09/19/24
+    version : 1.7
+    date    : 11/15/24
 *)
 [pop] first null false =.
 [sum] first null false =.
@@ -22,3 +22,14 @@ true null false =.
 1.0 null false =.
 "exist" "r" fopen null.
 stdin null false =.
+
+[sum] first [] [true] [false] ifte.
+[pop] first [] [true] [false] ifte.
+true [] [true] [false] ifte.
+'A [] [true] [false] ifte.
+1 [] [true] [false] ifte.
+{0} [] [true] [false] ifte.
+"A" [] [true] [false] ifte.
+[0] [] [true] [false] ifte.
+1.0 [] [true] [false] ifte.
+"exist" "r" fopen [] [false] [true] ifte.

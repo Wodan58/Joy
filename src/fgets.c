@@ -31,7 +31,7 @@ void fgets_(pEnv env)
 	    break;
 #ifdef NOBDW
 	if ((tmp = realloc(buf, size <<= 1)) == 0)
-	    break;	/* LCOV_EXCLUDE_LINE */
+	    break;	/* LCOV_EXCL_LINE */
 	buf = tmp;
 #else
 	buf = GC_realloc(buf, size <<= 1);

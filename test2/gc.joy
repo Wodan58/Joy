@@ -1,9 +1,9 @@
 (*
-    module  : gc2.joy
-    version : 1.14
-    date    : 07/02/24
+    module  : gc.joy
+    version : 1.15
+    date    : 11/20/24
 *)
 __memoryindex
-1 10000 from-to-list pop
+1 14000 from-to-list pop
 gc gc gc gc gc
 __memorymax <.

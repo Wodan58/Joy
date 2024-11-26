@@ -1,8 +1,8 @@
 /* FILE: interp.c */
 /*
  *  module  : interp.c
- *  version : 1.86
- *  date    : 10/18/24
+ *  version : 1.87
+ *  date    : 11/15/24
  */
 
 /*
@@ -242,7 +242,6 @@ start:
 	    break;
 	default:
 	    execerror(env, "valid factor", "exeterm");
-	    break;
 	}
 #ifdef TRACEGC
 	if (env->tracegc > 5) {

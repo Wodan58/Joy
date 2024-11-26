@@ -1,12 +1,12 @@
 /*
     module  : decode.h
-    version : 1.5
-    date    : 06/21/24
+    version : 1.6
+    date    : 11/11/24
 */
 #ifndef DECODE_H
 #define DECODE_H
 
-void decode_time(pEnv env, struct tm *t)
+static void decode_time(pEnv env, struct tm *t)
 {
     Index p;
 

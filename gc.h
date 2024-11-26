@@ -1,7 +1,7 @@
 /*
     module  : gc.h
-    version : 1.22
-    date    : 10/27/24
+    version : 1.23
+    date    : 11/20/24
 */
 #ifndef GC_H
 #define GC_H
@@ -30,4 +30,6 @@ void *GC_malloc(size_t size);
 void *GC_realloc(void *old, size_t size);
 char *GC_strdup(const char *str);
 size_t GC_get_gc_no(void);
+size_t GC_get_memory_use(void);
+size_t GC_get_free_bytes(void);
 #endif

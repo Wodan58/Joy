@@ -30,9 +30,10 @@ the implementation in C was started in 1995.
 Build instructions
 ------------------
 
+    rm -rf build
     mkdir build
     cd build
-    cmake ..
+    cmake -G "Unix Makefiles" ..
     cmake --build .
 
     cp ../lib/usrlib.joy ~

@@ -1,10 +1,12 @@
 /*
     module  : binrec.c
-    version : 1.6
-    date    : 09/17/24
+    version : 1.9
+    date    : 11/11/24
 */
 #ifndef BINREC_C
 #define BINREC_C
+
+#include "boolean.h"
 
 /**
 Q4  OK  2730  binrec  :  [P] [T] [R1] [R2]  ->  ...
@@ -18,7 +20,7 @@ void binrecaux(pEnv env)
 
     env->dump1 = LIST_NEWNODE(env->stck, env->dump1);
     exeterm(env, nodevalue(SAVED4).lis);
-    result = nodevalue(env->stck).num;
+    result = get_boolean(env, env->stck);
     env->stck = DMP1;
     POP(env->dump1);
     if (result)

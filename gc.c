@@ -1,7 +1,7 @@
 /*
     module  : gc.c
-    version : 1.53
-    date    : 10/28/24
+    version : 1.54
+    date    : 11/20/24
 */
 #ifdef MALLOC_DEBUG
 #include "rmalloc.h"
@@ -69,6 +69,8 @@ static khint_t max_items;	/* max. items before gc */
 static uint64_t lower, upper;	/* heap bounds */
 #ifdef COUNT_COLLECTIONS
 static size_t GC_gc_no;		/* number of garbage collections */
+static size_t memory_use;	/* amount of memory currently used */
+static size_t free_bytes;	/* amount of memory on the freelist */
 #endif
 
 /*
@@ -232,6 +234,9 @@ static void scan(void)
 	    if (kh_val(MEM, key).flags & GC_MARK)
 		kh_val(MEM, key).flags &= ~GC_MARK;
 	    else {
+#ifdef COUNT_COLLECTIONS
+		free_bytes += kh_val(MEM, key).size;
+#endif		
 		free((void *)kh_key(MEM, key));
 		kh_del(Backup, MEM, key);
 	    }
@@ -282,6 +287,9 @@ static void remind(char *ptr, size_t size, int flags)
     key = kh_put(Backup, MEM, value, &rv);
     kh_val(MEM, key).flags = flags;
     kh_val(MEM, key).size = size;
+#ifdef COUNT_COLLECTIONS
+    memory_use += size;
+#endif
 /*
  * See if there are already too many items allocated. If yes, trigger the
  * garbage collector. As the number of items that need to be remembered is
@@ -335,13 +343,20 @@ void *GC_malloc(size_t size)
 /*
  * Forget about a memory block and return its flags.
  */
+#ifdef COUNT_COLLECTIONS
+static unsigned char forget(void *ptr, unsigned *size)
+#else
 static unsigned char forget(void *ptr)
+#endif
 {
     khint_t key;
     unsigned char flags = 0;
 
     if ((key = kh_get(Backup, MEM, (uint64_t)ptr)) != kh_end(MEM)) {
 	flags = kh_val(MEM, key).flags;
+#ifdef COUNT_COLLECTIONS	
+	*size = kh_val(MEM, key).size;
+#endif
 	kh_del(Backup, MEM, key);
     }
     return flags;
@@ -353,10 +368,19 @@ static unsigned char forget(void *ptr)
 void *GC_realloc(void *ptr, size_t size)
 {
     unsigned char flags;
+#ifdef COUNT_COLLECTIONS
+    unsigned old_size = 0;
+#endif
 
     if (!ptr)
 	return GC_malloc(size);
+#ifdef COUNT_COLLECTIONS
+    flags = forget(ptr, &old_size);
+    memory_use -= old_size;
+    memory_use += size;
+#else
     flags = forget(ptr);
+#endif
     ptr = realloc(ptr, size);
 #ifdef _MSC_VER
     if (!ptr)
@@ -376,8 +400,8 @@ char *GC_strdup(const char *str)
     char *ptr;
     size_t leng;
 
-    leng = strlen(str);
-    if ((ptr = GC_malloc_atomic(leng + 1)) != 0)
+    leng = strlen(str) + 1;
+    if ((ptr = GC_malloc_atomic(leng)) != 0)
 	strcpy(ptr, str);
     return ptr;
 }
@@ -386,9 +410,28 @@ char *GC_strdup(const char *str)
 #ifdef COUNT_COLLECTIONS
 /*
  * Return the number of garbage collections.
+ * This is reported in the main function.
  */
 size_t GC_get_gc_no(void)
 {
     return GC_gc_no;
 }
+
+/*
+ * Return the amount of memory currently in use.
+ */
+/* LCOV_EXCL_START */
+size_t GC_get_memory_use(void)
+{
+    return memory_use;
+}
+
+/*
+ * Return the amount of memory on the freelist.
+ */
+size_t GC_get_free_bytes(void)
+{
+    return free_bytes;
+}
+/* LCOV_EXCL_STOP */
 #endif

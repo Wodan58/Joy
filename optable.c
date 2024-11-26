@@ -1,17 +1,11 @@
 /*
  *  module  : optable.c
- *  version : 1.13
- *  date    : 10/14/24
+ *  version : 1.14
+ *  date    : 11/15/24
  */
 #include "globals.h"
 #include "runtime.h"
 #include "builtin.h"	/* declarations of functions */
-
-#ifdef _MSC_VER
-#define NOINLINE
-#else
-#define NOINLINE	__attribute__((__noinline__))
-#endif
 
 /*
  * Specify number of quotations that a combinator consumes.
@@ -81,10 +75,12 @@ static struct {
  * tablesize - return the size of the table, to be used when searching from the
  *	       end of the table to the start.
  */
-NOINLINE int tablesize(void)
+#if defined(BYTECODE) || defined(COMPILER)
+int tablesize(void)
 {
     return sizeof(optable) / sizeof(optable[0]);
 }
+#endif
 
 /*
  * nickname - return the name of an operator. If the operator starts with a
@@ -93,9 +89,11 @@ NOINLINE int tablesize(void)
  */
 char *nickname(int ch)
 {
+    int j;
     char *str;
 
-    if (ch < 0 || ch >= tablesize())
+    j = sizeof(optable) / sizeof(optable[0]);
+    if (ch < 0 || ch >= j)
 	ch = 0;
     str = optable[ch].name;
     if ((ch = *str) == '_' || isalpha(ch))
@@ -111,7 +109,10 @@ char *nickname(int ch)
  */
 char *opername(int ch)
 {
-    if (ch < 0 || ch >= tablesize())
+    int j;
+
+    j = sizeof(optable) / sizeof(optable[0]);
+    if (ch < 0 || ch >= j)
 	ch = 0;
     return optable[ch].name;
 }
@@ -165,7 +166,8 @@ void inisymboltable(pEnv env)	/* initialise */
     env->hash = kh_init(Symtab);
     env->prim = kh_init(Funtab);
 #endif
-    for (i = 0, j = tablesize(); i < j; i++) {
+    j = sizeof(optable) / sizeof(optable[0]);
+    for (i = 0; i < j; i++) {
 	memset(&ent, 0, sizeof(ent));
 	ent.name = optable[i].name;
 	ent.flags = optable[i].flags;

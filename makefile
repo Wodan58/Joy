@@ -1,7 +1,7 @@
 #
 #   module  : makefile
-#   version : 1.15
-#   date    : 10/02/24
+#   version : 1.17
+#   date    : 11/15/24
 #
 .POSIX:
 .SUFFIXES:

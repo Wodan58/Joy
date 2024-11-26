@@ -1,8 +1,8 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.117
- *  date    : 10/28/24
+ *  version : 1.120
+ *  date    : 11/15/24
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -77,8 +77,6 @@
 #include "khash.h"
 #endif
 
-#include "macros.h"
-
 #ifdef NOBDW
 #define nodetype(n)  env->memory[n].op
 #define nodeleng(n)  env->memory[n].len
@@ -100,6 +98,8 @@
 #undef TRACEGC
 #endif
 #endif
+
+#include "macros.h"
 
 /* settings for cflags */
 #define IS_ACTIVE	1	/* prevent recursion */

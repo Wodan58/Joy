@@ -1,14 +1,14 @@
 #
 #   module  : table.sh
-#   version : 1.7
-#   date    : 09/16/24
+#   version : 1.8
+#   date    : 11/15/24
 #
 #   Generate table.c
 #   The directory needs to be given as parameter.
 #
 echo checking table.c
 todo=0
-if [ ! -f $1/table.c ]
+if [ ! -s $1/table.c ]
 then
   echo creating table.c
   todo=1

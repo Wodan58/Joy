@@ -1,10 +1,12 @@
 /*
     module  : split.c
-    version : 1.11
-    date    : 09/17/24
+    version : 1.14
+    date    : 11/11/24
 */
 #ifndef SPLIT_C
 #define SPLIT_C
+
+#include "boolean.h"
 
 /**
 Q1  OK  2840  split  :  A [B]  ->  A1 A2
@@ -13,9 +15,9 @@ Uses test B to split aggregate A into sametype aggregates A1 and A2.
 void split_(pEnv env)
 {
     Index temp;
-    int i = 0, yesptr = 0, noptr = 0;
     uint64_t yes_set = 0, no_set = 0;
     char *str, *yesstring, *nostring;
+    int i = 0, yesptr = 0, noptr = 0, result = 0;
 
     TWOPARAMS("split");
     ONEQUOTE("split");
@@ -27,7 +29,8 @@ void split_(pEnv env)
 		env->stck = INTEGER_NEWNODE(i, SAVED3);
 		exeterm(env, nodevalue(SAVED1).lis);
 		CHECKSTACK("split");
-		if (nodevalue(env->stck).num)
+		result = get_boolean(env, env->stck);
+		if (result)
 		    yes_set |= ((int64_t)1 << i);
 		else
 		    no_set |= ((int64_t)1 << i);
@@ -42,7 +45,8 @@ void split_(pEnv env)
 	    env->stck = CHAR_NEWNODE(str[i], SAVED3);
 	    exeterm(env, nodevalue(SAVED1).lis);
 	    CHECKSTACK("split");
-	    if (nodevalue(env->stck).num)
+	    result = get_boolean(env, env->stck);
+	    if (result)
 		yesstring[yesptr++] = str[i];
 	    else
 		nostring[noptr++] = str[i];
@@ -66,7 +70,8 @@ void split_(pEnv env)
 	    exeterm(env, nodevalue(SAVED1).lis);
 	    CHECKSTACK("split");
 	    temp = newnode2(env, DMP1, 0);
-	    if (nodevalue(env->stck).num) {	/* pass */
+	    result = get_boolean(env, env->stck);
+	    if (result) {			/* pass */
 		if (!DMP2) {			/* first */
 		    DMP2 = temp;
 		    DMP3 = DMP2;

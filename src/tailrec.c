@@ -1,10 +1,12 @@
 /*
     module  : tailrec.c
-    version : 1.7
-    date    : 09/17/24
+    version : 1.10
+    date    : 11/11/24
 */
 #ifndef TAILREC_C
 #define TAILREC_C
+
+#include "boolean.h"
 
 /**
 Q3  OK  2720  tailrec  :  [P] [T] [R1]  ->  ...
@@ -14,11 +16,12 @@ Else executes R1, recurses.
 void tailrecaux(pEnv env)
 {
     int result;
+
 tailrec:
     env->dump1 = LIST_NEWNODE(env->stck, env->dump1);
     exeterm(env, nodevalue(SAVED3).lis);
     CHECKSTACK("tailrec");
-    result = nodevalue(env->stck).num;
+    result = get_boolean(env, env->stck);
     env->stck = DMP1;
     POP(env->dump1);
     if (result)

@@ -1,10 +1,12 @@
 /*
     module  : condnestrec.c
-    version : 1.7
-    date    : 09/17/24
+    version : 1.10
+    date    : 11/11/24
 */
 #ifndef CONDNESTREC_C
 #define CONDNESTREC_C
+
+#include "boolean.h"
 
 /**
 Q1  OK  2750  condnestrec  :  [ [C1] [C2] .. [D] ]  ->  ...
@@ -23,7 +25,8 @@ void condnestrecaux(pEnv env)
     for (; DMP1 && nextnode1(DMP1); DMP1 = nextnode1(DMP1)) {
 	env->stck = DMP2;
 	exeterm(env, nodevalue(nodevalue(DMP1).lis).lis);
-	if ((result = nodevalue(env->stck).num) != 0)
+	result = get_boolean(env, env->stck);
+	if (result)
 	    break;
     }
     env->stck = DMP2;

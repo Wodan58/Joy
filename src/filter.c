@@ -1,10 +1,12 @@
 /*
     module  : filter.c
-    version : 1.10
-    date    : 09/17/24
+    version : 1.12
+    date    : 11/11/24
 */
 #ifndef FILTER_C
 #define FILTER_C
+
+#include "boolean.h"
 
 /**
 Q1  OK  2830  filter  :  A [B]  ->  A1
@@ -15,7 +17,7 @@ void filter_(pEnv env)
     char *str;
     Index temp;
     uint64_t set;
-    int i = 0, j = 0;
+    int i = 0, j = 0, result = 0;
 
     TWOPARAMS("filter");
     ONEQUOTE("filter");
@@ -27,7 +29,8 @@ void filter_(pEnv env)
 		env->stck = INTEGER_NEWNODE(i, SAVED3);
 		exeterm(env, nodevalue(SAVED1).lis);
 		CHECKSTACK("filter");
-		if (nodevalue(env->stck).num)
+		result = get_boolean(env, env->stck);
+		if (result)
 		    set |= ((int64_t)1 << i);
 	    }
 	env->stck = SET_NEWNODE(set, SAVED3);
@@ -37,7 +40,8 @@ void filter_(pEnv env)
 	    env->stck = CHAR_NEWNODE(str[i], SAVED3);
 	    exeterm(env, nodevalue(SAVED1).lis);
 	    CHECKSTACK("filter");
-	    if (nodevalue(env->stck).num)
+	    result = get_boolean(env, env->stck);
+	    if (result)
 		str[j++] = str[i];
 	}
 	str[j] = 0;
@@ -52,7 +56,8 @@ void filter_(pEnv env)
 	    env->stck = newnode2(env, DMP1, SAVED3);
 	    exeterm(env, nodevalue(SAVED1).lis);
 	    CHECKSTACK("filter");
-	    if (nodevalue(env->stck).num) {	/* test */
+	    result = get_boolean(env, env->stck);
+	    if (result) {			/* test */
 		temp = newnode2(env, DMP1, 0);
 		if (!DMP2) {			/* first */
 		    DMP2 = temp;

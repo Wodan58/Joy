@@ -1,7 +1,7 @@
 /*
  *  module  : runtime.h
- *  version : 1.2
- *  date    : 10/11/24
+ *  version : 1.3
+ *  date    : 11/11/24
  */
 #define FLOATABLE							\
     (nodetype(env->stck) == INTEGER_ || nodetype(env->stck) == FLOAT_)
@@ -47,7 +47,7 @@
 #define FIVEPARAMS(NAME)    						\
     if (!env->stck || !nextnode1(env->stck) || !nextnode2(env->stck)    \
     || !nextnode3(env->stck) || !nextnode4(env->stck))    		\
-{ execerror(env, "five parameters", NAME); return; }
+    { execerror(env, "five parameters", NAME); return; }
 #define ONEQUOTE(NAME)    						\
     if (nodetype(env->stck) != LIST_)    				\
     { execerror(env, "quotation as top parameter", NAME); return; }
@@ -75,9 +75,6 @@
 #define INTEGER(NAME)    						\
     if (nodetype(env->stck) != INTEGER_)    				\
     { execerror(env, "integer", NAME); return; }
-#define POSITIVEINTEGER(n, NAME)    					\
-    if (n < 0)    							\
-    { execerror(env, "non-negative integer", NAME); return; }
 #define INTEGER2(NAME)    						\
     if (nodetype(nextnode1(env->stck)) != INTEGER_)    			\
     { execerror(env, "integer as second parameter", NAME); return; }
@@ -116,7 +113,7 @@
 #define CHECKDIVISOR(NAME)    						\
     if ((nodetype(env->stck) == FLOAT_ && nodevalue(env->stck).dbl == 0.0) \
     || (nodetype(env->stck) == INTEGER_ && nodevalue(env->stck).num == 0)) \
-    { execerror(env, "non-zero divisor", "divide"); return; }
+    { execerror(env, "non-zero divisor", NAME); return; }
 #define LIST(NAME)    							\
     if (nodetype(env->stck) != LIST_)    				\
     { execerror(env, "list", NAME); return; }
@@ -187,7 +184,6 @@
 #define STRING(NAME)
 #define STRING2(NAME)
 #define INTEGER(NAME)
-#define POSITIVEINTEGER(NAME)
 #define INTEGER2(NAME)
 #define CHARACTER(NAME)
 #define INTEGERS2(NAME)

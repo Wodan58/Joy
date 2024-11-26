@@ -1,10 +1,12 @@
 /*
     module  : some.c
-    version : 1.4
-    date    : 09/17/24
+    version : 1.6
+    date    : 11/11/24
 */
 #ifndef SOME_C
 #define SOME_C
+
+#include "boolean.h"
 
 /**
 Q1  OK  2850  some  :  A [B]  ->  X
