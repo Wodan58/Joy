@@ -1,7 +1,7 @@
 #
 #   module  : CMakeLists.txt
-#   version : 1.33
-#   date    : 11/11/24
+#   version : 1.34
+#   date    : 11/26/24
 #
 cmake_minimum_required(VERSION 3.29)
 project(Joy VERSION 1.0)
