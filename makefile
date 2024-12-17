@@ -1,12 +1,13 @@
 #
 #   module  : makefile
-#   version : 1.17
-#   date    : 11/15/24
+#   version : 1.18
+#   date    : 12/14/24
 #
 .POSIX:
 .SUFFIXES:
 
-CC = gcc # -pg
+# Use CC environment variable
+# CC = gcc -pg
 CF = -DNOBDW -O3 -Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter
 LF = -lm
 CFLAGS = $(CF) -DCOMP="\"$(CF)\"" -DLINK="\"$(LF)\"" -DVERS="\"NOBDW Release 1.0\""

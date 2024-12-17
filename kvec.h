@@ -51,8 +51,8 @@ int main()
 
 /*
     module  : kvec.h
-    version : 1.19
-    date    : 11/20/24
+    version : 1.20
+    date    : 12/13/24
 
  1. Change type of n, m from size_t to unsigned. Reason: takes less memory.
  2. Remove (type*) casts. Reason: not needed for C.
@@ -96,12 +96,18 @@ int main()
 36. vec_copy_all added. This is nicer than always using vec_copy_count.
 37. vec_reduce added. This makes it easier to pop a number of items.
 38. vec_shallow_copy_take_ownership replaced by vec_copy: it failed.
+39. vec_shallow_copy_take_ownership restored: it works with an ownership flag.
 
   2008-09-22 (0.1.0):
 	* The initial version.
 */
 #ifndef AC_KVEC_H
 #define AC_KVEC_H
+
+typedef enum owner_t {
+    NOT_OWNER,
+    OWNER
+} owner_t;
 
 typedef enum arity_t {
     ARITY_UNKNOWN,
@@ -119,15 +125,16 @@ typedef enum arity_t {
  * a = arity
  * m = current capacity
  * n = current fill
+ * o = ownership
  * p = previous capacity
  */
-#define vector(type)		struct { int a, m, n, p; type *c; }
+#define vector(type)		struct { int a, m, n, o, p; type *c; }
 /*
- * A vector is initialized with all fields set to zero.
+ * A vector is initialized with all fields, except ownership, set to zero.
  */
 #define vec_init(v)		do { (v) = GC_malloc(sizeof(*(v)));	\
 				(v)->a = (v)->m = (v)->n = (v)->p = 0;	\
-				(v)->c = 0; } while (0)
+				(v)->c = 0; (v)->o = OWNER; } while (0)
 #define vec_destroy(v)		do { GC_free((v)->c); GC_free(v); }	\
 				while (0)
 #define vec_at(v, i)		((v)->c[i])
@@ -150,18 +157,20 @@ typedef enum arity_t {
 
 /* vec_push assumes that v has been initialized before it being called */
 #define vec_push(v, x) 							\
-	do {								\
+	do { void *c;							\
 	    if ((v)->n == (v)->m) { if (!(v)->m) (v)->m = 1;		\
 	    if (!(v)->p) { (v)->p = 1; } (v)->m += (v)->p; (v)->p =	\
-	    (v)->n; (v)->c = GC_realloc((v)->c, sizeof(*(v)->c) *	\
-	    (v)->m); } (v)->c[(v)->n++] = (x);				\
+	    (v)->n; c = GC_malloc(sizeof(*(v)->c) * (v)->m);		\
+	    memcpy(c, (v)->c, sizeof(*(v)->c) * (v)->n); (v)->c = c;	\
+	    (v)->o = OWNER; } (v)->c[(v)->n++] = (x);			\
 	} while (0)
 
 /* vec_add adds an element at index, even when the index did not exist */
 #define vec_add(v, x, i) 						\
-	do {								\
-	    if ((v)->m <= (i)) { (v)->m = (v)->n = (i) + 1; (v)->c =	\
-	    GC_realloc((v)->c, sizeof(*(v)->c) * (v)->m); } else if	\
+	do { size_t n; void *c;						\
+	    if ((v)->m <= (i)) { n = (v)->n; (v)->m = (v)->n = (i) + 1;	\
+	    c = GC_malloc(sizeof(*(v)->c) * (v)->m); memcpy(c, (v)->c,	\
+	    sizeof((*v)->c * n)); (v)->c = c; (v)->o = OWNER; } else if	\
 	    ((v)->n <= (i)) (v)->n = (i) + 1; (v)->c[i] = (x);		\
 	} while (0)
 
@@ -194,7 +203,7 @@ typedef enum arity_t {
 	do {								\
 	    vec_init(v); (v)->m = (v)->n = (x); if ((v)->m) { (v)->c =	\
 	    GC_malloc(sizeof(*(v)->c) * (v)->m); memcpy((v)->c, (w)->c,	\
-	    sizeof(*(v)->c) * (v)->m); }				\
+	    sizeof(*(v)->c) * (v)->m); (v)->o = OWNER; }		\
 	} while (0)
 
 /* vec_copy_all creates v, then copies all elements from w to vector v */
@@ -207,7 +216,7 @@ typedef enum arity_t {
 	    vec_init(v); (v)->m = (v)->n = (w)->n + 1; (v)->c =		\
 	    GC_malloc(sizeof(*(v)->c) * (v)->m); (v)->c[0] = (x);	\
 	    if ((w)->n) memcpy(&(v)->c[1], (w)->c, sizeof(*(v)->c) *	\
-	    (w)->n);							\
+	    (w)->n); (v)->o = OWNER;					\
 	} while (0)
 
 /* vec_copy_rest copies w to v, leaving out the first x elements of w. */
@@ -215,7 +224,7 @@ typedef enum arity_t {
 	do {								\
 	    vec_init(v); (v)->m = (v)->n = (w)->n - (x); if ((v)->m) {	\
 	    (v)->c = GC_malloc(sizeof(*(v)->c) * (v)->m); memcpy((v)->c,\
-	    &(w)->c[(x)], sizeof(*(v)->c) * (v)->m); }			\
+	    &(w)->c[(x)], sizeof(*(v)->c) * (v)->m); (v)->o = OWNER; }	\
 	} while (0)
 
 /* vec_concat copies the contents of vectors v and w to a new vector u */
@@ -225,6 +234,7 @@ typedef enum arity_t {
 	    GC_malloc(sizeof(*(u)->c) * (u)->m); if ((v)->n) memcpy(	\
 	    (u)->c, (v)->c, sizeof(*(u)->c) * (v)->n); if ((w)->n)	\
 	    memcpy((u)->c + (v)->n, (w)->c, sizeof(*(u)->c) * (w)->n);	\
+	    (u)->o = OWNER;						\
 	} while (0)
 
 /* vec_shallow_copy makes a copy without taking ownership of the array */
@@ -232,11 +242,20 @@ typedef enum arity_t {
 	do {								\
 	    vec_init(v); (v)->a = (w)->a; (v)->m = (w)->m;		\
 	    (v)->n = (w)->n; (v)->p = (w)->p; (v)->c = (w)->c;		\
+	    (v)->o = NOT_OWNER;						\
 	} while (0)
 
 /* vec_copy makes a full copy, including the space that is not in use. */
 #define vec_copy(v, w)							\
 	do { size_t s;							\
 	    vec_shallow_copy(v, w); if ((v)->m) { s = sizeof(*(v)->c) *	\
-	    (v)->m; (v)->c = GC_malloc(s); memcpy((v)->c, (w)->c, s); }	\
+	    (v)->m; (v)->c = GC_malloc(s); memcpy((v)->c, (w)->c, s);	\
+	    (v)->o = OWNER; }						\
+	} while (0)
+
+/* vec_shallow_copy_take_ownership makes a copy while taking ownership */
+#define vec_shallow_copy_take_ownership(v, w)				\
+	do {								\
+	    if ((w)->o == OWNER) { vec_shallow_copy(v, w);		\
+	    (w)->o = NOT_OWNER;	(v)->o = OWNER; } else vec_copy(v, w);	\
 	} while (0)

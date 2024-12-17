@@ -1,7 +1,7 @@
 /*
  *  module  : optable.c
- *  version : 1.14
- *  date    : 11/15/24
+ *  version : 1.15
+ *  date    : 12/15/24
  */
 #include "globals.h"
 #include "runtime.h"
@@ -94,7 +94,7 @@ char *nickname(int ch)
 
     j = sizeof(optable) / sizeof(optable[0]);
     if (ch < 0 || ch >= j)
-	ch = 0;
+	ch = 0;		/* LCOV_EXCL_LINE */
     str = optable[ch].name;
     if ((ch = *str) == '_' || isalpha(ch))
 	return str;
@@ -113,7 +113,7 @@ char *opername(int ch)
 
     j = sizeof(optable) / sizeof(optable[0]);
     if (ch < 0 || ch >= j)
-	ch = 0;
+	ch = 0;		/* LCOV_EXCL_LINE */
     return optable[ch].name;
 }
 

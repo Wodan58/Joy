@@ -25,7 +25,9 @@ As for the comments in interp.c, I added them because I like some version
 history. It proves that the language and the implementation was not done over
 night.
 In fact, according to this [interview](http://archive.vector.org.uk/art10000350)
-the implementation in C was started in 1995.
+the implementation in C was started in 1995. And according to the
+[bibliography](https://wodan58.github.io/joybibl.html) the first papers about
+Joy date back to 1994.
 
 Build instructions
 ------------------
@@ -40,8 +42,8 @@ Build instructions
     mkdir ~/usrlib
     cp ../lib/* ~/usrlib
 
-Then manually change the path to inilib.joy in ~/usrlib.joy
-from "../lib" to "usrlib".
+Then manually change the path to inilib.joy in ~/usrlib.joy from "../lib" to
+"usrlib".
 
 Build with MSVC
 ---------------
@@ -53,8 +55,8 @@ Build with MSVC
     mkdir %HOMEPATH%\usrlib
     copy ..\lib\*.* %HOMEPATH%\usrlib
 
-Then manually change the path to inilib.joy in %HOMEPATH%\usrlib.joy
-from "../lib" to "usrlib".
+Then manually change the path to inilib.joy in %HOMEPATH%\usrlib.joy from
+"../lib" to "usrlib".
 
 Running
 -------
@@ -87,9 +89,10 @@ Implementation|Dependencies
 [Foy](https://github.com/Wodan58/Foy)|[BDW garbage collector](https://github.com/ivmai/bdwgc)
 [Moy](https://github.com/Wodan58/Moy)|[BDW garbage collector](https://github.com/ivmai/bdwgc) and [Lex & Yacc](https://sourceforge.net/projects/winflexbison/files/win_flex_bison-latest.zip)
 
-Documentation|
--------------|
-[Legacy Docs](https://wodan58.github.io)
-[User Manual](https://wodan58.github.io/j09imp.html)
-[Comparison (PDF)](https://github.com/Wodan58/HET/blob/master/doc/FIB.pdf)
-[Maintenance Manual (PDF)](https://github.com/Wodan58/G3/blob/master/JOP.pdf)
+Documentation|Notes
+-------------|-----
+[Legacy Docs](https://wodan58.github.io)|Link in About section
+[User Manual](https://wodan58.github.io/j09imp.html)|
+[Comparison](https://github.com/Wodan58/HET/blob/master/doc/FIB.md)|Speed comparison
+[Main Manual (PDF)](https://github.com/Wodan58/G3/blob/master/JOP.pdf)|2nd edition
+[Academic Article (PDF)](https://sol.sbc.org.br/index.php/sblp/article/view/30253/30060)|Conversion to/from Combinatory Calculus

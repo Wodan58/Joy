@@ -1,7 +1,7 @@
 /*
     module  : gc.h
-    version : 1.23
-    date    : 11/20/24
+    version : 1.24
+    date    : 12/15/24
 */
 #ifndef GC_H
 #define GC_H
@@ -12,13 +12,13 @@ void fatal(char *str);
 
 /* #define SCAN_BSS_MEMORY */
 /* #define STACK_GROWS_UPWARD */
+/* #define USE_GC_REALLOC */
 
 #ifdef MALLOC_DEBUG
 #define FREE_ON_EXIT
 #endif
 #define USE_GC_MALLOC_ATOMIC
 #define USE_GC_MALLOC
-#define USE_GC_REALLOC
 #define USE_GC_STRDUP
 #define COUNT_COLLECTIONS
 
