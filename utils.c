@@ -1,7 +1,7 @@
 /*
  *  module  : utils.c
- *  version : 1.46
- *  date    : 10/21/24
+ *  version : 1.47
+ *  date    : 01/14/25
  */
 #include "globals.h"
 
@@ -10,7 +10,7 @@
 #endif
 
 /*
- * MEM_LOW should allow reading usrlib.joy, inilib.joy, prelib.joy and
+ * MEM_LOW should allow reading usrlib.joy, inilib.joy, prelib.joy, and
  * agglib.joy without reallocation and without garbage collection.
  */
 #define MEM_LOW		1100	/* initial number of nodes */
@@ -97,7 +97,7 @@ static Index copy(pEnv env, Index n)
 {
     Index temp;
     Operator op;
-    size_t leng;
+    int size, leng, num = 1;
 
 #ifdef TRACEGC
     nodesinspected++;
@@ -125,9 +125,11 @@ static Index copy(pEnv env, Index n)
  * If the node contains a string, then some more copying is needed.
  */
     if (op == STRING_ || op == BIGNUM_) {
-	leng = old_memory[n].len + 1;
+	size = leng = old_memory[n].len + 1;
 	memcpy(&env->memory[temp].u, &old_memory[n].u, leng);
-	memoryindex += (leng + sizeof(Types)) / sizeof(Node);
+	if ((size -= sizeof(Types)) > 0)	/* first part in Types */
+	    num += (size + sizeof(Node) - 1) / sizeof(Node);	/* round up */
+	memoryindex += num;
     }
 /*
  * If the node contains a list, then the list needs to be copied. This requires
@@ -278,11 +280,12 @@ void my_gc(pEnv env)
 Index newnode(pEnv env, Operator o, Types u, Index r)
 {
     Index p;
-    int leng = 0, num = 1;	/* allocate at least one node */
+    int size, leng = 0, num = 1;	/* allocate at least one node */
 
     if (o == STRING_ || o == BIGNUM_) {
-	leng = strlen(u.str) + 1;
-	num += (leng + sizeof(Types)) / sizeof(Node);	/* round up */
+	size = leng = strlen(u.str) + 1;
+	if ((size -= sizeof(Types)) > 0)	/* first part in Types */
+	    num += (size + sizeof(Node) - 1) / sizeof(Node);	/* round up */
     }
     if (memoryindex + num >= memorymax) {	/* space for new node */
 	if (env->flibrary_busy) {

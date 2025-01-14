@@ -1,8 +1,8 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.120
- *  date    : 11/15/24
+ *  version : 1.121
+ *  date    : 01/14/25
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -364,7 +364,8 @@ void print(pEnv env);
 /* repl.c */
 void repl(pEnv env);
 /* setraw.c */
-void SetRaw(pEnv env);
+void SetRaw();
+void SetNormal();
 /* symbol.c */
 int lookup(pEnv env, char *name);
 int enteratom(pEnv env, char *name);

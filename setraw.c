@@ -1,20 +1,74 @@
 /*
  *  module  : setraw.c
- *  version : 1.9
- *  date    : 10/11/24
+ *  version : 1.10
+ *  date    : 01/14/25
  */
-#include "globals.h"
+#include <stdio.h>
+#include <stdlib.h>
 
-/* #define EXPECT_ERROR */
+#if defined(_MSC_VER) || defined(__MINGW64_VERSION_MAJOR) || defined(__TINYC__)
+#define WINDOWS
+#endif
+
+#if !defined(ATARI) && !defined(WINDOWS)
+#define UNIX
+#endif
+
+/*
+ * This preprocessor test may not be available on all systems.
+ */
+#if !defined(ATARI) && !defined(WINDOWS) && !defined(UNIX)
+#error "either ATARI, WINDOWS, or UNIX should be defined"
+#endif
+
+#ifdef ATARI
+#include <sgtty.h>
+#endif
+
+#ifdef WINDOWS
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>	/* pollute name space as much as possible */
+#include <io.h>		/* also import deprecated POSIX names */
+#endif
+
+#ifdef UNIX
+#include <termios.h>
+#include <sys/ioctl.h>
+#endif
+
+#ifdef NPROTO
+void do_push_int();
+#else
+void do_push_int(int num);
+#endif
+
+/*
+ * Flag that tells whether the terminal is in raw mode or not; set in
+ * initScreen and reset in SetNormal. This allows SetNormal te be called
+ * even if SetRaw was never called.
+ */
+static unsigned char raw_mode;
+
+#ifdef ATARI
+struct sgttyb old_tty;
+struct tchars old_tch;
+#endif
 
 #ifdef WINDOWS
 static int size_x, size_y;
 static DWORD input_mode, output_mode;
-#else
+#endif
+
+#ifdef UNIX
 static struct termios orig_mode;
+#endif
 
 #ifdef EXPECT_ERROR
-static void die(const char *s)
+/*
+ * Abort program execution when a fatal error occurs.
+ */
+static void die(s)
+char *s;
 {
     printf("\033[2J\033[H");	/* assume VT100 escape codes are supported */
     perror(s);
@@ -22,16 +76,20 @@ static void die(const char *s)
 }
 #endif
 
+#ifdef UNIX
+/*
+ * Retrieve or calculate the screen dimensions.
+ */
 static int sizeScreen(int *rows, int *cols)
 {
 #ifdef EXPECT_ERROR
     int num;
-    char buf[MAXNUM];
+    char buf[20];
 #endif
     struct winsize ws;
 
     ws.ws_row = ws.ws_col = 0;
-    if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) < 0 || !ws.ws_row) {
+    if (ioctl(1, TIOCGWINSZ, &ws) < 0 || !ws.ws_row) {
 #ifdef EXPECT_ERROR
 	printf("\033[999C\033[999B\033[6n\r");
 	fflush(stdout);
@@ -50,31 +108,52 @@ static int sizeScreen(int *rows, int *cols)
 #endif
 
 /*
- * initScreen - make rows and cols available on the stack.
+ * initScreen - make rows and cols available.
  */
-static void initScreen(pEnv env)
+static void initScreen()
 {
     int rows, cols;
+
+    raw_mode = 1;
+
+#ifdef ATARI    
+    rows = 25;
+    cols = 80;
+#endif
 
 #ifdef WINDOWS
     rows = size_y;
     cols = size_x;
-#else
+#endif
+
+#ifdef UNIX    
     if (sizeScreen(&rows, &cols) < 0) {
 #ifdef EXPECT_ERROR
 	die("sizeScreen");
 #endif
     }
 #endif
-    NULLARY(INTEGER_NEWNODE, rows);
-    NULLARY(INTEGER_NEWNODE, cols);
+
+    /*
+     * External function that should be present.
+     */
+    do_push_int(rows);
+    do_push_int(cols);
 }
 
 /*
  * Undo the machinations of SetRaw.
  */
-static void SetNormal(void)
+void SetNormal()
 {
+    if (!raw_mode)
+	return;
+    raw_mode = 0;
+#ifdef ATARI
+    ioctl(0, TIOCSETP, &old_tty);
+    ioctl(0, TIOCSETC, &old_tch);
+#endif
+
 #ifdef WINDOWS
     HANDLE input, output;
 
@@ -83,10 +162,12 @@ static void SetNormal(void)
 
     output = GetStdHandle(STD_OUTPUT_HANDLE);
     SetConsoleMode(output, output_mode);
-#else
-    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_mode) < 0) {
+#endif
+
+#ifdef UNIX
+    if (tcsetattr(0, TCSAFLUSH, &orig_mode) < 0) {
 #ifdef EXPECT_ERROR
-	die("sizeScreen");
+	die("SetNormal");
 #endif
     }
 #endif
@@ -95,39 +176,61 @@ static void SetNormal(void)
 /*
  * Set the terminal in raw mode.
  *
-#define ENABLE_PROCESSED_INPUT	0x1
-#define ENABLE_LINE_INPUT	0x2
-#define ENABLE_ECHO_INPUT	0x4
-#define ENABLE_WINDOW_INPUT	0x8
-#define ENABLE_MOUSE_INPUT	0x10
-#define ENABLE_INSERT_MODE	0x20
-#define ENABLE_QUICK_EDIT_MODE	0x40
-#define ENABLE_EXTENDED_FLAGS	0x80
-#define ENABLE_AUTO_POSITION	0x100
+#define ENABLE_PROCESSED_INPUT			0x1
+#define ENABLE_LINE_INPUT			0x2
+#define ENABLE_ECHO_INPUT			0x4
+#define ENABLE_WINDOW_INPUT			0x8
+#define ENABLE_MOUSE_INPUT			0x10
+#define ENABLE_INSERT_MODE			0x20
+#define ENABLE_QUICK_EDIT_MODE			0x40
+#define ENABLE_EXTENDED_FLAGS			0x80
+#define ENABLE_AUTO_POSITION			0x100
  */
 #ifndef ENABLE_VIRTUAL_TERMINAL_INPUT
-#define ENABLE_VIRTUAL_TERMINAL_INPUT	0x200
+#define ENABLE_VIRTUAL_TERMINAL_INPUT		0x200
 #endif
-
 /*
-#define ENABLE_PROCESSED_OUTPUT		0x1
-#define ENABLE_WRAP_AT_EOL_OUTPUT	0x2
-#define DISABLE_NEWLINE_AUTO_RETURN	0x8
-#define ENABLE_LVB_GRID_WORLDWIDE	0x10
+#define ENABLE_PROCESSED_OUTPUT			0x1
+#define ENABLE_WRAP_AT_EOL_OUTPUT		0x2
+#define DISABLE_NEWLINE_AUTO_RETURN		0x8
+#define ENABLE_LVB_GRID_WORLDWIDE		0x10
  */
 #ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
 #define ENABLE_VIRTUAL_TERMINAL_PROCESSING	0x4
 #endif
 
-void SetRaw(pEnv env)
+/*
+ * SetRaw sets the terminal in raw mode and also calls initScreen.
+ */
+void SetRaw()
 {
+#ifdef ATARI
+    struct sgttyb new_tty;
+    struct tchars new_tch;
+
+    ioctl(0, TIOCGETP, &old_tty);
+    ioctl(0, TIOCGETC, &old_tch);
+    /*
+     * Set tty to CBREAK mode.
+     */
+    new_tty = old_tty;
+    new_tty.sg_flags |= CBREAK;
+    new_tty.sg_flags &= ~ECHO;
+    ioctl(0, TIOCSETP, &new_tty);
+    /*
+     * Unset signal characters.
+     */
+    memset(&new_tch, -1, sizeof(new_tch));
+    ioctl(0, TIOCSETC, &new_tch);
+#endif
+
 #ifdef WINDOWS
     HWND hwnd;
     DWORD mode;
     HANDLE input, output;
     CONSOLE_SCREEN_BUFFER_INFO info;
 
-#ifndef __TINYC__ 
+#ifndef __TINYC__
     hwnd = GetConsoleWindow();
     SetWindowLongA(hwnd, GWL_STYLE,
 		   GetWindowLongA(hwnd, GWL_STYLE) & ~WS_MAXIMIZEBOX);
@@ -148,12 +251,14 @@ void SetRaw(pEnv env)
     GetConsoleScreenBufferInfo(output, &info);
     size_x = info.srWindow.Right - info.srWindow.Left + 1;
     size_y = info.srWindow.Bottom - info.srWindow.Top + 1;
-#else
+#endif
+
+#ifdef UNIX    
     struct termios raw;
 
-    if (tcgetattr(STDIN_FILENO, &orig_mode) < 0) {
+    if (tcgetattr(0, &orig_mode) < 0) {
 #ifdef EXPECT_ERROR
-	die("sizeScreen");
+	die("GetNormal");
 #endif
     }
     raw = orig_mode;
@@ -178,12 +283,11 @@ void SetRaw(pEnv env)
 #endif
     /* control modes: set 8 bit chars */
     raw.c_cflag |= CS8;
-    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) < 0) {
+    if (tcsetattr(0, TCSAFLUSH, &raw) < 0) {
 #ifdef EXPECT_ERROR
-	die("sizeScreen");
+	die("SetRaw");
 #endif
     }
 #endif
-    initScreen(env);
-    atexit(SetNormal);
+    initScreen();
 }

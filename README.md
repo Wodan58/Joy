@@ -94,5 +94,5 @@ Documentation|Notes
 [Legacy Docs](https://wodan58.github.io)|Link in About section
 [User Manual](https://wodan58.github.io/j09imp.html)|
 [Comparison](https://github.com/Wodan58/HET/blob/master/doc/FIB.md)|Speed comparison
-[Main Manual (PDF)](https://github.com/Wodan58/G3/blob/master/JOP.pdf)|2nd edition
+[Main Manual (PDF)](https://github.com/Wodan58/G3/blob/master/JOP.pdf)|3rd edition
 [Academic Article (PDF)](https://sol.sbc.org.br/index.php/sblp/article/view/30253/30060)|Conversion to/from Combinatory Calculus

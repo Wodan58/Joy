@@ -1,8 +1,8 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.108
- *  date    : 10/28/24
+ *  version : 1.109
+ *  date    : 01/14/25
  */
 
 /*
@@ -125,8 +125,6 @@ static void stats(pEnv env), dump(pEnv env);
 static void mem_free(pEnv env);
 #endif
 
-void printcandidates(pEnv env);
-
 /*
  * abort execution and restart reading from srcfile; the stack is not cleared.
  */
@@ -228,6 +226,18 @@ static void unknown_opt(char *exe, int ch)
 {
     printf("Unknown option argument: \"-%c\"\n", ch);
     printf("More info with: \"%s -h\"\n", exe);
+}
+
+/*
+ * Push an integer on the stack. The stack is communicated through a global
+ * variable that is only used here.
+ */
+static pEnv tmp_env;
+
+void do_push_int(int num)
+{
+    tmp_env->bucket.num = num;
+    tmp_env->stck = newnode(tmp_env, INTEGER_, tmp_env->bucket, tmp_env->stck);
 }
 
 static void my_main(int argc, char **argv)
@@ -419,7 +429,9 @@ start:
     if (raw && env.filename) {	/* raw requires a filename */
 	env.autoput = 0;	/* disable autoput in usrlib.joy */
 	env.autoput_set = 1;	/* prevent enabling autoput */
-	SetRaw(&env);		/* keep output buffered */
+	tmp_env = &env;
+	SetRaw();		/* keep output buffered */
+	tmp_env = 0;
 #ifdef NOBDW
 	env.inits = env.stck;	/* remember initial stack */
 	inimem2(&env);		/* store initial stack in definition space */
@@ -500,6 +512,7 @@ einde:
 #ifdef MALLOC_DEBUG
     mem_free(&env);
 #endif
+    SetNormal();		/* set the terminal back to normal */
 }
 
 int main(int argc, char **argv)
