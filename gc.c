@@ -1,7 +1,7 @@
 /*
     module  : gc.c
-    version : 1.58
-    date    : 01/10/26
+    version : 1.59
+    date    : 01/13/26
 */
 #include <stdio.h>
 #include <string.h>
@@ -43,7 +43,7 @@ typedef uint64_t pointer_t;
 #endif
 
 #include "khash.h"
-#include <gc.h>		/* needs to be specified with -I */
+#include "gc.h"
 
 #ifdef _MSC_VER
 #define DOWN_64K	~0xFFFF
