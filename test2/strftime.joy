@@ -1,42 +1,33 @@
 (*
     module  : strftime.joy
-    version : 1.7
-    date    : 09/19/24
+    version : 1.10
+    date    : 01/12/26
 *)
-time localtime dup dup
-putln dup
-"%%%t%c%n" strftime putchars dup
-"%Y\n" strftime putchars dup
-"%y\n" strftime putchars dup
-"%C\n" strftime putchars dup
-"%G\n" strftime putchars dup
-"%g\n" strftime putchars dup
-"%b\n" strftime putchars dup
-"%B\n" strftime putchars dup
-"%m\n" strftime putchars dup
-"%U\n" strftime putchars dup
-"%W\n" strftime putchars dup
-"%V\n" strftime putchars dup
-"%j\n" strftime putchars dup
-"%d\n" strftime putchars dup
-"%e\n" strftime putchars dup
-"%a\n" strftime putchars dup
-"%A\n" strftime putchars dup
-"%w\n" strftime putchars dup
-"%u\n" strftime putchars dup
-"%H\n" strftime putchars dup
-"%I\n" strftime putchars dup
-"%M\n" strftime putchars dup
-"%S\n" strftime putchars dup
-"%x\n" strftime putchars dup
-"%F\n" strftime putchars dup
-"%X\n" strftime putchars dup
-"%R\n" strftime putchars dup
-"%T\n" strftime putchars dup
-"%p\n" strftime putchars dup
-# "%z\n" strftime putchars dup
-# "%Z\n" strftime putchars dup
+time gmtime dup putln dup
+"%a\n"	strftime putchars dup	# abbreviated weekday name (e.g., Mon)
+"%A\n"	strftime putchars dup	# full weekday name (e.g. Monday)
+"%w\n"	strftime putchars dup	# weekday number (0 = Sunday)
+"%d\n"	strftime putchars dup	# day of the month (01-31)
+"%b\n"	strftime putchars dup	# abbreviated month name (e.g., Jan)
+"%B\n"	strftime putchars dup	# full month name (e.g., January)
+"%m\n"	strftime putchars dup	# month number (01-12)
+"%y\n"	strftime putchars dup	# year without century (00-99)
+"%Y\n"	strftime putchars dup	# year with century (e.g. 2026)
+"%H\n"	strftime putchars dup	# hour (00-23)
+"%I\n"	strftime putchars dup	# hour (01-12, 12-hour clock)
+"%p\n"	strftime putchars dup	# AM/PM indicator
+"%M\n"	strftime putchars dup	# minutes (00-59)
+"%S\n"	strftime putchars dup	# seconds (00-60, leap second allowed)
+(* The timezone offset is not handled correctly in Joy *)
+"%z\n"	strftime putchars dup	# UTC offset (e.g., +0100)
+"%Z\n"	strftime putchars dup	# time zone name
+"%j\n"	strftime putchars dup	# day of the year (001-366)
+"%U\n"	strftime putchars dup	# week number (sunday as first day of week)
+"%W\n"	strftime putchars dup	# week number (monday as first day of week)
+"%c\n"	strftime putchars dup	# locale's date and time representation
+"%x\n"	strftime putchars dup	# locale's date representation
+"%X\n"	strftime putchars dup	# locale's time representation
+"%%\n"	strftime putchars.	# literal percent sign
 
-"%h\n" strftime putchars dup
-"%D\n" strftime putchars dup
-"%r\n" strftime putchars.
+(* show-todaynow from inilib.joy, including time zone *)
+time localtime "%A %d-%b-%y %H:%M:%S %Z" strftime putchars newline.

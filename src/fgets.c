@@ -1,7 +1,7 @@
 /*
     module  : fgets.c
-    version : 1.10
-    date    : 10/28/24
+    version : 1.12
+    date    : 01/08/26
 */
 #ifndef FGETS_C
 #define FGETS_C
@@ -21,7 +21,7 @@ void fgets_(pEnv env)
     ONEPARAM("fgets");
     ISFILE("fgets");
 #ifdef NOBDW
-    buf = malloc(size);
+    buf = check_malloc(size);
 #else
     buf = GC_malloc_atomic(size);
 #endif

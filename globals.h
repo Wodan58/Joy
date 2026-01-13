@@ -1,8 +1,8 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.121
- *  date    : 01/14/25
+ *  version : 1.123
+ *  date    : 01/08/26
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -10,8 +10,6 @@
 #ifdef MALLOC_DEBUG
 #include "rmalloc.h"
 #endif
-
-/* #define USE_KHASHL */
 
 #include <stdio.h>
 #include <string.h>
@@ -27,21 +25,30 @@
 #include <inttypes.h>
 
 /*
+ * KHASHL uses a more modern interface, but cannot be used in gc.c
+ */
+/* #define USE_KHASHL */
+
+/*
+ * Under Linux overcommit_memory can be turned off (value 2), or ulimit kan be
+ * set and that way, malloc can return 0. The return value of GC_malloc is not
+ * tested, because, although BDW can announce that it will return NULL, it
+ * never does.
+ */
+#define TEST_MALLOC_RETURN
+/*
+ * A call to system() is not allowed in WINDOWS_S. It is a kind of security
+ * leak and can be disabled here.
+ */
+#define ALLOW_SYSTEM_CALLS
+
+/*
  * Certain compilers are likely to compile for the Windows platform and that
  * means that WINDOWS can be set. Other compilers need to set this explicitly,
  * if so desired.
  */
 #if defined(_MSC_VER) || defined(__MINGW64_VERSION_MAJOR) || defined(__TINYC__)
 #define WINDOWS
-#endif
-
-/*
- * The system call doesn't work when Windows is run in S-mode, so it might just
- * as well be disabled, regardless of the compiler that is used. It is a bit of
- * a security leak anyways.
- */
-#ifdef WINDOWS
-#define WINDOWS_S
 #endif
 
 #ifdef WINDOWS
@@ -61,15 +68,10 @@
 #include <sys/ioctl.h>
 #endif
 
-#ifndef NOBDW
-#ifdef _MSC_VER
-#include "gc-8.2.8/include/gc.h"
-#else
+/*
+ * The path to the gc-header needs to be set with -I on the command line.
+ */
 #include <gc.h>
-#endif
-#else
-#include "gc.h"
-#endif
 #include "kvec.h"
 #ifdef USE_KHASHL
 #include "khashl.h"
@@ -78,22 +80,22 @@
 #endif
 
 #ifdef NOBDW
-#define nodetype(n)  env->memory[n].op
-#define nodeleng(n)  env->memory[n].len
-#define nodevalue(n) env->memory[n].u
-#define nextnode1(n) env->memory[n].next
-#define nextnode2(n) env->memory[nextnode1(n)].next
-#define nextnode3(n) env->memory[nextnode2(n)].next
-#define nextnode4(n) env->memory[nextnode3(n)].next
-#define nextnode5(n) env->memory[nextnode4(n)].next
+#define nodetype(n)	env->memory[n].op
+#define nodeleng(n)	env->memory[n].len
+#define nodevalue(n)	env->memory[n].u
+#define nextnode1(n)	env->memory[n].next
+#define nextnode2(n)	env->memory[nextnode1(n)].next
+#define nextnode3(n)	env->memory[nextnode2(n)].next
+#define nextnode4(n)	env->memory[nextnode3(n)].next
+#define nextnode5(n)	env->memory[nextnode4(n)].next
 #else
-#define nodetype(p)  (p)->op
-#define nodevalue(p) (p)->u
-#define nextnode1(p) (p)->next
-#define nextnode2(p) (nextnode1(p))->next
-#define nextnode3(p) (nextnode2(p))->next
-#define nextnode4(p) (nextnode3(p))->next
-#define nextnode5(p) (nextnode4(p))->next
+#define nodetype(p)	(p)->op
+#define nodevalue(p)	(p)->u
+#define nextnode1(p)	(p)->next
+#define nextnode2(p)	(nextnode1(p))->next
+#define nextnode3(p)	(nextnode2(p))->next
+#define nextnode4(p)	(nextnode3(p))->next
+#define nextnode5(p)	(nextnode4(p))->next
 #ifdef TRACEGC
 #undef TRACEGC
 #endif
@@ -110,7 +112,7 @@
 #define SHELLESCAPE	'$'
 #define INPSTACKMAX	10
 #define INPLINEMAX	255
-#define BUFFERMAX	80	/* smaller buffer */
+#define BUFFERMAX	100	/* smaller buffer */
 #define HELPLINEMAX	72
 #define MAXNUM		40	/* even smaller buffer */
 #define FILENAMEMAX	14
@@ -336,6 +338,8 @@ void inimem1(pEnv env, int status);
 void inimem2(pEnv env);
 void printnode(pEnv env, Index p);
 void my_gc(pEnv env);
+char *check_strdup(char *str);
+void *check_malloc(size_t leng);
 #endif
 /* error.c */
 void execerror(pEnv env, char *message, char *op);
@@ -378,7 +382,7 @@ void writeterm(pEnv env, Index n, FILE *fp);
 #ifdef BYTECODE
 /* bytecode.c */
 void bytecode(pEnv env, Node *list);
-void initbytes(pEnv env);
+void initbytes(pEnv env, char *ext);
 void exitbytes(pEnv env);
 /* compeval.c */
 void compeval(pEnv env, FILE *fp);
@@ -392,6 +396,8 @@ void optimize(pEnv env, FILE *fp);
 /* readbyte.c */
 void readbyte(pEnv env, FILE *fp);
 unsigned char *readfile(FILE *fp);
+/* renumber.c */
+void renumber(pEnv env, FILE *fp);
 #endif
 #ifdef COMPILER
 /* compiler.c */

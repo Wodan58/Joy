@@ -1,7 +1,7 @@
 /*
     module  : decode.h
-    version : 1.6
-    date    : 11/11/24
+    version : 1.7
+    date    : 01/12/26
 */
 #ifndef DECODE_H
 #define DECODE_H
@@ -10,8 +10,7 @@ static void decode_time(pEnv env, struct tm *t)
 {
     Index p;
 
-    t->tm_year = t->tm_mon = t->tm_mday = t->tm_hour = t->tm_min = t->tm_sec
-	= t->tm_isdst = t->tm_yday = t->tm_wday = 0;
+    memset(t, 0, sizeof(struct tm));
     p = nodevalue(env->stck).lis;
     if (p && nodetype(p) == INTEGER_) {
 	t->tm_year = nodevalue(p).num - 1900;

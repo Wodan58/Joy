@@ -1,7 +1,7 @@
 /*
     module  : concat.c
-    version : 1.9
-    date    : 09/17/24
+    version : 1.10
+    date    : 01/08/26
 */
 #ifndef CONCAT_C
 #define CONCAT_C
@@ -25,7 +25,7 @@ void concat_(pEnv env)
 	break;
     case STRING_:
 	leng = nodeleng(nextnode1(env->stck)) + nodeleng(env->stck) + 1;
-	str = malloc(leng);
+	str = check_malloc(leng);
 	snprintf(str, leng, "%s%s", (char *)&nodevalue(nextnode1(env->stck)),
 			(char *)&nodevalue(env->stck));
 	BINARY(STRING_NEWNODE, str);

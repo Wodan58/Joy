@@ -21,38 +21,37 @@
 
 /*
   An example:
-
+*/
+#if 0
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
-#if 1
-#include <gc.h>
-#else
-#define GC_malloc(x)	calloc(1, (x))
-#define GC_realloc	realloc
-#define GC_free		free
-#endif
+#include <math.h>
+#define GC_malloc(x)		calloc(1, (x))
+#define GC_realloc		realloc
+#define GC_free			free
 #include "kvec.h"
 
 int main()
 {
     int i, j;
-    vector(int) *array;		// declaration
+    vector(int) *array;		/* declaration */
 
-    vec_init(array);		// initialization
-    vec_push(array, 1);		// append
-    vec_add(array, 2, 20);	// dynamic
-    vec_at(array, 15) = 3;	// static
-    for (i = 0, j = vec_size(array); i < j; i++)		// size
-	printf("array[%d] = %d\n", i, vec_at(array, i));	// access
-    vec_destroy(array);		// destructor
+    vec_init(array);		/* initialization */
+    for (i = 0; i < 20; i++)
+	vec_push(array, i);	/* append */
+    vec_at(array, 15) = 3;	/* static */
+    for (i = 0, j = vec_size(array); i < j; i++)		/* size */
+	printf("array[%d] = %d\n", i, vec_at(array, i));	/* access */
+    vec_destroy(array);		/* destructor */
     return 0;
 }
-*/
+#endif
 
 /*
     module  : kvec.h
-    version : 1.20
-    date    : 12/13/24
+    version : 1.21
+    date    : 01/06/26
 
  1. Change type of n, m from size_t to unsigned. Reason: takes less memory.
  2. Remove (type*) casts. Reason: not needed for C.
@@ -97,6 +96,7 @@ int main()
 37. vec_reduce added. This makes it easier to pop a number of items.
 38. vec_shallow_copy_take_ownership replaced by vec_copy: it failed.
 39. vec_shallow_copy_take_ownership restored: it works with an ownership flag.
+40. Updated example.
 
   2008-09-22 (0.1.0):
 	* The initial version.

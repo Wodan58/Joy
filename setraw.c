@@ -1,7 +1,7 @@
 /*
  *  module  : setraw.c
- *  version : 1.10
- *  date    : 01/14/25
+ *  version : 1.11
+ *  date    : 01/08/26
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -110,7 +110,11 @@ static int sizeScreen(int *rows, int *cols)
 /*
  * initScreen - make rows and cols available.
  */
+#ifdef NPROTO
 static void initScreen()
+#else
+static void initScreen(void)
+#endif
 {
     int rows, cols;
 
@@ -144,7 +148,11 @@ static void initScreen()
 /*
  * Undo the machinations of SetRaw.
  */
+#ifdef NPROTO
 void SetNormal()
+#else
+void SetNormal(void)
+#endif
 {
     if (!raw_mode)
 	return;
@@ -202,7 +210,11 @@ void SetNormal()
 /*
  * SetRaw sets the terminal in raw mode and also calls initScreen.
  */
+#ifdef NPROTO
 void SetRaw()
+#else
+void SetRaw(void)
+#endif
 {
 #ifdef ATARI
     struct sgttyb new_tty;

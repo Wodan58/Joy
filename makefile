@@ -1,14 +1,13 @@
 #
 #   module  : makefile
-#   version : 1.18
-#   date    : 12/14/24
+#   version : 1.20
+#   date    : 01/10/26
 #
 .POSIX:
 .SUFFIXES:
 
-# Use CC environment variable
-# CC = gcc -pg
-CF = -DNOBDW -O3 -Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter
+CC = gcc
+CF = -DNOBDW -I. -O3 -Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter
 LF = -lm
 CFLAGS = $(CF) -DCOMP="\"$(CF)\"" -DLINK="\"$(LF)\"" -DVERS="\"NOBDW Release 1.0\""
 HDRS = globals.h
@@ -25,7 +24,7 @@ prep:
 	sh table.sh .
 
 clean:
-	rm -f $(OBJS) builtin.* table.c
+	rm -f $(OBJS)
 
 .SUFFIXES: .c .o
 

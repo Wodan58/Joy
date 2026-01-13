@@ -1,7 +1,7 @@
 /*
     module  : filter.c
-    version : 1.12
-    date    : 11/11/24
+    version : 1.13
+    date    : 01/08/26
 */
 #ifndef FILTER_C
 #define FILTER_C
@@ -36,7 +36,7 @@ void filter_(pEnv env)
 	env->stck = SET_NEWNODE(set, SAVED3);
 	break;
     case STRING_:
-	for (str = strdup((char *)&nodevalue(SAVED2)); str[i]; i++) {
+	for (str = check_strdup((char *)&nodevalue(SAVED2)); str[i]; i++) {
 	    env->stck = CHAR_NEWNODE(str[i], SAVED3);
 	    exeterm(env, nodevalue(SAVED1).lis);
 	    CHECKSTACK("filter");

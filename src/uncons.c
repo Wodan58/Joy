@@ -1,7 +1,7 @@
 /*
     module  : uncons.c
-    version : 1.10
-    date    : 09/17/24
+    version : 1.11
+    date    : 01/08/26
 */
 #ifndef UNCONS_C
 #define UNCONS_C
@@ -27,7 +27,7 @@ void uncons_(pEnv env)
 	NULLARY(SET_NEWNODE, set & ~((int64_t)1 << i));
 	break;
     case STRING_:
-	str = strdup((char *)&nodevalue(env->stck));
+	str = check_strdup((char *)&nodevalue(env->stck));
 	CHECKEMPTYSTRING(str, "uncons");
 	UNARY(CHAR_NEWNODE, *str);
 	NULLARY(STRING_NEWNODE, str + 1);

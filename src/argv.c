@@ -1,14 +1,15 @@
 /*
     module  : argv.c
-    version : 1.7
-    date    : 09/17/24
+    version : 1.8
+    date    : 01/12/26
 */
 #ifndef ARGV_C
 #define ARGV_C
 
 /**
 Q0  OK  3040  argv  :  ->  A
-Creates an aggregate A containing the interpreter's command line arguments.
+[RUNTIME] Creates an aggregate A containing the interpreter's command line
+arguments.
 */
 void argv_(pEnv env)
 {

@@ -1,9 +1,9 @@
 Joy
 ===
 
-Build|Linux|Windows|Coverity
----|---|---|---
-status|[![GitHub CI build status](https://github.com/Wodan58/Joy/actions/workflows/cmake.yml/badge.svg)](https://github.com/Wodan58/Joy/actions/workflows/cmake.yml)|[![AppVeyor CI build status](https://ci.appveyor.com/api/projects/status/github/Wodan58/Joy?branch=master&svg=true)](https://ci.appveyor.com/project/Wodan58/Joy)|[![Coverity Scan Build Status](https://img.shields.io/coverity/scan/14641.svg)](https://scan.coverity.com/projects/wodan58-joy)
+Build|Linux|Coverity
+---|---|---
+status|[![GitHub CI build status](https://github.com/Wodan58/Joy/actions/workflows/cmake.yml/badge.svg)](https://github.com/Wodan58/Joy/actions/workflows/cmake.yml)|[![Coverity Scan Build Status](https://img.shields.io/coverity/scan/14641.svg)](https://scan.coverity.com/projects/wodan58-joy)
 
 This is the NOBDW version of [Joy1](https://github.com/Wodan58/joy1).
 [Joy](http://www.complang.tuwien.ac.at/anton/euroforth/ef01/thun01.pdf) is a
@@ -94,5 +94,5 @@ Documentation|Notes
 [Legacy Docs](https://wodan58.github.io)|Link in About section
 [User Manual](https://wodan58.github.io/j09imp.html)|
 [Comparison](https://github.com/Wodan58/HET/blob/master/doc/FIB.md)|Speed comparison
-[Main Manual (PDF)](https://github.com/Wodan58/G3/blob/master/JOP.pdf)|3rd edition
+[Maintenance Manual (PDF)](https://github.com/Wodan58/G3/blob/master/JOP.pdf)|6th edition
 [Academic Article (PDF)](https://sol.sbc.org.br/index.php/sblp/article/view/30253/30060)|Conversion to/from Combinatory Calculus

@@ -1,7 +1,7 @@
 /*
     module  : system.c
-    version : 1.14
-    date    : 10/18/24
+    version : 1.15
+    date    : 01/08/26
 */
 #ifndef SYSTEM_C
 #define SYSTEM_C
@@ -14,12 +14,12 @@ When that has finished, the process returns to Joy.
 */
 void system_(pEnv env)
 {
-#ifndef WINDOWS_S
+#ifdef ALLOW_SYSTEM_CALLS
     char *str;
 #endif
     ONEPARAM("system");
     STRING("system");
-#ifndef WINDOWS_S
+#ifdef ALLOW_SYSTEM_CALLS
     str = GETSTRING(env->stck);
     (void)system(str);
 #endif

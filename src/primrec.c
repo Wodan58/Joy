@@ -1,7 +1,7 @@
 /*
     module  : primrec.c
-    version : 1.9
-    date    : 09/17/24
+    version : 1.10
+    date    : 01/08/26
 */
 #ifndef PRIMREC_C
 #define PRIMREC_C
@@ -32,7 +32,7 @@ void primrec_(pEnv env)
 	POP(env->dump1);
 	break;
     case STRING_:
-	for (str = strdup((char *)&nodevalue(SAVED3)); str[i]; i++) {
+	for (str = check_strdup((char *)&nodevalue(SAVED3)); str[i]; i++) {
 	    NULLARY(CHAR_NEWNODE, str[i]);
 	    n++;
 	}

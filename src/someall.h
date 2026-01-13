@@ -1,7 +1,7 @@
 /*
     module  : someall.h
-    version : 1.10
-    date    : 11/06/24
+    version : 1.11
+    date    : 01/08/26
 */
 #ifndef SOMEALL_H
 #define SOMEALL_H
@@ -29,7 +29,8 @@
 		}							\
 	    break;							\
 	case STRING_:							\
-	    for (str = strdup((char *)&nodevalue(SAVED2)); str[i]; i++) {\
+	    for (str = check_strdup((char *)&nodevalue(SAVED2)); str[i];\
+			    i++) {\
 		env->stck = CHAR_NEWNODE(str[i], SAVED3);		\
 		exeterm(env, nodevalue(SAVED1).lis);			\
 		CHECKSTACK(NAME);					\

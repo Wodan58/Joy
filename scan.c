@@ -1,8 +1,8 @@
 /* FILE : scan.c */
 /*
  *  module  : scan.c
- *  version : 1.86
- *  date    : 10/11/24
+ *  version : 1.87
+ *  date    : 01/08/26
  */
 #include "globals.h"
 
@@ -49,9 +49,9 @@ again:
     if ((ch = fgetc(srcfile)) == EOF) {
 	if (!ilevel)
 	    abortexecution_(ABORT_QUIT);
-	fclose(srcfile);
 	if (env->finclude_busy)
 	    longjmp(env->finclude, 1);	/* back to finclude */
+	fclose(srcfile);
 	srcfile = infile[--ilevel].fp;
 	linenum = infile[ilevel].line;
 	filenam = infile[ilevel].name;
@@ -62,7 +62,7 @@ again:
 	while ((ch = fgetc(srcfile)) != '\n' && ch != EOF)
 	    vec_push(env->string, ch);
 	vec_push(env->string, 0);
-#ifndef WINDOWS_S
+#ifdef ALLOW_SYSTEM_CALLS
 	if (!env->ignore)
 	    (void)system(&vec_at(env->string, 0));
 #endif

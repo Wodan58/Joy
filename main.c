@@ -1,8 +1,8 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.109
- *  date    : 01/14/25
+ *  version : 1.111
+ *  date    : 01/08/26
  */
 
 /*
@@ -73,8 +73,8 @@ This processes in accordance with the grammar
 compound-definition :==
 ["MODULE" atomic symbol]
 ["PRIVATE" definition-sequence ]
-			       ^ (* ERROR: MISSING "compound_def"
-				    SEE DISGUST BELOW *)
+                               ^ (* ERROR: MISSING "compound_def"
+                                    SEE DISGUST BELOW *)
 ["PUBLIC" definition-sequence]
 ("END" | ".")
 Each of the 3 parts is optional. Instead of "PRIVATE.. PUBLIC.."
@@ -137,13 +137,15 @@ void abortexecution_(int num)
 /*
  * fatal terminates the application with an error message.
  */
-#if defined(NOBDW) && defined(_MSC_VER)
+#ifdef NOBDW
+/* LCOV_EXCL_START */
 void fatal(char *str)
 {
     fflush(stdout);
     fprintf(stderr, "fatal error: %s\n", str);
     abortexecution_(ABORT_QUIT);
 }
+/* LCOV_EXCL_STOP */
 #endif
 
 /*
@@ -210,6 +212,7 @@ static void options(int verbose)
     printf("  -p : print debug list of tokens\n");
 #ifdef BYTECODE
     printf("  -q : quick const folding of bytecodes\n");
+    printf("  -r : renumber bytecodes for target\n");
 #endif
     printf("  -s : dump symbol table after execution\n");
     printf("  -t : print a trace of program execution\n");
@@ -253,7 +256,7 @@ static void my_main(int argc, char **argv)
 		  raw = 0;
 #ifdef BYTECODE
     FILE *fp = 0;
-    unsigned char listing = 0, lining = 0, quick = 0;
+    unsigned char listing = 0, lining = 0, quick = 0, renum = 0;
 #endif
 
     memset(&env, 0, sizeof(env));
@@ -335,6 +338,7 @@ static void my_main(int argc, char **argv)
 		case 'p' : env.printing = 1; break;
 #ifdef BYTECODE
 		case 'q' : quick = 1; joy = 0; break;	/* const folding */
+		case 'r' : renum = 1; joy = 0; break;
 #endif
 		case 's' : psdump = 1; break;
 		case 't' : env.debugging = 2; break;
@@ -444,6 +448,10 @@ start:
     if (mustinclude)
 	include(&env, "usrlib.joy");
 #ifdef BYTECODE
+    if (renum) {
+	renumber(&env, fp);	/* create .byc file, renumbering */
+	goto einde;
+    }
     if (quick) {
 	compeval(&env, fp);	/* create .buc file, const folding */
 	goto einde;
@@ -457,7 +465,7 @@ start:
 	goto einde;
     }
     if (env.bytecoding && joy)
-	initbytes(&env);	/* create .bic file from joy source */
+	initbytes(&env, "bic");	/* create .bic file from joy source */
 #endif
 #ifdef COMPILER
     if (env.compiling)

@@ -1,26 +1,41 @@
 /*
     module  : gc.c
-    version : 1.54
-    date    : 11/20/24
+    version : 1.58
+    date    : 01/10/26
 */
-#ifdef MALLOC_DEBUG
-#include "rmalloc.h"
-#endif
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <limits.h>
-#include <stdint.h>
 #include <setjmp.h>
 #include <signal.h>
+
+/*
+ *  pointer_t is an unsigned type, large enough to hold a pointer.
+ */
+#ifdef _MINIX
+typedef unsigned pointer_t;
+#define TO_POINTER(x)	((void *)(x))
+#define TO_INTEGER(x)	((pointer_t)(x))
+#else
+#include <stdint.h>
+typedef uint64_t pointer_t;
+#define TO_POINTER(x)	((void *)(intptr_t)(x))
+#define TO_INTEGER(x)	((pointer_t)(intptr_t)(x))
+#endif
 
 #ifdef _MSC_VER
 #pragma warning(disable: 4267)
 #endif
 
+#ifdef _MINIX
+#define kh_inline
+#define POSIX
+#endif
+
 #ifdef __linux__
 #include <unistd.h>
+#define POSIX
 #endif
 
 #ifdef __APPLE__
@@ -28,7 +43,7 @@
 #endif
 
 #include "khash.h"
-#include "gc.h"
+#include <gc.h>		/* needs to be specified with -I */
 
 #ifdef _MSC_VER
 #define DOWN_64K	~0xFFFF
@@ -45,28 +60,42 @@
 #define GC_MARK		2
 
 #define GROW_FACTOR	2
+#ifdef _MINIX
+#define BSS_ALIGN	2
+#else
 #define BSS_ALIGN	4
+#endif
 #define MIN_ITEMS	170	/* initial number of items */
 
 /*
- * When pointers are aligned at 16 bytes, the lower 4 bits are always zero.
+ *  When pointers are aligned at 16 bytes, the lower 4 bits are always zero.
  */
+#ifdef _MINIX
+#define HASH_FUNCTION(key)	(key)
+
+typedef struct mem_info {
+    unsigned flags: 2;
+    unsigned size: 14;
+} mem_info;
+#else
 #define HASH_FUNCTION(key)	(khint_t)((key) >> 4)
 
 typedef struct mem_info {
     unsigned flags: 2;
     unsigned size: 30;
 } mem_info;
+#endif
 
 /*
- * The map contains a pointer as key and mem_info as value.
+ *  The map contains a pointer as key and mem_info as value. The pointer_t is
+ *  an unsigned integer equal in size to a pointer.
  */
-KHASH_INIT(Backup, uint64_t, mem_info, 1, HASH_FUNCTION, kh_int64_hash_equal)
+KHASH_INIT(Backup, pointer_t, mem_info, 1, HASH_FUNCTION, kh_int64_hash_equal)
 
 static khash_t(Backup) *MEM;	/* backup of pointers */
 
 static khint_t max_items;	/* max. items before gc */
-static uint64_t lower, upper;	/* heap bounds */
+static pointer_t lower, upper;	/* heap bounds */
 #ifdef COUNT_COLLECTIONS
 static size_t GC_gc_no;		/* number of garbage collections */
 static size_t memory_use;	/* amount of memory currently used */
@@ -74,55 +103,56 @@ static size_t free_bytes;	/* amount of memory on the freelist */
 #endif
 
 /*
- * Pointers to memory segments.
+ *  Pointers to memory segments.
  */
 #ifdef SCAN_BSS_MEMORY
-static uint64_t start_of_text,
-		start_of_data,
-		start_of_bss,
-		start_of_heap;
+static pointer_t start_of_text,
+		 start_of_data,
+		 start_of_bss,
+		 start_of_heap;
 #endif
 
 /*
- * fatal - Report a fatal error and end the program. The message is taken from
- *	   yacc. The function should be present in main.c
+ *  fatal - Report a fatal error and end the program. The message is taken from
+ *	    yacc. The function should be present in main.c
  */
-#ifdef _MSC_VER
+#ifdef TEST_MALLOC_RETURN
 void fatal(char *str);
 #endif
 
 /*
- * Determine sections of memory. This is highly system dependent and not tested
- * on __APPLE__.
+ *  Determine sections of memory. This is highly system dependent and not
+ *  tested on __APPLE__.
  */
 #ifdef SCAN_BSS_MEMORY
 static void init_heap(void)
 {
     extern int main(int argc, char **argv);
+#ifdef POSIX
+    extern char etext, edata, end;
+#endif
 #ifdef _MSC_VER
     int *ptr;
 #endif
-    start_of_text = (uint64_t)main;
-#ifdef __CYGWIN__
-    extern char __data_start__, __bss_start__, __bss_end__;
+    start_of_text = TO_INTEGER(main);
+#ifdef __MINGW32__
+    extern char _data_start__, _bss_start__, _bss_end__;
 #if 0
-    extern char __data_end__, __end__;
+    extern char _data_end__, _image_base__
 #endif
-    start_of_data = (uint64_t)&__data_start__;
-    start_of_bss  = (uint64_t)&__bss_start__;
-    start_of_heap = (uint64_t)&__bss_end__;
+    start_of_data = TO_INTEGER(&_data_start__);
+    start_of_bss  = TO_INTEGER(&_bss_start__);
+    start_of_heap = TO_INTEGER(&_bss_end__);
 #endif
-#ifdef __linux__
-    extern char etext, edata, end;
-
-    start_of_data = (uint64_t)&etext;
-    start_of_bss  = (uint64_t)&edata;
-    start_of_heap = (uint64_t)&end;
+#ifdef POSIX
+    start_of_data = TO_INTEGER(&etext);
+    start_of_bss  = TO_INTEGER(&edata);
+    start_of_heap = TO_INTEGER(&end);
 #endif
 #ifdef __APPLE__
-    start_of_data = (uint64_t)get_etext();
-    start_of_bss  = (uint64_t)get_edata();
-    start_of_heap = (uint64_t)get_end();
+    start_of_data = TO_INTEGER(get_etext());
+    start_of_bss  = TO_INTEGER(get_edata());
+    start_of_heap = TO_INTEGER(get_end());
 #endif
 #ifdef _MSC_VER
     start_of_text &= DOWN_64K;
@@ -137,7 +167,7 @@ static void init_heap(void)
 #endif
 
 /*
- * Report of the amount of memory allocated is delegated to valgrind.
+ *  Report of the amount of memory allocated is delegated to valgrind.
  */
 #ifdef FREE_ON_EXIT
 static void mem_exit(void)
@@ -152,7 +182,7 @@ static void mem_exit(void)
 #endif
 
 /*
- * Initialise gc memory.
+ *  Initialise gc memory.
  */
 void GC_INIT(void)
 {
@@ -168,15 +198,16 @@ void GC_INIT(void)
 }
 
 /*
- * Mark a block as in use. No optimization for this (recursive) function.
+ *  Mark a block as in use. No optimization for this (recursive) function.
+ *  Recursion is suspicious.
  */
 static void mark_ptr(char *ptr)
 {
     khint_t key;
     size_t i, size;
-    uint64_t value;
+    pointer_t value;
 
-    value = (uint64_t)ptr;
+    value = TO_INTEGER(ptr);
     if (value < lower || value >= upper)
 	return;
     if ((key = kh_get(Backup, MEM, value)) != kh_end(MEM)) {
@@ -187,43 +218,43 @@ static void mark_ptr(char *ptr)
 	    return;
 	size = kh_val(MEM, key).size / sizeof(char *);
 	for (i = 0; i < size; i++)
-	    mark_ptr(((char **)value)[i]);	/* recursion is suspicious */
+	    mark_ptr(((char **)TO_POINTER(value))[i]);
     }
 }
 
 /*
- * Mark blocks that can be found on the stack.
+ *  Mark blocks that can be found on the stack.
  */
 static void mark_stk(void)
 {
-    uint64_t ptr = (uint64_t)&ptr;
+    pointer_t ptr = TO_INTEGER(&ptr);
   
 #ifdef STACK_GROWS_UPWARD
     if (ptr > bottom)
-	for (; ptr > (uint64_t)bottom_of_stack; ptr -= sizeof(char *))
-	    mark_ptr(*(char **)ptr);
+	for (; ptr > TO_INTEGER(bottom_of_stack); ptr -= sizeof(char *))
+	    mark_ptr(*(char **)TO_POINTER(ptr));
     else
 #endif
-	for (; ptr < (uint64_t)bottom_of_stack; ptr += sizeof(char *))
-	    mark_ptr(*(char **)ptr);
+	for (; ptr < TO_INTEGER(bottom_of_stack); ptr += sizeof(char *))
+	    mark_ptr(*(char **)TO_POINTER(ptr));
 }
 
 /*
- * Mark blocks that are pointed to from static uninitialized memory.
+ *  Mark blocks that are pointed to from static uninitialized memory.
  */
 #ifdef SCAN_BSS_MEMORY
 static void mark_bss(void)
 {
-    uint64_t ptr, end_of_bss;
+    pointer_t ptr, end_of_bss;
 
     end_of_bss = start_of_heap - sizeof(void *);
     for (ptr = start_of_bss; ptr <= end_of_bss; ptr += BSS_ALIGN)
-	mark_ptr(*(char **)ptr);
+	mark_ptr(*(char **)TO_POINTER(ptr));
 }
 #endif
 
 /*
- * Walk registered blocks and free those that have not been marked.
+ *  Walk registered blocks and free those that have not been marked.
  */
 static void scan(void)
 {
@@ -237,7 +268,7 @@ static void scan(void)
 #ifdef COUNT_COLLECTIONS
 		free_bytes += kh_val(MEM, key).size;
 #endif		
-		free((void *)kh_key(MEM, key));
+		free(TO_POINTER(kh_key(MEM, key)));
 		kh_del(Backup, MEM, key);
 	    }
 	}
@@ -245,12 +276,12 @@ static void scan(void)
 }
 
 /*
- * Collect garbage.
+ *  Collect garbage.
  *
- * Pointers that are reachable from registers or stack are marked
- * as well as all pointers that are reachable from those pointers.
- * In other words: roots for garbage collection are searched in
- * registers, on the stack, and in the blocks themselves.
+ *  Pointers that are reachable from registers or stack are marked
+ *  as well as all pointers that are reachable from those pointers.
+ *  In other words: roots for garbage collection are searched in
+ *  registers, on the stack, and in the blocks themselves.
  */
 void GC_gcollect(void)
 {
@@ -270,16 +301,16 @@ void GC_gcollect(void)
 }
 
 /*
- * Register an allocated memory block and garbage collect if there are too many
- * blocks already.
+ *  Register an allocated memory block and garbage collect if there are too
+ *  many blocks already.
  */
 static void remind(char *ptr, size_t size, int flags)
 {
     int rv;
     khint_t key;
-    uint64_t value;
+    pointer_t value;
 
-    value = (uint64_t)ptr;
+    value = TO_INTEGER(ptr);
     if (lower > value || !lower)
 	lower = value;
     if (upper < value + size)
@@ -291,10 +322,10 @@ static void remind(char *ptr, size_t size, int flags)
     memory_use += size;
 #endif
 /*
- * See if there are already too many items allocated. If yes, trigger the
- * garbage collector. As the number of items that need to be remembered is
- * unknown, it is set to twice the number of items that are currently being
- * used. This allows a 100% growth in the number of items allocated.
+ *  See if there are already too many items allocated. If yes, trigger the
+ *  garbage collector. As the number of items that need to be remembered is
+ *  unknown, it is set to twice the number of items that are currently being
+ *  used. This allows a 100% growth in the number of items allocated.
  */
     if (max_items < kh_size(MEM)) {
 	GC_gcollect();
@@ -303,16 +334,16 @@ static void remind(char *ptr, size_t size, int flags)
 }
 
 /*
- * Register an allocated memory block. The block is cleared with zeroes.
+ *  Register an allocated memory block. The block is cleared with zeroes.
  */
 static void *mem_block(size_t size, int leaf)
 {
     void *ptr = 0;
 
     ptr = malloc(size);
-#ifdef _MSC_VER
+#ifdef TEST_MALLOC_RETURN
     if (!ptr)
-	fatal("memory exhausted");
+	fatal("memory exhausted");	/* LCOV_EXCL_LINE */
 #endif
     memset(ptr, 0, size);
     remind(ptr, size, leaf);
@@ -320,7 +351,7 @@ static void *mem_block(size_t size, int leaf)
 }
 
 /*
- * Register a memory block that contains no other blocks.
+ *  Register a memory block that contains no other blocks.
  */
 #ifdef USE_GC_MALLOC_ATOMIC
 void *GC_malloc_atomic(size_t size)
@@ -330,7 +361,7 @@ void *GC_malloc_atomic(size_t size)
 #endif
 
 /*
- * Register a memory block that can be collected.
+ *  Register a memory block that can be collected.
  */
 #ifdef USE_GC_MALLOC
 void *GC_malloc(size_t size)
@@ -341,7 +372,7 @@ void *GC_malloc(size_t size)
 
 #ifdef USE_GC_REALLOC
 /*
- * Forget about a memory block and return its flags.
+ *  Forget about a memory block and return its flags.
  */
 #ifdef COUNT_COLLECTIONS
 static unsigned char forget(void *ptr, unsigned *size)
@@ -352,7 +383,7 @@ static unsigned char forget(void *ptr)
     khint_t key;
     unsigned char flags = 0;
 
-    if ((key = kh_get(Backup, MEM, (uint64_t)ptr)) != kh_end(MEM)) {
+    if ((key = kh_get(Backup, MEM, TO_INTEGER(ptr))) != kh_end(MEM)) {
 	flags = kh_val(MEM, key).flags;
 #ifdef COUNT_COLLECTIONS	
 	*size = kh_val(MEM, key).size;
@@ -363,7 +394,7 @@ static unsigned char forget(void *ptr)
 }
 
 /*
- * Enlarge an already allocated memory block.
+ *  Enlarge an already allocated memory block.
  */
 void *GC_realloc(void *ptr, size_t size)
 {
@@ -382,9 +413,9 @@ void *GC_realloc(void *ptr, size_t size)
     flags = forget(ptr);
 #endif
     ptr = realloc(ptr, size);
-#ifdef _MSC_VER
+#ifdef TEST_MALLOC_RETURN
     if (!ptr)
-	fatal("memory exhausted");
+	fatal("memory exhausted");	/* LCOV_EXCL_LINE */
 #endif
     remind(ptr, size, flags);
     return ptr;
@@ -392,7 +423,7 @@ void *GC_realloc(void *ptr, size_t size)
 #endif
 
 /*
- * Duplicate a string. A string does not contain internal pointers.
+ *  Duplicate a string. A string does not contain internal pointers.
  */
 #ifdef USE_GC_STRDUP
 char *GC_strdup(const char *str)
@@ -409,25 +440,25 @@ char *GC_strdup(const char *str)
 
 #ifdef COUNT_COLLECTIONS
 /*
- * Return the number of garbage collections.
- * This is reported in the main function.
+ *  Return the number of garbage collections.
+ *  This is reported in the main function.
  */
-size_t GC_get_gc_no(void)
+/* LCOV_EXCL_START */
+long GC_get_gc_no(void)
 {
     return GC_gc_no;
 }
 
 /*
- * Return the amount of memory currently in use.
+ *  Return the amount of memory currently in use.
  */
-/* LCOV_EXCL_START */
 size_t GC_get_memory_use(void)
 {
     return memory_use;
 }
 
 /*
- * Return the amount of memory on the freelist.
+ *  Return the amount of memory on the freelist.
  */
 size_t GC_get_free_bytes(void)
 {

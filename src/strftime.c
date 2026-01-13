@@ -1,7 +1,7 @@
 /*
     module  : strftime.c
-    version : 1.9
-    date    : 10/18/24
+    version : 1.11
+    date    : 01/12/26
 */
 #ifndef STRFTIME_C
 #define STRFTIME_C
@@ -16,8 +16,7 @@ using string S1 and pushes the result S2.
 void strftime_(pEnv env)
 {
     struct tm t;
-    size_t leng;
-    char *fmt, *result;
+    char *fmt, *str;
 
     TWOPARAMS("strftime");
     STRING("strftime");
@@ -25,16 +24,15 @@ void strftime_(pEnv env)
     POP(env->stck);
     LIST("strftime");
     decode_time(env, &t);
-    leng = BUFFERMAX;
 #ifdef NOBDW
-    result = malloc(leng + 1);
+    str = check_malloc(BUFFERMAX);
 #else
-    result = GC_malloc_atomic(leng + 1);
+    str = GC_malloc_atomic(BUFFERMAX);
 #endif
-    strftime(result, leng, fmt, &t);
-    UNARY(STRING_NEWNODE, result);
+    strftime(str, BUFFERMAX, fmt, &t);
+    UNARY(STRING_NEWNODE, str);
 #ifdef NOBDW
-    free(result);
+    free(str);
 #endif
 }
 #endif

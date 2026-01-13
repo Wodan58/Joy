@@ -1,7 +1,7 @@
 /*
     module  : cons_swons.h
-    version : 1.11
-    date    : 09/17/24
+    version : 1.12
+    date    : 01/08/26
 */
 #ifndef CONS_SWONS_H
 #define CONS_SWONS_H
@@ -24,7 +24,7 @@
 	    break;							\
 	case STRING_:							\
 	    CHECKCHARACTER(ELEM, NAME);					\
-	    str = malloc(nodeleng(AGGR) + 2);				\
+	    str = check_malloc(nodeleng(AGGR) + 2);			\
 	    str[0] = (char)nodevalue(ELEM).num;				\
 	    strcpy(str + 1, (char *)&nodevalue(AGGR));			\
 	    BINARY(STRING_NEWNODE, str);				\

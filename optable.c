@@ -1,7 +1,7 @@
 /*
  *  module  : optable.c
- *  version : 1.15
- *  date    : 12/15/24
+ *  version : 1.17
+ *  date    : 01/12/26
  */
 #include "globals.h"
 #include "runtime.h"
@@ -125,9 +125,9 @@ int operindex(pEnv env, proc_t proc)
     khint_t key;
 
 #ifdef USE_KHASHL
-    if ((key = funtab_get(env->prim, (uint64_t)proc)) != kh_end(env->prim))
+    if ((key = funtab_get(env->prim, (intptr_t)proc)) != kh_end(env->prim))
 #else
-    if ((key = kh_get(Funtab, env->prim, (uint64_t)proc)) != kh_end(env->prim))
+    if ((key = kh_get(Funtab, env->prim, (intptr_t)proc)) != kh_end(env->prim))
 #endif
 	return kh_val(env->prim, key);
     return 0;	/* if not found, return 0 */
@@ -171,6 +171,12 @@ void inisymboltable(pEnv env)	/* initialise */
 	memset(&ent, 0, sizeof(ent));
 	ent.name = optable[i].name;
 	ent.flags = optable[i].flags;
+#ifdef BYTECODE
+	if (ent.flags == IMMEDIATE) {
+	    if (strcmp(ent.name, "false") && strcmp(ent.name, "true"))
+		ent.flags = OK;
+	}
+#endif
 	ent.u.proc = optable[i].proc;
 	/*
 	 * The qcode is copied to the symbol table, telling how many quotations
@@ -199,9 +205,9 @@ void inisymboltable(pEnv env)	/* initialise */
 	    }
 	addsymbol(env, ent, i);
 #ifdef USE_KHASHL
-	key = funtab_put(env->prim, (uint64_t)ent.u.proc, &rv);
+	key = funtab_put(env->prim, (intptr_t)ent.u.proc, &rv);
 #else
-	key = kh_put(Funtab, env->prim, (uint64_t)ent.u.proc, &rv);
+	key = kh_put(Funtab, env->prim, (intptr_t)ent.u.proc, &rv);
 #endif
 	kh_val(env->prim, key) = i;
 	vec_push(env->symtab, ent);

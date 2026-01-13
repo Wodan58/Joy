@@ -1,7 +1,7 @@
 /*
     module  : drop.c
-    version : 1.15
-    date    : 10/28/24
+    version : 1.16
+    date    : 01/08/26
 */
 #ifndef DROP_C
 #define DROP_C
@@ -37,7 +37,7 @@ void drop_(pEnv env)
 	while (n-- > 0 && str[i])
 	    i++;
 #ifdef NOBDW
-	str = strdup(str + i);
+	str = check_strdup(str + i);
 	UNARY(STRING_NEWNODE, str);
 	free(str);
 #else

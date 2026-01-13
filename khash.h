@@ -46,6 +46,13 @@ int main() {
 */
 
 /*
+ *  module  : khash.h
+ *  version : 1.2
+ *  date    : 01/06/26
+ */
+/* port to Minix 2.0.4 */
+
+/*
   2016-10-19 (0.2.9):
 
 	* Removed __ac_HASH_UPPER=0.77f. Use (max>>1)+(max>>2) instead (i.e. 0.75).
@@ -144,6 +151,11 @@ int main() {
 
 /* compiler specific configuration */
 
+#ifdef _MINIX
+typedef unsigned khint32_t;
+typedef unsigned long khint64_t;
+#define kh_inline
+#else
 #if UINT_MAX == 0xffffffffu
 typedef unsigned int khint32_t;
 #elif ULONG_MAX == 0xffffffffu
@@ -154,6 +166,7 @@ typedef unsigned long khint32_t;
 typedef unsigned long khint64_t;
 #else
 typedef unsigned long long khint64_t;
+#endif
 #endif
 
 #ifndef kh_inline
@@ -432,6 +445,7 @@ static kh_inline khint_t __ac_Wang_hash(khint_t key)
 }
 #define kh_int_hash_func2(key) __ac_Wang_hash((khint_t)(key))
 
+#ifndef _MINIX
 static kh_inline khint64_t __ac_Jenkins_hash64(khint64_t key)
 {
 	key = ~key + (key << 21);
@@ -444,6 +458,7 @@ static kh_inline khint64_t __ac_Jenkins_hash64(khint64_t key)
 	return key;
 }
 #define kh_int64_hash_func2(key) (khint_t)__ac_Jenkins_hash64((khint64_t)(key))
+#endif
 
 /* --- END OF HASH FUNCTIONS --- */
 
