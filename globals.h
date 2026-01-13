@@ -1,8 +1,8 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.123
- *  date    : 01/08/26
+ *  version : 1.124
+ *  date    : 01/13/26
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -71,7 +71,11 @@
 /*
  * The path to the gc-header needs to be set with -I on the command line.
  */
+#ifdef NOBDW
+#include "gc.h"
+#else
 #include <gc.h>
+#endif
 #include "kvec.h"
 #ifdef USE_KHASHL
 #include "khashl.h"
