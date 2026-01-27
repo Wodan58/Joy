@@ -1,13 +1,16 @@
 /*
  *  module  : utils.c
- *  version : 1.50
- *  date    : 01/12/26
+ *  version : 1.56
+ *  date    : 01/26/26
  */
 #include "globals.h"
 
 /*
  * Tracegc is normally turned off. It can be turned on, in case problems are
- * suspected.
+ * suspected. One aim of this file is to make it more flexible than the
+ * original. Another aim is to not make it slower. Yet another aim is to not
+ * use more memory than necessary. Large memory with fewer garbage collections
+ * is not always faster than small memory with more collections.
  */
 #if 0
 #define TRACEGC
@@ -15,13 +18,11 @@
 
 /*
  * MEM_LOW should allow reading usrlib.joy, inilib.joy, prelib.joy, and
- * agglib.joy without reallocation and without garbage collection.
+ * agglib.joy without reallocation and without garbage collection. The
+ * allocation is capped at INT_MAX nodes. That is 32 GiB and that should
+ * be enough, for the time being. MEM_LOW is now "optimized" for fib(35).
  */
-#define MEM_LOW		1100	/* initial number of nodes */
-
-static Node *old_memory;
-static size_t memorymax;
-static Index mem_low, memoryindex;
+#define MEM_LOW		2000	/* initial number of nodes */
 
 static clock_t start_gc_clock;	/* statistics */
 #ifdef TRACEGC
@@ -33,7 +34,7 @@ char *check_strdup(char *str)
     char *ptr = strdup(str);
 #ifdef TEST_MALLOC_RETURN
     if (!ptr)
-	fatal("memory exhausted");	/* LCOV_EXCL_LINE */
+	fatal("memory exhausted");
 #endif
     return ptr;
 }
@@ -43,7 +44,7 @@ void *check_malloc(size_t leng)
     void *ptr = malloc(leng);
 #ifdef TEST_MALLOC_RETURN
     if (!ptr)
-	fatal("memory exhausted");	/* LCOV_EXCL_LINE */
+	fatal("memory exhausted");
 #endif
     return ptr;
 }
@@ -59,16 +60,16 @@ void inimem1(pEnv env, int status)
 #ifdef TRACEGC
     env->tracegc = 4;			/* set to reasonable, max=6 */
 #endif
-    if (!mem_low) {
-	memoryindex = mem_low = 1;
-	env->memory = calloc(memorymax = MEM_LOW, sizeof(Node));
+    if (!env->mem_low) {
+	env->memoryindex = env->mem_low = 1;
+	env->memory = calloc(env->memorymax = MEM_LOW, sizeof(Node));
 #ifdef TEST_MALLOC_RETURN
 	if (!env->memory)
-	    fatal("memory exhausted");	/* LCOV_EXCL_LINE */
+	    fatal("memory exhausted");
 #endif
     } else if (status) {
 	env->stck = env->inits;		/* reset the stack to initial */
-	memoryindex = mem_low;		/* retain only definitions */
+	env->memoryindex = env->mem_low;/* retain only definitions */
     }
     env->conts = env->dump = 0;
     env->dump1 = env->dump2 = env->dump3 = env->dump4 = env->dump5 = 0;
@@ -83,16 +84,16 @@ void inimem2(pEnv env)
 {
     double new_avail;
 
-    mem_low = memoryindex;		/* enlarge definition space */
-    new_avail = memorymax - mem_low;
+    env->mem_low = env->memoryindex;	/* enlarge definition space */
+    new_avail = env->memorymax - env->mem_low;
     if (env->avail > new_avail || !env->avail)
 	env->avail = new_avail;
     env->flibrary_busy = 0;		/* enable garbage collection */
 #ifdef TRACEGC
     if (env->tracegc > 1) {
-	printf("mem_low = %d\n", mem_low);
-	printf("memoryindex = %d\n", memoryindex);
-	printf("top of mem = %ld\n", (long)memorymax);
+	printf("mem_low = %u\n", env->mem_low);
+	printf("memoryindex = %u\n", env->memoryindex);
+	printf("top of mem = %lu\n", (unsigned long)env->memorymax);
     }
 #endif
 }
@@ -119,9 +120,9 @@ void printnode(pEnv env, Index p)
  */
 static Index copy(pEnv env, Index n)
 {
-    Index temp;
+    Index temp;			/* index in to_space, te be returned */
     Operator op;
-    int size, leng, num = 1;
+    int size, leng, num = 1;	/* number of physical nodes */
 
 #ifdef TRACEGC
     nodesinspected++;
@@ -132,46 +133,46 @@ static Index copy(pEnv env, Index n)
  * If n is 0 or in the space reserved for definitions, it is returned
  * unmodified. Definitions have already been copied.
  */
-    if (n < mem_low)
+    if (n < env->mem_low)
 	return n;
 /*
  * If the node has already been copied, then the new index is present in the
  * lis member.
  */
-    if ((op = old_memory[n].op) == COPIED_)
-	return old_memory[n].u.lis;
+    if ((op = env->old_memory[n].op) == COPIED_)
+	return env->old_memory[n].u.lis;
 /*
  * Copy the node from the original to the new location. What gets copied is:
  * op, len, next, u.
  */
-    env->memory[temp = memoryindex++] = old_memory[n];
+    env->memory[temp = env->memoryindex++] = env->old_memory[n];
 /*
  * If the node contains a string, then some more copying is needed.
  */
     if (op == STRING_ || op == BIGNUM_) {
-	size = leng = old_memory[n].len + 1;
-	memcpy(&env->memory[temp].u, &old_memory[n].u, leng);
+	size = leng = env->old_memory[n].len + 1;
+	memcpy(&env->memory[temp].u, &env->old_memory[n].u, leng);
 	if ((size -= sizeof(Types)) > 0)	/* first part in Types */
 	    num += (size + sizeof(Node) - 1) / sizeof(Node);	/* round up */
-	memoryindex += num;
+	env->memoryindex += num;
     }
 /*
  * If the node contains a list, then the list needs to be copied. This requires
  * that copy is called recursively.
  */
     if (op == LIST_)
-	env->memory[temp].u.lis = copy(env, old_memory[n].u.lis);
+	env->memory[temp].u.lis = copy(env, env->old_memory[n].u.lis);
 /*
  * The next field also needs to be copied separately, overruling what was there
  * copied earlier on.
  */
-    env->memory[temp].next = copy(env, old_memory[n].next);
+    env->memory[temp].next = copy(env, env->old_memory[n].next);
 /*
- * The original location is set to COPIED_, such that it will not be copied
- * again.
+ * The original location is set to COPIED_: it will not be copied again.
+ * The lis field is given the index in the to_space.
  */
-    old_memory[n].op = COPIED_;
-    old_memory[n].u.lis = temp;
+    env->old_memory[n].op = COPIED_;
+    env->old_memory[n].u.lis = temp;
 #ifdef TRACEGC
     nodescopied++;
 #endif
@@ -199,14 +200,12 @@ static void scan_roots(pEnv env)
 	    ent.u.body = copy(env, ent.u.body);
 	    vec_at(env->symtab, i) = ent;
 	}
-	if (ent.is_last)		/* stop at the last variable */
-	    break;
+	/* The last flag that used to be tested here, wasn't working. */
     }
 }
 
 static void gc1(pEnv env, Index *l, Index *r)
 {
-    start_gc_clock = clock();		/* statistics */
 #ifdef TRACEGC
     if (env->tracegc > 1)
 	printf("begin garbage collection\n");
@@ -230,21 +229,21 @@ static void gc1(pEnv env, Index *l, Index *r)
     if (r)
 	COP1(*r,     "next");
 #endif
-    old_memory = env->memory;		/* backup original memory */
+    env->old_memory = env->memory;	/* backup original memory */
     /*
-     * Allocate new memory with at least the same capacity as the original.
+     * Allocate new memory with sufficient capacity.
      */
-    env->memory = calloc(memorymax, sizeof(Node));
+    env->memory = calloc(env->memorymax, sizeof(Node));
 #ifdef TEST_MALLOC_RETURN
     if (!env->memory)
-	fatal("memory exhausted");	/* LCOV_EXCL_LINE */
+	fatal("memory exhausted");
 #endif
     /* copy all nodes that are used in definitions */
-    memcpy(env->memory, old_memory, (memoryindex = mem_low) * sizeof(Node));
+    env->memoryindex = env->mem_low;
+    memcpy(env->memory, env->old_memory, env->memoryindex * sizeof(Node));
 #ifdef TRACEGC
 #define COP2(X, NAME)						\
-    if (X) {							\
-	X = copy(env, X);					\
+    if (X) { X = copy(env, X);					\
 	if (env->tracegc > 2) {					\
 	    printf("\nnew %s = ", NAME);			\
 	    writeterm(env, X, stdout); putchar('\n'); } }
@@ -266,27 +265,15 @@ static void gc1(pEnv env, Index *l, Index *r)
     if (r)
 	COP2(*r,     "next");
     if (env->variable_busy)	/* also copy variables, if there are any */
-	scan_roots(env);
+    	scan_roots(env);
 }
 
 static void gc2(pEnv env)
 {
     clock_t this_gc_clock;
 
-    free(old_memory);		/* release old memory */
-/*
- * If memory is mostly occupied, even after gc, it should be increased.
- * If only a small amount is occupied after gc, it should be decreased.
- */
-    if (memoryindex * 100.0 / memorymax < 10)	/* check decrease */
-	memorymax *= 0.9;
-    else if (memoryindex * 100.0 / memorymax > 90) {	/* check increase */
-	env->memory = realloc(env->memory, (memorymax *= 2) * sizeof(Node));
-#ifdef TEST_MALLOC_RETURN
-	if (!env->memory)
-	    fatal("memory exhausted");		/* LCOV_EXCL_LINE */
-#endif
-    }
+    free(env->old_memory);			/* release old memory */
+    env->old_memory = 0;
     this_gc_clock = clock() - start_gc_clock;	/* statistics */
     env->gc_clock += this_gc_clock;
     env->collect++;
@@ -301,12 +288,15 @@ static void gc2(pEnv env)
 
 void my_gc(pEnv env)
 {
+    start_gc_clock = clock();	/* statistics */
     gc1(env, 0, 0);
     gc2(env);
 }
 
 /*
- * Count the number of nodes that need to be copied during garbage collection.
+ * Count the number of physical nodes that need to be copied
+ * during garbage collection, when the logical node at Index
+ * n needs to be copied.
  */
 static int count(pEnv env, Index n)
 {
@@ -316,7 +306,7 @@ static int count(pEnv env, Index n)
 /*
  * If n is 0 or in the space reserved for definitions, it is not counted.
  */
-    if (n < mem_low)
+    if (n < env->mem_low)
 	return 0;
     op = env->memory[n].op;
 /*
@@ -328,63 +318,136 @@ static int count(pEnv env, Index n)
 	    num += (size + sizeof(Node) - 1) / sizeof(Node);	/* round up */
     }
 /*
- * If the node contains a list, then the list needs to be counted.
+ * If the node contains a list, then the list needs to be counted as well.
  */
     if (op == LIST_)
 	num += count(env, env->memory[n].u.lis);
+/*
+ * Also count the rest, just like this is done during copying.
+ */
+    num += count(env, env->memory[n].next);
+/*
+ * Return the number of physical nodes.
+ */
+    return num;
+}
+
+/*
+ * Count the number of nodes that are used by variables. They are also copied.
+ */
+static int count_roots(pEnv env)
+{
+    Entry ent;
+    int i, num = 0;
+
+    /*
+     * Look in the symbol table for variables. They also need to be garbage
+     * collected.
+     */
+    for (i = vec_size(env->symtab) - 1; i > 0; i--) {
+	ent = vec_at(env->symtab, i);
+	if (!ent.is_user)	/* stop at builtins */
+	    break;
+	if (ent.is_root && ent.u.body)
+	    num += count(env, ent.u.body);
+    }
     return num;
 }
 
 /*
  * Allocate a number of nodes. The nodes are filled from the parameters.
- * Strings are passed in allocated memory, that is copied to nodes and must
- * be freed afterwards.
+ * Strings are passed in allocated memory, that is copied to nodes; they
+ * must be freed afterwards.
  */
 Index newnode(pEnv env, Operator o, Types u, Index r)
 {
     Index p;
-    int size, leng = 0, num = 1, numgc;		/* allocate at least one node */
+    size_t numgc;
+    int size, leng = 0, num = 1;		/* allocate at least one node */
 
     if (o == STRING_ || o == BIGNUM_) {
 	size = leng = strlen(u.str) + 1;
 	if ((size -= sizeof(Types)) > 0)	/* first part in Types */
 	    num += (size + sizeof(Node) - 1) / sizeof(Node);	/* round up */
     }
-    if (memoryindex + num >= memorymax) {	/* space for new node */
+    if (env->memoryindex + num >= env->memorymax) {	/* space for new node */
 	/*
 	 * No garbage collection during the read of definitions.
 	 */
 	if (env->flibrary_busy) {
-	    while (memoryindex + num >= memorymax)
-		memorymax *= 2;
-	    env->memory = realloc(env->memory, memorymax * sizeof(Node));
+	    while (env->memoryindex + num >= env->memorymax)
+		env->memorymax *= 2;
+	    env->memory = realloc(env->memory, env->memorymax * sizeof(Node));
 #ifdef TEST_MALLOC_RETURN
 	    if (!env->memory)
-		fatal("memory exhausted");	/* LCOV_EXCL_LINE */
+		fatal("memory exhausted");
 #endif
 	} else {
 	    /*
-	     * Make sure that, in the case if gc, enough nodes are available.
+	     * Make sure that enough nodes are available.
+	     * Simply count everything that will be copied.
+	     * And because of all the counting, clock should
+	     * be started here.
 	     */
-	    numgc = num;
+	    start_gc_clock = clock();		/* statistics */
+	    numgc = env->mem_low + num;
+    	    numgc += count(env, env->stck);
+    	    numgc += count(env, env->prog);
+    	    numgc += count(env, env->conts);
+    	    numgc += count(env, env->dump);
+    	    numgc += count(env, env->dump1);
+    	    numgc += count(env, env->dump2);
+    	    numgc += count(env, env->dump3);
+    	    numgc += count(env, env->dump4);
+    	    numgc += count(env, env->dump5);
 	    if (o == LIST_)
 		numgc += count(env, u.lis);
 	    numgc += count(env, r);
+	    numgc += count_roots(env);
 	    /*
-	     * Increase memorymax, do not realloc. The new memory is allocated
-	     * in gc1 before copying nodes to the new memory.
+	     * Check whether memory can be decreased or whether it must be
+	     * increased or whether it can stay the same. The aim is not to
+	     * claim more memory than necessary.
 	     */
-	    while (memoryindex + numgc >= memorymax)
-		memorymax *= 2;
+	    if (numgc * 100.0 / env->memorymax < 10)	/* check decrease */
+		env->memorymax *= 0.9;
+	    else if (numgc * 100.0 / env->memorymax > 90) {	/* increase */
+		if (env->memorymax < INT_MAX)
+		    env->memorymax *= 2;
+		else
+		    env->memorymax = INT_MAX;
+	    }
+	    /*
+	     * Make sure that enough nodes are available. Just in case the
+	     * decrease calculation was wrong.
+	     */
+	    if (env->memorymax < numgc)
+		env->memorymax = numgc;
+	    /*
+	     * Also make sure that memory is not lower than MEM_LOW.
+	     */
+	    if (env->memorymax < MEM_LOW)
+		env->memorymax = MEM_LOW;
+	    /*
+	     * Now do the actual copying. The new memory, that is guaranteed to
+	     * be large enough, is allocated in gc1. In gc2 the old memory will
+	     * be released.
+	     */
 	    if (o == LIST_)		/* copy parameters */
 		gc1(env, &u.lis, &r);
 	    else			/* copy roots */
 		gc1(env, 0, &r);
-	    gc2(env);			/* finish copying */
+	    /*
+	     * Check that, after copying, memoryindex is lower than memorymax.
+	     * It should be, because the precise number was counted up front.
+	     * And if it wasn't then some memory may have been overwritten.
+	     */
+	    assert(env->memoryindex < env->memorymax);
+	    gc2(env);		/* finish copying */
 	}
     }
-    p = memoryindex;		/* new index of new node(s) */
-    memoryindex += num;		/* space for new node(s) */
+    p = env->memoryindex;	/* new index of new node(s) */
+    env->memoryindex += num;	/* space for new node(s) */
     env->nodes += num;		/* statistics */
 /*
  * Fill newly created node(s) with data from parameters. Some special handling
@@ -426,7 +489,7 @@ Index newnode2(pEnv env, Index p, Index r)
  */
 void my_memoryindex(pEnv env)
 {
-    NULLARY(INTEGER_NEWNODE, memoryindex);
+    NULLARY(INTEGER_NEWNODE, env->memoryindex);
 }
 
 /*
@@ -434,5 +497,5 @@ void my_memoryindex(pEnv env)
  */
 void my_memorymax(pEnv env)
 {
-    NULLARY(INTEGER_NEWNODE, memorymax);
+    NULLARY(INTEGER_NEWNODE, env->memorymax);
 }

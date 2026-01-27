@@ -1,8 +1,8 @@
 /* FILE: interp.c */
 /*
  *  module  : interp.c
- *  version : 1.87
- *  date    : 11/15/24
+ *  version : 1.88
+ *  date    : 01/24/26
  */
 
 /*
@@ -80,8 +80,11 @@ void exeterm(pEnv env, Index n)
     int index;
     Entry ent;
 #ifdef COMPILER
+#ifdef INLINING
+    int leng;
+#endif
+    int nofun;
     const char *ptr;
-    int leng, nofun;
 #endif
 
 start:
@@ -142,6 +145,7 @@ start:
 		/*
 		 * Functions are inlined unless they are called recursively.
 		 */
+#ifdef INLINING
 		if ((ent.cflags & IS_ACTIVE) == 0) {
 		    /*
 		     * The ACTIVE flag prevents endless recursion.
@@ -165,15 +169,19 @@ start:
 		    ptr = identifier(ent.name);
 		    leng = strlen(ptr) + 4;
 		    ent.name = GC_malloc_atomic(leng);
-		    snprintf(ent.name, leng, "do_%s", ptr);
+		    snprintf(ent.name, leng, "%s", ptr);
 		}
+#endif
 		/*
 		 * The USED flag causes the function to be printed.
 		 */
 		ent.cflags |= IS_USED;
 		vec_at(env->symtab, index) = ent;
 		printstack(env);
-		fprintf(env->outfp, "%s(env);\n", ent.name);
+		if (index < tablesize())
+		    fprintf(env->outfp, "%s_(env);\n", nickname(index));
+		else
+		    fprintf(env->outfp, "do_%s(env);\n", ent.name);
 		break;
 	    }
 #endif	    
@@ -223,7 +231,8 @@ start:
 		 */
 		if (nofun || ent.nofun) {
 		    printstack(env);
-		    fprintf(env->outfp, "%s_(env);\n", ent.name);
+		    ptr = index < tablesize() ? nickname(index) : ent.name;
+		    fprintf(env->outfp, "%s_(env);\n", ptr);
 		    break;
 		}
 	    }

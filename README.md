@@ -32,8 +32,6 @@ Joy date back to 1994.
 Build instructions
 ------------------
 
-    rm -rf build
-    mkdir build
     cd build
     cmake -G "Unix Makefiles" ..
     cmake --build .
@@ -48,8 +46,9 @@ Then manually change the path to inilib.joy in ~/usrlib.joy from "../lib" to
 Build with MSVC
 ---------------
 
-    cmake --build . --config Release
-    copy Release\joy.exe
+    cd build
+    cmake -DCMAKE_BUILD_TYPE=Release ..
+    cmake --build .
 
     copy ..\lib\usrlib.joy %HOMEPATH%
     mkdir %HOMEPATH%\usrlib
@@ -83,16 +82,16 @@ See also
 
 Implementation|Dependencies
 --------------|------------
-[42minjoy](https://github.com/Wodan58/42minjoy)|
-[joy0](https://github.com/Wodan58/joy0)|
+[42minjoy](https://github.com/Wodan58/42minjoy)|Minimal Joy
+[joy0](https://github.com/Wodan58/joy0)|Original Joy
 [joy1](https://github.com/Wodan58/joy1)|[BDW garbage collector](https://github.com/ivmai/bdwgc)
 [Foy](https://github.com/Wodan58/Foy)|[BDW garbage collector](https://github.com/ivmai/bdwgc)
 [Moy](https://github.com/Wodan58/Moy)|[BDW garbage collector](https://github.com/ivmai/bdwgc) and [Lex & Yacc](https://sourceforge.net/projects/winflexbison/files/win_flex_bison-latest.zip)
 
 Documentation|Notes
 -------------|-----
-[Legacy Docs](https://wodan58.github.io)|Link in About section
-[User Manual](https://wodan58.github.io/j09imp.html)|
-[Comparison](https://github.com/Wodan58/HET/blob/master/doc/FIB.md)|Speed comparison
-[Maintenance Manual (PDF)](https://github.com/Wodan58/G3/blob/master/JOP.pdf)|6th edition
-[Academic Article (PDF)](https://sol.sbc.org.br/index.php/sblp/article/view/30253/30060)|Conversion to/from Combinatory Calculus
+[Legacy Docs](https://wodan58.github.io)|Original Joy documentation
+[User Manual](https://wodan58.github.io/j09imp.html)|Joy language reference
+[Comparison](https://github.com/Wodan58/HET/blob/master/doc/FIB.md)|Fibonacci
+[Main Manual](https://github.com/Wodan58/G3/blob/master/JOP.pdf)|7th edition
+[Academic](https://sol.sbc.org.br/index.php/sblp/article/view/30253/30060)|Conversion to/from Combinatory Calculus

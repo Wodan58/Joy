@@ -1,7 +1,7 @@
 /*
  *  module  : optable.c
- *  version : 1.17
- *  date    : 01/12/26
+ *  version : 1.18
+ *  date    : 01/22/26
  */
 #include "globals.h"
 #include "runtime.h"
@@ -75,7 +75,7 @@ static struct {
  * tablesize - return the size of the table, to be used when searching from the
  *	       end of the table to the start.
  */
-#if defined(BYTECODE) || defined(COMPILER)
+#if defined(BYTECODE) || defined(COMPILER) || defined(RUNBYTES)
 int tablesize(void)
 {
     return sizeof(optable) / sizeof(optable[0]);

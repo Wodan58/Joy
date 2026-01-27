@@ -1,7 +1,7 @@
 /*
  *  module  : error.c
- *  version : 1.3
- *  date    : 10/11/24
+ *  version : 1.4
+ *  date    : 01/24/26
  */
 #include "globals.h"
 
@@ -17,13 +17,14 @@ void execerror(pEnv env, char *message, char *op)
 
     if (env->compiling > 0) {
 	leng = lookup(env, op);			/* locate in symbol table */
-	if (leng < tablesize())
-	    op = nickname(leng);
 	ent = vec_at(env->symtab, leng);
 	ent.flags |= IS_USED;
 	vec_at(env->symtab, leng) = ent;
 	printstack(env);
-	fprintf(env->outfp, "%s_(env);\n", op);
+	if (leng < tablesize())
+	    fprintf(env->outfp, "%s_(env);\n", nickname(leng));
+	else
+	    fprintf(env->outfp, "do_%s(env);\n", op);
 	return;
     }
 #endif

@@ -1,15 +1,21 @@
 /*
  *  module  : setraw.c
- *  version : 1.11
- *  date    : 01/08/26
+ *  version : 1.12
+ *  date    : 01/16/26
  */
 #include <stdio.h>
 #include <stdlib.h>
 
-#if defined(_MSC_VER) || defined(__MINGW64_VERSION_MAJOR) || defined(__TINYC__)
+/*
+ * Some compilers compile for the Windows platform.
+ */
+#if defined(_MSC_VER) || defined(__MINGW32__) || defined(__TINYC__)
 #define WINDOWS
 #endif
 
+/*
+ * If nothing was defined, define UNIX.
+ */
 #if !defined(ATARI) && !defined(WINDOWS)
 #define UNIX
 #endif
@@ -116,14 +122,9 @@ static void initScreen()
 static void initScreen(void)
 #endif
 {
-    int rows, cols;
+    int rows = 25, cols = 80;	/* assume reasonable size */
 
     raw_mode = 1;
-
-#ifdef ATARI    
-    rows = 25;
-    cols = 80;
-#endif
 
 #ifdef WINDOWS
     rows = size_y;
@@ -138,6 +139,10 @@ static void initScreen(void)
     }
 #endif
 
+    if (!rows || !cols) {	/* restore reasonable size */
+	rows = 25;
+	cols = 80;
+    }
     /*
      * External function that should be present.
      */

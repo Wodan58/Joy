@@ -1,7 +1,7 @@
 /*
  *  module  : runtime.h
- *  version : 1.3
- *  date    : 11/11/24
+ *  version : 1.4
+ *  date    : 01/21/26
  */
 #define FLOATABLE							\
     (nodetype(env->stck) == INTEGER_ || nodetype(env->stck) == FLOAT_)
@@ -232,6 +232,7 @@
 
 #include "src/andorxor.h"
 #include "src/bfloat.h"
+#include "src/boolean.h"
 #include "src/compare.h"
 #include "src/comprel.h"
 #include "src/comprel2.h"

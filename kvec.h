@@ -50,8 +50,8 @@ int main()
 
 /*
     module  : kvec.h
-    version : 1.21
-    date    : 01/06/26
+    version : 1.23
+    date    : 01/26/26
 
  1. Change type of n, m from size_t to unsigned. Reason: takes less memory.
  2. Remove (type*) casts. Reason: not needed for C.

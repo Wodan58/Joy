@@ -1,8 +1,8 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.124
- *  date    : 01/13/26
+ *  version : 1.131
+ *  date    : 01/26/26
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -47,7 +47,7 @@
  * means that WINDOWS can be set. Other compilers need to set this explicitly,
  * if so desired.
  */
-#if defined(_MSC_VER) || defined(__MINGW64_VERSION_MAJOR) || defined(__TINYC__)
+#if defined(_MSC_VER) || defined(__MINGW32__) || defined(__TINYC__)
 #define WINDOWS
 #endif
 
@@ -221,7 +221,7 @@ typedef struct Token {
 
 typedef struct Entry {
     char *name;
-    unsigned char is_user, flags, is_ok, is_root, is_last, qcode, nofun, cflags;
+    unsigned char is_user, flags, is_ok, is_root, qcode, nofun, cflags;
     union {
 	Index body;
 	proc_t proc;
@@ -269,6 +269,9 @@ typedef struct Env {
 #ifdef NOBDW
     clock_t gc_clock;
     Node *memory;		/* dynamic memory */
+    Node *old_memory;
+    size_t memorymax;
+    Index memoryindex, mem_low;
     Index conts, dump, dump1, dump2, dump3, dump4, dump5, inits;
 #endif
     Index prog, stck;
@@ -372,8 +375,8 @@ void print(pEnv env);
 /* repl.c */
 void repl(pEnv env);
 /* setraw.c */
-void SetRaw();
-void SetNormal();
+void SetRaw(void);
+void SetNormal(void);
 /* symbol.c */
 int lookup(pEnv env, char *name);
 int enteratom(pEnv env, char *name);
@@ -390,29 +393,29 @@ void initbytes(pEnv env, char *ext);
 void exitbytes(pEnv env);
 /* compeval.c */
 void compeval(pEnv env, FILE *fp);
-/* computil.c */
-Node *reverse(Node *cur);
-char *outputfile(char *inputfile, char *suffix);
 /* dumpbyte.c */
 void dumpbyte(pEnv env, FILE *fp);
 /* optimize.c */
 void optimize(pEnv env, FILE *fp);
-/* readbyte.c */
-void readbyte(pEnv env, FILE *fp);
-unsigned char *readfile(FILE *fp);
 /* renumber.c */
 void renumber(pEnv env, FILE *fp);
+#endif
+#if defined(BYTECODE) || defined(COMPILER)
+/* computil.c */
+Node *reverse(Node *cur);
+char *outputfile(char *inputfile, char *suffix);
+#endif
+#if defined(BYTECODE) || defined(COMPILER) || defined(RUNBYTES)
+/* readbyte.c */
+void readbyte(pEnv env, FILE *fp);
 #endif
 #ifdef COMPILER
 /* compiler.c */
 void printnode(pEnv env, Node *node);
 void printstack(pEnv env);
 void compile(pEnv env, Node *node);
-void initcompile(pEnv env);
+void initcompile(pEnv env, int joy);
 void exitcompile(pEnv env);
-/* computil.c */
-Node *reverse(Node *cur);
-char *outputfile(char *inputfile, char *suffix);
 /* identify.c */
 const char *identifier(const char *str);
 const char *unidentify(const char *str);

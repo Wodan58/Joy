@@ -1,8 +1,8 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.111
- *  date    : 01/08/26
+ *  version : 1.115
+ *  date    : 01/22/26
  */
 
 /*
@@ -197,7 +197,7 @@ static void options(int verbose)
     printf("  -g : set the __tracegc flag (0-6)\n");
     printf("  -h : print this help text and exit\n");
     printf("  -i : ignore impure imperative functions\n");
-#ifdef BYTECODE
+#if defined(BYTECODE) || defined(COMPILER) || defined(RUNBYTES)
     printf("  -j : filename parameter is binary\n");
 #endif
     printf("  -k : allow keyboard input in raw mode\n");
@@ -246,8 +246,9 @@ void do_push_int(int num)
 static void my_main(int argc, char **argv)
 {
     static unsigned char psdump = 0, pstats = 0;
-#ifdef BYTECODE
+#if defined(BYTECODE) || defined(COMPILER) || defined(RUNBYTES)
     static unsigned char joy = 1;	/* assume joy source code */
+    FILE *fp = 0;
 #endif
     Env env;				/* global variables */
     int i, j, ch;
@@ -255,7 +256,6 @@ static void my_main(int argc, char **argv)
     unsigned char helping = 0, unknown = 0, mustinclude = 1, verbose = 0,
 		  raw = 0;
 #ifdef BYTECODE
-    FILE *fp = 0;
     unsigned char listing = 0, lining = 0, quick = 0, renum = 0;
 #endif
 
@@ -323,7 +323,7 @@ static void my_main(int argc, char **argv)
 			   break;
 		case 'h' : helping = 1; break;
 		case 'i' : env.ignore = 1; break;
-#ifdef BYTECODE
+#if defined(BYTECODE) || defined(COMPILER) || defined(RUNBYTES)
 		case 'j' : joy = 0; break;		/* assume binary file */
 #endif
 		case 'k' : raw = 1; break;		/* terminal raw mode */
@@ -374,17 +374,30 @@ static void my_main(int argc, char **argv)
     for (i = 1; i < argc; i++) {
 	ch = argv[i][0];
 	if (!isdigit(ch)) {
-	    /*
-	     * The first file should also benefit from include logic.
-	     */
-#ifdef BYTECODE
+#if defined(BYTECODE) || defined(COMPILER) || defined(RUNBYTES)
 	    if (!joy) {
 		if ((fp = fopen(env.filename = argv[i], "rb")) == 0) {
-		    fprintf(stderr, "failed to open the file '%s'.\n", argv[i]);
-		    return;
+		    /*
+		     * Try the path of the executable.
+		     */
+		    if (vec_size(env.pathnames)) {
+			ptr = vec_at(env.pathnames, 0);
+			j = strlen(ptr) + strlen(env.filename) + 2;
+			tmp = GC_malloc_atomic(j);
+			snprintf(tmp, j, "%s/%s", ptr, env.filename);
+			fp = fopen(tmp, "rb");
+		    }
+		    if (!fp) {
+			fprintf(stderr, "failed to open the file '%s'.\n",
+					argv[i]);
+			return;
+		    }
 		}
 	    } else
 #endif
+	    /*
+	     * The first file should also benefit from include logic.
+	     */
 	    if (include(&env, env.filename = argv[i])) {
 		fprintf(stderr, "failed to open the file '%s'.\n", argv[i]);
 		return;
@@ -469,7 +482,7 @@ start:
 #endif
 #ifdef COMPILER
     if (env.compiling)
-	initcompile(&env);	/* create .c file */
+	initcompile(&env, joy);	/* create .c file */
 #endif
     /*
      * handle options, might print symbol table.
@@ -487,7 +500,7 @@ start:
      * (re)initialize code.
      */
     env.prog = 0;		/* clear program, just to be sure */
-#ifdef BYTECODE
+#if defined(BYTECODE) || defined(COMPILER) || defined(RUNBYTES)
     if (!joy) {			/* interprete or compile bytecode */
 	readbyte(&env, fp);
 #ifdef COMPILER

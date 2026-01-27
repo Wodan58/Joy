@@ -1,7 +1,7 @@
 /*
     module  : gc.c
-    version : 1.59
-    date    : 01/13/26
+    version : 1.64
+    date    : 01/26/26
 */
 #include <stdio.h>
 #include <string.h>
@@ -43,6 +43,11 @@ typedef uint64_t pointer_t;
 #endif
 
 #include "khash.h"
+/*
+ *  Note: including the exported functions in the implementation file, ensures
+ *  that the function signatures are synchronized. Software shops that forbid
+ *  this kind of safeguard ...
+ */
 #include "gc.h"
 
 #ifdef _MSC_VER
@@ -110,14 +115,6 @@ static pointer_t start_of_text,
 		 start_of_data,
 		 start_of_bss,
 		 start_of_heap;
-#endif
-
-/*
- *  fatal - Report a fatal error and end the program. The message is taken from
- *	    yacc. The function should be present in main.c
- */
-#ifdef TEST_MALLOC_RETURN
-void fatal(char *str);
 #endif
 
 /*
@@ -198,63 +195,9 @@ void GC_INIT(void)
 }
 
 /*
- *  Mark a block as in use. No optimization for this (recursive) function.
- *  Recursion is suspicious.
- */
-static void mark_ptr(char *ptr)
-{
-    khint_t key;
-    size_t i, size;
-    pointer_t value;
-
-    value = TO_INTEGER(ptr);
-    if (value < lower || value >= upper)
-	return;
-    if ((key = kh_get(Backup, MEM, value)) != kh_end(MEM)) {
-	if (kh_val(MEM, key).flags & GC_MARK)
-	    return;
-	kh_val(MEM, key).flags |= GC_MARK;
-	if (kh_val(MEM, key).flags & GC_LEAF)
-	    return;
-	size = kh_val(MEM, key).size / sizeof(char *);
-	for (i = 0; i < size; i++)
-	    mark_ptr(((char **)TO_POINTER(value))[i]);
-    }
-}
-
-/*
- *  Mark blocks that can be found on the stack.
- */
-static void mark_stk(void)
-{
-    pointer_t ptr = TO_INTEGER(&ptr);
-  
-#ifdef STACK_GROWS_UPWARD
-    if (ptr > bottom)
-	for (; ptr > TO_INTEGER(bottom_of_stack); ptr -= sizeof(char *))
-	    mark_ptr(*(char **)TO_POINTER(ptr));
-    else
-#endif
-	for (; ptr < TO_INTEGER(bottom_of_stack); ptr += sizeof(char *))
-	    mark_ptr(*(char **)TO_POINTER(ptr));
-}
-
-/*
- *  Mark blocks that are pointed to from static uninitialized memory.
- */
-#ifdef SCAN_BSS_MEMORY
-static void mark_bss(void)
-{
-    pointer_t ptr, end_of_bss;
-
-    end_of_bss = start_of_heap - sizeof(void *);
-    for (ptr = start_of_bss; ptr <= end_of_bss; ptr += BSS_ALIGN)
-	mark_ptr(*(char **)TO_POINTER(ptr));
-}
-#endif
-
-/*
  *  Walk registered blocks and free those that have not been marked.
+ *  Note: kh_del from khash.h can be used in a loop. The one from khashl.h
+ *  cannot be used.
  */
 static void scan(void)
 {
@@ -273,31 +216,6 @@ static void scan(void)
 	    }
 	}
     }
-}
-
-/*
- *  Collect garbage.
- *
- *  Pointers that are reachable from registers or stack are marked
- *  as well as all pointers that are reachable from those pointers.
- *  In other words: roots for garbage collection are searched in
- *  registers, on the stack, and in the blocks themselves.
- */
-void GC_gcollect(void)
-{
-    jmp_buf env;
-    void (* volatile m)(void) = mark_stk;
-
-    memset(&env, 0, sizeof(jmp_buf));
-    setjmp(env);
-    (*m)();
-#ifdef SCAN_BSS_MEMORY
-    mark_bss();
-#endif
-    scan();
-#ifdef COUNT_COLLECTIONS
-    GC_gc_no++;
-#endif
 }
 
 /*
@@ -343,7 +261,7 @@ static void *mem_block(size_t size, int leaf)
     ptr = malloc(size);
 #ifdef TEST_MALLOC_RETURN
     if (!ptr)
-	fatal("memory exhausted");	/* LCOV_EXCL_LINE */
+	fatal("memory exhausted");
 #endif
     memset(ptr, 0, size);
     remind(ptr, size, leaf);
@@ -370,7 +288,7 @@ void *GC_malloc(size_t size)
 }
 #endif
 
-#ifdef USE_GC_REALLOC
+#if defined(USE_GC_REALLOC) || defined(USE_GC_FREE)
 /*
  *  Forget about a memory block and return its flags.
  */
@@ -392,10 +310,33 @@ static unsigned char forget(void *ptr)
     }
     return flags;
 }
+#endif
+
+/*
+ *  Remove a pointer from the hash table.
+ */
+#ifdef USE_GC_FREE
+void GC_free(void *ptr)
+{
+#ifdef COUNT_COLLECTIONS
+    unsigned old_size = 0;
+#endif
+
+    if (!ptr)
+	return;
+#ifdef COUNT_COLLECTIONS
+    forget(ptr, &old_size);
+    memory_use -= old_size;
+#else
+    flags = forget(ptr);
+#endif
+}
+#endif
 
 /*
  *  Enlarge an already allocated memory block.
  */
+#ifdef USE_GC_REALLOC
 void *GC_realloc(void *ptr, size_t size)
 {
     unsigned char flags;
@@ -415,7 +356,7 @@ void *GC_realloc(void *ptr, size_t size)
     ptr = realloc(ptr, size);
 #ifdef TEST_MALLOC_RETURN
     if (!ptr)
-	fatal("memory exhausted");	/* LCOV_EXCL_LINE */
+	fatal("memory exhausted");
 #endif
     remind(ptr, size, flags);
     return ptr;
@@ -443,7 +384,6 @@ char *GC_strdup(const char *str)
  *  Return the number of garbage collections.
  *  This is reported in the main function.
  */
-/* LCOV_EXCL_START */
 long GC_get_gc_no(void)
 {
     return GC_gc_no;
@@ -464,5 +404,85 @@ size_t GC_get_free_bytes(void)
 {
     return free_bytes;
 }
-/* LCOV_EXCL_STOP */
 #endif
+
+/*
+ *  Mark a block as in use. Also remember interior pointers, to be processed
+ *  later on.
+ */
+static void mark_ptr(char *ptr)
+{
+    khint_t key;
+    size_t i, size;
+    pointer_t value;
+
+    value = TO_INTEGER(ptr);
+    if (value < lower || value >= upper)	/* check whether in heap */
+	return;
+    if ((key = kh_get(Backup, MEM, value)) != kh_end(MEM)) {
+	if (kh_val(MEM, key).flags & GC_MARK)	/* check whether already done */
+	    return;
+	kh_val(MEM, key).flags |= GC_MARK;
+	if (kh_val(MEM, key).flags & GC_LEAF)	/* leaf nodes w/o interior */
+	    return;
+	size = kh_val(MEM, key).size / sizeof(char *);
+	for (i = 0; i < size; i++)
+	    mark_ptr(((char **)TO_POINTER(value))[i]);
+    }
+}
+
+/*
+ *  Mark blocks that can be found on the stack.
+ */
+static void mark_stk(void)
+{
+    pointer_t ptr = TO_INTEGER(&ptr);
+
+#ifdef STACK_GROWS_UPWARD
+    if (ptr > bottom)
+	for (; ptr > TO_INTEGER(bottom_of_stack); ptr -= sizeof(char *))
+	    mark_ptr(*(char **)TO_POINTER(ptr));
+    else
+#endif
+	for (; ptr < TO_INTEGER(bottom_of_stack); ptr += sizeof(char *))
+	    mark_ptr(*(char **)TO_POINTER(ptr));
+}
+
+/*
+ *  Mark blocks that are pointed to from static uninitialized memory.
+ */
+#ifdef SCAN_BSS_MEMORY
+static void mark_bss(void)
+{
+    pointer_t ptr, end_of_bss;
+
+    end_of_bss = start_of_heap - sizeof(void *);
+    for (ptr = start_of_bss; ptr <= end_of_bss; ptr += BSS_ALIGN)
+	mark_ptr(*(char **)TO_POINTER(ptr), stack);
+}
+#endif
+
+/*
+ *  Collect garbage.
+ *
+ *  Pointers that are reachable from registers or stack are marked
+ *  as well as all pointers that are reachable from those pointers.
+ *  In other words: roots for garbage collection are searched in
+ *  registers, on the stack, and in the blocks themselves.
+ */
+void GC_gcollect(void)
+{
+    jmp_buf env;
+    void (* volatile m)(void) = mark_stk;
+
+    memset(&env, 0, sizeof(jmp_buf));
+    setjmp(env);
+    (*m)();
+#ifdef SCAN_BSS_MEMORY
+    mark_bss();
+#endif
+    scan();
+#ifdef COUNT_COLLECTIONS
+    GC_gc_no++;
+#endif
+}

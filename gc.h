@@ -1,7 +1,7 @@
 /*
     module  : gc.h
-    version : 1.27
-    date    : 01/07/26
+    version : 1.29
+    date    : 01/26/26
 */
 #ifndef GC_H
 #define GC_H
@@ -19,12 +19,13 @@ extern char *bottom_of_stack;
 #ifdef NPROTO
 void fatal();
 #else
-void fatal(char *str);			/* LCOV_EXCL_LINE */
+void fatal(char *str);
 #endif
 
 /* #define STACK_GROWS_UPWARD */
 /* #define SCAN_BSS_MEMORY */
 /* #define USE_GC_REALLOC */
+/* #define USE_GC_FREE */
 
 #ifdef MALLOC_DEBUG
 #define FREE_ON_EXIT
@@ -40,6 +41,7 @@ void GC_INIT();
 void GC_gcollect();
 void *GC_malloc_atomic();
 void *GC_malloc();
+void GC_free();
 void *GC_realloc();
 char *GC_strdup();
 long GC_get_gc_no();
@@ -50,10 +52,11 @@ void GC_INIT(void);
 void GC_gcollect(void);
 void *GC_malloc_atomic(size_t size);
 void *GC_malloc(size_t size);
-void *GC_realloc(void *old, size_t size);
+void GC_free(void *ptr);
+void *GC_realloc(void *ptr, size_t size);
 char *GC_strdup(const char *str);
-long GC_get_gc_no(void);		/* LCOV_EXCL_LINE */
-size_t GC_get_memory_use(void);		/* LCOV_EXCL_LINE */
-size_t GC_get_free_bytes(void);		/* LCOV_EXCL_LINE */
+long GC_get_gc_no(void);
+size_t GC_get_memory_use(void);
+size_t GC_get_free_bytes(void);
 #endif
 #endif
