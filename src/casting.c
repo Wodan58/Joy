@@ -1,7 +1,7 @@
 /*
     module  : casting.c
-    version : 1.5
-    date    : 01/12/26
+    version : 1.6
+    date    : 02/04/26
 */
 #ifndef CASTING_C
 #define CASTING_C
@@ -18,11 +18,9 @@ void casting_(pEnv env)
     node.op = nodevalue(env->stck).num;
     POP(env->stck);
     if (node.op == STRING_ || node.op == BIGNUM_)
-	node.u.str = check_strdup((char *)&nodevalue(env->stck));
+	node.u.str = GC_strdup((char *)&nodevalue(env->stck));
     else
 	node.u = nodevalue(env->stck);
     env->stck = newnode(env, node.op, node.u, nextnode1(env->stck));
-    if (node.op == STRING_ || node.op == BIGNUM_)
-	free(node.u.str);
 }
 #endif

@@ -1,15 +1,11 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.131
- *  date    : 01/26/26
+ *  version : 1.134
+ *  date    : 02/06/26
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
-
-#ifdef MALLOC_DEBUG
-#include "rmalloc.h"
-#endif
 
 #include <stdio.h>
 #include <string.h>
@@ -18,24 +14,11 @@
 #include <limits.h>
 #include <stdint.h>
 #include <setjmp.h>
-#include <signal.h>
 #include <assert.h>
 #include <math.h>
 #include <time.h>
 #include <inttypes.h>
 
-/*
- * KHASHL uses a more modern interface, but cannot be used in gc.c
- */
-/* #define USE_KHASHL */
-
-/*
- * Under Linux overcommit_memory can be turned off (value 2), or ulimit kan be
- * set and that way, malloc can return 0. The return value of GC_malloc is not
- * tested, because, although BDW can announce that it will return NULL, it
- * never does.
- */
-#define TEST_MALLOC_RETURN
 /*
  * A call to system() is not allowed in WINDOWS_S. It is a kind of security
  * leak and can be disabled here.
@@ -69,19 +52,11 @@
 #endif
 
 /*
- * The path to the gc-header needs to be set with -I on the command line.
+ * The path to the gc-header must be set with -I on the command line.
  */
-#ifdef NOBDW
-#include "gc.h"
-#else
 #include <gc.h>
-#endif
 #include "kvec.h"
-#ifdef USE_KHASHL
 #include "khashl.h"
-#else
-#include "khash.h"
-#endif
 
 #ifdef NOBDW
 #define nodetype(n)	env->memory[n].op
@@ -100,9 +75,6 @@
 #define nextnode3(p)	(nextnode2(p))->next
 #define nextnode4(p)	(nextnode3(p))->next
 #define nextnode5(p)	(nextnode4(p))->next
-#ifdef TRACEGC
-#undef TRACEGC
-#endif
 #endif
 
 #include "macros.h"
@@ -118,7 +90,7 @@
 #define INPLINEMAX	255
 #define BUFFERMAX	100	/* smaller buffer */
 #define HELPLINEMAX	72
-#define MAXNUM		40	/* even smaller buffer */
+#define MAXNUM		60	/* even smaller buffer */
 #define FILENAMEMAX	14
 #define DISPLAYMAX	10	/* nesting in HIDE & MODULE */
 #define INIECHOFLAG	0
@@ -228,15 +200,22 @@ typedef struct Entry {
     } u;
 } Entry;
 
-#ifdef USE_KHASHL
 KHASHL_MAP_INIT(KH_LOCAL, symtab_t, symtab, const char *, int, kh_hash_str,
 		kh_eq_str)
 KHASHL_MAP_INIT(KH_LOCAL, funtab_t, funtab, uint64_t, int, kh_hash_uint64,
 		kh_eq_generic)
-#else
-KHASH_MAP_INIT_STR(Symtab, int)
-KHASH_MAP_INIT_INT64(Funtab, int)
-#endif
+
+/*
+ * Anonymous vectors are now a thing of the past. They cannot be passed as
+ * a parameter and although such usage is not required, it is better to use
+ * named vectors going forward.
+ */
+typedef char *char_p;		/* pointer to char */
+typedef char char_s;		/* dynamic string */
+typedef char char_b;		/* push back buffer */
+typedef struct {
+    Index from, *to;
+} pair_t;
 
 typedef struct Env {
     jmp_buf finclude;		/* return point in finclude */
@@ -253,28 +232,24 @@ typedef struct Env {
     char *filename;		/* first include file */
     char *homedir;		/* HOME or HOMEPATH */
     char *mod_name;		/* name of module */
-    vector(char *) *pathnames;	/* pathnames to be searched when including */
-    vector(char) *string;	/* value */
-    vector(char) *pushback;	/* push back buffer */
+    vector(char_p) *pathnames;	/* pathnames to be searched when including */
+    vector(char_s) *string;	/* value */
+    vector(char_b) *pushback;	/* push back buffer */
     vector(Token) *tokens;	/* read ahead table */
     vector(Entry) *symtab;	/* symbol table */
-#ifdef USE_KHASHL
     symtab_t *hash;		/* hash tables that index the symbol table */
     funtab_t *prim;
-#else
-    khash_t(Symtab) *hash;
-    khash_t(Funtab) *prim;
-#endif
     Types bucket;		/* used by NEWNODE defines */
 #ifdef NOBDW
     clock_t gc_clock;
+    vector(pair_t) *gc_stack;	/* garbage collection w/o recursion, sort of */
     Node *memory;		/* dynamic memory */
     Node *old_memory;
     size_t memorymax;
     Index memoryindex, mem_low;
-    Index conts, dump, dump1, dump2, dump3, dump4, dump5, inits;
+    Index dump, dump1, dump2, dump3, dump4, dump5, inits;
 #endif
-    Index prog, stck;
+    Index prog, stck, conts;
 #ifdef COMPILER
     FILE *declfp, *outfp;
 #endif
@@ -299,8 +274,10 @@ typedef struct Env {
     unsigned char finclude_busy;
     unsigned char flibrary_busy;
     unsigned char variable_busy;
-    signed char bytecoding;	/* BDW only */
-    signed char compiling;	/* BDW only */
+#ifndef NOBDW
+    signed char bytecoding;
+    signed char compiling;
+#endif
 } Env;
 
 typedef struct table_t {

@@ -1,7 +1,7 @@
 /*
     module  : split.c
-    version : 1.15
-    date    : 01/08/26
+    version : 1.16
+    date    : 02/04/26
 */
 #ifndef SPLIT_C
 #define SPLIT_C
@@ -15,6 +15,7 @@ Uses test B to split aggregate A into sametype aggregates A1 and A2.
 void split_(pEnv env)
 {
     Index temp;
+    char *volatile ptr;
     uint64_t yes_set = 0, no_set = 0;
     char *str, *yesstring, *nostring;
     int i = 0, yesptr = 0, noptr = 0, result = 0;
@@ -39,9 +40,9 @@ void split_(pEnv env)
 	NULLARY(SET_NEWNODE, no_set);
 	break;
     case STRING_:
-	yesstring = check_malloc(nodeleng(SAVED2) + 1);
-	nostring = check_malloc(nodeleng(SAVED2) + 1);
-	for (str = check_strdup((char *)&nodevalue(SAVED2)); str[i]; i++) {
+	yesstring = GC_malloc(nodeleng(SAVED2) + 1);
+	nostring = GC_malloc(nodeleng(SAVED2) + 1);
+	for (str = ptr = GC_strdup((char *)&nodevalue(SAVED2)); str[i]; i++) {
 	    env->stck = CHAR_NEWNODE(str[i], SAVED3);
 	    exeterm(env, nodevalue(SAVED1).lis);
 	    CHECKSTACK("split");
@@ -55,9 +56,6 @@ void split_(pEnv env)
 	nostring[noptr] = 0;
 	env->stck = STRING_NEWNODE(yesstring, SAVED3);
 	NULLARY(STRING_NEWNODE, nostring);
-	free(str);
-	free(nostring);
-	free(yesstring);
 	break;
     case LIST_:
 	env->dump1 = LIST_NEWNODE(nodevalue(SAVED2).lis, env->dump1);

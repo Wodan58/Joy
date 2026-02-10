@@ -1,7 +1,7 @@
 /*
  *  module  : setraw.c
- *  version : 1.12
- *  date    : 01/16/26
+ *  version : 1.13
+ *  date    : 02/04/26
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -140,8 +140,8 @@ static void initScreen(void)
 #endif
 
     if (!rows || !cols) {	/* restore reasonable size */
-	rows = 25;
-	cols = 80;
+	rows = 25;		/* LCOV_EXCL_LINE */
+	cols = 80;		/* LCOV_EXCL_LINE */
     }
     /*
      * External function that should be present.

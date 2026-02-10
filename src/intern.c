@@ -1,7 +1,7 @@
 /*
     module  : intern.c
-    version : 1.14
-    date    : 10/18/24
+    version : 1.15
+    date    : 02/04/26
 */
 #ifndef INTERN_C
 #define INTERN_C
@@ -19,16 +19,16 @@ void intern_(pEnv env)
     ONEPARAM("intern");
     STRING("intern");
     ptr = str = GETSTRING(env->stck);
-    if (!strchr("\"#'().0123456789;[]{}", *ptr)) {
-	if (*ptr == '-' && isdigit((int)ptr[1]))
-	    ;
-	else
-	    for (++ptr; *ptr; ptr++)
-		if (!isalnum((int)*ptr) && !strchr("-=_", *ptr))
-		    break;
-    }
+    if (isspace((int)*ptr))
+	;
+    else if (isdigit((int)*ptr) || (*ptr == '-' && isdigit((int)ptr[1])))
+	;	/* number, not name */
+    else
+	for (++ptr; *ptr && !isspace((int)*ptr); ptr++)
+	    if (strchr("\"#'().;[]{}", *ptr))	/* excluded from name */
+		break;	/* LCOV_EXCL_LINE */
     CHECKNAME(ptr, "intern");
-    index = lookup(env, GC_strdup(str));
+    index = lookup(env, str);
     ent = vec_at(env->symtab, index);
     if (ent.is_user)
 	UNARY(USR_NEWNODE, index);

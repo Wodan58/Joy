@@ -1,14 +1,14 @@
 /*
-    module  : gc.c
-    version : 1.64
-    date    : 01/26/26
-*/
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <limits.h>
+ *  module  : gc.c
+ *  version : 1.70
+ *  date    : 02/09/26
+ */
+#include <stdio.h>	/* for printf-debugging */
 #include <setjmp.h>
-#include <signal.h>
+#ifdef _MSC_VER
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#endif
 
 /*
  *  pointer_t is an unsigned type, large enough to hold a pointer.
@@ -24,10 +24,6 @@ typedef uint64_t pointer_t;
 #define TO_INTEGER(x)	((pointer_t)(intptr_t)(x))
 #endif
 
-#ifdef _MSC_VER
-#pragma warning(disable: 4267)
-#endif
-
 #ifdef _MINIX
 #define kh_inline
 #define POSIX
@@ -40,25 +36,15 @@ typedef uint64_t pointer_t;
 
 #ifdef __APPLE__
 #include <mach-o/getsect.h>
+#include <mach-o/dyld.h>
 #endif
 
 #include "khash.h"
 /*
  *  Note: including the exported functions in the implementation file, ensures
- *  that the function signatures are synchronized. Software shops that forbid
- *  this kind of safeguard ...
+ *  that the function signatures are synchronized. The -I flag is required.
  */
-#include "gc.h"
-
-#ifdef _MSC_VER
-#define DOWN_64K	~0xFFFF
-#define PEPOINTER	15
-#define IMAGE_BASE	13
-#define BASE_OF_CODE	11
-#define SIZE_OF_CODE	7
-#define SIZE_OF_DATA	8
-#define SIZE_OF_BSS	9
-#endif
+#include <gc.h>
 
 #define GC_COLL		0
 #define GC_LEAF		1
@@ -93,12 +79,11 @@ typedef struct mem_info {
 
 /*
  *  The map contains a pointer as key and mem_info as value. The pointer_t is
- *  an unsigned integer equal in size to a pointer.
+ *  an unsigned integer large enough in size to hold a pointer.
  */
 KHASH_INIT(Backup, pointer_t, mem_info, 1, HASH_FUNCTION, kh_int64_hash_equal)
 
 static khash_t(Backup) *MEM;	/* backup of pointers */
-
 static khint_t max_items;	/* max. items before gc */
 static pointer_t lower, upper;	/* heap bounds */
 #ifdef COUNT_COLLECTIONS
@@ -111,57 +96,120 @@ static size_t free_bytes;	/* amount of memory on the freelist */
  *  Pointers to memory segments.
  */
 #ifdef SCAN_BSS_MEMORY
-static pointer_t start_of_text,
-		 start_of_data,
-		 start_of_bss,
-		 start_of_heap;
+static char *start_of_bss, *end_of_bss;
+
+#ifdef _MSC_VER
+static char *start_of_data, *end_of_data;
+
+extern IMAGE_DOS_HEADER __ImageBase;
+
+typedef struct {
+    const char *name;
+    void *vaddr;
+    DWORD vsize;
+    DWORD raw_offset;
+    DWORD raw_size;
+    DWORD characteristics;
+} section_info;
+
+typedef struct {
+    section_info sections[32];	/* 32 should be enough */
+    int count;
+} section_table;
+
+section_table get_all_sections(void)
+{
+    int i;
+    BYTE *base = (BYTE *)&__ImageBase;
+    IMAGE_NT_HEADERS *nt = (IMAGE_NT_HEADERS *)(base + __ImageBase.e_lfanew);
+    IMAGE_SECTION_HEADER *sec = (IMAGE_SECTION_HEADER *)
+	((BYTE *)&nt->OptionalHeader + nt->FileHeader.SizeOfOptionalHeader);
+
+    section_table out = {0};
+    for (i = 0; i < nt->FileHeader.NumberOfSections; i++) {
+        section_info *s = &out.sections[out.count++];
+        s->name = (const char *)sec[i].Name;
+        s->vaddr = base + sec[i].VirtualAddress;
+        s->vsize = sec[i].Misc.VirtualSize;
+        s->raw_offset = sec[i].PointerToRawData;
+        s->raw_size = sec[i].SizeOfRawData;
+        s->characteristics = sec[i].Characteristics;
+    }
+    return out;
+}
+#endif
+
+#ifdef __APPLE__
+typedef struct
+{
+    void *bss_start;
+    size_t bss_size;
+} section_info;
+
+section_info get_macho_sections(void)
+{
+    section_info out = {0};
+    unsigned long size = 0;
+
+    out.bss_start = getsectiondata(NULL, "__DATA", "__bss", &size);
+    out.bss_size = size;
+    return out;
+}
 #endif
 
 /*
  *  Determine sections of memory. This is highly system dependent and not
  *  tested on __APPLE__.
  */
-#ifdef SCAN_BSS_MEMORY
 static void init_heap(void)
 {
-    extern int main(int argc, char **argv);
 #ifdef POSIX
-    extern char etext, edata, end;
+    extern char edata, end;
+
+    start_of_bss = &edata;
+    end_of_bss = &end;
 #endif
-#ifdef _MSC_VER
-    int *ptr;
-#endif
-    start_of_text = TO_INTEGER(main);
+
+#ifdef __x86_64__
+    extern char __bss_start__, __bss_end__;
+
+    start_of_bss = &__bss_start__;
+    end_of_bss = &__bss_end__;
+#else
 #ifdef __MINGW32__
-    extern char _data_start__, _bss_start__, _bss_end__;
-#if 0
-    extern char _data_end__, _image_base__
+    extern char _bss_start__, _bss_end__;
+
+    start_of_bss = &_bss_start__;
+    end_of_bss = &_bss_end__;
 #endif
-    start_of_data = TO_INTEGER(&_data_start__);
-    start_of_bss  = TO_INTEGER(&_bss_start__);
-    start_of_heap = TO_INTEGER(&_bss_end__);
 #endif
-#ifdef POSIX
-    start_of_data = TO_INTEGER(&etext);
-    start_of_bss  = TO_INTEGER(&edata);
-    start_of_heap = TO_INTEGER(&end);
-#endif
-#ifdef __APPLE__
-    start_of_data = TO_INTEGER(get_etext());
-    start_of_bss  = TO_INTEGER(get_edata());
-    start_of_heap = TO_INTEGER(get_end());
-#endif
+
 #ifdef _MSC_VER
-    start_of_text &= DOWN_64K;
-    ptr = (int *)start_of_text;
-    ptr += ptr[PEPOINTER] / 4;
-    start_of_text = ptr[IMAGE_BASE] + ptr[BASE_OF_CODE];
-    start_of_data = start_of_text + ptr[SIZE_OF_CODE];
-    start_of_bss  = start_of_data + ptr[SIZE_OF_DATA];
-    start_of_heap = start_of_bss + ptr[SIZE_OF_BSS];
+    int i;
+    section_info *s;
+    section_table t = get_all_sections();
+
+    for (i = 0; i < t.count; i++) {
+	s = &t.sections[i];
+	if (!strncmp(s->name, ".data", 5)) {
+            start_of_data = s->vaddr;
+	    end_of_data = (char *)s->vaddr + s->vsize;
+	}
+        if (!strncmp(s->name, ".bss", 4)) {
+            start_of_bss = s->vaddr;
+	    end_of_bss = (char *)s->vaddr + s->vsize;
+	}
+    }
+#endif
+ 
+#ifdef __APPLE__
+    section_info s = get_macho_sections();
+
+    start_of_bss = s.bss_start;
+    end_of_bss = s.bss_start + s.bss_size;
 #endif
 }
-#endif
+#endif	/* SCAN_BSS_MEMORY */
 
 /*
  *  Report of the amount of memory allocated is delegated to valgrind.
@@ -261,7 +309,7 @@ static void *mem_block(size_t size, int leaf)
     ptr = malloc(size);
 #ifdef TEST_MALLOC_RETURN
     if (!ptr)
-	fatal("memory exhausted");
+	fatal("memory exhausted");	/* LCOV_EXCL_LINE */
 #endif
     memset(ptr, 0, size);
     remind(ptr, size, leaf);
@@ -356,7 +404,7 @@ void *GC_realloc(void *ptr, size_t size)
     ptr = realloc(ptr, size);
 #ifdef TEST_MALLOC_RETURN
     if (!ptr)
-	fatal("memory exhausted");
+	fatal("memory exhausted");	/* LCOV_EXCL_LINE */
 #endif
     remind(ptr, size, flags);
     return ptr;
@@ -392,6 +440,7 @@ long GC_get_gc_no(void)
 /*
  *  Return the amount of memory currently in use.
  */
+/* LCOV_EXCL_START */
 size_t GC_get_memory_use(void)
 {
     return memory_use;
@@ -404,6 +453,7 @@ size_t GC_get_free_bytes(void)
 {
     return free_bytes;
 }
+/* LCOV_EXCL_STOP */
 #endif
 
 /*
@@ -449,16 +499,20 @@ static void mark_stk(void)
 }
 
 /*
- *  Mark blocks that are pointed to from static uninitialized memory.
+ *  Mark blocks that are pointed to from static (un)initialized memory.
  */
 #ifdef SCAN_BSS_MEMORY
 static void mark_bss(void)
 {
-    pointer_t ptr, end_of_bss;
+    pointer_t ptr = TO_INTEGER(start_of_bss);
 
-    end_of_bss = start_of_heap - sizeof(void *);
-    for (ptr = start_of_bss; ptr <= end_of_bss; ptr += BSS_ALIGN)
-	mark_ptr(*(char **)TO_POINTER(ptr), stack);
+    for (; ptr < TO_INTEGER(end_of_bss); ptr += BSS_ALIGN)
+	mark_ptr(*(char **)TO_POINTER(ptr));
+#ifdef _MSC_VER
+    ptr = TO_INTEGER(start_of_data);
+    for (; ptr < TO_INTEGER(end_of_data); ptr += BSS_ALIGN)
+	mark_ptr(*(char **)TO_POINTER(ptr));
+#endif
 }
 #endif
 

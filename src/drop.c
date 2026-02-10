@@ -1,7 +1,7 @@
 /*
     module  : drop.c
-    version : 1.16
-    date    : 01/08/26
+    version : 1.17
+    date    : 02/04/26
 */
 #ifndef DROP_C
 #define DROP_C
@@ -36,13 +36,7 @@ void drop_(pEnv env)
 	str = GETSTRING(env->stck);
 	while (n-- > 0 && str[i])
 	    i++;
-#ifdef NOBDW
-	str = check_strdup(str + i);
-	UNARY(STRING_NEWNODE, str);
-	free(str);
-#else
 	UNARY(STRING_NEWNODE, GC_strdup(str + i));
-#endif
 	break;
     case LIST_:
 	list = nodevalue(env->stck).lis;

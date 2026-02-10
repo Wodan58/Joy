@@ -1,7 +1,7 @@
 /*
     module  : filter.c
-    version : 1.13
-    date    : 01/08/26
+    version : 1.14
+    date    : 02/04/26
 */
 #ifndef FILTER_C
 #define FILTER_C
@@ -14,9 +14,9 @@ Uses test B to filter aggregate A producing sametype aggregate A1.
 */
 void filter_(pEnv env)
 {
-    char *str;
     Index temp;
     uint64_t set;
+    char *str, *volatile ptr;
     int i = 0, j = 0, result = 0;
 
     TWOPARAMS("filter");
@@ -36,7 +36,7 @@ void filter_(pEnv env)
 	env->stck = SET_NEWNODE(set, SAVED3);
 	break;
     case STRING_:
-	for (str = check_strdup((char *)&nodevalue(SAVED2)); str[i]; i++) {
+	for (str = ptr = GC_strdup((char *)&nodevalue(SAVED2)); str[i]; i++) {
 	    env->stck = CHAR_NEWNODE(str[i], SAVED3);
 	    exeterm(env, nodevalue(SAVED1).lis);
 	    CHECKSTACK("filter");
@@ -46,7 +46,6 @@ void filter_(pEnv env)
 	}
 	str[j] = 0;
 	env->stck = STRING_NEWNODE(str, SAVED3);
-	free(str);
 	break;
     case LIST_:
 	env->dump1 = LIST_NEWNODE(nodevalue(SAVED2).lis, env->dump1);

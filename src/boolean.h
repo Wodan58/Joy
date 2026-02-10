@@ -1,7 +1,7 @@
 /*
     module  : boolean.h
-    version : 1.5
-    date    : 11/15/24
+    version : 1.6
+    date    : 02/04/26
 */
 #ifndef BOOLEAN_H
 #define BOOLEAN_H
@@ -22,6 +22,7 @@ static int get_boolean(pEnv env, Index node)
      */
     case USR_:
     case ANON_FUNCT_:
+    default:
 	rv = 1;	/* assume true */
 	break;
     case BOOLEAN_:

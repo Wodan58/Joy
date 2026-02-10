@@ -50,8 +50,8 @@ int main()
 
 /*
     module  : kvec.h
-    version : 1.23
-    date    : 01/26/26
+    version : 1.24
+    date    : 02/04/26
 
  1. Change type of n, m from size_t to unsigned. Reason: takes less memory.
  2. Remove (type*) casts. Reason: not needed for C.
@@ -97,6 +97,7 @@ int main()
 38. vec_shallow_copy_take_ownership replaced by vec_copy: it failed.
 39. vec_shallow_copy_take_ownership restored: it works with an ownership flag.
 40. Updated example.
+41. Anonymous vectors cannot be passed as parameter; now they are named.
 
   2008-09-22 (0.1.0):
 	* The initial version.
@@ -128,7 +129,7 @@ typedef enum arity_t {
  * o = ownership
  * p = previous capacity
  */
-#define vector(type)		struct { int a, m, n, o, p; type *c; }
+#define vector(type)		struct vec##type { int a, m, n, o, p; type *c; }
 /*
  * A vector is initialized with all fields, except ownership, set to zero.
  */

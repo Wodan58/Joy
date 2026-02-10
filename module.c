@@ -1,7 +1,7 @@
 /*
  *  module  : module.c
- *  version : 1.20
- *  date    : 10/11/24
+ *  version : 1.21
+ *  date    : 02/04/26
  */
 #include "globals.h"
 
@@ -173,11 +173,7 @@ int qualify(pEnv env, char *name)
      * name. If the name is not found, there is an error and a 0 is returned.
      */
     if (strchr(name, '.')) {
-#ifdef USE_KHASHL
 	if ((key = symtab_get(env->hash, name)) != kh_end(env->hash))
-#else
-        if ((key = kh_get(Symtab, env->hash, name)) != kh_end(env->hash))
-#endif
             return kh_val(env->hash, key);
 	return 0;
     }
@@ -197,11 +193,7 @@ int qualify(pEnv env, char *name)
 	    leng = strlen(temp) + strlen(name) + 2;
 	    str = GC_malloc_atomic(leng);
 	    snprintf(str, leng, "%s.%s", temp, name);
-#ifdef USE_KHASHL
 	    if ((key = symtab_get(env->hash, str)) != kh_end(env->hash))
-#else
-	    if ((key = kh_get(Symtab, env->hash, str)) != kh_end(env->hash))
-#endif
 		return kh_val(env->hash, key);
 	}
     }
@@ -214,11 +206,7 @@ int qualify(pEnv env, char *name)
 	leng = strlen(buf) + strlen(name) + 2;
 	str = GC_malloc_atomic(leng);
 	snprintf(str, leng, "%s.%s", buf, name);
-#ifdef USE_KHASHL
 	if ((key = symtab_get(env->hash, str)) != kh_end(env->hash))
-#else
-        if ((key = kh_get(Symtab, env->hash, str)) != kh_end(env->hash))
-#endif
 	    return kh_val(env->hash, key);
     }
     /*
@@ -226,11 +214,7 @@ int qualify(pEnv env, char *name)
      * and also not in the module, it needs to be searched as is. If not found,
      * it is not an error, but simply an undefined name.
      */
-#ifdef USE_KHASHL
     if ((key = symtab_get(env->hash, name)) != kh_end(env->hash))
-#else
-    if ((key = kh_get(Symtab, env->hash, name)) != kh_end(env->hash))
-#endif
 	return kh_val(env->hash, key);
     return 0;
 }

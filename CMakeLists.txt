@@ -1,9 +1,9 @@
 #
 #   module  : CMakeLists.txt
-#   version : 1.37
-#   date    : 01/08/26
+#   version : 1.39
+#   date    : 02/09/26
 #
-cmake_minimum_required(VERSION 3.29)
+cmake_minimum_required(VERSION 3.28)
 project(Joy VERSION 1.0)
 if("${CMAKE_BUILD_TYPE}" STREQUAL "")
   set(CMAKE_BUILD_TYPE "Release")
@@ -17,9 +17,6 @@ add_executable(joy main.c interp.c scan.c utils.c factor.c module.c optable.c
 	       symbol.c undefs.c setraw.c repl.c write.c error.c print.c gc.c)
 add_definitions(-DLINK="\\"${CMAKE_EXE_LINKER_FLAGS}\\"")
 add_definitions(-DVERS="NOBDW ${CMAKE_BUILD_TYPE} ${CMAKE_PROJECT_VERSION}")
-#
-#    MSVC: cmake --build . --config Release
-#
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
   set(CMAKE_VERBOSE_MAKEFILE ON)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DNOBDW -D_CRT_SECURE_NO_DEPRECATE")
@@ -30,13 +27,13 @@ else()
 		    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 		    COMMAND sh prims.sh .
 		    COMMAND sh table.sh .)
-  set(CF "-DNOBDW -I. -Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter -Wno-unused-result")
+  set(CF "-DNOBDW -I.. -Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter -Wno-unused-result")
   if("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
     set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${CF}")
     add_definitions(-DCOMP="\\"${CMAKE_C_FLAGS_RELEASE}\\"")
   else()
     set(CMAKE_C_FLAGS_DEBUG	# debug, enabling coverage
-  "${CMAKE_C_FLAGS_DEBUG} ${CF} -O3 --coverage -fprofile-arcs -ftest-coverage")
+  "${CMAKE_C_FLAGS_DEBUG} ${CF} -O0 --coverage -fprofile-arcs -ftest-coverage")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
     add_definitions(-DCOMP="\\"${CMAKE_C_FLAGS_DEBUG}\\"")
   endif()

@@ -1,7 +1,7 @@
 /*
     module  : fgets.c
-    version : 1.12
-    date    : 01/08/26
+    version : 1.14
+    date    : 02/04/26
 */
 #ifndef FGETS_C
 #define FGETS_C
@@ -13,33 +13,17 @@ Q0  OK  1880  fgets  :  S  ->  S L
 void fgets_(pEnv env)
 {
     char *buf;
-#ifdef NOBDW
-    char *tmp;
-#endif
     size_t leng, size = INPLINEMAX;
 
     ONEPARAM("fgets");
     ISFILE("fgets");
-#ifdef NOBDW
-    buf = check_malloc(size);
-#else
     buf = GC_malloc_atomic(size);
-#endif
     buf[leng = 0] = 0;
     while (fgets(buf + leng, size - leng, nodevalue(env->stck).fil)) {
 	if ((leng = strlen(buf)) > 0 && buf[leng - 1] == '\n')
 	    break;
-#ifdef NOBDW
-	if ((tmp = realloc(buf, size <<= 1)) == 0)
-	    break;	/* LCOV_EXCL_LINE */
-	buf = tmp;
-#else
 	buf = GC_realloc(buf, size <<= 1);
-#endif
     }
     NULLARY(STRING_NEWNODE, buf);
-#ifdef NOBDW
-    free(buf);
-#endif
 }
 #endif

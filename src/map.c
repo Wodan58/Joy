@@ -1,7 +1,7 @@
 /*
     module  : map.c
-    version : 1.11
-    date    : 01/08/26
+    version : 1.12
+    date    : 02/04/26
 */
 #ifndef MAP_C
 #define MAP_C
@@ -13,10 +13,10 @@ collects results in sametype aggregate B.
 */
 void map_(pEnv env)
 {
-    char *str;
     Index temp;
     uint64_t set;
     int i = 0, j = 0;
+    char *str, *volatile ptr;
 
     TWOPARAMS("map");
     ONEQUOTE("map");
@@ -45,7 +45,7 @@ void map_(pEnv env)
 	POP(env->dump1);
 	break;
     case STRING_:
-	for (str = check_strdup((char *)&nodevalue(SAVED2)); str[i]; i++) {
+	for (str = ptr = GC_strdup((char *)&nodevalue(SAVED2)); str[i]; i++) {
 	    env->stck = CHAR_NEWNODE(str[i], SAVED3);
 	    exeterm(env, nodevalue(SAVED1).lis);
 	    CHECKSTACK("map");
@@ -53,7 +53,6 @@ void map_(pEnv env)
 	}
 	str[j] = 0;
 	env->stck = STRING_NEWNODE(str, SAVED3);
-	free(str);
 	break;
     case SET_:
 	for (set = 0; i < SETSIZE; i++)

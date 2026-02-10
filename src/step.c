@@ -1,7 +1,7 @@
 /*
     module  : step.c
-    version : 1.10
-    date    : 01/08/26
+    version : 1.11
+    date    : 02/04/26
 */
 #ifndef STEP_C
 #define STEP_C
@@ -14,7 +14,7 @@ executes P for each member of A.
 void step_(pEnv env)
 {
     int i = 0;
-    char *str;
+    char *str, *volatile ptr;
 
     TWOPARAMS("step");
     ONEQUOTE("step");
@@ -30,11 +30,10 @@ void step_(pEnv env)
 	POP(env->dump1);
 	break;
     case STRING_:
-	for (str = check_strdup((char *)&nodevalue(SAVED2)); str[i]; i++) {
+	for (str = ptr = GC_strdup((char *)&nodevalue(SAVED2)); str[i]; i++) {
 	    NULLARY(CHAR_NEWNODE, str[i]);
 	    exeterm(env, nodevalue(SAVED1).lis);
 	}
-	free(str);
 	break;
     case SET_:
 	for (; i < SETSIZE; i++)

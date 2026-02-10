@@ -5,7 +5,7 @@ Build|Linux|Coverity
 ---|---|---
 status|[![GitHub CI build status](https://github.com/Wodan58/Joy/actions/workflows/cmake.yml/badge.svg)](https://github.com/Wodan58/Joy/actions/workflows/cmake.yml)|[![Coverity Scan Build Status](https://img.shields.io/coverity/scan/14641.svg)](https://scan.coverity.com/projects/wodan58-joy)
 
-This is the NOBDW version of [Joy1](https://github.com/Wodan58/joy1).
+This is the Copying GC version of [Joy1](https://github.com/Wodan58/joy1).
 [Joy](http://www.complang.tuwien.ac.at/anton/euroforth/ef01/thun01.pdf) is a
 decent language and needs a ditto
 [presentation](http://www.complang.tuwien.ac.at/anton/euroforth/ef01/thomas01a.pdf). The original version can be seen [here](https://github.com/Wodan58/joy0).
@@ -62,7 +62,11 @@ Running
 
     joy -h
 
-gives an overview of available options.
+gives an overview of available options;
+
+    rlwrap ./joy
+
+allows command line editing, history when used interactively.
 
 Testing
 -------
@@ -80,18 +84,16 @@ loaded successfully.
 See also
 --------
 
-Implementation|Dependencies
---------------|------------
+Implementation|Notes
+--------------|-----
 [42minjoy](https://github.com/Wodan58/42minjoy)|Minimal Joy
 [joy0](https://github.com/Wodan58/joy0)|Original Joy
-[joy1](https://github.com/Wodan58/joy1)|[BDW garbage collector](https://github.com/ivmai/bdwgc)
-[Foy](https://github.com/Wodan58/Foy)|[BDW garbage collector](https://github.com/ivmai/bdwgc)
-[Moy](https://github.com/Wodan58/Moy)|[BDW garbage collector](https://github.com/ivmai/bdwgc) and [Lex & Yacc](https://sourceforge.net/projects/winflexbison/files/win_flex_bison-latest.zip)
+[joy1](https://github.com/Wodan58/joy1)|Simplified Joy
+[Foy](https://github.com/Wodan58/Foy)|FORTH inspired Joy
+[Moy](https://github.com/Wodan58/Moy)|Stackless Joy
 
 Documentation|Notes
 -------------|-----
 [Legacy Docs](https://wodan58.github.io)|Original Joy documentation
 [User Manual](https://wodan58.github.io/j09imp.html)|Joy language reference
-[Comparison](https://github.com/Wodan58/HET/blob/master/doc/FIB.md)|Fibonacci
-[Main Manual](https://github.com/Wodan58/G3/blob/master/JOP.pdf)|7th edition
-[Academic](https://sol.sbc.org.br/index.php/sblp/article/view/30253/30060)|Conversion to/from Combinatory Calculus
+[Main Manual](https://github.com/Wodan58/G3/blob/master/JOP.pdf)|Comprehensive Joy Manual

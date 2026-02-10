@@ -1,6 +1,6 @@
 /* The MIT License
 
-   Copyright (c) 2019-2024 by Attractive Chaos <attractor@live.co.uk>
+   Copyright (c) 2019- by Attractive Chaos <attractor@live.co.uk>
 
    Permission is hereby granted, free of charge, to any person obtaining
    a copy of this software and associated documentation files (the
@@ -26,7 +26,7 @@
 #ifndef __AC_KHASHL_H
 #define __AC_KHASHL_H
 
-#define AC_VERSION_KHASHL_H "r26"
+#define AC_VERSION_KHASHL_H "r40"
 
 #include <stdlib.h>
 #include <string.h>
@@ -73,25 +73,19 @@ typedef const char *kh_cstr_t;
  * Configurable macros *
  ***********************/
 
-#ifndef kh_max_count
+#ifndef kh_max_count /* set the max load factor */
 #define kh_max_count(cap) (((cap)>>1) + ((cap)>>2)) /* default load factor: 75% */
 #endif
 
-#ifndef kh_packed
+#ifndef kh_packed /* pack the key-value struct */
 #define kh_packed __attribute__ ((__packed__))
 #endif
 
-#ifndef kcalloc
-#define kcalloc(N,Z) calloc(N,Z)
-#endif
-#ifndef kmalloc
-#define kmalloc(Z) malloc(Z)
-#endif
-#ifndef krealloc
-#define krealloc(P,Z) realloc(P,Z)
-#endif
-#ifndef kfree
-#define kfree(P) free(P)
+#if !defined(Kmalloc) || !defined(Kcalloc) || !defined(Krealloc) || !defined(Kfree)
+#define Kmalloc(km, type, cnt)       ((type*)malloc((cnt) * sizeof(type)))
+#define Kcalloc(km, type, cnt)       ((type*)calloc((cnt), sizeof(type)))
+#define Krealloc(km, type, ptr, cnt) ((type*)realloc((ptr), (cnt) * sizeof(type)))
+#define Kfree(km, ptr)               free(ptr)
 #endif
 
 /****************************
@@ -104,7 +98,10 @@ typedef const char *kh_cstr_t;
 
 #define __kh_fsize(m) ((m) < 32? 1 : (m)>>5)
 
-static kh_inline khint_t __kh_h2b(khint_t hash, khint_t bits) { return hash * 2654435769U >> (32 - bits); }
+/* LCOV_EXCL_START */
+static kh_inline khint_t __kh_splitmix32(khint_t *x) { khint_t z = (*x += 0x9e3779b9U); z = (z ^ (z >> 16)) * 0x21f0aaadU; z = (z ^ (z >> 15)) * 0x735a2d97U; return z ^ (z >> 15); }
+/* LCOV_EXCL_STOP */
+static kh_inline khint_t __kh_h2b(khint_t hash, khint_t salt, khint_t bits) { return (hash ^ salt) * 2654435769U >> (32 - bits); } /* Fibonacci hashing */
 
 /*******************
  * Hash table base *
@@ -112,13 +109,16 @@ static kh_inline khint_t __kh_h2b(khint_t hash, khint_t bits) { return hash * 26
 
 #define __KHASHL_TYPE(HType, khkey_t) \
 	typedef struct HType { \
-		khint_t bits, count; \
+		void *km; \
+		unsigned short bits, salt; \
+		khint_t count; \
 		khint32_t *used; \
 		khkey_t *keys; \
 	} HType;
 
 #define __KHASHL_PROTOTYPES(HType, prefix, khkey_t) \
 	extern HType *prefix##_init(void); \
+	extern HType *prefix##_init2(void *km); \
 	extern void prefix##_destroy(HType *h); \
 	extern void prefix##_clear(HType *h); \
 	extern khint_t prefix##_getp(const HType *h, const khkey_t *key); \
@@ -127,13 +127,18 @@ static kh_inline khint_t __kh_h2b(khint_t hash, khint_t bits) { return hash * 26
 	extern void prefix##_del(HType *h, khint_t k);
 
 #define __KHASHL_IMPL_BASIC(SCOPE, HType, prefix) \
-	SCOPE HType *prefix##_init(void) { \
-		return (HType*)kcalloc(1, sizeof(HType)); \
+	SCOPE HType *prefix##_init3(void *km, khint_t seed) { \
+		HType *h = Kcalloc(km, HType, 1); \
+		h->km = km; \
+		if (seed != 0) h->salt = __kh_splitmix32(&seed); \
+		return h; \
 	} \
+	SCOPE HType *prefix##_init2(void *km) { return prefix##_init3(km, 0); } \
+	SCOPE HType *prefix##_init(void) { return prefix##_init2(0); } \
 	SCOPE void prefix##_destroy(HType *h) { \
 		if (!h) return; \
-		kfree((void *)h->keys); kfree(h->used); \
-		kfree(h); \
+		Kfree(h->km, (void*)h->keys); Kfree(h->km, h->used); \
+		Kfree(h->km, h); \
 	} \
 	SCOPE void prefix##_clear(HType *h) { \
 		if (h && h->used) { \
@@ -149,7 +154,7 @@ static kh_inline khint_t __kh_h2b(khint_t hash, khint_t bits) { return hash * 26
 		if (h->keys == 0) return 0; \
 		n_buckets = (khint_t)1U << h->bits; \
 		mask = n_buckets - 1U; \
-		i = last = __kh_h2b(hash, h->bits); \
+		i = last = __kh_h2b(hash, h->salt, h->bits); \
 		while (__kh_used(h->used, i) && !__hash_eq(h->keys[i], *key)) { \
 			i = (i + 1U) & mask; \
 			if (i == last) return n_buckets; \
@@ -166,17 +171,18 @@ static kh_inline khint_t __kh_h2b(khint_t hash, khint_t bits) { return hash * 26
 		while ((x >>= 1) != 0) ++j; \
 		if (new_n_buckets & (new_n_buckets - 1)) ++j; \
 		new_bits = j > 2? j : 2; \
+		if (new_bits == h->bits) return 0; /* same size; no need to rehash */ \
 		new_n_buckets = (khint_t)1U << new_bits; \
 		if (h->count > kh_max_count(new_n_buckets)) return 0; /* requested size is too small */ \
-		new_used = (khint32_t*)kmalloc(__kh_fsize(new_n_buckets) * sizeof(khint32_t)); \
-		memset(new_used, 0, __kh_fsize(new_n_buckets) * sizeof(khint32_t)); \
+		new_used = Kmalloc(h->km, khint32_t, __kh_fsize(new_n_buckets)); \
 		if (!new_used) return -1; /* not enough memory */ \
+		memset(new_used, 0, __kh_fsize(new_n_buckets) * sizeof(khint32_t)); \
 		n_buckets = h->keys? (khint_t)1U<<h->bits : 0U; \
 		if (n_buckets < new_n_buckets) { /* expand */ \
-			khkey_t *new_keys = (khkey_t*)krealloc((void*)h->keys, new_n_buckets * sizeof(khkey_t)); \
-			if (!new_keys) { kfree(new_used); return -1; } \
+			khkey_t *new_keys = Krealloc(h->km, khkey_t, h->keys, new_n_buckets); \
+			if (!new_keys) { Kfree(h->km, new_used); return -1; } \
 			h->keys = new_keys; \
-		} /* otherwise shrink */ \
+		} \
 		new_mask = new_n_buckets - 1; \
 		for (j = 0; j != n_buckets; ++j) { \
 			khkey_t key; \
@@ -185,8 +191,8 @@ static kh_inline khint_t __kh_h2b(khint_t hash, khint_t bits) { return hash * 26
 			__kh_set_unused(h->used, j); \
 			while (1) { /* kick-out process; sort of like in Cuckoo hashing */ \
 				khint_t i; \
-				i = __kh_h2b(__hash_fn(key), new_bits); \
-				while (__kh_used(new_used, i)) i = (i + 1) & new_mask; \
+				i = __kh_h2b(__hash_fn(key), h->salt, new_bits); \
+				while (__kh_used(new_used, i)) i = (i + 1U) & new_mask; \
 				__kh_set_used(new_used, i); \
 				if (i < n_buckets && __kh_used(h->used, i)) { /* kick out the existing element */ \
 					{ khkey_t tmp = h->keys[i]; h->keys[i] = key; key = tmp; } \
@@ -197,9 +203,12 @@ static kh_inline khint_t __kh_h2b(khint_t hash, khint_t bits) { return hash * 26
 				} \
 			} \
 		} \
-		if (n_buckets > new_n_buckets) /* shrink the hash table */ \
-			h->keys = (khkey_t*)krealloc((void *)h->keys, new_n_buckets * sizeof(khkey_t)); \
-		kfree(h->used); /* free the working space */ \
+		if (n_buckets > new_n_buckets) { /* shrink the hash table */ \
+			khkey_t *new_keys = Krealloc(h->km, khkey_t, h->keys, new_n_buckets); \
+			if (!new_keys) { Kfree(h->km, new_used); return -1; } \
+			h->keys = new_keys; \
+		} \
+		Kfree(h->km, h->used); /* free the working space */ \
 		h->used = new_used, h->bits = new_bits; \
 		return 0; \
 	}
@@ -215,7 +224,7 @@ static kh_inline khint_t __kh_h2b(khint_t hash, khint_t bits) { return hash * 26
 			n_buckets = (khint_t)1U<<h->bits; \
 		} /* TODO: to implement automatically shrinking; resize() already support shrinking */ \
 		mask = n_buckets - 1; \
-		i = last = __kh_h2b(hash, h->bits); \
+		i = last = __kh_h2b(hash, h->salt, h->bits); \
 		while (__kh_used(h->used, i) && !__hash_eq(h->keys[i], *key)) { \
 			i = (i + 1U) & mask; \
 			if (i == last) break; \
@@ -240,7 +249,7 @@ static kh_inline khint_t __kh_h2b(khint_t hash, khint_t bits) { return hash * 26
 		while (1) { \
 			j = (j + 1U) & mask; \
 			if (j == i || !__kh_used(h->used, j)) break; /* j==i only when the table is completely full */ \
-			k = __kh_h2b(__hash_fn(h->keys[j]), h->bits); \
+			k = __kh_h2b(__hash_fn(h->keys[j]), h->salt, h->bits); \
 			if ((j > i && (k <= i || k > j)) || (j < i && (k <= i && k > j))) \
 				h->keys[i] = h->keys[j], i = j; \
 		} \
@@ -272,21 +281,30 @@ typedef struct {
 #define KHASHE_INIT(SCOPE, HType, prefix, khkey_t, __hash_fn, __hash_eq) \
 	KHASHL_INIT(KH_LOCAL, HType##_sub, prefix##_sub, khkey_t, __hash_fn, __hash_eq) \
 	typedef struct HType { \
+		void *km; \
 		khint64_t count:54, bits:8; \
 		HType##_sub *sub; \
 	} HType; \
-	SCOPE HType *prefix##_init(int bits) { \
+	SCOPE HType *prefix##_init3(void *km, int bits, khint_t seed) { \
 		HType *g; \
-		g = (HType*)kcalloc(1, sizeof(*g)); \
-		g->bits = bits; \
-		g->sub = (HType##_sub*)kcalloc(1U<<bits, sizeof(*g->sub)); \
+		g = Kcalloc(km, HType, 1); \
+		if (!g) return 0; \
+		g->bits = bits, g->km = km; \
+		g->sub = Kcalloc(km, HType##_sub, 1U<<bits); \
+		if (seed != 0) { \
+			khint_t i, rng = seed; \
+			for (i = 0; i < 1U<<bits; ++i) \
+				g->sub[i].salt = __kh_splitmix32(&rng); \
+		} \
 		return g; \
 	} \
+	SCOPE HType *prefix##_init2(void *km, int bits) { return prefix##_init3(km, bits, 0); } \
+	SCOPE HType *prefix##_init(int bits) { return prefix##_init2(0, bits); } \
 	SCOPE void prefix##_destroy(HType *g) { \
 		int t; \
 		if (!g) return; \
-		for (t = 0; t < 1<<g->bits; ++t) { kfree((void*)g->sub[t].keys); kfree(g->sub[t].used); } \
-		kfree(g->sub); kfree(g); \
+		for (t = 0; t < 1<<g->bits; ++t) { Kfree(g->km, (void*)g->sub[t].keys); Kfree(g->km, g->sub[t].used); } \
+		Kfree(g->km, g->sub); Kfree(g->km, g); \
 	} \
 	SCOPE kh_ensitr_t prefix##_getp(const HType *g, const khkey_t *key) { \
 		khint_t hash, low, ret; \
@@ -325,13 +343,18 @@ typedef struct {
 		int i; \
 		for (i = 0; i < 1U<<g->bits; ++i) prefix##_sub_clear(&g->sub[i]); \
 		g->count = 0; \
+	} \
+	SCOPE void prefix##_resize(HType *g, khint64_t new_n_buckets) { \
+		khint_t j; \
+		for (j = 0; j < 1U<<g->bits; ++j) \
+			prefix##_sub_resize(&g->sub[j], new_n_buckets >> g->bits); \
 	}
 
 /*****************************
  * More convenient interface *
  *****************************/
 
-#define __kh_cached_hash(x) ((x).hash)
+/* common */
 
 #define KHASHL_SET_INIT(SCOPE, HType, prefix, khkey_t, __hash_fn, __hash_eq) \
 	typedef struct { khkey_t key; } kh_packed HType##_s_bucket_t; \
@@ -339,6 +362,8 @@ typedef struct {
 	static kh_inline int prefix##_s_eq(HType##_s_bucket_t x, HType##_s_bucket_t y) { return __hash_eq(x.key, y.key); } \
 	KHASHL_INIT(KH_LOCAL, HType, prefix##_s, HType##_s_bucket_t, prefix##_s_hash, prefix##_s_eq) \
 	SCOPE HType *prefix##_init(void) { return prefix##_s_init(); } \
+	SCOPE HType *prefix##_init2(void *km) { return prefix##_s_init2(km); } \
+	SCOPE HType *prefix##_init3(void *km, khint_t seed) { return prefix##_s_init3(km, seed); } \
 	SCOPE void prefix##_destroy(HType *h) { prefix##_s_destroy(h); } \
 	SCOPE void prefix##_resize(HType *h, khint_t new_n_buckets) { prefix##_s_resize(h, new_n_buckets); } \
 	SCOPE khint_t prefix##_get(const HType *h, khkey_t key) { HType##_s_bucket_t t; t.key = key; return prefix##_s_getp(h, &t); } \
@@ -352,11 +377,18 @@ typedef struct {
 	static kh_inline int prefix##_m_eq(HType##_m_bucket_t x, HType##_m_bucket_t y) { return __hash_eq(x.key, y.key); } \
 	KHASHL_INIT(KH_LOCAL, HType, prefix##_m, HType##_m_bucket_t, prefix##_m_hash, prefix##_m_eq) \
 	SCOPE HType *prefix##_init(void) { return prefix##_m_init(); } \
+	SCOPE HType *prefix##_init2(void *km) { return prefix##_m_init2(km); } \
+	SCOPE HType *prefix##_init3(void *km, khint_t seed) { return prefix##_m_init3(km, seed); } \
 	SCOPE void prefix##_destroy(HType *h) { prefix##_m_destroy(h); } \
+	SCOPE void prefix##_resize(HType *h, khint_t new_n_buckets) { prefix##_m_resize(h, new_n_buckets); } \
 	SCOPE khint_t prefix##_get(const HType *h, khkey_t key) { HType##_m_bucket_t t; t.key = key; return prefix##_m_getp(h, &t); } \
 	SCOPE int prefix##_del(HType *h, khint_t k) { return prefix##_m_del(h, k); } \
 	SCOPE khint_t prefix##_put(HType *h, khkey_t key, int *absent) { HType##_m_bucket_t t; t.key = key; return prefix##_m_putp(h, &t, absent); } \
 	SCOPE void prefix##_clear(HType *h) { prefix##_m_clear(h); }
+
+/* cached hashes to trade memory for performance when hashing and comparison are expensive */
+
+#define __kh_cached_hash(x) ((x).hash)
 
 #define KHASHL_CSET_INIT(SCOPE, HType, prefix, khkey_t, __hash_fn, __hash_eq) \
 	typedef struct { khkey_t key; khint_t hash; } kh_packed HType##_cs_bucket_t; \
@@ -380,6 +412,8 @@ typedef struct {
 	SCOPE khint_t prefix##_put(HType *h, khkey_t key, int *absent) { HType##_cm_bucket_t t; t.key = key, t.hash = __hash_fn(key); return prefix##_cm_putp(h, &t, absent); } \
 	SCOPE void prefix##_clear(HType *h) { prefix##_cm_clear(h); }
 
+/* ensemble for huge hash tables */
+
 #define KHASHE_SET_INIT(SCOPE, HType, prefix, khkey_t, __hash_fn, __hash_eq) \
 	typedef struct { khkey_t key; } kh_packed HType##_es_bucket_t; \
 	static kh_inline khint_t prefix##_es_hash(HType##_es_bucket_t x) { return __hash_fn(x.key); } \
@@ -387,6 +421,7 @@ typedef struct {
 	KHASHE_INIT(KH_LOCAL, HType, prefix##_es, HType##_es_bucket_t, prefix##_es_hash, prefix##_es_eq) \
 	SCOPE HType *prefix##_init(int bits) { return prefix##_es_init(bits); } \
 	SCOPE void prefix##_destroy(HType *h) { prefix##_es_destroy(h); } \
+	SCOPE void prefix##_resize(HType *h, khint64_t new_n_buckets) { prefix##_es_resize(h, new_n_buckets); } \
 	SCOPE kh_ensitr_t prefix##_get(const HType *h, khkey_t key) { HType##_es_bucket_t t; t.key = key; return prefix##_es_getp(h, &t); } \
 	SCOPE int prefix##_del(HType *h, kh_ensitr_t k) { return prefix##_es_del(h, k); } \
 	SCOPE kh_ensitr_t prefix##_put(HType *h, khkey_t key, int *absent) { HType##_es_bucket_t t; t.key = key; return prefix##_es_putp(h, &t, absent); } \
@@ -399,6 +434,7 @@ typedef struct {
 	KHASHE_INIT(KH_LOCAL, HType, prefix##_em, HType##_em_bucket_t, prefix##_em_hash, prefix##_em_eq) \
 	SCOPE HType *prefix##_init(int bits) { return prefix##_em_init(bits); } \
 	SCOPE void prefix##_destroy(HType *h) { prefix##_em_destroy(h); } \
+	SCOPE void prefix##_resize(HType *h, khint64_t new_n_buckets) { prefix##_em_resize(h, new_n_buckets); } \
 	SCOPE kh_ensitr_t prefix##_get(const HType *h, khkey_t key) { HType##_em_bucket_t t; t.key = key; return prefix##_em_getp(h, &t); } \
 	SCOPE int prefix##_del(HType *h, kh_ensitr_t k) { return prefix##_em_del(h, k); } \
 	SCOPE kh_ensitr_t prefix##_put(HType *h, khkey_t key, int *absent) { HType##_em_bucket_t t; t.key = key; return prefix##_em_putp(h, &t, absent); } \
@@ -453,10 +489,8 @@ static kh_inline khint_t kh_hash_uint64(khint64_t x) { /* splitmix64; see https:
 	return (khint_t)x;
 }
 
-#define KH_FNV_SEED 11
-
 static kh_inline khint_t kh_hash_str(kh_cstr_t s) { /* FNV1a */
-	khint_t h = KH_FNV_SEED ^ 2166136261U;
+	khint_t h = 2166136261U;
 	const unsigned char *t = (const unsigned char*)s;
 	for (; *t; ++t)
 		h ^= *t, h *= 16777619;
@@ -464,7 +498,7 @@ static kh_inline khint_t kh_hash_str(kh_cstr_t s) { /* FNV1a */
 }
 
 static kh_inline khint_t kh_hash_bytes(int len, const unsigned char *s) {
-	khint_t h = KH_FNV_SEED ^ 2166136261U;
+	khint_t h = 2166136261U;
 	int i;
 	for (i = 0; i < len; ++i)
 		h ^= s[i], h *= 16777619;

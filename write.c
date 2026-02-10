@@ -1,7 +1,7 @@
 /*
  *  module  : write.c
- *  version : 1.3
- *  date    : 01/08/26
+ *  version : 1.4
+ *  date    : 02/04/26
  */
 #include "globals.h"
 
@@ -12,7 +12,7 @@ void writefactor(pEnv env, Index n, FILE *fp)
 {
     int i;
     uint64_t set, j;
-    char *ptr, buf[BUFFERMAX], tmp[MAXNUM];
+    char *ptr, buf[MAXNUM], tmp[MAXNUM];
 
 #if 0
 /*
@@ -86,7 +86,7 @@ void writefactor(pEnv env, Index n, FILE *fp)
 	break;
 
     case FLOAT_:
-	snprintf(buf, BUFFERMAX, "%g", nodevalue(n).dbl); /* exponent char e */
+	snprintf(buf, MAXNUM, "%g", nodevalue(n).dbl); /* exponent char e */
 	if (strchr(buf, '.') == 0) {		/* locate decimal point */
 	    if ((ptr = strchr(buf, 'e')) == 0) {/* locate start of exponent */
 		i = buf[strlen(buf) - 1];

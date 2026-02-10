@@ -1,7 +1,7 @@
 /*
     module  : unswons.c
-    version : 1.11
-    date    : 01/08/26
+    version : 1.12
+    date    : 02/04/26
 */
 #ifndef UNSWONS_C
 #define UNSWONS_C
@@ -27,11 +27,10 @@ void unswons_(pEnv env)
 	NULLARY(INTEGER_NEWNODE, i);
 	break;
     case STRING_:
-	str = check_strdup((char *)&nodevalue(env->stck));
+	str = GC_strdup((char *)&nodevalue(env->stck));
 	CHECKEMPTYSTRING(str, "unswons");
 	UNARY(STRING_NEWNODE, str + 1);
 	NULLARY(CHAR_NEWNODE, *str);
-	free(str);
 	break;
     case LIST_:
 	SAVESTACK;

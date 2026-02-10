@@ -1,7 +1,7 @@
 /*
     module  : filetime.c
-    version : 1.12
-    date    : 01/08/26
+    version : 1.13
+    date    : 02/04/26
 */
 #ifndef FILETIME_C
 #define FILETIME_C
@@ -24,16 +24,9 @@ void filetime_(pEnv env)
     str = GETSTRING(env->stck);
     mtime = 0;
     if ((fp = fopen(str, "r")) != 0) {
-#ifdef NOBDW
-	buf = check_malloc(sizeof(struct stat));
-#else
 	buf = GC_malloc_atomic(sizeof(struct stat));
-#endif
 	if (fstat(fileno(fp), buf) >= 0)
 	    mtime = buf->st_mtime;
-#ifdef NOBDW
-	free(buf);
-#endif
 	fclose(fp);
     }
     UNARY(INTEGER_NEWNODE, mtime);

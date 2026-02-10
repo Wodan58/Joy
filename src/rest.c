@@ -1,7 +1,7 @@
 /*
     module  : rest.c
-    version : 1.14
-    date    : 01/08/26
+    version : 1.15
+    date    : 02/04/26
 */
 #ifndef REST_C
 #define REST_C
@@ -26,13 +26,7 @@ void rest_(pEnv env)
     case STRING_:
 	str = GETSTRING(env->stck);
 	CHECKEMPTYSTRING(str, "rest");
-#ifdef NOBDW
-	str = check_strdup(str + 1);
-	UNARY(STRING_NEWNODE, str);
-	free(str);
-#else
 	UNARY(STRING_NEWNODE, GC_strdup(str + 1));
-#endif
 	break;
     case LIST_:
 	CHECKEMPTYLIST(nodevalue(env->stck).lis, "rest");

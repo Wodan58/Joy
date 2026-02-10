@@ -1,7 +1,7 @@
 /*
  *  module  : optable.c
- *  version : 1.18
- *  date    : 01/22/26
+ *  version : 1.19
+ *  date    : 02/04/26
  */
 #include "globals.h"
 #include "runtime.h"
@@ -66,6 +66,15 @@ static struct {
 {Q0,	OK,	" bignum type",		id_,	"->  F",
 "The type of arbitrary precision floating-point numbers.\nLiterals of this type are written with embedded decimal points (like 1.2)\nand optional exponent specifiers (like 1.5E2)."},
 
+{Q0,	OK,	" reserved 1",		id_,	"->",	/* 13 */
+"Reserved for future data types."},
+
+{Q0,	OK,	" reserved 2",		id_,	"->",	/* 14 */
+"Reserved for future data types."},
+
+{Q0,	OK,	" reserved 3",		id_,	"->",	/* 15 */
+"Reserved for future data types."},
+
 #include "table.c"	/* the rest of optable */
 };
 
@@ -124,13 +133,9 @@ int operindex(pEnv env, proc_t proc)
 {
     khint_t key;
 
-#ifdef USE_KHASHL
     if ((key = funtab_get(env->prim, (intptr_t)proc)) != kh_end(env->prim))
-#else
-    if ((key = kh_get(Funtab, env->prim, (intptr_t)proc)) != kh_end(env->prim))
-#endif
 	return kh_val(env->prim, key);
-    return 0;	/* if not found, return 0 */
+    return 0;	/* LCOV_EXCL_LINE */
 }
 
 /*
@@ -141,11 +146,7 @@ void addsymbol(pEnv env, Entry ent, int index)
     int rv;
     khint_t key;
 
-#ifdef USE_KHASHL
     key = symtab_put(env->hash, ent.name, &rv);
-#else
-    key = kh_put(Symtab, env->hash, ent.name, &rv);
-#endif
     kh_val(env->hash, key) = index;
 }
 
@@ -159,13 +160,8 @@ void inisymboltable(pEnv env)	/* initialise */
     khint_t key;
     int i, j, rv;
 
-#ifdef USE_KHASHL
     env->hash = symtab_init();
     env->prim = funtab_init();
-#else
-    env->hash = kh_init(Symtab);
-    env->prim = kh_init(Funtab);
-#endif
     j = sizeof(optable) / sizeof(optable[0]);
     for (i = 0; i < j; i++) {
 	memset(&ent, 0, sizeof(ent));
@@ -204,11 +200,7 @@ void inisymboltable(pEnv env)	/* initialise */
 		break;
 	    }
 	addsymbol(env, ent, i);
-#ifdef USE_KHASHL
 	key = funtab_put(env->prim, (intptr_t)ent.u.proc, &rv);
-#else
-	key = kh_put(Funtab, env->prim, (intptr_t)ent.u.proc, &rv);
-#endif
 	kh_val(env->prim, key) = i;
 	vec_push(env->symtab, ent);
     }

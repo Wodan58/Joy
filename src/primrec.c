@@ -1,7 +1,7 @@
 /*
     module  : primrec.c
-    version : 1.10
-    date    : 01/08/26
+    version : 1.11
+    date    : 02/04/26
 */
 #ifndef PRIMREC_C
 #define PRIMREC_C
@@ -14,9 +14,9 @@ For aggregate X uses successive members and combines by C for new R.
 */
 void primrec_(pEnv env)
 {
-    char *str;
     uint64_t set;
     int i = 0, n = 0;
+    char *str, *volatile ptr;
 
     THREEPARAMS("primrec");
     TWOQUOTES("primrec");
@@ -32,11 +32,10 @@ void primrec_(pEnv env)
 	POP(env->dump1);
 	break;
     case STRING_:
-	for (str = check_strdup((char *)&nodevalue(SAVED3)); str[i]; i++) {
+	for (str = ptr = GC_strdup((char *)&nodevalue(SAVED3)); str[i]; i++) {
 	    NULLARY(CHAR_NEWNODE, str[i]);
 	    n++;
 	}
-	free(str);
 	break;
     case SET_:
 	set = nodevalue(SAVED3).set;

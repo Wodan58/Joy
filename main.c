@@ -1,8 +1,8 @@
 /* FILE: main.c */
 /*
  *  module  : main.c
- *  version : 1.115
- *  date    : 01/22/26
+ *  version : 1.118
+ *  date    : 02/05/26
  */
 
 /*
@@ -116,14 +116,12 @@ Manfred von Thun, 2006
 */
 #include "globals.h"
 
-static jmp_buf begin;		/* restart with empty program */
+/* Internally used longjmp target used if errors occur. */
+jmp_buf errorbuf;
+char *bottom_of_stack;	/* needed in nobdw.c */
 
-char *bottom_of_stack;		/* needed in gc.c */
-
+/* Forward declarations of some diagnostics. */
 static void stats(pEnv env), dump(pEnv env);
-#ifdef MALLOC_DEBUG
-static void mem_free(pEnv env);
-#endif
 
 /*
  * abort execution and restart reading from srcfile; the stack is not cleared.
@@ -131,13 +129,12 @@ static void mem_free(pEnv env);
 void abortexecution_(int num)
 {
     fflush(stdin);
-    longjmp(begin, num);
+    longjmp(errorbuf, num);
 }
 
 /*
  * fatal terminates the application with an error message.
  */
-#ifdef NOBDW
 /* LCOV_EXCL_START */
 void fatal(char *str)
 {
@@ -146,7 +143,6 @@ void fatal(char *str)
     abortexecution_(ABORT_QUIT);
 }
 /* LCOV_EXCL_STOP */
-#endif
 
 /*
  * banner - print the banner that was present in joy0; the banner is only
@@ -212,7 +208,6 @@ static void options(int verbose)
     printf("  -p : print debug list of tokens\n");
 #ifdef BYTECODE
     printf("  -q : quick const folding of bytecodes\n");
-    printf("  -r : renumber bytecodes for target\n");
 #endif
     printf("  -s : dump symbol table after execution\n");
     printf("  -t : print a trace of program execution\n");
@@ -256,7 +251,7 @@ static void my_main(int argc, char **argv)
     unsigned char helping = 0, unknown = 0, mustinclude = 1, verbose = 0,
 		  raw = 0;
 #ifdef BYTECODE
-    unsigned char listing = 0, lining = 0, quick = 0, renum = 0;
+    unsigned char listing = 0, lining = 0, quick = 0;
 #endif
 
     memset(&env, 0, sizeof(env));
@@ -338,7 +333,6 @@ static void my_main(int argc, char **argv)
 		case 'p' : env.printing = 1; break;
 #ifdef BYTECODE
 		case 'q' : quick = 1; joy = 0; break;	/* const folding */
-		case 'r' : renum = 1; joy = 0; break;
 #endif
 		case 's' : psdump = 1; break;
 		case 't' : env.debugging = 2; break;
@@ -429,6 +423,9 @@ start:
     vec_init(env.pushback);
     vec_init(env.tokens);
     vec_init(env.symtab);
+#ifdef NOBDW
+    vec_init(env.gc_stack);
+#endif
     /*
      * initialize symbol table.
      */
@@ -461,10 +458,6 @@ start:
     if (mustinclude)
 	include(&env, "usrlib.joy");
 #ifdef BYTECODE
-    if (renum) {
-	renumber(&env, fp);	/* create .byc file, renumbering */
-	goto einde;
-    }
     if (quick) {
 	compeval(&env, fp);	/* create .buc file, const folding */
 	goto einde;
@@ -492,9 +485,9 @@ start:
 	goto einde;
     }
     /*
-     * setup return address of error, abort, or quit.
+     * setup return address of error, abort, quit, or fatal.
      */
-    if (setjmp(begin) == ABORT_QUIT)
+    if (setjmp(errorbuf) >= ABORT_QUIT)
 	goto einde;		/* return here after error or abort */
     /*
      * (re)initialize code.
@@ -530,10 +523,8 @@ einde:
 	stats(&env);
     if (psdump)
 	dump(&env);
-#ifdef MALLOC_DEBUG
-    mem_free(&env);
-#endif
     SetNormal();		/* set the terminal back to normal */
+    exit(EXIT_SUCCESS);		/* tell Coverity that this is the end */
 }
 
 int main(int argc, char **argv)
@@ -543,7 +534,7 @@ int main(int argc, char **argv)
     bottom_of_stack = (char *)&argc;
     GC_INIT();
     (*m)(argc, argv);
-    return 0;
+    return 0;			/* LCOV_EXCL_LINE */
 }
 
 /*
@@ -583,38 +574,25 @@ static void stats(pEnv env)
 static void dump(pEnv env)
 {
     int i;
+    char *ptr;
     Entry ent;
 
     for (i = vec_size(env->symtab) - 1; i >= 0; i--) {
 	ent = vec_at(env->symtab, i);
-	if (!ent.is_user)
-	    printf("(%d) %s\n", i, ent.name);
-	else {
+	if (!ent.is_user) {
+	    ptr = ent.name;
+	    if (*ptr == '#')		/* skip anonymous */
+		continue;
+	    if (isspace((int)*ptr))	/* skip datatypes */
+		break;
+	    if (!isalpha((int)*ptr) && *ptr != '_')
+		while (*ptr++)
+		    ;
+	    printf("\"%s\"\t%s\t%d\n", ent.name, ptr, i);
+	} else {
 	    printf("(%d) %s == ", i, ent.name);
 	    writeterm(env, ent.u.body, stdout);
 	    putchar('\n');
 	}
     }
 }
-
-#ifdef MALLOC_DEBUG
-static void mem_free(pEnv env)
-{
-    int i, j;
-    Entry ent;
-
-    /*
-     * The strings in the symbol table have been moved to permanent memory.
-     * They need to be released explicitly.
-     */
-    for (i = tablesize(), j = vec_size(env->symtab); i < j; i++) {
-	ent = vec_at(env->symtab, i);
-	free(ent.name);
-    }
-#ifdef NOBDW
-    free(env->memory);
-#endif
-    kh_destroy(Symtab, env->hash);
-    kh_destroy(Funtab, env->prim);
-}
-#endif

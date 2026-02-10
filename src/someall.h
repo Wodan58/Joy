@@ -1,7 +1,7 @@
 /*
     module  : someall.h
-    version : 1.11
-    date    : 01/08/26
+    version : 1.12
+    date    : 02/04/26
 */
 #ifndef SOMEALL_H
 #define SOMEALL_H
@@ -10,7 +10,7 @@
     void PROCEDURE(pEnv env)						\
     {									\
 	int i = 0, result, end_result = INITIAL;			\
-	char *str;							\
+	char *str, *volatile ptr;					\
 	TWOPARAMS(NAME);						\
 	ONEQUOTE(NAME);							\
 	SAVESTACK;							\
@@ -29,8 +29,8 @@
 		}							\
 	    break;							\
 	case STRING_:							\
-	    for (str = check_strdup((char *)&nodevalue(SAVED2)); str[i];\
-			    i++) {\
+	    for (str = ptr = GC_strdup((char *)&nodevalue(SAVED2));	\
+					str[i]; i++) {			\
 		env->stck = CHAR_NEWNODE(str[i], SAVED3);		\
 		exeterm(env, nodevalue(SAVED1).lis);			\
 		CHECKSTACK(NAME);					\
@@ -40,7 +40,6 @@
 		    break;						\
 		}							\
 	    }								\
-	    free(str);							\
 	    break;							\
 	case LIST_:							\
 	    env->dump1 = LIST_NEWNODE(nodevalue(SAVED2).lis, env->dump1);\
