@@ -1,7 +1,7 @@
 /*
  *  module  : symbol.c
- *  version : 1.9
- *  date    : 02/04/26
+ *  version : 1.10
+ *  date    : 02/23/26
  */
 #include "globals.h"
 
@@ -87,12 +87,20 @@ static int definition(pEnv env, int ch)
 	return ch;
     }
 
-    if (env->sym != USR_)
-	/*   NOW ALLOW EMPTY DEFINITION:
-	      { error("atom expected at start of definition");
-		abortexecution_(); }
-	*/
+    if (env->sym != USR_) {
+/*
+ * It was decided a long time ago that the semicolon can be a terminator as it
+ * is in the C programming language rather than a separator as it used to be in
+ * Pascal. This define cannot be activated, because it would break the tests in
+ * the lib-directory.
+ */
+#ifdef EMPTY_DEFINE_ISNOK
+	error("atom expected at start of definition");
+	abortexecution_(ABORT_RETRY);
+#endif
+	/* NOW ALLOW EMPTY DEFINITION: */
 	return ch;
+    }
 
     /* sym == USR_ : */
     name = GC_strdup(env->str);

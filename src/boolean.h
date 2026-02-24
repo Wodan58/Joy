@@ -1,7 +1,7 @@
 /*
     module  : boolean.h
-    version : 1.6
-    date    : 02/04/26
+    version : 1.7
+    date    : 02/23/26
 */
 #ifndef BOOLEAN_H
 #define BOOLEAN_H
@@ -12,7 +12,7 @@
  * That is the task of get_boolean. This file should be included whenever
  * a condition is needed.
  */
-static int get_boolean(pEnv env, Index node)
+int get_boolean(pEnv env, Index node)
 {
     int rv = 0;
 

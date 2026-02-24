@@ -1,8 +1,8 @@
 /* FILE : scan.c */
 /*
  *  module  : scan.c
- *  version : 1.87
- *  date    : 01/08/26
+ *  version : 1.89
+ *  date    : 02/23/26
  */
 #include "globals.h"
 
@@ -445,6 +445,7 @@ static void push_sym(pEnv env)
 {
     Token node;
 
+    memset(&node, 0, sizeof(node));
     switch (node.op = env->sym) {
     case CHAR_:
     case INTEGER_:

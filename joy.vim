@@ -15,7 +15,7 @@ syntax region joyList    matchgroup=joyBracket start=/\[/ end=/\]/ contains=ALL
 syntax match  joyComment /[#].*/
 syntax region joyComment start=/(\*/ end=/\*)/
 syntax match  joySymbol  /[^"#'()\.\;\[\]\{\} ]+/
-syntax match  joySpecial /[\.\;]/
+syntax match  joySpecial /[.;]/
 syntax match  joySpecial /==/
 syntax match  joySpecial /LIBRA[ \t\n]/
 syntax match  joySpecial /DEFINE[ \t\n]/

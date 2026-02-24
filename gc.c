@@ -1,7 +1,7 @@
 /*
  *  module  : gc.c
- *  version : 1.70
- *  date    : 02/09/26
+ *  version : 1.71
+ *  date    : 02/23/26
  */
 #include <stdio.h>	/* for printf-debugging */
 #include <setjmp.h>
@@ -393,7 +393,7 @@ void *GC_realloc(void *ptr, size_t size)
 #endif
 
     if (!ptr)
-	return GC_malloc(size);
+	return GC_malloc(size);		/* LCOV_EXCL_LINE */
 #ifdef COUNT_COLLECTIONS
     flags = forget(ptr, &old_size);
     memory_use -= old_size;

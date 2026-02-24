@@ -1,7 +1,7 @@
 /*
     module  : compare.h
-    version : 1.24
-    date    : 02/05/26
+    version : 1.25
+    date    : 02/23/26
 */
 #ifndef COMPARE_H
 #define COMPARE_H
@@ -62,13 +62,6 @@ int Compare(pEnv env, Index first, Index second)
 	case BIGNUM_:
 	    name2 = GETSTRING(second);
 	    goto cmpstr;
-#if 0
-	default:
-	    if (type2 < 16)
-		break;
-	    name2 = opername(type2);
-	    goto cmpstr;
-#endif
 	}
 	break;
     case ANON_FUNCT_:
@@ -84,13 +77,6 @@ int Compare(pEnv env, Index first, Index second)
 	case BIGNUM_:
 	    name2 = GETSTRING(second);
 	    goto cmpstr;
-#if 0
-	default:
-	    if (type2 < 16)
-		break;
-	    name2 = opername(type2);
-	    goto cmpstr;
-#endif
 	}
 	break;
     case BOOLEAN_:
@@ -166,13 +152,6 @@ int Compare(pEnv env, Index first, Index second)
 	case BIGNUM_:
 	    name2 = GETSTRING(second);
 	    goto cmpstr;
-#if 0
-	default:
-	    if (type2 < 16)
-		break;
-	    name2 = opername(type2);
-	    goto cmpstr;
-#endif
 	}
 	break;
     case FLOAT_:
@@ -200,30 +179,6 @@ int Compare(pEnv env, Index first, Index second)
 	    return fp1 < fp2 ? -1 : fp1 > fp2;
 	}
 	break;
-#if 0
-    default:
-	if (type1 < 16)
-	    break;
-	name1 = opername(type1);
-	switch (type2) {
-	case USR_:
-	    name2 = vec_at(env->symtab, nodevalue(second).ent).name;
-	    goto cmpstr;
-	case ANON_FUNCT_:
-	    name2 = nickname(operindex(env, nodevalue(second).proc));
-	    goto cmpstr;
-	case STRING_:
-	case BIGNUM_:
-	    name2 = GETSTRING(second);
-	    goto cmpstr;
-	default:
-	    if (type2 < 16)
-		break;
-	    name2 = opername(type2);
-	    goto cmpstr;
-	}
-	break;
-#endif
     }
     return 1;	/* unequal */
 cmpnum:

@@ -60,7 +60,7 @@ Then manually change the path to inilib.joy in %HOMEPATH%\usrlib.joy from
 Running
 -------
 
-    joy -h
+    ./joy -h
 
 gives an overview of available options;
 

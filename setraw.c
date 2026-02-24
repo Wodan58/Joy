@@ -1,7 +1,7 @@
 /*
  *  module  : setraw.c
- *  version : 1.13
- *  date    : 02/04/26
+ *  version : 1.14
+ *  date    : 02/23/26
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -251,7 +251,9 @@ void SetRaw(void)
     hwnd = GetConsoleWindow();
     SetWindowLongA(hwnd, GWL_STYLE,
 		   GetWindowLongA(hwnd, GWL_STYLE) & ~WS_MAXIMIZEBOX);
+#ifndef __MINGW32__
     SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_UNAWARE);
+#endif
 #endif
     input = GetStdHandle(STD_INPUT_HANDLE);
     GetConsoleMode(input, &input_mode);

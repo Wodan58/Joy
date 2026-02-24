@@ -1,9 +1,37 @@
 /*
  *  module  : write.c
- *  version : 1.4
- *  date    : 02/04/26
+ *  version : 1.5
+ *  date    : 02/23/26
  */
 #include "globals.h"
+
+/*
+ * writechar - print a character to a string.
+ */
+void writechar(int ch, char *str)
+{
+    if (ch >= 8 && ch <= 13)
+	sprintf(str, "'\\%c", "btnvfr"[ch - 8]);
+    else if (iscntrl(ch) || ch == 32)
+	sprintf(str, "'\\%03d", ch);
+    else
+	sprintf(str, "'%c", ch);
+}
+
+/*
+ * writestring - print a character in a string to a string.
+ */
+void writestring(int ch, char *str)
+{
+    if (ch == '"')
+	strcpy(str, "\\\"");
+    else if (ch >= 8 && ch <= 13)
+	sprintf(str, "\\%c", "btnvfr"[ch - 8]);
+    else if (iscntrl(ch))
+	sprintf(str, "\\%03d", ch);
+    else
+	sprintf(str, "%c", ch);
+}
 
 /*
  * writefactor - print a factor in readable format to stdout.
@@ -37,12 +65,8 @@ void writefactor(pEnv env, Index n, FILE *fp)
 	break;
 
     case CHAR_:
-	if (nodevalue(n).num >= 8 && nodevalue(n).num <= 13)
-	    fprintf(fp, "'\\%c", "btnvfr"[nodevalue(n).num - 8]);
-	else if (iscntrl(nodevalue(n).num) || nodevalue(n).num == 32)
-	    fprintf(fp, "'\\%03d", (int)nodevalue(n).num);
-	else
-	    fprintf(fp, "'%c", (int)nodevalue(n).num);
+	writechar(nodevalue(n).num, buf);
+	fprintf(fp, "%s", buf);
 	break;
 
     case INTEGER_:
@@ -64,18 +88,13 @@ void writefactor(pEnv env, Index n, FILE *fp)
     case STRING_:
 	putc('"', fp);
 #ifdef NOBDW
-	for (ptr = (char *)&nodevalue(n); *ptr; ptr++)
+	for (ptr = (char *)&nodevalue(n); *ptr; ptr++) {
 #else
-	for (ptr = nodevalue(n).str; *ptr; ptr++)
+	for (ptr = nodevalue(n).str; *ptr; ptr++) {
 #endif
-	    if (*ptr == '"')
-		fprintf(fp, "\\\"");
-	    else if (*ptr >= 8 && *ptr <= 13)
-		fprintf(fp, "\\%c", "btnvfr"[*ptr - 8]);
-	    else if (iscntrl((int)*ptr))
-		fprintf(fp, "\\%03d", *ptr);
-	    else
-		putc(*ptr, fp);
+	    writestring(*ptr, buf);
+	    fprintf(fp, "%s", buf);
+	}
 	putc('"', fp);
 	break;
 

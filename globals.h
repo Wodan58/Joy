@@ -1,8 +1,8 @@
 /* FILE: globals.h */
 /*
  *  module  : globals.h
- *  version : 1.134
- *  date    : 02/06/26
+ *  version : 1.135
+ *  date    : 02/23/26
  */
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -119,7 +119,9 @@ enum {
     FILE_,
     BIGNUM_,
 
+#ifdef COMPILER
     LIST_PRIME_,
+#endif
 
     LIBRA,
     EQDEF,
@@ -206,9 +208,9 @@ KHASHL_MAP_INIT(KH_LOCAL, funtab_t, funtab, uint64_t, int, kh_hash_uint64,
 		kh_eq_generic)
 
 /*
- * Anonymous vectors are now a thing of the past. They cannot be passed as
- * a parameter and although such usage is not required, it is better to use
- * named vectors going forward.
+ * Anonymous vectors are now a thing of the past. They cannot be passed as a
+ * parameter and although such usage is not required, it is better to use named
+ * vectors going forward.
  */
 typedef char *char_p;		/* pointer to char */
 typedef char char_s;		/* dynamic string */
@@ -272,9 +274,10 @@ typedef struct Env {
     unsigned char overwrite;
     unsigned char printing;
     unsigned char finclude_busy;
-    unsigned char flibrary_busy;
     unsigned char variable_busy;
-#ifndef NOBDW
+#ifdef NOBDW
+    unsigned char flibrary_busy;
+#else
     signed char bytecoding;
     signed char compiling;
 #endif
@@ -322,8 +325,6 @@ void inimem1(pEnv env, int status);
 void inimem2(pEnv env);
 void printnode(pEnv env, Index p);
 void my_gc(pEnv env);
-char *check_strdup(char *str);
-void *check_malloc(size_t leng);
 #endif
 /* error.c */
 void execerror(pEnv env, char *message, char *op);
@@ -361,6 +362,8 @@ int compound_def(pEnv env, int ch);
 /* undefs.c */
 void hide_inner_modules(pEnv env, int flag);
 /* write.c */
+void writechar(int ch, char *str);
+void writestring(int ch, char *str);
 void writefactor(pEnv env, Index n, FILE *fp);
 void writeterm(pEnv env, Index n, FILE *fp);
 #ifdef BYTECODE
