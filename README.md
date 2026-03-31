@@ -96,4 +96,4 @@ Documentation|Notes
 -------------|-----
 [Legacy Docs](https://wodan58.github.io)|Original Joy documentation
 [User Manual](https://wodan58.github.io/j09imp.html)|Joy language reference
-[Main Manual](https://github.com/Wodan58/G3/blob/master/JOP.pdf)|Comprehensive Joy Manual
+[Main Manual](https://codeberg.org/Wodan58/G3-JOY-1/src/branch/master/JOP.pdf)|Comprehensive Joy Manual
